@@ -515,7 +515,7 @@
       </div>
       <div class="quests-section">
         <h3 class="section-title">КВЕСТЫ И ЧЕЛЛЕНДЖИ</h3>
-        <div id="quests-container"></div>
+        <div id="profile-quests-container"></div>
       </div>
       <div class="achievements-section">
         <h3 class="section-title">ДОСТИЖЕНИЯ</h3>
@@ -634,11 +634,12 @@
   function renderQuests() {
     if (!window.QuestsManager || !state.quests) return;
 
-    console.log("DEBUG renderQuests: state.quests.daily =", state.quests.daily);
-    console.log("DEBUG renderQuests: state.quests.daily.length =", state.quests.daily?.length);
-
-    const container = $("#quests-container");
-    if (!container) return;
+    // Получаем оба контейнера (на экране квестов и в профиле)
+    const questsContainer = $("#quests-container");
+    const profileQuestsContainer = $("#profile-quests-container");
+    
+    // Если ни один контейнер не найден, выходим
+    if (!questsContainer && !profileQuestsContainer) return;
     
     const timeLeft = window.QuestsManager.getTimeUntilReset();
     
@@ -715,9 +716,17 @@
     console.log("DEBUG state.quests.daily:", state.quests.daily);
     console.log("DEBUG dailyQuestsHtml:", dailyQuestsHtml);
     
-    container.innerHTML = weeklyHtml + dailyHtml;
+    const fullHtml = weeklyHtml + dailyHtml;
     
-    // Добавляем обработчики для кнопок Claim
+    // Рендерим в оба контейнера, если они существуют
+    if (questsContainer) {
+      questsContainer.innerHTML = fullHtml;
+    }
+    if (profileQuestsContainer) {
+      profileQuestsContainer.innerHTML = fullHtml;
+    }
+    
+    // Добавляем обработчики для кнопок Claim в обоих контейнерах
     $$(".btn-claim:not([disabled])").forEach(btn => {
       btn.onclick = () => claimQuest(btn.dataset.questId);
     });
@@ -1371,7 +1380,7 @@
     const codeBlocks = [];
     const preserved = text.replace(/```([\s\S]*?)```/g, (_, c) => {
       const idx = codeBlocks.length;
-      codeBlocks.push(`<pre>${c.trim()}</pre>`);
+      codeBlocks.push(`<pre>${escapeHtml(c.trim())}</pre>`);
       return `\x00CODEBLOCK${idx}\x00`;
     });
     let h = escapeHtml(preserved);
