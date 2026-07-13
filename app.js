@@ -1406,9 +1406,28 @@
     renderModalContent();
   }
   
+  // Маппинг упрощенных японских кандзи (shinjitai) на традиционные китайские (kyūjitai)
+  const kanjiSimplifiedToTraditional = {
+    '専': '專', '学': '學', '図': '圖', '実': '實', '医': '醫',
+    '体': '體', '国': '國', '会': '會', '帰': '歸', '万': '萬',
+    '円': '圓', '亜': '亞', '仏': '佛', '単': '單', '号': '號',
+    '売': '賣', '変': '變', '声': '聲', '寝': '寢', '広': '廣',
+    '従': '從', '恵': '惠', '応': '應', '斎': '齋', '旧': '舊',
+    '権': '權', '楽': '樂', '気': '氣', '温': '溫', '湾': '灣',
+    '点': '點', '為': '爲', '画': '畫', '祈': '祈', '禅': '禪',
+    '糸': '絲', '経': '經', '絵': '繪', '続': '續', '聴': '聽',
+    '脳': '腦', '臓': '臟', '薬': '藥', '虫': '蟲', '号': '號',
+    '覚': '覺', '観': '觀', '訳': '譯', '証': '證', '読': '讀',
+    '辞': '辭', '鉄': '鐵', '関': '關', '雑': '雜', '霊': '靈',
+    '顔': '顏', '駅': '驛', '黄': '黃', '黒': '黑', '歯': '齒'
+  };
+  
   // Функция инициализации HanziWriter для словаря
-  function initDictionaryKanjiWriter(kanji) {
+  async function initDictionaryKanjiWriter(kanji) {
     const target = document.getElementById("dict-kanji-writer-target");
+    const container = target?.parentElement;
+    const controls = document.querySelector(".dict-kanji-controls");
+    
     if (!target || typeof HanziWriter === 'undefined') {
       toast("⚠️ HanziWriter не загружен");
       return;
@@ -1416,6 +1435,34 @@
     
     target.innerHTML = "";
     target.style.touchAction = "none";
+    
+    // Функция загрузки данных кандзи с fallback
+    const loadKanjiData = async (char) => {
+      try {
+        // Пытаемся загрузить исходный символ
+        const response = await fetch(`https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${char}.json`);
+        
+        if (response.ok) {
+          return await response.json();
+        }
+        
+        // Если 404 и есть традиционный вариант, пробуем его
+        if (response.status === 404 && kanjiSimplifiedToTraditional[char]) {
+          const traditionalChar = kanjiSimplifiedToTraditional[char];
+          const fallbackResponse = await fetch(`https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${traditionalChar}.json`);
+          
+          if (fallbackResponse.ok) {
+            return await fallbackResponse.json();
+          }
+        }
+        
+        // Если ничего не помогло, выбрасываем ошибку
+        throw new Error(`Данные для символа "${char}" недоступны`);
+        
+      } catch (error) {
+        throw error;
+      }
+    };
     
     try {
       const writer = HanziWriter.create(target, kanji, {
@@ -1431,9 +1478,20 @@
         outlineColor: '#DDD',
         drawingColor: '#333',
         drawingWidth: 18,
-      charDataLoader: (char) =>
-        fetch(`https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${char}.json`)
-          .then(r => r.json())
+        charDataLoader: loadKanjiData,
+        onLoadCharDataError: (error) => {
+          console.warn(`Не удалось загрузить данные для "${kanji}":`, error);
+          // Скрываем контейнер с полотном и кнопками
+          if (container) container.style.display = 'none';
+          if (controls) controls.style.display = 'none';
+          // Показываем сообщение
+          if (container && container.parentElement) {
+            const message = document.createElement('p');
+            message.className = 'dict-no-kanji';
+            message.textContent = `Данные для отрисовки символа "${kanji}" недоступны`;
+            container.parentElement.insertBefore(message, container);
+          }
+        }
       });
       
       // Кнопка анимации
@@ -1459,7 +1517,16 @@
       }
     } catch (error) {
       console.error("Ошибка инициализации HanziWriter:", error);
-      toast("⚠️ Ошибка загрузки кандзи");
+      // Скрываем контейнер с полотном и кнопками
+      if (container) container.style.display = 'none';
+      if (controls) controls.style.display = 'none';
+      // Показываем сообщение об ошибке
+      if (container && container.parentElement) {
+        const message = document.createElement('p');
+        message.className = 'dict-no-kanji';
+        message.textContent = `Данные для отрисовки символа "${kanji}" недоступны`;
+        container.parentElement.insertBefore(message, container);
+      }
     }
   }
   
