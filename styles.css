@@ -905,6 +905,7 @@ p{line-height:1.5;}
 }
 
 /* ===== SRS ===== */
+#screen-srs .screen-scroll{padding-top:0;}
 .srs-mini{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;}
 .srs-mini .m{text-align:center;min-width:0;}
 .srs-mini .m b{
@@ -3498,7 +3499,7 @@ rt {
 .srs-tabs {
   display: flex;
   gap: 8px;
-  padding: 12px 16px 0;
+  padding: 12px 0 0;
   border-bottom: 1px solid var(--border);
   background: var(--card-bg);
 }
