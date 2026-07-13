@@ -112,7 +112,7 @@
       performSave();
     } else {
       if (saveTimeout) clearTimeout(saveTimeout);
-      saveTimeout = setTimeout(performSave, 300);
+      saveTimeout = setTimeout(performSave, 500);
     }
   }
   
@@ -1145,11 +1145,45 @@
     const body = $("#srs-body");
     const due = dueCards();
     const total = allCards().length;
+    
+    // Создаем табы
+    body.innerHTML = `
+      <div class="srs-tabs">
+        <button class="srs-tab ${currentSRSTab === 'repetition' ? 'active' : ''}" data-tab="repetition">Повторение</button>
+        <button class="srs-tab ${currentSRSTab === 'dictionary' ? 'active' : ''}" data-tab="dictionary">Словарь</button>
+      </div>
+      <div id="srs-tab-content"></div>
+    `;
+    
+    // Обработчики переключения табов
+    $$(".srs-tab", body).forEach(tab => {
+      tab.onclick = () => {
+        currentSRSTab = tab.dataset.tab;
+        renderSRSHome();
+      };
+    });
+    
+    // Рендерим контент в зависимости от активного таба
+    if (currentSRSTab === "repetition") {
+      renderSRSRepetition();
+    } else {
+      renderDictionary();
+    }
+  }
+  
+  function renderSRSRepetition() {
+    const content = $("#srs-tab-content");
+    if (!content) return;
+    
+    const due = dueCards();
+    const total = allCards().length;
+    
     if (total === 0) {
-      body.innerHTML = emptyState("🎴", "Пока нет карточек", "Начните главу на Главном экране, чтобы добавить слова в повторение.");
+      content.innerHTML = emptyState("🎴", "Пока нет карточек", "Начните главу на Главном экране, чтобы добавить слова в повторение.");
       return;
     }
-    body.innerHTML = `
+    
+    content.innerHTML = `
       <header style="padding:6px 0 14px"><h1 class="app-title">Повторение (SRS)</h1><p class="app-subtitle">Интервальные повторения по SM-2</p></header>
       <div class="stat-row">
         <div class="stat-box"><div class="stat-num accent">${due.length}</div><div class="stat-cap">К повтору</div></div>
@@ -1157,11 +1191,281 @@
       </div>
       <button class="btn-primary" id="srs-start" ${due.length === 0 ? "disabled" : ""} data-testid="srs-start-btn">🎴 ${due.length > 0 ? `Учить ${due.length} карточек` : "Всё повторено на сегодня!"}</button>
       <button class="btn-extra-review ${due.length > 0 ? "hidden" : ""}" id="srs-extra-review" data-testid="srs-extra-review-btn">➕ Доп. повторение (10 карточек)</button>`;
+    
     const b = $("#srs-start");
     if (b) b.onclick = () => startFlash(null);
     const extraBtn = $("#srs-extra-review");
     if (extraBtn) extraBtn.onclick = startExtraReview;
   }
+  
+  // Функция отображения словаря
+  function renderDictionary() {
+    const content = $("#srs-tab-content");
+    if (!content) return;
+    
+    content.innerHTML = `
+      <header style="padding:6px 0 14px">
+        <h1 class="app-title">Словарь</h1>
+        <p class="app-subtitle">Все слова из уроков Genki</p>
+      </header>
+      <div class="dict-search-wrap">
+        <input 
+          type="search" 
+          id="dict-search" 
+          class="dict-search-input" 
+          placeholder="🔍 Поиск слов..."
+          autocomplete="off"
+        />
+      </div>
+      <div id="dict-lessons-container"></div>
+    `;
+    
+    renderDictionaryLessons();
+    
+    // Обработчик поиска с debounce
+    const searchInput = $("#dict-search");
+    let searchTimeout;
+    if (searchInput) {
+      searchInput.addEventListener("input", (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          filterDictionaryWords(e.target.value);
+        }, 300);
+      });
+    }
+  }
+  
+  // Функция рендеринга списка уроков и слов
+  function renderDictionaryLessons(searchQuery = "") {
+    const container = $("#dict-lessons-container");
+    if (!container) return;
+    
+    const query = searchQuery.toLowerCase().trim();
+    let totalVisible = 0;
+    
+    container.innerHTML = LESSONS.map((lesson) => {
+      const words = lesson.words || [];
+      
+      // Фильтруем слова по поисковому запросу
+      const filteredWords = query ? words.filter(word => {
+        return (word.kanji && word.kanji.toLowerCase().includes(query)) ||
+               (word.writing && word.writing.toLowerCase().includes(query)) ||
+               (word.romaji && word.romaji.toLowerCase().includes(query)) ||
+               (word.translation && word.translation.toLowerCase().includes(query));
+      }) : words;
+      
+      if (filteredWords.length === 0 && query) {
+        return ''; // Скрываем урок, если нет подходящих слов
+      }
+      
+      totalVisible += filteredWords.length;
+      
+      const wordsHtml = filteredWords.map(word => {
+        // Вычисляем прогресс из state.srs
+        const srsRecord = state.srs[word.id];
+        let progress = 0;
+        let progressClass = 'progress-none';
+        
+        if (srsRecord && srsRecord.interval) {
+          progress = Math.min(100, Math.round((srsRecord.interval / 21) * 100));
+          if (progress >= 75) progressClass = 'progress-high';
+          else if (progress >= 25) progressClass = 'progress-medium';
+          else progressClass = 'progress-low';
+        }
+        
+        return `
+          <div class="dict-word-card" data-word-id="${word.id}">
+            <div class="dict-word-main">
+              <div class="dict-word-kanji">${word.kanji || word.writing}</div>
+              <div class="dict-word-info">
+                <div class="dict-word-reading">${word.writing}</div>
+                <div class="dict-word-translation">${word.translation}</div>
+              </div>
+            </div>
+            <div class="dict-word-progress">
+              <div class="dict-progress-bar">
+                <div class="dict-progress-fill ${progressClass}" style="width: ${progress}%"></div>
+              </div>
+              <span class="dict-progress-text">${progress}%</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      return `
+        <div class="dict-lesson">
+          <div class="dict-lesson-header">
+            <h3 class="dict-lesson-title">Lesson ${lesson.id}: ${lesson.title}</h3>
+            <span class="dict-lesson-count">${filteredWords.length} слов</span>
+          </div>
+          <div class="dict-words-list">
+            ${wordsHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    // Показываем сообщение, если ничего не найдено
+    if (query && totalVisible === 0) {
+      container.innerHTML = emptyState("🔍", "Ничего не найдено", `По запросу "${searchQuery}" слова не найдены.`);
+      return;
+    }
+    
+    // Добавляем обработчики кликов на карточки слов
+    $$(".dict-word-card").forEach(card => {
+      card.onclick = () => {
+        const wordId = card.dataset.wordId;
+        const word = wordById(wordId);
+        if (word) openDictionaryModal(word);
+      };
+    });
+  }
+  
+  // Функция фильтрации слов
+  function filterDictionaryWords(searchQuery) {
+    renderDictionaryLessons(searchQuery);
+  }
+  
+  // Функция открытия модального окна с деталями слова
+  function openDictionaryModal(word) {
+    const body = $("#srs-body");
+    if (!body) return;
+    
+    const kanjiChars = getAllKanji(word.kanji || word.writing);
+    const hasKanji = kanjiChars.length > 0;
+    
+    // Сохраняем текущее состояние для возврата
+    const returnToDict = () => {
+      currentSRSTab = "dictionary";
+      renderSRSHome();
+    };
+    
+    let currentKanjiIdx = 0;
+    
+    const renderModalContent = () => {
+      const selectedKanji = hasKanji ? kanjiChars[currentKanjiIdx] : null;
+      
+      const kanjiTabsHtml = kanjiChars.length > 1 ? `
+        <div class="dict-kanji-tabs">
+          ${kanjiChars.map((k, idx) => `
+            <button class="dict-kanji-tab ${idx === currentKanjiIdx ? 'active' : ''}" data-kanji-idx="${idx}">
+              ${k}
+            </button>
+          `).join('')}
+        </div>
+      ` : '';
+      
+      body.innerHTML = `
+        <div class="dict-modal">
+          <div class="dict-modal-header">
+            <button class="btn-ghost" id="dict-modal-close">← Назад</button>
+            <h2 class="dict-modal-title">${word.kanji || word.writing}</h2>
+          </div>
+          
+          <div class="dict-modal-content">
+            <div class="dict-modal-info">
+              <p class="dict-modal-reading">${word.writing}</p>
+              <p class="dict-modal-translation">${word.translation}</p>
+              ${word.romaji ? `<p class="dict-modal-romaji">${word.romaji}</p>` : ''}
+            </div>
+            
+            ${hasKanji ? `
+              ${kanjiTabsHtml}
+              <div class="dict-kanji-writer-container">
+                <div id="dict-kanji-writer-target"></div>
+              </div>
+              <div class="dict-kanji-controls">
+                <button class="btn-secondary" id="dict-animate-btn">🎬 Анимация черт</button>
+                <button class="btn-secondary" id="dict-quiz-btn">✍️ Пропись</button>
+              </div>
+            ` : '<p class="dict-no-kanji">В этом слове нет кандзи для отрисовки</p>'}
+          </div>
+        </div>
+      `;
+      
+      // Обработчик закрытия
+      const closeBtn = $("#dict-modal-close");
+      if (closeBtn) closeBtn.onclick = returnToDict;
+      
+      // Обработчики табов кандзи
+      if (kanjiChars.length > 1) {
+        $$(".dict-kanji-tab").forEach(tab => {
+          tab.onclick = () => {
+            currentKanjiIdx = parseInt(tab.dataset.kanjiIdx);
+            renderModalContent();
+          };
+        });
+      }
+      
+      // Инициализация HanziWriter
+      if (hasKanji && selectedKanji) {
+        initDictionaryKanjiWriter(selectedKanji);
+      }
+    };
+    
+    renderModalContent();
+  }
+  
+  // Функция инициализации HanziWriter для словаря
+  function initDictionaryKanjiWriter(kanji) {
+    const target = document.getElementById("dict-kanji-writer-target");
+    if (!target || typeof HanziWriter === 'undefined') {
+      toast("⚠️ HanziWriter не загружен");
+      return;
+    }
+    
+    target.innerHTML = "";
+    target.style.touchAction = "none";
+    
+    try {
+      const writer = HanziWriter.create(target, kanji, {
+        width: 280,
+        height: 280,
+        padding: 10,
+        strokeAnimationSpeed: 1,
+        delayBetweenStrokes: 200,
+        showOutline: true,
+        showCharacter: true,
+        strokeColor: '#555',
+        radicalColor: '#168F16',
+        outlineColor: '#DDD',
+        drawingColor: '#333',
+        drawingWidth: 18,
+      charDataLoader: (char) =>
+        fetch(`https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${char}.json`)
+          .then(r => r.json())
+      });
+      
+      // Кнопка анимации
+      const animateBtn = $("#dict-animate-btn");
+      if (animateBtn) {
+        animateBtn.onclick = () => {
+          writer.animateCharacter();
+        };
+      }
+      
+      // Кнопка прописи
+      const quizBtn = $("#dict-quiz-btn");
+      if (quizBtn) {
+        quizBtn.onclick = () => {
+          writer.quiz({
+            showOutline: true,
+            leniency: 1.2,
+            onComplete: () => {
+              toast("✅ Отлично!");
+            }
+          });
+        };
+      }
+    } catch (error) {
+      console.error("Ошибка инициализации HanziWriter:", error);
+      toast("⚠️ Ошибка загрузки кандзи");
+    }
+  }
+  
+  // Глобальные переменные для SRS
+  let currentSRSTab = "repetition"; // "repetition" или "dictionary"
+  
   // Глобальная переменная для HanziWriter
   let currentWriter = null;
   let drawingMistakes = 0;
@@ -1263,7 +1567,7 @@
       if (!currentWriter) return;
       
   currentWriter.quiz({
-    leniency: 1, // НЕ ИЗМЕНЯТЬ ЭТО ЗНАЧЕНИЕ
+    leniency: 1.2, // НЕ ИЗМЕНЯТЬ ЭТО ЗНАЧЕНИЕ
     onMistake: (strokeData) => {
       drawingMistakes++;
           if (drawingMistakes >= 3) {
@@ -1357,7 +1661,7 @@
         radicalColor: '#168F16',
         outlineColor: '#f2f2f2',
         drawingColor: '#333',
-        drawingWidth: 8
+        drawingWidth: 18
       });
 
       const undoBtn = document.getElementById("drawing-undo");
@@ -1541,7 +1845,7 @@
             </div>
             <div class="kanji-progress-cells" id="kanji-progress-cells"></div>
             <div id="kanji-writer-target" style="width: 300px; height: 300px; margin: 20px auto;"></div>
-            <button class="btn-ghost" id="undo-stroke">↶ Отменить штрих</button>
+            <button class="btn-ghost" id="drawing-undo">↶ Отменить штрих</button>
           </div>
         </div>`;
     } else {
@@ -2107,7 +2411,10 @@
         srs: state.srs,
         streak: state.streak,
         savedNotes: state.savedNotes,
-        settings: state.settings,
+        settings: {
+          ...state.settings,
+          openrouterKey: "", // Не экспортируем API ключ в целях безопасности
+        },
         xp: state.xp,
         level: state.level,
         coins: state.coins,
@@ -2208,6 +2515,7 @@
           <label>🔑 API-ключ OpenRouter</label>
           <input type="password" id="set-key" value="${s.openrouterKey || ""}" placeholder="sk-or-v1-..." data-testid="set-openrouter-key" />
           <div class="set-hint">Получите ключ на openrouter.ai. Хранится только на этом устройстве.</div>
+          <div class="set-warning">⚠️ Ключ хранится в браузере. Не делитесь файлом бэкапа, если используете платный ключ.</div>
         </div>
         <div class="set-item">
           <label>🤖 Модель</label>
