@@ -423,6 +423,11 @@ p{line-height:1.5;}
 #screen-sensei > .app-header {
   flex-shrink: 0;
 }
+#screen-sensei > .chat-area {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
 #screen-sensei > .chat-input-bar {
   flex-shrink: 0;
 }
@@ -1356,6 +1361,84 @@ p{line-height:1.5;}
 .typing i{width:8px;height:8px;border-radius:50%;background:var(--text-muted);animation:bl 1s infinite;}
 .typing i:nth-child(2){animation-delay:.2s;}.typing i:nth-child(3){animation-delay:.4s;}
 @keyframes bl{0%,80%,100%{opacity:.2;}40%{opacity:1;}}
+
+/* ===== AI Loading Animation ===== */
+.ai-loading-card {
+  text-align: center;
+  padding: 60px 40px;
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--orange-soft) 100%);
+  border: 2px solid var(--orange);
+  animation: ai-pulse 2s ease-in-out infinite;
+}
+
+.ai-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.ai-loading-icon {
+  font-size: 64px;
+  animation: ai-bounce 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(255, 122, 26, 0.3));
+}
+
+.ai-loading-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  background: linear-gradient(90deg, var(--orange), var(--orange-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ai-loading-hint {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+@keyframes ai-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 20px rgba(255, 122, 26, 0.1);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 8px 30px rgba(255, 122, 26, 0.2);
+  }
+}
+
+@keyframes ai-bounce {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-10px) rotate(-5deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+}
+
+/* Улучшенные стили для typing dots */
+.ai-loading-card .typing {
+  margin-top: 8px;
+}
+
+.ai-loading-card .typing i {
+  background: var(--orange);
+  width: 10px;
+  height: 10px;
+  box-shadow: 0 2px 4px rgba(255, 122, 26, 0.3);
+}
 
 /* ===== Library ===== */
 .lib-tabs{display:flex;gap:8px;padding:0 16px 8px;width:100%;}
