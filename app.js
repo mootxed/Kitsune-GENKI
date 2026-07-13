@@ -12,6 +12,7 @@
   const XP_CHECK = 20;
   const XP_CHAPTER_FULL = 100;
   const COINS_PER_LEVEL = 50;
+  const DRAWING_MODE_PROBABILITY = 0.2; // 20% шанс режима рисования
 
   const MONTHS_RU = [
     "Январь","Февраль","Март","Апрель","Май","Июнь",
@@ -161,14 +162,14 @@
       LESSONS = [];
       return;
     }
-    const fileVersion = data.version || 0;
-    if (!raw || String(cachedVersion) !== String(fileVersion)) {
-      LESSONS = normalize(data);
-      localStorage.setItem(LS_LESSONS, JSON.stringify(LESSONS));
-      localStorage.setItem(LS_LESSON_VERSION, String(fileVersion));
-    } else {
-      LESSONS = JSON.parse(raw);
-    }
+  const fileVersion = data.version || 0;
+  if (!raw || String(cachedVersion) !== String(fileVersion)) {
+    LESSONS = normalize(data);
+    localStorage.setItem(LS_LESSONS, JSON.stringify(LESSONS));
+    localStorage.setItem(LS_LESSON_VERSION, String(fileVersion));
+  } else {
+    LESSONS = JSON.parse(raw);
+  }
     // Принудительно обновляем отображение глав после загрузки данных
     if (state && state.initialized) {
       renderHome();
@@ -1161,8 +1162,325 @@
     const extraBtn = $("#srs-extra-review");
     if (extraBtn) extraBtn.onclick = startExtraReview;
   }
+  // Глобальная переменная для HanziWriter
+  let currentWriter = null;
+  let drawingMistakes = 0;
+
+  // Функция проверки, является ли строка одиночным кандзи
+  function isSingleKanji(text) {
+    if (!text || text.length === 0) return false;
+    const code = text.charCodeAt(0);
+    // Проверяем диапазоны кандзи (CJK Unified Ideographs)
+    return (code >= 0x4E00 && code <= 0x9FFF) || // Основной блок
+           (code >= 0x3400 && code <= 0x4DBF) || // Extension A
+           (code >= 0x20000 && code <= 0x2A6DF); // Extension B
+  }
+
+  // Функция извлекает первый кандзи из текста
+  function getFirstKanji(text) {
+    if (!text) return null;
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i);
+      if ((code >= 0x4E00 && code <= 0x9FFF) ||
+          (code >= 0x3400 && code <= 0x4DBF) ||
+          (code >= 0x20000 && code <= 0x2A6DF)) {
+        return text[i];
+      }
+    }
+    return null;
+  }
+
+  // Функция извлечения всех кандзи из строки
+  function getAllKanji(text) {
+    if (!text) return [];
+    const kanji = [];
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i);
+      if ((code >= 0x4E00 && code <= 0x9FFF) ||
+          (code >= 0x3400 && code <= 0x4DBF) ||
+          (code >= 0x20000 && code <= 0x2A6DF)) {
+        kanji.push(text[i]);
+      }
+    }
+    return kanji;
+  }
+
+  // Переменные для последовательного рисования
+  let kanjiSequence = [];
+  let currentKanjiIndex = 0;
+
+  // Отрисовка ячеек прогресса
+  function renderKanjiProgressCells() {
+    const container = document.getElementById("kanji-progress-cells");
+    if (!container || kanjiSequence.length === 0) {
+      if (container) container.innerHTML = "";
+      return;
+    }
+
+    container.innerHTML = kanjiSequence.map((k, idx) => {
+      const classes = ['kanji-cell'];
+      if (idx < currentKanjiIndex) classes.push('completed');
+      if (idx === currentKanjiIndex) classes.push('current');
+      
+      const displayChar = idx < currentKanjiIndex ? k.kanji : '';
+      return `<div class="${classes.join(' ')}">${displayChar}</div>`;
+    }).join('');
+  }
+
+  // Функция инициализации режима рисования с HanziWriter
+  function initDrawingMode(kanji, writing, translation, category, hideRomaji, romaji) {
+    const target = document.getElementById("kanji-writer-target");
+    if (!target || !kanji || typeof HanziWriter === 'undefined') {
+      toast("⚠️ HanziWriter не загружен");
+      return;
+    }
+
+    // 🛑 ВАЖНО: Блокируем скролл страницы при рисовании пальцем на мобилке
+    target.style.touchAction = "none"; 
+
+    // Инициализация последовательности, если это первый кандзи
+    if (kanjiSequence.length === 0) {
+      const kanjiChars = getAllKanji(kanji);
+      kanjiSequence = kanjiChars.map(k => ({
+        kanji: k,
+        writing: writing,
+        translation: translation,
+        category: category,
+        hideRomaji: hideRomaji,
+        romaji: romaji
+      }));
+      currentKanjiIndex = 0;
+    }
+
+    renderKanjiProgressCells();
+    drawingMistakes = 0;
+    
+    // Извлекаем текущий кандзи из последовательности
+    const currentKanji = kanjiSequence[currentKanjiIndex].kanji;
+
+    function startQuiz() {
+      drawingMistakes = 0;
+      if (!currentWriter) return;
+      
+  currentWriter.quiz({
+    leniency: 1, // НЕ ИЗМЕНЯТЬ ЭТО ЗНАЧЕНИЕ
+    onMistake: (strokeData) => {
+      drawingMistakes++;
+          if (drawingMistakes >= 3) {
+            currentWriter.updateColor('outlineColor', '#bbbbbb');
+            currentWriter.showOutline();
+            toast("💡 Слишком много ошибок. Дорисуйте по контуру");
+          }
+        },
+        onComplete: (summaryData) => {
+          // Переход к следующему кандзи в последовательности
+          currentKanjiIndex++;
+          
+          if (currentKanjiIndex < kanjiSequence.length) {
+            // Есть ещё кандзи для рисования
+            const nextKanji = kanjiSequence[currentKanjiIndex];
+            renderKanjiProgressCells();
+            
+            // Очищаем холст и инициализируем следующий кандзи
+            const target = document.getElementById("kanji-writer-target");
+            if (target) target.innerHTML = "";
+            currentWriter = null;
+            drawingMistakes = 0;
+            
+            initDrawingMode(
+              nextKanji.kanji,
+              nextKanji.writing,
+              nextKanji.translation,
+              nextKanji.category,
+              nextKanji.hideRomaji,
+              nextKanji.romaji
+            );
+            return;
+          }
+          
+          // Все кандзи нарисованы - оцениваем карточку
+          const quality = drawingMistakes >= 3 ? 3 : 5;
+          const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+          
+          const resultText = quality === 5 
+            ? "✅ Отлично! Нарисовано без подсказок" 
+            : "📝 Нарисовано с подсказками";
+          toast(resultText);
+          
+          if (window.QuestsManager && sessionManager) {
+            const cardState = sessionManager.getCardState(card.id);
+            const isFirstAttempt = cardState.sessionLapses === 0;
+            
+            if (quality >= 4 && isFirstAttempt) {
+              window.QuestsManager.incrementStreakCorrect(state);
+            } else if (quality < 3) {
+              window.QuestsManager.resetStreakCorrect(state);
+            }
+          }
+          
+          if (sessionManager) {
+            sessionManager.answerCard(card.id, quality, state.srs);
+          } else {
+            SRS.review(state.srs[card.id], quality);
+            flashIdx += 1;
+          }
+          
+          addXP(XP_CARD);
+          save(true);
+          markActivity();
+          flashRevealed = false;
+          
+          // Сбрасываем последовательность
+          kanjiSequence = [];
+          currentKanjiIndex = 0;
+          
+          setTimeout(() => {
+            renderFlash();
+            updateSrsBadge();
+          }, 300);
+        }
+      });
+    }
+
+    try {
+      target.innerHTML = "";
+      
+      currentWriter = HanziWriter.create(target, currentKanji, {
+        width: 280,
+        height: 280,
+        padding: 10,
+        strokeAnimationSpeed: 1,
+        delayBetweenStrokes: 200,
+        showOutline: false,
+        showCharacter: false,
+        strokeColor: '#555',
+        radicalColor: '#168F16',
+        outlineColor: '#f2f2f2',
+        drawingColor: '#333',
+        drawingWidth: 8
+      });
+
+      const undoBtn = document.getElementById("drawing-undo");
+      if (undoBtn) {
+        undoBtn.onclick = () => {
+          if (currentWriter) {
+            // Возвращаем бледный контур, если он был сделан темным из-за 3 ошибок
+            currentWriter.updateColor('outlineColor', '#f2f2f2');
+            startQuiz(); // Перезапускаем викторину
+          }
+        };
+      }
+
+      const startBtn = document.getElementById("drawing-start");
+      if (startBtn) {
+        startBtn.onclick = () => {
+          startQuiz();
+        };
+      }
+      
+      // Автозапуск quiz сразу после инициализации
+      startQuiz();
+    } catch (error) {
+      console.error("Ошибка инициализации HanziWriter:", error);
+      toast("⚠️ Ошибка загрузки кандзи: " + error.message);
+      flashRevealed = true;
+      renderFlash();
+    }
+  }
+
+  // Функция показа карточки после завершения рисования
+  function showCardAfterDrawing(kanji, writing, translation, category, hideRomaji, romaji) {
+    const body = $("#srs-body");
+    
+    body.innerHTML = `
+      <div class="flash-wrap">
+        <div class="flash-top">
+          <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
+          <button class="btn-ghost" id="flash-exit">Выйти</button>
+        </div>
+        <div class="flash-card-3d" id="flash-card" data-testid="flash-card">
+          <div class="flash-inner flipped">
+            <div class="flash-front">
+              <button class="flash-speak" id="flash-speak" aria-label="Озвучить">🔊</button>
+              <div class="flash-cat">${category}</div>
+              <p class="flash-jp">${kanji}</p>
+              <p class="flash-tap-hint">Нажмите, чтобы показать ответ</p>
+            </div>
+            <div class="flash-back">
+              <p class="flash-tr">${translation}</p>
+              ${kanji !== writing ? `<p class="flash-reading">${writing}</p>` : ""}
+              ${hideRomaji ? "" : `<p class="flash-romaji">${romaji}</p>`}
+            </div>
+          </div>
+        </div>
+        <div id="rate" class="">
+          <div class="rate-row">
+            <button class="rate-btn rate-again" data-q="0" data-testid="rate-again">Снова</button>
+            <button class="rate-btn rate-hard" data-q="3" data-testid="rate-hard">Трудно</button>
+            <button class="rate-btn rate-good" data-q="4" data-testid="rate-good">Хорошо</button>
+            <button class="rate-btn rate-easy" data-q="5" data-testid="rate-easy">Легко</button>
+          </div>
+        </div>
+      </div>`;
+
+    // Озвучка
+    speak(writing);
+    const speakBtn = $("#flash-speak");
+    if (speakBtn) speakBtn.onclick = (e) => { e.stopPropagation(); speak(writing); };
+
+    // Кнопка выхода
+    const exitBtn = $("#flash-exit");
+    if (exitBtn) exitBtn.onclick = () => { flashCtx ? nav("chapter", flashCtx) : renderSRSHome(); };
+
+    // Обработчики оценок
+    $$("#rate .rate-btn").forEach((b) => {
+      b.onclick = () => {
+        const quality = parseInt(b.dataset.q, 10);
+        const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+        
+        // Трекинг для квеста "5 подряд" ДО обработки ответа
+        if (window.QuestsManager && sessionManager) {
+          const cardState = sessionManager.getCardState(card.id);
+          const isFirstAttempt = cardState.sessionLapses === 0;
+          
+          if (quality >= 4 && isFirstAttempt) {
+            window.QuestsManager.incrementStreakCorrect(state);
+          } else if (quality < 3) {
+            window.QuestsManager.resetStreakCorrect(state);
+          }
+        }
+        
+        // Используем SessionManager если доступен
+        if (sessionManager) {
+          sessionManager.answerCard(card.id, quality, state.srs);
+        } else {
+          // Fallback на старую логику
+          SRS.review(state.srs[card.id], quality);
+          flashIdx += 1;
+        }
+        
+        addXP(XP_CARD);
+        save(true); 
+        markActivity();
+        flashRevealed = false;
+        renderFlash();
+        updateSrsBadge();
+      };
+    });
+  }
+
   function renderFlash() {
     const body = $("#srs-body");
+    
+    // Очищаем предыдущий writer при переходе к следующей карточке
+    if (currentWriter) {
+      const target = document.getElementById("kanji-writer-target");
+      if (target) {
+        target.innerHTML = '';
+      }
+      currentWriter = null;
+      drawingMistakes = 0;
+    }
     
     // Проверяем завершение через SessionManager
     if (sessionManager && sessionManager.isSessionComplete()) {
@@ -1204,48 +1522,85 @@
     
     const hideRomaji = state.settings.hideRomaji || false;
     
-    body.innerHTML = `
-      <div class="flash-wrap">
-        <div class="flash-top">
-          <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
-          <button class="btn-ghost" id="flash-exit">Выйти</button>
-        </div>
-        <div class="flash-card-3d" id="flash-card" data-testid="flash-card">
-          <div class="flash-inner ${flashRevealed ? "flipped" : ""}">
-            <div class="flash-front">
-              <button class="flash-speak" id="flash-speak" aria-label="Озвучить">🔊</button>
-              <div class="flash-cat">${displayCategory}</div>
-              <p class="flash-jp">${displayKanji}</p>
-              <p class="flash-tap-hint">Нажмите, чтобы показать ответ</p>
+    // Проверка на режим рисования (извлекаем все кандзи из слова)
+    const allKanji = getAllKanji(displayKanji);
+    const isDrawingMode = allKanji.length > 0 && Math.random() < DRAWING_MODE_PROBABILITY;
+    
+    if (isDrawingMode && !flashRevealed && allKanji.length > 0) {
+      // Режим рисования (рисуем все кандзи из слова)
+      body.innerHTML = `
+        <div class="flash-wrap">
+          <div class="flash-top">
+            <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
+            <button class="btn-ghost" id="flash-exit">Выйти</button>
+          </div>
+          <div class="drawing-mode">
+            <div class="drawing-prompt">
+              <p class="drawing-translation">${displayTranslation}</p>
+                <p class="drawing-hint">Нарисуйте кандзи по памяти</p>
             </div>
-            <div class="flash-back">
-              <p class="flash-tr">${displayTranslation}</p>
-              ${displayKanji !== displayWriting ? `<p class="flash-reading">${displayWriting}</p>` : ""}
-              ${hideRomaji ? "" : `<p class="flash-romaji">${displayRomaji}</p>`}
+            <div class="kanji-progress-cells" id="kanji-progress-cells"></div>
+            <div id="kanji-writer-target" style="width: 300px; height: 300px; margin: 20px auto;"></div>
+            <button class="btn-ghost" id="undo-stroke">↶ Отменить штрих</button>
+          </div>
+        </div>`;
+    } else {
+      // Обычный режим карточки
+      body.innerHTML = `
+        <div class="flash-wrap">
+          <div class="flash-top">
+            <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
+            <button class="btn-ghost" id="flash-exit">Выйти</button>
+          </div>
+          <div class="flash-card-3d" id="flash-card" data-testid="flash-card">
+            <div class="flash-inner ${flashRevealed ? "flipped" : ""}">
+              <div class="flash-front">
+                <button class="flash-speak" id="flash-speak" aria-label="Озвучить">🔊</button>
+                <div class="flash-cat">${displayCategory}</div>
+                <p class="flash-jp">${displayKanji}</p>
+                <p class="flash-tap-hint">Нажмите, чтобы показать ответ</p>
+              </div>
+              <div class="flash-back">
+                <p class="flash-tr">${displayTranslation}</p>
+                ${displayKanji !== displayWriting ? `<p class="flash-reading">${displayWriting}</p>` : ""}
+                ${hideRomaji ? "" : `<p class="flash-romaji">${displayRomaji}</p>`}
+              </div>
             </div>
           </div>
-        </div>
-        <div id="rate" class="${flashRevealed ? "" : "hidden"}">
-          <div class="rate-row">
-            <button class="rate-btn rate-again" data-q="0" data-testid="rate-again">Снова</button>
-            <button class="rate-btn rate-hard" data-q="3" data-testid="rate-hard">Трудно</button>
-            <button class="rate-btn rate-good" data-q="4" data-testid="rate-good">Хорошо</button>
-            <button class="rate-btn rate-easy" data-q="5" data-testid="rate-easy">Легко</button>
+          <div id="rate" class="${flashRevealed ? "" : "hidden"}">
+            <div class="rate-row">
+              <button class="rate-btn rate-again" data-q="0" data-testid="rate-again">Снова</button>
+              <button class="rate-btn rate-hard" data-q="3" data-testid="rate-hard">Трудно</button>
+              <button class="rate-btn rate-good" data-q="4" data-testid="rate-good">Хорошо</button>
+              <button class="rate-btn rate-easy" data-q="5" data-testid="rate-easy">Легко</button>
+            </div>
           </div>
-        </div>
-      </div>`;
-    speak(displayWriting);
-    $("#flash-speak").onclick = (e) => { e.stopPropagation(); speak(displayWriting); };
-    $("#flash-exit").onclick = () => { flashCtx ? nav("chapter", flashCtx) : renderSRSHome(); };
-    $("#flash-card").onclick = () => { 
-      if (!flashRevealed) { 
-        flashRevealed = true; 
-        const inner = document.querySelector(".flash-inner");
-        const rate = document.getElementById("rate");
-        if (inner) inner.classList.add("flipped");
-        if (rate) rate.classList.remove("hidden");
-      } 
-    };
+        </div>`;
+    }
+    // Инициализация режима рисования
+    if (isDrawingMode && !flashRevealed && allKanji.length > 0 && typeof HanziWriter !== 'undefined') {
+      initDrawingMode(displayKanji, displayWriting, displayTranslation, displayCategory, hideRomaji, displayRomaji);
+    } else {
+      // Обычный режим
+      speak(displayWriting);
+      const speakBtn = $("#flash-speak");
+      if (speakBtn) speakBtn.onclick = (e) => { e.stopPropagation(); speak(displayWriting); };
+      const cardEl = $("#flash-card");
+      if (cardEl) {
+        cardEl.onclick = () => { 
+          if (!flashRevealed) { 
+            flashRevealed = true; 
+            const inner = document.querySelector(".flash-inner");
+            const rate = document.getElementById("rate");
+            if (inner) inner.classList.add("flipped");
+            if (rate) rate.classList.remove("hidden");
+          } 
+        };
+      }
+    }
+    
+    const exitBtn = $("#flash-exit");
+    if (exitBtn) exitBtn.onclick = () => { flashCtx ? nav("chapter", flashCtx) : renderSRSHome(); };
     $$("#rate .rate-btn").forEach((b) => {
       b.onclick = () => {
         const quality = parseInt(b.dataset.q, 10);
