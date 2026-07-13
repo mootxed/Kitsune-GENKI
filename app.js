@@ -429,23 +429,24 @@
     return null;
   }
 
-  // ---------- Navigation ----------
-  const SCREENS = ["home", "profile", "chapter", "srs", "sensei", "library", "settings", "plan", "story", "quests"];
-  function nav(name, opt) {
-    SCREENS.forEach((s) => $("#screen-" + s).classList.toggle("hidden", s !== name));
-    $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.nav === name));
-    if (name === "home") renderHome();
-    if (name === "profile") renderProfile();
-    if (name === "srs") renderSRSHome();
-    if (name === "library") renderLibrary();
-    if (name === "settings") renderSettings();
-    if (name === "sensei") renderSensei();
-    if (name === "chapter") renderChapter(opt);
-    if (name === "plan") renderPlan();
-    if (name === "quests") renderQuests();
-    window.scrollTo(0, 0);
-    syncAvatars();
-  }
+// ---------- Navigation ----------
+const SCREENS = ["home", "profile", "chapter", "srs", "sensei", "library", "settings", "plan", "story", "quests", "ai-story"];
+function nav(name, opt) {
+SCREENS.forEach((s) => $("#screen-" + s).classList.toggle("hidden", s !== name));
+$$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.nav === name));
+if (name === "home") renderHome();
+if (name === "profile") renderProfile();
+if (name === "srs") renderSRSHome();
+if (name === "library") renderLibrary();
+if (name === "settings") renderSettings();
+if (name === "sensei") renderSensei();
+if (name === "chapter") renderChapter(opt);
+if (name === "plan") renderPlan();
+if (name === "quests") renderQuests();
+if (name === "ai-story") renderAIStory();
+window.scrollTo(0, 0);
+syncAvatars();
+}
 
   // ---------- Avatar Sync ----------
   function syncAvatars() {
@@ -494,6 +495,131 @@
       list.appendChild(el);
     });
     syncAvatars();
+  }
+
+  // ---------- AI Story Generator ----------
+  function renderAIStory() {
+    const body = $("#ai-story-body");
+    
+    body.innerHTML = `
+      <div style="padding: 20px;">
+        <div class="card">
+          <h3 style="margin: 0 0 12px;">Ваш промпт</h3>
+          <textarea 
+            id="ai-story-prompt" 
+            placeholder="Например: Создай историю про поход в магазин"
+            style="width: 100%; min-height: 120px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical;"
+          ></textarea>
+          
+          <label style="display: flex; align-items: center; gap: 8px; margin: 16px 0; cursor: pointer;">
+            <input type="checkbox" id="use-weak-words" style="width: 18px; height: 18px; cursor: pointer;" />
+            <span>Использовать слова, в которых я часто ошибаюсь</span>
+          </label>
+          
+          <button class="btn-primary" id="generate-story-btn" style="width: 100%;">
+            ✨ Сгенерировать историю
+          </button>
+        </div>
+        
+        <div id="ai-story-result" style="margin-top: 20px;"></div>
+      </div>
+    `;
+    
+    // Обработчик генерации
+    const generateBtn = $("#generate-story-btn");
+    if (generateBtn) {
+      generateBtn.onclick = generateAndRenderStory;
+    }
+  }
+  
+  async function generateAndRenderStory() {
+    const promptInput = $("#ai-story-prompt");
+    const useWeakWordsCheckbox = $("#use-weak-words");
+    const resultContainer = $("#ai-story-result");
+    const generateBtn = $("#generate-story-btn");
+    
+    const prompt = promptInput.value.trim();
+    
+    if (!prompt) {
+      toast("⚠️ Введите промпт для генерации истории");
+      return;
+    }
+    
+    // Проверка API ключа
+    if (!state.settings.openrouterKey) {
+      toast("⚠️ Укажите API-ключ OpenRouter в настройках");
+      return;
+    }
+    
+    // Получаем слабые слова, если чекбокс активен
+    const weakWords = useWeakWordsCheckbox.checked ? getWeakWords(10) : [];
+    
+  // Показываем улучшенную загрузку
+  generateBtn.disabled = true;
+  generateBtn.textContent = "⏳ Генерация...";
+  resultContainer.innerHTML = `
+    <div class="card ai-loading-card">
+      <div class="ai-loading-container">
+        <div class="ai-loading-icon">🦊</div>
+        <h3 class="ai-loading-title">AI генерирует историю</h3>
+        <div class="typing"><i></i><i></i><i></i></div>
+        <p class="ai-loading-hint">Это может занять 10-30 секунд</p>
+      </div>
+    </div>
+  `;
+    
+    try {
+      // Запрос к API
+      const rawResponse = await API.generateAIStory(prompt, weakWords, state.settings);
+      
+      // Очистка от markdown (если ИИ не послушается)
+      const cleaned = rawResponse
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      
+      // Парсинг JSON
+      let storyData;
+      try {
+        storyData = JSON.parse(cleaned);
+      } catch (parseError) {
+        console.error("Ошибка парсинга JSON:", parseError);
+        console.log("Raw response:", rawResponse);
+        throw new Error("API вернул невалидный JSON. Попробуйте переформулировать запрос.");
+      }
+      
+      // Проверка структуры данных
+      if (!storyData.story || !Array.isArray(storyData.story)) {
+        throw new Error("Неверная структура данных в ответе API");
+      }
+      
+      // Рендер через существующую функцию
+      const storyHtml = renderInteractiveStory(storyData.story);
+      
+      resultContainer.innerHTML = `
+        <div class="card">
+          <h3 style="margin: 0 0 16px;">Сгенерированная история</h3>
+          <div class="story-text">${storyHtml}</div>
+        </div>
+      `;
+      
+      // Активация обработчиков токенов
+      setupTranslationToggleHandlers();
+      
+      toast("✅ История сгенерирована!");
+      
+    } catch (error) {
+      console.error("Ошибка генерации истории:", error);
+      resultContainer.innerHTML = `
+        <div class="card" style="border-left: 4px solid var(--danger);">
+          <h3 style="margin: 0 0 8px; color: var(--danger);">⚠️ Ошибка генерации</h3>
+          <p>${error.message}</p>
+        </div>
+      `;
+    } finally {
+      generateBtn.disabled = false;
+      generateBtn.textContent = "✨ Сгенерировать историю";
+    }
   }
 
   // ---------- Render: Profile ----------
@@ -1980,7 +2106,7 @@
           </div>
         </div>`;
     } else {
-      // Обычный режим карточки
+      // Обычный режим
       body.innerHTML = `
         <div class="flash-wrap">
           <div class="flash-top">
@@ -2016,10 +2142,9 @@
     if (isDrawingMode && !flashRevealed && allKanji.length > 0 && typeof HanziWriter !== 'undefined') {
       initDrawingMode(displayKanji, displayWriting, displayTranslation, displayCategory, hideRomaji, displayRomaji);
     } else {
-      // Обычный режим
-      speak(displayWriting);
+      // Обычный режим - озвучка ТОЛЬКО через кнопку, без автовоспроизведения
       const speakBtn = $("#flash-speak");
-      if (speakBtn) speakBtn.onclick = (e) => { e.stopPropagation(); speak(displayWriting); };
+      if (speakBtn) speakBtn.onclick = (e) => { e.stopPropagation(); speak(displayWriting, speakBtn); };
       const cardEl = $("#flash-card");
       if (cardEl) {
         cardEl.onclick = () => { 
@@ -2100,60 +2225,233 @@
   }
 
   // ---------- Web Speech (Japanese TTS) ----------
+  let ttsAvailable = null; // null = не проверено, true/false = результат проверки
+  
   function waitForJapaneseVoice() {
     return new Promise((resolve) => {
-      if (!("speechSynthesis" in window)) { resolve(null); return; }
+      if (!("speechSynthesis" in window)) { 
+        ttsAvailable = false;
+        resolve(null); 
+        return; 
+      }
+      
+      // Проверяем сразу доступные голоса
       const voices = speechSynthesis.getVoices();
       const found = voices.find((v) => v.lang && v.lang.startsWith("ja"));
-      if (found) { resolve(found); return; }
+      if (found) { 
+        ttsAvailable = true;
+        resolve(found); 
+        return; 
+      }
+      
+      // Если голосов нет, ждём события onvoiceschanged
+      let resolved = false;
+      
       speechSynthesis.onvoiceschanged = () => {
+        if (resolved) return;
+        resolved = true;
+        
         const v = speechSynthesis.getVoices().find((x) => x.lang && x.lang.startsWith("ja"));
         speechSynthesis.onvoiceschanged = null;
-        resolve(v || null);
+        
+        // Fallback: если японского голоса нет, берём любой доступный
+        if (!v) {
+          const anyVoice = speechSynthesis.getVoices()[0];
+          ttsAvailable = anyVoice ? true : false;
+          resolve(anyVoice || null);
+        } else {
+          ttsAvailable = true;
+          resolve(v);
+        }
       };
+      
+      // Увеличенный таймаут для мобильных устройств (5 секунд)
       setTimeout(() => {
+        if (resolved) return;
+        resolved = true;
+        
         if (speechSynthesis.onvoiceschanged) {
           speechSynthesis.onvoiceschanged = null;
-          const v = speechSynthesis.getVoices().find((x) => x.lang && x.lang.startsWith("ja"));
-          resolve(v || null);
         }
-      }, 2000);
+        
+        const v = speechSynthesis.getVoices().find((x) => x.lang && x.lang.startsWith("ja"));
+        
+        // Fallback: если японского голоса нет, берём любой доступный
+        if (!v) {
+          const anyVoice = speechSynthesis.getVoices()[0];
+          ttsAvailable = anyVoice ? true : false;
+          resolve(anyVoice || null);
+        } else {
+          ttsAvailable = true;
+          resolve(v);
+        }
+      }, 5000);
     });
   }
-  async function speak(text) {
+  async function speak(text, buttonElement) {
     try {
-      if (!("speechSynthesis" in window)) return;
+      if (!("speechSynthesis" in window)) {
+        toast("⚠️ Озвучка не поддерживается браузером");
+        return;
+      }
+      
+      // Проверяем доступность TTS при первом использовании
+      if (ttsAvailable === null) {
+        if (buttonElement) {
+          buttonElement.textContent = "⏳";
+          buttonElement.disabled = true;
+        }
+        await waitForJapaneseVoice();
+        if (buttonElement) {
+          buttonElement.textContent = "🔊";
+          buttonElement.disabled = false;
+        }
+      }
+      
+      // Если TTS недоступен, показываем сообщение
+      if (ttsAvailable === false) {
+        toast("⚠️ Озвучка недоступна на этом устройстве");
+        return;
+      }
+      
       const voice = await waitForJapaneseVoice();
       speechSynthesis.cancel();
+      
+      // Визуальная обратная связь
+      if (buttonElement) {
+        buttonElement.classList.add("speaking");
+        buttonElement.textContent = "🔉";
+      }
+      
       const u = new SpeechSynthesisUtterance(text);
       u.lang = "ja-JP";
       u.rate = 0.9;
       if (voice) u.voice = voice;
+      
+      // Обработчики событий для кнопки
+      u.onend = () => {
+        if (buttonElement) {
+          buttonElement.classList.remove("speaking");
+          buttonElement.textContent = "🔊";
+        }
+      };
+      
+      u.onerror = (e) => {
+        console.warn("TTS error:", e);
+        if (buttonElement) {
+          buttonElement.classList.remove("speaking");
+          buttonElement.textContent = "🔊";
+        }
+        if (e.error !== "canceled") {
+          toast("⚠️ Ошибка озвучки");
+        }
+      };
+      
       speechSynthesis.speak(u);
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      console.error("Speak error:", e);
+      if (buttonElement) {
+        buttonElement.classList.remove("speaking");
+        buttonElement.textContent = "🔊";
+      }
+    }
+  }
+
+  // ---------- Get Weak Words ----------
+  function getWeakWords(limit = 10) {
+    // Получаем все карточки и сортируем по сложности
+    return Object.values(state.srs)
+      .filter(card => card.easeFactor < 2.5 || card.lapses > 2)
+      .sort((a, b) => (a.easeFactor + a.lapses) - (b.easeFactor + b.lapses))
+      .slice(0, limit)
+      .map(card => {
+        const word = wordById(card.id);
+        return word ? (word.kanji || word.writing) : null;
+      })
+      .filter(Boolean);
   }
 
   // ---------- Sensei (chat) ----------
   let chatHistory = []; // {role,content}
+  let senseiTab = "chat"; // "chat" или "aiplus"
+  
   function renderSensei() {
-    const area = $("#chat-area");
-    area.innerHTML = "";
-    if (chatHistory.length === 0) {
-      addBotMessage("こんにちは！Я — Kitsune Sensei 🦊 Спросите что угодно про японский язык или учебник Genki!");
+    // Рендерим вкладки
+    $$("[data-senseitab]").forEach(t => t.classList.toggle("active", t.dataset.senseitab === senseiTab));
+
+    const body = $("#sensei-body");
+
+    if (senseiTab === "aiplus") {
+      renderSenseiAIPlus();
       return;
     }
-    chatHistory.forEach((msg) => {
-      if (msg.role === "user") {
-        const wrap = document.createElement("div");
-        wrap.className = "msg-wrap user";
-        wrap.innerHTML = `<div class="msg user">${escapeHtml(msg.content)}</div>`;
-        area.appendChild(wrap);
-      } else if (msg.role === "assistant") {
-        addBotMessage(msg.content, false);
-      }
-    });
-    requestAnimationFrame(() => area.scrollTop = area.scrollHeight);
+
+    // Вкладка "Чат" - вставляем элементы напрямую в #sensei-body как siblings
+    body.innerHTML = `
+      <div class="chat-area" id="chat-area" data-testid="chat-area"></div>
+    `;
+
+    // Создаём chat-input-bar как sibling к sensei-body (прямой потомок screen-sensei)
+    const screen = $("#screen-sensei");
+    let inputBar = screen.querySelector(".chat-input-bar");
+    
+    // Удаляем старый input bar если есть
+    if (inputBar) {
+      inputBar.remove();
+    }
+    
+    // Создаём новый input bar
+    inputBar = document.createElement("div");
+    inputBar.className = "chat-input-bar";
+    inputBar.innerHTML = `
+      <input type="text" id="chat-input" class="chat-input" placeholder="質問してください… Задайте вопрос" data-testid="chat-input" />
+      <button class="chat-send" id="chat-send" data-testid="chat-send-btn" aria-label="Отправить">➤</button>
+    `;
+    screen.appendChild(inputBar);
+
+    const area = $("#chat-area");
+    if (chatHistory.length === 0) {
+      addBotMessage("こんにちは！Я — Kitsune Sensei 🦊 Спросите что угодно про японский язык или учебник Genki!");
+    } else {
+      chatHistory.forEach((msg) => {
+        if (msg.role === "user") {
+          const wrap = document.createElement("div");
+          wrap.className = "msg-wrap user";
+          wrap.innerHTML = `<div class="msg user">${escapeHtml(msg.content)}</div>`;
+          area.appendChild(wrap);
+        } else if (msg.role === "assistant") {
+          addBotMessage(msg.content, false);
+        }
+      });
+      requestAnimationFrame(() => area.scrollTop = area.scrollHeight);
+    }
+
+    // Привязываем обработчики для чата
+    $("#chat-send").onclick = sendChat;
+    $("#chat-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
+
     syncAvatars();
+  }
+  
+  function renderSenseiAIPlus() {
+    const body = $("#sensei-body");
+    body.innerHTML = `
+      <div style="padding: 20px;">
+        <div class="card" style="cursor: pointer; transition: transform 0.2s;" data-nav="ai-story">
+          <div style="display:flex;align-items:center;gap:16px">
+            <span style="font-size:40px">✨</span>
+            <div style="flex:1">
+              <h3 style="margin:0 0 4px">AI-история</h3>
+              <p style="margin:0;opacity:0.7;font-size:14px">Генерируйте интерактивные истории на основе ваших слабых слов</p>
+            </div>
+            <div style="font-size:24px;opacity:0.5">›</div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Привязываем навигацию
+    $("[data-nav='ai-story']", body).onclick = () => nav("ai-story");
   }
   function escapeHtml(s) {
     var a = String.fromCharCode(38);
@@ -3345,7 +3643,14 @@
     if (planEntryBtn) planEntryBtn.onclick = () => nav("plan");
     
     $$(".lib-tab").forEach((t) => t.onclick = () => { libTab = t.dataset.libtab; renderLibrary(); });
-    $("#chat-send").onclick = sendChat;
+    
+    // Обработчики табов AI Сенсей
+    document.addEventListener("click", (e) => {
+      if (e.target.dataset.senseitab) {
+        senseiTab = e.target.dataset.senseitab;
+        renderSensei();
+      }
+    });
     
     // Shop modal — close handler (open handler is in renderProfile)
     const shopModal = $("#shop-modal");
@@ -3380,8 +3685,6 @@
       }
     });
     // Обработчики табов магазина — в renderShop()
-    
-    $("#chat-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
 
     if ("speechSynthesis" in window) {
       speechSynthesis.getVoices();

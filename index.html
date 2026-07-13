@@ -153,20 +153,32 @@
       <div class="screen-scroll" id="srs-body"></div>
     </section>
 
-    <!-- ===== SENSEI ===== -->
-    <section class="screen hidden" id="screen-sensei" data-testid="screen-sensei">
-      <header class="app-header">
-        <div class="app-header-left">
-          <span class="logo-fox">🦊</span>
-          <div><h1 class="app-title">AI Сенсей</h1><p class="app-subtitle">Спросите про японский или Genki</p></div>
-        </div>
-      </header>
-      <div class="chat-area" id="chat-area" data-testid="chat-area"></div>
-      <div class="chat-input-bar">
-        <input type="text" id="chat-input" class="chat-input" placeholder="質問してください… Задайте вопрос" data-testid="chat-input" />
-        <button class="chat-send" id="chat-send" data-testid="chat-send-btn" aria-label="Отправить">➤</button>
-      </div>
-    </section>
+<!-- ===== SENSEI ===== -->
+<section class="screen hidden" id="screen-sensei" data-testid="screen-sensei">
+<header class="app-header">
+<div class="app-header-left">
+<span class="logo-fox">🦊</span>
+<div><h1 class="app-title">AI Сенсей</h1></div>
+</div>
+</header>
+<div class="lib-tabs">
+<button class="lib-tab active" data-senseitab="chat" data-testid="senseitab-chat">Чат</button>
+<button class="lib-tab" data-senseitab="aiplus" data-testid="senseitab-aiplus">AI+</button>
+</div>
+<div class="screen-scroll" id="sensei-body"></div>
+</section>
+
+<!-- ===== AI STORY GENERATOR ===== -->
+<section class="screen hidden" id="screen-ai-story" data-testid="screen-ai-story">
+<header class="app-header">
+<button class="icon-btn back-btn" data-nav="sensei" data-testid="ai-story-back-btn" aria-label="Назад">‹</button>
+<div>
+<h1 class="app-title">AI-история</h1>
+<p class="app-subtitle">Генератор интерактивных историй</p>
+</div>
+</header>
+<div class="screen-scroll" id="ai-story-body"></div>
+</section>
 
     <!-- ===== LIBRARY ===== -->
     <section class="screen hidden" id="screen-library" data-testid="screen-library">
