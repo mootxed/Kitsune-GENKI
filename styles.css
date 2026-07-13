@@ -3866,3 +3866,121 @@ rt {
   flex: 1;
   max-width: 200px;
 }
+
+/* Адаптация словаря для мобильных устройств */
+@media (max-width: 768px) {
+  .dict-modal-header {
+    padding: 12px;
+  }
+
+  .dict-modal-title {
+    font-size: 20px;
+  }
+
+  .dict-modal-content {
+    padding: 16px 12px;
+  }
+
+  .dict-modal-info {
+    margin-bottom: 16px;
+  }
+
+  .dict-modal-reading {
+    font-size: 16px;
+    margin: 6px 0;
+  }
+
+  .dict-modal-translation {
+    font-size: 15px;
+  }
+
+  .dict-kanji-tabs {
+    margin-bottom: 16px;
+    gap: 6px;
+  }
+
+  .dict-kanji-tab {
+    padding: 8px 16px;
+    font-size: 20px;
+    min-width: 50px;
+  }
+
+  .dict-kanji-writer-container {
+    margin: 12px 0;
+  }
+
+  #dict-kanji-writer-target {
+    width: 200px;
+    height: 200px;
+  }
+
+  .dict-kanji-controls {
+    margin-top: 12px;
+    gap: 8px;
+  }
+
+  .dict-kanji-controls .btn-secondary {
+    font-size: 14px;
+    padding: 10px 12px;
+    max-width: 180px;
+  }
+}
+
+/* Дополнительная оптимизация для очень маленьких экранов */
+@media (max-width: 400px) {
+  .dict-modal-header {
+    padding: 10px;
+  }
+
+  .dict-modal-title {
+    font-size: 18px;
+  }
+
+  .dict-modal-content {
+    padding: 12px 10px;
+  }
+
+  .dict-modal-info {
+    margin-bottom: 12px;
+  }
+
+  .dict-modal-reading {
+    font-size: 15px;
+    margin: 4px 0;
+  }
+
+  .dict-modal-translation {
+    font-size: 14px;
+  }
+
+  .dict-kanji-tabs {
+    margin-bottom: 12px;
+    gap: 4px;
+  }
+
+  .dict-kanji-tab {
+    padding: 6px 12px;
+    font-size: 18px;
+    min-width: 45px;
+  }
+
+  .dict-kanji-writer-container {
+    margin: 10px 0;
+  }
+
+  #dict-kanji-writer-target {
+    width: 180px;
+    height: 180px;
+  }
+
+  .dict-kanji-controls {
+    margin-top: 10px;
+    gap: 6px;
+  }
+
+  .dict-kanji-controls .btn-secondary {
+    font-size: 13px;
+    padding: 8px 10px;
+    max-width: 160px;
+  }
+}
