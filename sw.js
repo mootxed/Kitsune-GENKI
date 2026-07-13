@@ -6,6 +6,11 @@ const ASSETS = [
   "app.js",
   "srs.js",
   "services.js",
+  "session-manager.js",
+  "studyplan.js",
+  "stories.js",
+  "achievements.js",
+  "quests.js",
   "lesson.json",
   "manifest.json",
   "icon.svg"
