@@ -1520,9 +1520,18 @@
     };
     
     try {
+      // Адаптивный размер в зависимости от ширины экрана
+      const screenWidth = window.innerWidth;
+      let writerSize = 280;
+      if (screenWidth <= 400) {
+        writerSize = 180;
+      } else if (screenWidth <= 768) {
+        writerSize = 200;
+      }
+      
       const writer = HanziWriter.create(target, kanji, {
-        width: 280,
-        height: 280,
+        width: writerSize,
+        height: writerSize,
         padding: 10,
         strokeAnimationSpeed: 1,
         delayBetweenStrokes: 200,
