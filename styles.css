@@ -1040,6 +1040,16 @@ p{line-height:1.5;}
   display:flex;align-items:center;justify-content:center;
   font-size:40px;margin:0 auto 12px;box-shadow:0 6px 16px rgba(245,78,0,.3);
 }
+.profile-rank-icon{
+  width:64px;height:64px;object-fit:contain;margin:8px auto;display:block;
+  filter:drop-shadow(0 2px 8px rgba(0,0,0,0.1));transition:transform 0.2s ease;
+}
+.profile-rank-icon:hover{transform:scale(1.05);}
+.profile-rank-name{
+  font-size:15px;font-weight:800;color:var(--orange);margin:6px 0 4px;
+  text-align:center;letter-spacing:0.3px;text-transform:uppercase;
+  transition:var(--transition-theme);
+}
 .profile-name{font-size:22px;font-weight:800;margin:0;color:var(--text);transition:var(--transition-theme);}
 .profile-title{
   font-size:14px;font-weight:700;color:var(--text-muted);margin:4px 0 0;

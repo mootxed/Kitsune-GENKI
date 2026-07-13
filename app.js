@@ -145,6 +145,40 @@
     save();
   }
 
+  // ---------- Rank System ----------
+  function getUserRankData(level) {
+    // Защита от выхода за рамки (максимум 96 уровень для расчета значков)
+    const effectiveLevel = Math.max(1, Math.min(96, level));
+
+    // Определяем лигу (каждая лига длится 24 уровня)
+    let league = "alpha";
+    let leagueName = "Альфа";
+    let baseLevel = effectiveLevel;
+
+    if (effectiveLevel > 72) {
+      league = "delta";
+      leagueName = "Дельта Мастер";
+      baseLevel = effectiveLevel - 72;
+    } else if (effectiveLevel > 48) {
+      league = "gamma";
+      leagueName = "Гамма";
+      baseLevel = effectiveLevel - 48;
+    } else if (effectiveLevel > 24) {
+      league = "beta";
+      leagueName = "Бета";
+      baseLevel = effectiveLevel - 24;
+    }
+
+    // Определяем номер значка от 01 до 12 (растет каждые 2 уровня)
+    const iconNumber = Math.ceil(baseLevel / 2);
+    const paddedNumber = String(iconNumber).padStart(2, '0');
+
+    return {
+      name: `${leagueName} — Ступень ${iconNumber}`,
+      icon: `${league}_${paddedNumber}.png`
+    };
+  }
+
   // ---------- Data parsing / loading ----------
   const LS_LESSON_VERSION = "kitsune_lessons_version_v1";
 
@@ -493,11 +527,16 @@
       }
     }
     
+    // Получаем данные о ранге пользователя
+    const rankData = getUserRankData(state.level);
+    
     const body = $("#profile-body");
     body.innerHTML = `
       <div class="profile-header">
         <div class="profile-avatar" id="profile-avatar-display">${state.currentAvatar || "🦊"}</div>
+        <img src="rank/${rankData.icon}" class="profile-rank-icon" alt="${rankData.name}" />
         <h2 class="profile-name">Kitsune Genki</h2>
+        <div class="profile-rank-name">${rankData.name}</div>
         <div class="profile-title" id="profile-title">${state.currentTitle || "Новичок"}</div>
       </div>
       <div class="profile-stats">
