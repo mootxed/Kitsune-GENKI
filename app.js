@@ -683,67 +683,79 @@
     
     const timeLeft = window.QuestsManager.getTimeUntilReset();
     
-    // Рендерим Weekly Challenges
-    const weeklyHtml = state.quests.weekly.map(challenge => {
-      const progress = Math.min((challenge.current / challenge.target) * 100, 100);
-      const canClaim = challenge.completed && !challenge.claimed;
-      const claimed = challenge.claimed;
-      
-      return `
-        <div class="quest-card weekly ${claimed ? 'claimed' : ''}">
-          <div class="quest-icon">${challenge.icon}</div>
-          <div class="quest-info">
+  // Рендерим Weekly Challenges
+  const weeklyHtml = state.quests.weekly.map(challenge => {
+    const progress = Math.min((challenge.current / challenge.target) * 100, 100);
+    const canClaim = challenge.completed && !challenge.claimed;
+    const claimed = challenge.claimed;
+    
+    return `
+      <div class="quest-card weekly ${claimed ? 'claimed' : ''}">
+        <div class="quest-icon-wrap">${challenge.icon}</div>
+        <div class="quest-main">
+          <div class="quest-header">
             <h4 class="quest-title">${challenge.title}</h4>
-            <p class="quest-desc">${challenge.desc}</p>
+            <div class="quest-reward-pill">
+              <span>${challenge.reward.xp} XP</span>
+              <span>${challenge.reward.coins} 🪙</span>
+            </div>
+          </div>
+          <p class="quest-desc">${challenge.desc}</p>
+          <div class="quest-progress-row">
             <div class="quest-progress-bar">
               <div class="quest-progress-fill" style="width: ${progress}%"></div>
             </div>
             <span class="quest-counter">${challenge.current}/${challenge.target}</span>
           </div>
-          <div class="quest-reward">
-            <span class="quest-reward-xp">${challenge.reward.xp} XP</span>
-            <span class="quest-reward-coins">${challenge.reward.coins} 🪙</span>
-          </div>
+        </div>
+        <div class="quest-action">
           ${canClaim ? 
             `<button class="btn-claim" data-quest-id="${challenge.id}">Забрать</button>` :
             claimed ? 
-              `<button class="btn-claim claimed" disabled>✅ Забрано</button>` :
+              `<button class="btn-claim claimed" disabled>✓</button>` :
               `<button class="btn-claim" disabled>Забрать</button>`
           }
         </div>
-      `;
-    }).join('');
+      </div>
+    `;
+  }).join('');
     
-    // Рендерим Daily Quests
-    const dailyQuestsHtml = state.quests.daily.map(quest => {
-      const progress = Math.min((quest.current / quest.target) * 100, 100);
-      const canClaim = quest.completed && !quest.claimed;
-      const claimed = quest.claimed;
-      
-      return `
-        <div class="quest-card daily ${claimed ? 'claimed' : ''}">
-          <div class="quest-icon">${quest.icon}</div>
-          <div class="quest-info">
+  // Рендерим Daily Quests
+  const dailyQuestsHtml = state.quests.daily.map(quest => {
+    const progress = Math.min((quest.current / quest.target) * 100, 100);
+    const canClaim = quest.completed && !quest.claimed;
+    const claimed = quest.claimed;
+    
+    return `
+      <div class="quest-card daily ${claimed ? 'claimed' : ''}">
+        <div class="quest-icon-wrap">${quest.icon}</div>
+        <div class="quest-main">
+          <div class="quest-header">
             <h4 class="quest-title">${quest.title}</h4>
-            <p class="quest-desc">${quest.desc}</p>
+            <div class="quest-reward-pill">
+              <span>${quest.reward.xp} XP</span>
+              <span>${quest.reward.coins} 🪙</span>
+            </div>
+          </div>
+          <p class="quest-desc">${quest.desc}</p>
+          <div class="quest-progress-row">
             <div class="quest-progress-bar">
               <div class="quest-progress-fill" style="width: ${progress}%"></div>
             </div>
             <span class="quest-counter">${quest.current}/${quest.target}</span>
           </div>
-          <div class="quest-reward">
-            <span class="quest-reward-xp">${quest.reward.xp} XP</span>
-            <span class="quest-reward-coins">${quest.reward.coins} 🪙</span>
-          </div>
+        </div>
+        <div class="quest-action">
           ${canClaim ? 
             `<button class="btn-claim" data-quest-id="${quest.id}">Забрать</button>` :
             claimed ? 
-              `<button class="btn-claim claimed" disabled>✅ Забрано</button>` :
+              `<button class="btn-claim claimed" disabled>✓</button>` :
               `<button class="btn-claim" disabled>Забрать</button>`
           }
         </div>
-      `;
-    }).join('');
+      </div>
+    `;
+  }).join('');
     
     const dailyHtml = `
       <div class="daily-header">
@@ -1171,6 +1183,10 @@
     flashCtx = chapterId || null;
     const dueCardsList = dueCards(chapterId);
     if (dueCardsList.length === 0) { toast("Нет карточек к повторению"); return; }
+    
+    // Сбрасываем состояние режима рисования
+    kanjiSequence = [];
+    currentKanjiIndex = 0;
     
     // Инициализируем SessionManager
     sessionManager = new SessionManager(dueCardsList);
