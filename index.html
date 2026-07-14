@@ -18,6 +18,9 @@
   <script src="quests.js"></script>
 </head>
 <body>
+  <!-- Grid Background -->
+  <div class="grid-background"></div>
+
   <!-- Loading Screen -->
   <div id="app-loader" class="app-loader">
     <div class="loader-content">
@@ -294,9 +297,10 @@
       </div>
     </section>
 
-    <!-- ===== BOTTOM NAV ===== -->
-    <nav class="tabbar" data-testid="tabbar">
-      <button class="tab active" data-nav="home" data-testid="tab-home"><span class="tab-ic">🏠</span><span>Главная</span></button>
+  <!-- ===== BOTTOM NAV ===== -->
+  <nav class="tabbar" data-testid="tabbar">
+    <div class="tab-indicator"></div>
+    <button class="tab active" data-nav="home" data-testid="tab-home"><span class="tab-ic">🏠</span><span>Главная</span></button>
       <button class="tab" data-nav="srs" data-testid="tab-srs"><span class="tab-ic">🎴</span><span class="tab-badge hidden" id="tab-srs-badge">0</span><span>SRS</span></button>
       <button class="tab" data-nav="sensei" data-testid="tab-sensei"><span class="tab-ic">💬</span><span>Сенсей</span></button>
       <button class="tab" data-nav="library" data-testid="tab-library"><span class="tab-ic">📖</span><span>Учебник</span></button>
