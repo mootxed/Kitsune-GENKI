@@ -11,7 +11,7 @@
   const XP_CARD = 1;
   const XP_CHECK = 20;
   const XP_CHAPTER_FULL = 100;
-  const COINS_PER_LEVEL = 50;
+  const COINS_PER_LEVEL = 9999;
   const DRAWING_MODE_PROBABILITY = 0.2; // 20% шанс режима рисования
 
   const MONTHS_RU = [
@@ -429,12 +429,23 @@
     return null;
   }
 
+// ---------- Tab Indicator Animation ----------
+function updateTabIndicator() {
+  const activeTab = $(".tab.active");
+  const indicator = $(".tab-indicator");
+  if (activeTab && indicator) {
+    indicator.style.transform = `translateX(${activeTab.offsetLeft}px)`;
+    indicator.style.width = `${activeTab.offsetWidth}px`;
+  }
+}
+
 // ---------- Navigation ----------
 const SCREENS = ["home", "profile", "chapter", "srs", "sensei", "library", "settings", "plan", "story", "quests", "ai-story"];
 function nav(name, opt) {
 SCREENS.forEach((s) => $("#screen-" + s).classList.toggle("hidden", s !== name));
-$$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.nav === name));
-if (name === "home") renderHome();
+  $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.nav === name));
+  updateTabIndicator();
+  if (name === "home") renderHome();
 if (name === "profile") renderProfile();
 if (name === "srs") renderSRSHome();
 if (name === "library") renderLibrary();
@@ -656,15 +667,33 @@ syncAvatars();
     // Получаем данные о ранге пользователя
     const rankData = getUserRankData(state.level);
     
-    const body = $("#profile-body");
-    body.innerHTML = `
-      <div class="profile-header">
-        <div class="profile-avatar" id="profile-avatar-display">${state.currentAvatar || "🦊"}</div>
-        <img src="rank/${rankData.icon}" class="profile-rank-icon" alt="${rankData.name}" />
-        <h2 class="profile-name">Kitsune Genki</h2>
-        <div class="profile-rank-name">${rankData.name}</div>
-        <div class="profile-title" id="profile-title">${state.currentTitle || "Новичок"}</div>
-      </div>
+  const body = $("#profile-body");
+  
+  // Вычисляем прогресс XP (от 0 до 99)
+  const currentXP = state.xp;
+  const maxXP = 99;
+  const xpPercent = Math.min((currentXP / maxXP) * 100, 100);
+  
+  body.innerHTML = `
+  <div class="profile-header">
+    <div class="profile-avatar" id="profile-avatar-display">${state.currentAvatar || "🦊"}</div>
+    <h2 class="profile-name">Kitsune Genki</h2>
+    <div class="profile-rank-name">${rankData.name}</div>
+    <div class="profile-title" id="profile-title">${state.currentTitle || "Новичок"}</div>
+    
+	<!-- Капсула: иконка ранга внутри белой плашки -->
+	<div class="profile-level-bar-container">
+		<div class="profile-level-bar-wrap">
+			<img src="rank/${rankData.icon}" class="profile-rank-icon" alt="${rankData.name}" />
+			<div class="profile-level-bar-content">
+				<div class="profile-level-bar-track">
+					<div class="profile-level-bar-fill" style="width: ${xpPercent}%"></div>
+				</div>
+				<div class="profile-level-bar-text">${currentXP} / ${maxXP} XP</div>
+			</div>
+		</div>
+	</div>
+  </div>
       <div class="profile-stats">
         <div class="profile-stat-card">
           <div class="profile-stat-num">${state.level}</div>
@@ -1726,6 +1755,7 @@ syncAvatars();
   // Глобальная переменная для HanziWriter
   let currentWriter = null;
   let drawingMistakes = 0;
+  let totalDrawingMistakes = 0; // Общее количество ошибок для всех кандзи в слове
 
   // Функция проверки, является ли строка одиночным кандзи
   function isSingleKanji(text) {
@@ -1799,22 +1829,23 @@ syncAvatars();
     // 🛑 ВАЖНО: Блокируем скролл страницы при рисовании пальцем на мобилке
     target.style.touchAction = "none"; 
 
-    // Инициализация последовательности, если это первый кандзи
-    if (kanjiSequence.length === 0) {
-      const kanjiChars = getAllKanji(kanji);
-      kanjiSequence = kanjiChars.map(k => ({
-        kanji: k,
-        writing: writing,
-        translation: translation,
-        category: category,
-        hideRomaji: hideRomaji,
-        romaji: romaji
-      }));
-      currentKanjiIndex = 0;
-    }
+  // Инициализация последовательности, если это первый кандзи
+  if (kanjiSequence.length === 0) {
+    const kanjiChars = getAllKanji(kanji);
+    kanjiSequence = kanjiChars.map(k => ({
+      kanji: k,
+      writing: writing,
+      translation: translation,
+      category: category,
+      hideRomaji: hideRomaji,
+      romaji: romaji
+    }));
+    currentKanjiIndex = 0;
+    totalDrawingMistakes = 0; // Сброс общего счетчика ошибок для новой последовательности
+  }
 
-    renderKanjiProgressCells();
-    drawingMistakes = 0;
+  renderKanjiProgressCells();
+  drawingMistakes = 0;
     
     // Извлекаем текущий кандзи из последовательности
     const currentKanji = kanjiSequence[currentKanjiIndex].kanji;
@@ -1823,10 +1854,11 @@ syncAvatars();
       drawingMistakes = 0;
       if (!currentWriter) return;
       
-  currentWriter.quiz({
+      currentWriter.quiz({
     leniency: 1.2, // НЕ ИЗМЕНЯТЬ ЭТО ЗНАЧЕНИЕ
     onMistake: (strokeData) => {
       drawingMistakes++;
+      totalDrawingMistakes++; // Накапливаем общее количество ошибок
           if (drawingMistakes >= 3) {
             currentWriter.updateColor('outlineColor', '#bbbbbb');
             currentWriter.showOutline();
@@ -1860,7 +1892,7 @@ syncAvatars();
           }
           
           // Все кандзи нарисованы - оцениваем карточку
-          const quality = drawingMistakes >= 3 ? 3 : 5;
+          const quality = totalDrawingMistakes >= 3 ? 0 : 5;
           const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
           
           const resultText = quality === 5 
@@ -3701,6 +3733,9 @@ syncAvatars();
     nav("home");
     updateSrsBadge();
     syncAvatars();
+    
+    // Инициализация позиции индикатора табов
+    setTimeout(() => updateTabIndicator(), 100);
     
     // Показать onboarding для новых пользователей
     if (!state.onboardingCompleted) {
