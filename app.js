@@ -1688,8 +1688,8 @@ function renderProfile() {
         let progress = 0;
         let progressClass = 'progress-none';
         
-        if (srsRecord && srsRecord.interval) {
-          progress = Math.min(100, Math.round((srsRecord.interval / 21) * 100));
+        if (srsRecord) {
+          progress = srsRecord.progress || 0;
           if (progress >= 75) progressClass = 'progress-high';
           else if (progress >= 25) progressClass = 'progress-medium';
           else progressClass = 'progress-low';
@@ -2345,8 +2345,18 @@ function renderProfile() {
           flashIdx += 1;
         }
         
+        const srsCard = state.srs[card.id];
+        if (srsCard) {
+          if (srsCard.progress === undefined) srsCard.progress = 0;
+          
+          if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);       // Снова: -5%
+          else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);  // Трудно: -3%
+          else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5); // Хорошо: +5%
+          else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10); // Отлично: +10%
+        }
+        
         addXP(XP_CARD);
-        save(true); 
+        save(true);
         markActivity();
         flashRevealed = false;
         renderFlash();
@@ -3457,6 +3467,13 @@ function renderProfile() {
           // Помечаем флаг подсказки
           wordAnswer.usedHint = true;
 
+          const srsCard = state.srs[wordData.word.id];
+          if (srsCard) {
+            if (srsCard.progress === undefined) srsCard.progress = 0;
+            srsCard.progress = Math.max(0, srsCard.progress - 5); // Подсказка: -5%
+          }
+          save();
+
           // Выбираем случайный пустой индекс
           const randomIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
           const correctLetter = wordData.word.kana[randomIndex];
@@ -3653,6 +3670,14 @@ function renderProfile() {
       if (userWord === correctWord && !wordAnswer.correct) {
         // Слово правильно и ещё не было отмечено
         wordAnswer.correct = true;
+        
+        const srsCard = state.srs[pw.word.id];
+        if (srsCard) {
+          if (srsCard.progress === undefined) srsCard.progress = 0;
+          if (!wordAnswer.usedHint) {
+            srsCard.progress = Math.min(100, srsCard.progress + 8); // Сам угадал: +8%
+          }
+        }
         
         // Подсвечиваем зеленым все ячейки этого слова
         for (let i = 0; i < pw.word.length; i++) {
