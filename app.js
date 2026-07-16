@@ -11,7 +11,7 @@
   const XP_CARD = 1;
   const XP_CHECK = 20;
   const XP_CHAPTER_FULL = 100;
-  const COINS_PER_LEVEL = 9999;
+  const COINS_PER_LEVEL = 50;
   const DRAWING_MODE_PROBABILITY = 0.2; // 20% шанс режима рисования
 
   const MONTHS_RU = [
@@ -66,6 +66,7 @@
       currentTitle: "Новичок",
       unlockedTitles: ["Новичок"],
       unlockedAchievements: [],
+      claimedAchievements: [], // ID достижений, за которые уже забрали награду
       quests: null, // Инициализируется через QuestsManager
     };
   }
@@ -93,6 +94,7 @@
     if (!state.unlockedThemes) state.unlockedThemes = d.unlockedThemes;
     if (!state.currentTitle) state.currentTitle = d.currentTitle;
     if (!state.unlockedTitles) state.unlockedTitles = d.unlockedTitles;
+    if (!state.claimedAchievements) state.claimedAchievements = [];
     if (state._dailyGoalClaimed === undefined) state._dailyGoalClaimed = false;
     if (!state.studyPlan) state.studyPlan = null;
     
@@ -173,14 +175,79 @@
     const iconNumber = Math.ceil(baseLevel / 2);
     const paddedNumber = String(iconNumber).padStart(2, '0');
 
-    return {
-      name: `${leagueName} — Ступень ${iconNumber}`,
-      icon: `${league}_${paddedNumber}.png`
-    };
+  return {
+    name: `${leagueName} — Ступень ${iconNumber}`,
+    icon: `${league}_${paddedNumber}.png`
+  };
+}
+
+// ===== COMPLETION SCREEN (ЭКРАН УСПЕХА) =====
+function showCompletionScreen(options) {
+  console.log("=== ВНУТРИ showCompletionScreen ===");
+  console.log("Полученные опции:", options);
+  
+  const {
+    title = "おめでとう!",
+    subtitle = "Congratulations!",
+    desc = "You completed the session!",
+    theme = "success", // 'success' или 'levelup'
+    rewards = [], // [{icon: "🪙", label: "+10 XP"}, ...]
+    onContinue = null
+  } = options;
+
+  const overlay = document.getElementById("completion-overlay");
+  console.log("Overlay найден в DOM:", !!overlay);
+  
+  if (!overlay) {
+    console.error("❌ Completion overlay не найден в DOM!");
+    return;
   }
 
-  // ---------- Data parsing / loading ----------
-  const LS_LESSON_VERSION = "kitsune_lessons_version_v1";
+  console.log("Классы до показа:", overlay.className);
+  console.log("Display до показа:", window.getComputedStyle(overlay).display);
+  console.log("Opacity до показа:", window.getComputedStyle(overlay).opacity);
+
+  // Заполнить контент
+  document.getElementById("completion-title").textContent = title;
+  document.getElementById("completion-subtitle").textContent = subtitle;
+  document.getElementById("completion-desc").textContent = desc;
+
+  // Установить тему (цвет фона)
+  if (theme === "levelup") {
+    overlay.style.background = "linear-gradient(135deg, #1a0a2e 0%, #2a1a4e 100%)";
+  } else {
+    overlay.style.background = "linear-gradient(135deg, #1E3A2F 0%, #2E4A3F 100%)";
+  }
+
+  // Сгенерировать награды
+  const rewardsContainer = document.getElementById("completion-rewards");
+  rewardsContainer.innerHTML = rewards.map(r =>
+    `<div class="reward-item">
+      <span class="reward-icon">${r.icon}</span>
+      <span class="reward-label">${r.label}</span>
+    </div>`
+  ).join("");
+
+  // Показать оверлей
+  overlay.classList.remove("hidden");
+
+  console.log("Классы после показа:", overlay.className);
+  console.log("Display после показа:", window.getComputedStyle(overlay).display);
+  console.log("Opacity после показа:", window.getComputedStyle(overlay).opacity);
+  console.log("Z-index после показа:", window.getComputedStyle(overlay).zIndex);
+  console.log("✅ Оверлей должен быть видимым!");
+
+  // Обработчик кнопки
+  const btn = document.getElementById("btn-completion-continue");
+  btn.onclick = () => {
+    console.log("Клик по кнопке CONTINUE");
+    overlay.classList.add("hidden");
+    if (onContinue) onContinue();
+  };
+}
+
+// ---------- Data parsing / loading ----------
+const LS_LESSON_VERSION = "kitsune_lessons_version_v1";
 
   async function loadLessons() {
     let raw = localStorage.getItem(LS_LESSONS);
@@ -428,35 +495,54 @@
     for (const l of LESSONS) { const w = l.words.find((x) => x.id === id); if (w) return w; }
     return null;
   }
-
-// ---------- Tab Indicator Animation ----------
-function updateTabIndicator() {
-  const activeTab = $(".tab.active");
-  const indicator = $(".tab-indicator");
-  if (activeTab && indicator) {
-    indicator.style.transform = `translateX(${activeTab.offsetLeft}px)`;
-    indicator.style.width = `${activeTab.offsetWidth}px`;
+  
+  // Проверка доступности слова на основе прогресса пользователя
+  function isWordUnlocked(wordId) {
+    const chapterId = cardChapter(wordId);
+    if (!chapterId) return true; // Если не можем определить главу, разрешаем доступ
+    const chapter = state.chapters[chapterId];
+    if (!chapter) return false;
+    
+    // Корректно считаем выполненные пункты в объекте checklist
+    const completedLessons = Object.values(chapter.checklist || {}).filter(val => val === true).length;
+    return completedLessons >= 3;
   }
-}
 
-// ---------- Navigation ----------
-const SCREENS = ["home", "profile", "chapter", "srs", "sensei", "library", "settings", "plan", "story", "quests", "ai-story"];
-function nav(name, opt) {
-SCREENS.forEach((s) => $("#screen-" + s).classList.toggle("hidden", s !== name));
+  // ---------- Tab Indicator Animation ----------
+  function updateTabIndicator() {
+    const activeTab = $(".tab.active");
+    const indicator = $(".tab-indicator");
+    if (activeTab && indicator) {
+      indicator.style.transform = `translateX(${activeTab.offsetLeft}px)`;
+      indicator.style.width = `${activeTab.offsetWidth}px`;
+    }
+  }
+
+  // ---------- Navigation ----------
+  const SCREENS = ["home", "profile", "chapter", "srs", "sensei", "library", "settings", "plan", "story", "quests", "ai-story", "crossword"];
+function nav(name, opt, skipHistory = false) {
+  SCREENS.forEach((s) => $("#screen-" + s).classList.toggle("hidden", s !== name));
   $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.nav === name));
   updateTabIndicator();
+  
+  // Добавляем в историю браузера (кроме случаев, когда skipHistory=true)
+  if (!skipHistory) {
+    history.pushState({ screen: name, opt: opt }, '', '');
+  }
+  
   if (name === "home") renderHome();
-if (name === "profile") renderProfile();
-if (name === "srs") renderSRSHome();
-if (name === "library") renderLibrary();
-if (name === "settings") renderSettings();
-if (name === "sensei") renderSensei();
-if (name === "chapter") renderChapter(opt);
-if (name === "plan") renderPlan();
-if (name === "quests") renderQuests();
-if (name === "ai-story") renderAIStory();
-window.scrollTo(0, 0);
-syncAvatars();
+  if (name === "profile") renderProfile();
+  if (name === "srs") renderSRSHome();
+  if (name === "library") renderLibrary();
+  if (name === "settings") renderSettings();
+  if (name === "sensei") renderSensei();
+  if (name === "chapter") renderChapter(opt);
+  if (name === "plan") renderPlan();
+  if (name === "quests") renderQuests();
+  if (name === "ai-story") renderAIStory();
+  if (name === "crossword") renderCrossword();
+  window.scrollTo(0, 0);
+  syncAvatars();
 }
 
   // ---------- Avatar Sync ----------
@@ -467,9 +553,32 @@ syncAvatars();
     });
   }
 
+  // ---------- Format Time Until Reset ----------
+  function formatTimeUntilReset() {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    
+    const diff = tomorrow - now;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return `⏰ ${hours}ч ${minutes}м`;
+  }
+
+  // ---------- Update Main Quests Timer ----------
+  function updateMainQuestsTimer() {
+    const timerEl = document.getElementById("main-quests-timer");
+    if (timerEl) {
+      timerEl.textContent = formatTimeUntilReset();
+    }
+  }
+
   // ---------- Render: Home ----------
   function renderHome() {
     refreshStreakDisplay();
+    updateMainQuestsTimer();
     const due = dueCards().length;
     const total = allCards().length;
     $("#stat-due").textContent = due;
@@ -633,10 +742,11 @@ syncAvatars();
     }
   }
 
-  // ---------- Render: Profile ----------
-  let heatmapMonth = null; // текущий месяц для тепловой карты (Date object)
+// ---------- Render: Profile ----------
+let heatmapMonth = null; // текущий месяц для тепловой карты (Date object)
+let achievementsExpanded = false; // состояние раскрытия списка достижений
 
-  function renderProfile() {
+function renderProfile() {
     if (!heatmapMonth) {
       const now = new Date();
       heatmapMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -681,18 +791,18 @@ syncAvatars();
     <div class="profile-rank-name">${rankData.name}</div>
     <div class="profile-title" id="profile-title">${state.currentTitle || "Новичок"}</div>
     
-	<!-- Капсула: иконка ранга внутри белой плашки -->
-	<div class="profile-level-bar-container">
-		<div class="profile-level-bar-wrap">
-			<img src="rank/${rankData.icon}" class="profile-rank-icon" alt="${rankData.name}" />
-			<div class="profile-level-bar-content">
-				<div class="profile-level-bar-track">
-					<div class="profile-level-bar-fill" style="width: ${xpPercent}%"></div>
-				</div>
-				<div class="profile-level-bar-text">${currentXP} / ${maxXP} XP</div>
-			</div>
-		</div>
-	</div>
+      <!-- Капсула: иконка ранга перекрывает белую плашку -->
+      <div class="profile-level-bar-container">
+        <img src="rank/${rankData.icon}" class="profile-rank-icon" alt="${rankData.name}" />
+        <div class="profile-level-bar-wrap">
+          <div class="profile-level-bar-content">
+            <div class="profile-level-bar-track">
+              <div class="profile-level-bar-fill" style="width: ${xpPercent}%"></div>
+            </div>
+            <div class="profile-level-bar-text">${currentXP} / ${maxXP} XP</div>
+          </div>
+        </div>
+      </div>
   </div>
       <div class="profile-stats">
         <div class="profile-stat-card">
@@ -708,20 +818,20 @@ syncAvatars();
           <div class="profile-stat-label">🪙 Монет</div>
         </div>
       </div>
-      <div class="quests-section">
-        <h3 class="section-title">КВЕСТЫ И ЧЕЛЛЕНДЖИ</h3>
-        <div id="profile-quests-container"></div>
-      </div>
       <div class="achievements-section">
         <h3 class="section-title">ДОСТИЖЕНИЯ</h3>
-        <div class="achievements-progress">
+        <div class="achievements-progress" id="achievements-toggle">
           <div class="achievements-progress-text">
             <p class="achievements-progress-title">ПРОГРЕСС</p>
             <p class="achievements-progress-stats" id="achievements-stats">0 / 0</p>
           </div>
           <div class="achievements-progress-circle" id="achievements-circle"></div>
+          <button class="achievements-toggle-btn" id="achievements-expand-btn">
+            <span class="achievements-toggle-icon">🏆</span>
+            <span class="achievements-toggle-text">Показать все</span>
+          </button>
         </div>
-        <div class="achievements-grid" id="achievements-grid"></div>
+        <div class="achievements-grid ${achievementsExpanded ? '' : 'collapsed'}" id="achievements-grid"></div>
       </div>
       <div class="profile-heatmap-wrap">
         <div class="heatmap-streak-card">
@@ -756,11 +866,41 @@ syncAvatars();
           </div>
           <div class="heatmap-grid" id="heatmap-grid"></div>
         </div>
-      </div>
-      <button class="btn-outline" id="btn-open-shop" style="margin-top:8px">🛒 Магазин Кицунэ</button>`;
-    renderHeatmap();
-    renderAchievements();
-    renderQuests();
+  </div>
+  `;
+
+  renderAchievements();
+    
+    // Обработчик кнопки разворачивания достижений
+    const expandBtn = $("#achievements-expand-btn");
+    if (expandBtn) {
+      // Установить начальное состояние кнопки
+      const icon = expandBtn.querySelector(".achievements-toggle-icon");
+      const text = expandBtn.querySelector(".achievements-toggle-text");
+      if (achievementsExpanded) {
+        text.textContent = "Скрыть";
+        icon.textContent = "🔽";
+      } else {
+        text.textContent = "Показать все";
+        icon.textContent = "🏆";
+      }
+      
+      expandBtn.onclick = () => {
+        const grid = $("#achievements-grid");
+        
+        if (grid.classList.contains("collapsed")) {
+          grid.classList.remove("collapsed");
+          achievementsExpanded = true;
+          text.textContent = "Скрыть";
+          icon.textContent = "🔽";
+        } else {
+          grid.classList.add("collapsed");
+          achievementsExpanded = false;
+          text.textContent = "Показать все";
+          icon.textContent = "🏆";
+        }
+      };
+    }
     
     $("#heatmap-prev").onclick = () => {
       heatmapMonth.setMonth(heatmapMonth.getMonth() - 1);
@@ -770,17 +910,7 @@ syncAvatars();
       heatmapMonth.setMonth(heatmapMonth.getMonth() + 1);
       renderProfile();
     };
-    // Shop open handler (button is created dynamically)
-    const shopBtn = $("#btn-open-shop");
-    if (shopBtn) {
-      shopBtn.onclick = () => {
-        const shopModal = $("#shop-modal");
-        if (shopModal) {
-          shopModal.classList.remove("hidden");
-          renderShop();
-        }
-      };
-    }
+    
     syncAvatars();
   }
 
@@ -817,13 +947,27 @@ syncAvatars();
     
     gridEl.innerHTML = allAchievements.map(ach => {
       const unlocked = state.unlockedAchievements.includes(ach.id);
+      const claimed = state.claimedAchievements.includes(ach.id);
+      const canClaim = unlocked && !claimed && ach.rewards;
+      
       return `<div class="achievement-card ${unlocked ? 'unlocked' : 'locked'}">
         ${unlocked ? '<span class="achievement-badge">✓</span>' : ''}
         <div class="achievement-emoji">${ach.emoji}</div>
         <h4 class="achievement-title">${ach.title}</h4>
         <p class="achievement-desc">${ach.desc}</p>
+        ${canClaim ? `
+          <button class="btn-claim-achievement" data-achievement-id="${ach.id}">
+            Забрать награду
+          </button>
+        ` : ''}
+        ${claimed ? '<span class="achievement-claimed-badge">Награда получена</span>' : ''}
       </div>`;
     }).join('');
+    
+    // Добавляем обработчики для кнопок "Забрать награду"
+    $$(".btn-claim-achievement").forEach(btn => {
+      btn.onclick = () => claimAchievementReward(btn.dataset.achievementId);
+    });
   }
 
   function renderQuests() {
@@ -963,6 +1107,63 @@ syncAvatars();
     // Обновляем отображение
     renderProfile();
     refreshStreakDisplay();
+  }
+
+  function claimAchievementReward(achievementId) {
+    if (!window.Achievements || !achievementId) return;
+    
+    // Проверяем, не забрали ли награду уже
+    if (state.claimedAchievements.includes(achievementId)) {
+      toast("Награда уже получена");
+      return;
+    }
+    
+    // Находим достижение
+    const achievement = window.Achievements.getAll().find(a => a.id === achievementId);
+    if (!achievement || !achievement.rewards) {
+      toast("Достижение не найдено");
+      return;
+    }
+    
+    // Проверяем, разблокировано ли достижение
+    if (!state.unlockedAchievements.includes(achievementId)) {
+      toast("Достижение еще не разблокировано");
+      return;
+    }
+    
+    // Начисляем награды
+    const { xp, coins } = achievement.rewards;
+    state.xp += xp;
+    state.coins += coins;
+    
+    // Проверяем повышение уровня
+    while (state.xp >= XP_PER_LEVEL) {
+      state.xp -= XP_PER_LEVEL;
+      state.level += 1;
+      state.coins += COINS_PER_LEVEL;
+      toast(`🎉 Уровень ${state.level}! +${COINS_PER_LEVEL} 🪙`);
+    }
+    
+    // Отмечаем награду как полученную
+    state.claimedAchievements.push(achievementId);
+    save();
+    
+    // Показываем экран успеха
+    showCompletionScreen({
+      title: "おめでとう!",
+      subtitle: achievement.title,
+      desc: achievement.desc,
+      theme: "success",
+      rewards: [
+        { icon: "🏆", label: "Достижение разблокировано!" },
+        { icon: "⭐", label: `+${xp} XP` },
+        { icon: "🪙", label: `+${coins} монет` }
+      ],
+      onContinue: () => {
+        renderProfile();
+        refreshStreakDisplay();
+      }
+    });
   }
 
   function renderHeatmap() {
@@ -1278,7 +1479,12 @@ syncAvatars();
       el.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!cs.started) { toast("Сначала начните главу 🔒"); return; }
+        
+        // Автоматически начинаем главу при первой отметке чек-листа
+        if (!cs.started) {
+          startChapter(id);
+        }
+        
         const k = el.dataset.check;
         
         // Исправлено: теперь можно снимать галочки
@@ -1296,10 +1502,10 @@ syncAvatars();
           $$("#chapter-body .prog-dash .segment").forEach((seg, idx) => {
             seg.classList.toggle("active", idx < done);
           });
-          const progText = $("#chapter-body .row-between b");
-          if (progText) progText.textContent = `${done}/${items}`;
-          updateXP();
-          return;
+        const progText = $("#chapter-body .row-between b");
+        if (progText) progText.textContent = `${done}/${items}`;
+        refreshStreakDisplay();
+        return;
         }
         
         // Ставим галочку
@@ -1356,17 +1562,23 @@ syncAvatars();
     const due = dueCards();
     const total = allCards().length;
     
-    // Создаем табы
-    body.innerHTML = `
-      <div class="srs-tabs">
-        <button class="srs-tab ${currentSRSTab === 'repetition' ? 'active' : ''}" data-tab="repetition">Повторение</button>
-        <button class="srs-tab ${currentSRSTab === 'dictionary' ? 'active' : ''}" data-tab="dictionary">Словарь</button>
-      </div>
-      <div id="srs-tab-content"></div>
-    `;
+    // Обновляем активное состояние табов (табы теперь в HTML)
+    const tabsContainer = $("#srs-tabs-container");
+    if (tabsContainer) {
+      $$(".lib-tab", tabsContainer).forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === currentSRSTab);
+        tab.onclick = () => {
+          currentSRSTab = tab.dataset.tab;
+          renderSRSHome();
+        };
+      });
+    }
     
-    // Обработчики переключения табов
-    $$(".srs-tab", body).forEach(tab => {
+    // Очищаем body и рендерим только контент
+    body.innerHTML = "";
+    
+    // Обработчики переключения табов (для совместимости, если табы еще в body)
+    $$(".lib-tab", body).forEach(tab => {
       tab.onclick = () => {
         currentSRSTab = tab.dataset.tab;
         renderSRSHome();
@@ -1382,7 +1594,7 @@ syncAvatars();
   }
   
   function renderSRSRepetition() {
-    const content = $("#srs-tab-content");
+    const content = $("#srs-body");
     if (!content) return;
     
     const due = dueCards();
@@ -1394,13 +1606,13 @@ syncAvatars();
     }
     
     content.innerHTML = `
-      <header style="padding:6px 0 14px"><h1 class="app-title">Повторение (SRS)</h1><p class="app-subtitle">Интервальные повторения по SM-2</p></header>
       <div class="stat-row">
         <div class="stat-box"><div class="stat-num accent">${due.length}</div><div class="stat-cap">К повтору</div></div>
         <div class="stat-box"><div class="stat-num">${total}</div><div class="stat-cap">Всего карточек</div></div>
       </div>
       <button class="btn-primary" id="srs-start" ${due.length === 0 ? "disabled" : ""} data-testid="srs-start-btn">🎴 ${due.length > 0 ? `Учить ${due.length} карточек` : "Всё повторено на сегодня!"}</button>
-      <button class="btn-extra-review ${due.length > 0 ? "hidden" : ""}" id="srs-extra-review" data-testid="srs-extra-review-btn">➕ Доп. повторение (10 карточек)</button>`;
+      <button class="btn-extra-review ${due.length > 0 ? "hidden" : ""}" id="srs-extra-review" data-testid="srs-extra-review-btn">➕ Доп. повторение (10 карточек)</button>
+    `;
     
     const b = $("#srs-start");
     if (b) b.onclick = () => startFlash(null);
@@ -1410,14 +1622,10 @@ syncAvatars();
   
   // Функция отображения словаря
   function renderDictionary() {
-    const content = $("#srs-tab-content");
+    const content = $("#srs-body");
     if (!content) return;
     
     content.innerHTML = `
-      <header style="padding:6px 0 14px">
-        <h1 class="app-title">Словарь</h1>
-        <p class="app-subtitle">Все слова из уроков Genki</p>
-      </header>
       <div class="dict-search-wrap">
         <input 
           type="search" 
@@ -1471,6 +1679,10 @@ syncAvatars();
       totalVisible += filteredWords.length;
       
       const wordsHtml = filteredWords.map(word => {
+        // Проверяем доступность слова
+        const isUnlocked = isWordUnlocked(word.id);
+        const chapterId = cardChapter(word.id);
+        
         // Вычисляем прогресс из state.srs
         const srsRecord = state.srs[word.id];
         let progress = 0;
@@ -1481,6 +1693,28 @@ syncAvatars();
           if (progress >= 75) progressClass = 'progress-high';
           else if (progress >= 25) progressClass = 'progress-medium';
           else progressClass = 'progress-low';
+        }
+        
+        // Если слово заблокировано, показываем другой контент
+        if (!isUnlocked) {
+          return `
+            <div class="dict-word-card word-locked" data-word-id="${word.id}" data-chapter-id="${chapterId}">
+              <div class="dict-word-main">
+                <div class="dict-word-lock-icon">🔒</div>
+                <div class="dict-word-kanji">${word.kanji || word.writing}</div>
+                <div class="dict-word-info">
+                  <div class="dict-word-reading">・・・</div>
+                  <div class="dict-word-translation">Откроется в Главе ${chapterId}</div>
+                </div>
+              </div>
+              <div class="dict-word-progress">
+                <div class="dict-progress-bar">
+                  <div class="dict-progress-fill progress-none" style="width: 0%"></div>
+                </div>
+                <span class="dict-progress-text">🔒</span>
+              </div>
+            </div>
+          `;
         }
         
         return `
@@ -1525,6 +1759,14 @@ syncAvatars();
     $$(".dict-word-card").forEach(card => {
       card.onclick = () => {
         const wordId = card.dataset.wordId;
+        
+        // Проверяем, заблокирована ли карточка
+        if (card.classList.contains('word-locked')) {
+          const chapterId = card.dataset.chapterId;
+          toast(`🔒 Начните Главу ${chapterId}, чтобы разблокировать это слово`);
+          return;
+        }
+        
         const word = wordById(wordId);
         if (word) openDictionaryModal(word);
       };
@@ -1692,11 +1934,14 @@ syncAvatars();
         delayBetweenStrokes: 200,
         showOutline: true,
         showCharacter: true,
-        strokeColor: '#555',
+        
+        // Цвета (единообразие с режимом рисования)
+        strokeColor: '#1e293b',
         radicalColor: '#168F16',
         outlineColor: '#DDD',
-        drawingColor: '#333',
-        drawingWidth: 18,
+        drawingColor: '#1e293b',
+        drawingWidth: 16,
+        
         charDataLoader: loadKanjiData,
         onLoadCharDataError: (error) => {
           console.warn(`Не удалось загрузить данные для "${kanji}":`, error);
@@ -1946,11 +2191,23 @@ syncAvatars();
         delayBetweenStrokes: 200,
         showOutline: false,
         showCharacter: false,
-        strokeColor: '#555',
+        
+        // Цвета (идеально совпадают для плавного перехода)
+        strokeColor: '#1e293b',       // Цвет готовой правильной черты
+        drawingColor: '#1e293b',      // Цвет линии пользователя (тот же!)
         radicalColor: '#168F16',
         outlineColor: '#f2f2f2',
-        drawingColor: '#333',
-        drawingWidth: 18
+        
+        // Толщина линии рисования
+        drawingWidth: 16,
+        
+        // Настройки плавности перехода (примагничивание)
+        drawingFadeDuration: 150,     // Скорость исчезновения неровного следа
+        strokeFadeDuration: 200,      // Скорость появления идеального вектора
+        
+        // Чувствительность к точности
+        strokeMismatchThreshold: 0.85, // Чувствительность распознавания
+        leniency: 1.6                 // Снисходительность к отклонениям
       });
 
       const undoBtn = document.getElementById("drawing-undo");
@@ -2023,7 +2280,43 @@ syncAvatars();
 
     // Кнопка выхода
     const exitBtn = $("#flash-exit");
-    if (exitBtn) exitBtn.onclick = () => { flashCtx ? nav("chapter", flashCtx) : renderSRSHome(); };
+    if (exitBtn) {
+      exitBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        
+        console.log("=== Клик по кнопке Выход (SessionManager режим) ===");
+        console.log("sessionManager:", sessionManager);
+        if (sessionManager) {
+          const stats = sessionManager.getStats();
+          console.log("stats:", stats);
+          console.log("stats.reviewed:", stats.reviewed);
+          if (stats.reviewed > 0) {
+            console.log("✓ Условие выполнено: stats.reviewed > 0, показываем экран успеха");
+            // Показываем экран успеха с частичной статистикой
+            showCompletionScreen({
+              title: "おつかれさま!",
+              subtitle: "Хорошая работа!",
+              desc: `Вы повторили часть карточек`,
+              theme: "success",
+              rewards: [
+                { icon: "📚", label: `${stats.reviewed} карточек` },
+                { icon: "✨", label: `${stats.perfect} без ошибок` },
+                { icon: "🪙", label: `+${stats.reviewed} XP` }
+              ],
+              onContinue: () => {
+                sessionManager = null;
+                flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
+              }
+            });
+            return;
+          }
+        }
+        // Если reviewed === 0 или нет SessionManager, просто выходим
+        sessionManager = null;
+        flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
+      };
+    }
 
     // Обработчики оценок
     $$("#rate .rate-btn").forEach((b) => {
@@ -2078,13 +2371,23 @@ syncAvatars();
     // Проверяем завершение через SessionManager
     if (sessionManager && sessionManager.isSessionComplete()) {
       const stats = sessionManager.getStats();
-      body.innerHTML = emptyState("🎉", "Сессия завершена!", 
-        `Повторено: ${stats.reviewed} карточек<br>Без ошибок: ${stats.perfect}<br>С доучиванием: ${stats.relearned}`) +
-        `<button class="btn-primary" id="flash-done" data-testid="flash-done-btn">Готово</button>`;
-      $("#flash-done").onclick = () => { 
-        sessionManager = null; // очищаем менеджер
-        flashCtx ? nav("chapter", flashCtx) : renderSRSHome(); 
-      };
+      
+      // Показываем экран успеха
+      showCompletionScreen({
+        title: "おめでとう!",
+        subtitle: "Отличная работа!",
+        desc: `Вы завершили сессию повторения`,
+        theme: "success",
+        rewards: [
+          { icon: "📚", label: `${stats.reviewed} карточек` },
+          { icon: "✨", label: `${stats.perfect} без ошибок` },
+          { icon: "🪙", label: `+${stats.reviewed} XP` }
+        ],
+        onContinue: () => {
+          sessionManager = null;
+          flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
+        }
+      });
       return;
     }
     
@@ -2093,9 +2396,20 @@ syncAvatars();
     if (!card) {
       // Fallback на старую логику если SessionManager не работает
       if (flashIdx >= flashQueue.length) {
-        body.innerHTML = emptyState("🎉", "Сессия завершена!", `Повторено карточек: ${flashQueue.length}`) +
-          `<button class="btn-primary" id="flash-done" data-testid="flash-done-btn">Готово</button>`;
-        $("#flash-done").onclick = () => { flashCtx ? nav("chapter", flashCtx) : renderSRSHome(); };
+        // Показываем экран успеха
+        showCompletionScreen({
+          title: "おめでとう!",
+          subtitle: "Сессия завершена!",
+          desc: `Повторено карточек: ${flashQueue.length}`,
+          theme: "success",
+          rewards: [
+            { icon: "📚", label: `${flashQueue.length} карточек` },
+            { icon: "🪙", label: `+${flashQueue.length} XP` }
+          ],
+          onContinue: () => {
+            flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
+          }
+        });
         return;
       }
     }
@@ -2120,12 +2434,14 @@ syncAvatars();
     const isDrawingMode = allKanji.length > 0 && Math.random() < DRAWING_MODE_PROBABILITY;
     
     if (isDrawingMode && !flashRevealed && allKanji.length > 0) {
-      // Режим рисования (рисуем все кандзи из слова)
+      // Режим рисования (только при первом показе карты)
+      const currentProgress = sessionManager ? sessionManager.stats.reviewed + 1 : flashIdx + 1;
+      const totalCards = sessionManager ? sessionManager.stats.total : flashQueue.length;
       body.innerHTML = `
         <div class="flash-wrap">
           <div class="flash-top">
-            <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
-            <button class="btn-ghost" id="flash-exit">Выйти</button>
+            <span class="flash-count" data-testid="flash-progress">${currentProgress} / ${totalCards}</span>
+            <button class="btn-ghost" id="flash-exit">Выход</button>
           </div>
           <div class="drawing-mode">
             <div class="drawing-prompt">
@@ -2139,11 +2455,13 @@ syncAvatars();
         </div>`;
     } else {
       // Обычный режим
+      const currentProgress = sessionManager ? sessionManager.stats.reviewed + 1 : flashIdx + 1;
+      const totalCards = sessionManager ? sessionManager.stats.total : flashQueue.length;
       body.innerHTML = `
         <div class="flash-wrap">
           <div class="flash-top">
-            <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
-            <button class="btn-ghost" id="flash-exit">Выйти</button>
+            <span class="flash-count" data-testid="flash-progress">${currentProgress} / ${totalCards}</span>
+            <button class="btn-ghost" id="flash-exit">Выход</button>
           </div>
           <div class="flash-card-3d" id="flash-card" data-testid="flash-card">
             <div class="flash-inner ${flashRevealed ? "flipped" : ""}">
@@ -2192,7 +2510,38 @@ syncAvatars();
     }
     
     const exitBtn = $("#flash-exit");
-    if (exitBtn) exitBtn.onclick = () => { flashCtx ? nav("chapter", flashCtx) : renderSRSHome(); };
+    if (exitBtn) {
+      exitBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        
+        // Определяем количество пройденных карточек
+        const cardsCompleted = sessionManager ? sessionManager.stats.reviewed : flashIdx;
+        
+        console.log("=== Клик по кнопке Выход ===");
+        console.log("cardsCompleted:", cardsCompleted);
+        
+        // ВСЕГДА показываем экран успеха при выходе
+        showCompletionScreen({
+          title: cardsCompleted > 0 ? "おつかれさま!" : "До встречи!",
+          subtitle: cardsCompleted > 0 ? "Хорошая работа!" : "Возвращайтесь скорее!",
+          desc: cardsCompleted > 0 ? `Вы повторили ${cardsCompleted} карточек` : "Вы не повторили ни одной карточки",
+          theme: "success",
+          rewards: cardsCompleted > 0 ? [
+            { icon: "📚", label: `${cardsCompleted} карточек` },
+            { icon: "✨", label: sessionManager ? `${sessionManager.stats.perfect} без ошибок` : "" },
+            { icon: "🪙", label: `+${cardsCompleted} XP` }
+          ].filter(r => r.label) : [
+            { icon: "👋", label: "Увидимся!" }
+          ],
+          onContinue: () => {
+            sessionManager = null;
+            flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
+          }
+        });
+        return;
+      };
+    }
     $$("#rate .rate-btn").forEach((b) => {
       b.onclick = () => {
         const quality = parseInt(b.dataset.q, 10);
@@ -2403,9 +2752,655 @@ syncAvatars();
       .filter(Boolean);
   }
 
+  // ========== CROSSWORD GAME ==========
+  
+  // Конвертер Хирагана → Катакана
+  const HIRAGANA_TO_KATAKANA = {
+    'あ': 'ア', 'い': 'イ', 'う': 'ウ', 'え': 'エ', 'お': 'オ',
+    'か': 'カ', 'き': 'キ', 'く': 'ク', 'け': 'ケ', 'こ': 'コ',
+    'さ': 'サ', 'し': 'シ', 'す': 'ス', 'せ': 'セ', 'そ': 'ソ',
+    'た': 'タ', 'ち': 'チ', 'つ': 'ツ', 'て': 'テ', 'と': 'ト',
+    'な': 'ナ', 'に': 'ニ', 'ぬ': 'ヌ', 'ね': 'ネ', 'の': 'ノ',
+    'は': 'ハ', 'ひ': 'ヒ', 'ふ': 'フ', 'へ': 'ヘ', 'ほ': 'ホ',
+    'ま': 'マ', 'み': 'ミ', 'む': 'ム', 'め': 'メ', 'も': 'モ',
+    'や': 'ヤ', 'ゆ': 'ユ', 'よ': 'ヨ',
+    'ら': 'ラ', 'り': 'リ', 'る': 'ル', 'れ': 'レ', 'ろ': 'ロ',
+    'わ': 'ワ', 'を': 'ヲ', 'ん': 'ン',
+    'が': 'ガ', 'ぎ': 'ギ', 'ぐ': 'グ', 'げ': 'ゲ', 'ご': 'ゴ',
+    'ざ': 'ザ', 'じ': 'ジ', 'ず': 'ズ', 'ぜ': 'ゼ', 'ぞ': 'ゾ',
+    'だ': 'ダ', 'ぢ': 'ヂ', 'づ': 'ヅ', 'で': 'デ', 'ど': 'ド',
+    'ば': 'バ', 'び': 'ビ', 'ぶ': 'ブ', 'べ': 'ベ', 'ぼ': 'ボ',
+    'ぱ': 'パ', 'ぴ': 'ピ', 'ぷ': 'プ', 'ぺ': 'ペ', 'ぽ': 'ポ',
+    'ゃ': 'ャ', 'ゅ': 'ュ', 'ょ': 'ョ',
+    'っ': 'ッ', 'ー': 'ー'
+  };
+
+  function hiraganaToKatakana(text) {
+    return text.split('').map(char => HIRAGANA_TO_KATAKANA[char] || char).join('');
+  }
+
+  function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // Генератор кроссворда с ретраями (Правило 1)
+  function generateCrossword(gridSize = 11) {
+    const maxAttempts = 20;
+    let bestResult = null;
+    let bestScore = 0;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const result = tryGenerateCrossword(gridSize);
+      
+      if (result && result.placedWords.length > bestScore) {
+        bestScore = result.placedWords.length;
+        bestResult = result;
+      }
+
+      // Если разместили достаточно слов, прекращаем попытки
+      if (bestScore >= 6) break;
+    }
+
+    return bestResult;
+  }
+
+  function tryGenerateCrossword(gridSize = 11) {
+    // Собираем пул разблокированных слов
+    const unlockedWords = [];
+    LESSONS.forEach(lesson => {
+      lesson.words.forEach(word => {
+        if (isWordUnlocked(word.id) && word.writing) {
+          unlockedWords.push({
+            id: word.id,
+            kana: word.writing,
+            kanji: word.kanji || word.writing,
+            translation: word.translation,
+            length: word.writing.length
+          });
+        }
+      });
+    });
+
+    if (unlockedWords.length < 6) return null;
+
+    // Перемешиваем весь пул слов
+    const shuffledWords = shuffleArray(unlockedWords);
+    
+    // Инициализируем сетку
+    const grid = Array(gridSize).fill(null).map(() => 
+      Array(gridSize).fill(null).map(() => ({ letter: null, wordIds: [] }))
+    );
+    const placedWords = [];
+    
+    // Оставшийся пул доступных слов
+    const availableWords = [...shuffledWords];
+
+    // Размещаем первое случайное слово горизонтально по центру
+    const firstWord = availableWords.shift();
+    const startRow = Math.floor(gridSize / 2);
+    const startCol = Math.floor((gridSize - firstWord.length) / 2);
+
+    for (let i = 0; i < firstWord.length; i++) {
+      grid[startRow][startCol + i].letter = firstWord.kana[i];
+      grid[startRow][startCol + i].wordIds.push(firstWord.id);
+    }
+
+    placedWords.push({
+      word: firstWord,
+      row: startRow,
+      col: startCol,
+      direction: 'across',
+      number: 1
+    });
+
+    let wordNumber = 2;
+    const maxWords = 10; // Целевое количество слов
+
+    // Итеративно ищем пересечения для уже размещённых слов
+    while (placedWords.length < maxWords && availableWords.length > 0) {
+      let foundIntersection = false;
+
+      // Проходим по всем уже размещённым словам
+      for (const placedWord of placedWords) {
+        if (foundIntersection) break;
+
+        // Проходим по каждой букве размещённого слова
+        for (let k = 0; k < placedWord.word.length; k++) {
+          if (foundIntersection) break;
+          const placedLetter = placedWord.word.kana[k];
+
+          // Ищем слово в доступном пуле с такой же буквой
+          for (let wordIdx = 0; wordIdx < availableWords.length; wordIdx++) {
+            const word = availableWords[wordIdx];
+            
+            // Проверяем каждую букву кандидата
+            for (let j = 0; j < word.length; j++) {
+              const wordLetter = word.kana[j];
+
+              if (wordLetter === placedLetter) {
+                const newDirection = placedWord.direction === 'across' ? 'down' : 'across';
+                let newRow, newCol;
+
+                if (newDirection === 'down') {
+                  newRow = placedWord.row - j;
+                  newCol = placedWord.col + k;
+                } else {
+                  newRow = placedWord.row + k;
+                  newCol = placedWord.col - j;
+                }
+
+                // Проверяем возможность размещения
+                if (canPlaceWord(grid, word, newRow, newCol, newDirection, gridSize)) {
+                  placeWord(grid, word, newRow, newCol, newDirection, wordNumber);
+                  placedWords.push({
+                    word,
+                    row: newRow,
+                    col: newCol,
+                    direction: newDirection,
+                    number: wordNumber
+                  });
+                  wordNumber++;
+                  
+                  // Удаляем использованное слово из пула
+                  availableWords.splice(wordIdx, 1);
+                  foundIntersection = true;
+                  break;
+                }
+              }
+            }
+            
+            if (foundIntersection) break;
+          }
+        }
+      }
+
+      // Если не нашли больше пересечений, выходим
+      if (!foundIntersection) break;
+    }
+
+    // Формируем подсказки
+    const clues = {
+      across: placedWords.filter(p => p.direction === 'across').map(p => ({
+        number: p.number,
+        clue: `${p.word.kanji} — ${p.word.translation}`
+      })),
+      down: placedWords.filter(p => p.direction === 'down').map(p => ({
+        number: p.number,
+        clue: `${p.word.kanji} — ${p.word.translation}`
+      }))
+    };
+
+    return { grid, placedWords, clues, gridSize };
+  }
+
+  function canPlaceWord(grid, word, row, col, direction, gridSize) {
+    const length = word.length;
+
+    // 1. Проверка границ
+    if (direction === 'across') {
+      if (col < 0 || col + length > gridSize || row < 0 || row >= gridSize) return false;
+    } else {
+      if (row < 0 || row + length > gridSize || col < 0 || col >= gridSize) return false;
+    }
+
+    // 2. Проверяем клетки до и после слова (они не должны быть заняты, чтобы слова не слипались торцами)
+    if (direction === 'across') {
+      if (col > 0 && grid[row][col - 1].letter !== null) return false;
+      if (col + length < gridSize && grid[row][col + length].letter !== null) return false;
+    } else {
+      if (row > 0 && grid[row - 1][col].letter !== null) return false;
+      if (row + length < gridSize && grid[row + length][col].letter !== null) return false;
+    }
+
+    // 3. Проверяем каждую позицию слова
+    for (let i = 0; i < length; i++) {
+      const r = direction === 'across' ? row : row + i;
+      const c = direction === 'across' ? col + i : col;
+      const cell = grid[r][c];
+      const wordLetter = word.kana[i];
+
+      if (cell.letter !== null) {
+        // Если клетка занята, это должно быть валидное пересечение с совпадающей буквой
+        if (cell.letter !== wordLetter) return false; 
+        // Если буква совпадает, мы пересекаем слово. Нам не нужно проверять соседей этой клетки.
+      } else {
+        // Если клетка пустая, проверяем, чтобы она не касалась других слов боками (правило Adjacency)
+        if (direction === 'across') {
+          if (r > 0 && grid[r - 1][c].letter !== null) return false;
+          if (r < gridSize - 1 && grid[r + 1][c].letter !== null) return false;
+        } else {
+          if (c > 0 && grid[r][c - 1].letter !== null) return false;
+          if (c < gridSize - 1 && grid[r][c + 1].letter !== null) return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  function placeWord(grid, word, row, col, direction, number) {
+    for (let i = 0; i < word.length; i++) {
+      const r = direction === 'across' ? row : row + i;
+      const c = direction === 'across' ? col + i : col;
+      grid[r][c].letter = word.kana[i];
+      grid[r][c].wordIds.push(word.id);
+      if (i === 0) grid[r][c].number = number;
+    }
+  }
+
+  // Рендеринг кроссворда
+  function renderCrossword() {
+    const body = $("#crossword-body");
+
+    // Генерируем кроссворд
+    const crosswordData = generateCrossword(11);
+
+    if (!crosswordData || crosswordData.placedWords.length < 3) {
+      body.innerHTML = `
+        <div class="empty-state">
+          <span style="font-size:60px">🧩</span>
+          <h3>Недостаточно слов</h3>
+          <p>Откройте больше глав, чтобы играть в кроссворд</p>
+        </div>
+      `;
+      return;
+    }
+
+    const { grid, placedWords, clues, gridSize } = crosswordData;
+
+    // Состояние игры
+    let currentWord = null;
+    let userAnswers = {}; // { wordId: {filled: [...буквы], correct: bool} }
+    let completedWords = new Set();
+
+    // Инициализируем ответы
+    placedWords.forEach(pw => {
+      userAnswers[pw.word.id] = { filled: Array(pw.word.length).fill(''), correct: false };
+    });
+
+    body.innerHTML = `
+      <div class="crossword-container">
+        <!-- Clue Panel -->
+        <div class="clue-panel hidden" id="clue-panel">
+          <div class="clue-content">
+            <span class="clue-kanji" id="clue-kanji"></span>
+            <span class="clue-translation" id="clue-translation"></span>
+            <button class="clue-speak" id="clue-speak">🔊</button>
+          </div>
+        </div>
+
+        <!-- Сетка кроссворда -->
+        <div class="crossword-grid" id="crossword-grid" style="
+          display: grid;
+          grid-template-columns: repeat(${gridSize}, 1fr);
+          gap: 2px;
+          max-width: 100%;
+          aspect-ratio: 1;
+          margin: 20px auto;
+        ">
+          ${renderGridCells(grid, gridSize, placedWords)}
+        </div>
+
+        <!-- Кастомная клавиатура -->
+        <div class="crossword-keyboard" id="crossword-keyboard"></div>
+
+        <!-- Подсказки -->
+        <div class="crossword-clues">
+          <details>
+            <summary><strong>По горизонтали</strong></summary>
+            <ol>
+              ${clues.across.map(c => `<li value="${c.number}">${c.clue}</li>`).join('')}
+            </ol>
+          </details>
+          <details>
+            <summary><strong>По вертикали</strong></summary>
+            <ol>
+              ${clues.down.map(c => `<li value="${c.number}">${c.clue}</li>`).join('')}
+            </ol>
+          </details>
+        </div>
+      </div>
+    `;
+
+    // Инициализация обработчиков
+    initCrosswordHandlers(crosswordData, userAnswers, completedWords);
+  }
+
+  function renderGridCells(grid, gridSize, placedWords) {
+    let html = '';
+
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        const cell = grid[row][col];
+
+        if (cell.letter === null) {
+          html += `<div class="grid-cell empty"></div>`;
+        } else {
+          const number = cell.number || '';
+          html += `
+            <div class="grid-cell active" data-row="${row}" data-col="${col}">
+              ${number ? `<span class="cell-number">${number}</span>` : ''}
+              <div class="cell-kana">
+                <span class="kana-hira" data-answer=""></span>
+                <span class="kana-kata"></span>
+              </div>
+            </div>
+          `;
+        }
+      }
+    }
+
+    return html;
+  }
+
+  function initCrosswordHandlers(crosswordData, userAnswers, completedWords) {
+    const { placedWords, grid } = crosswordData;
+    let currentWord = null;
+
+    // Обработчик клика по ячейке
+    $$(".grid-cell.active").forEach(cell => {
+      cell.onclick = () => {
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+
+        // Правило 4: Возврат кнопок при клике на заполненную ячейку
+        const hiraSpan = cell.querySelector('.kana-hira');
+        if (hiraSpan && hiraSpan.dataset.answer && currentWord) {
+          const letter = hiraSpan.dataset.answer;
+          
+          // Стираем букву из ячейки
+          hiraSpan.dataset.answer = '';
+          hiraSpan.textContent = '';
+          const kataSpan = cell.querySelector('.kana-kata');
+          if (kataSpan) kataSpan.textContent = '';
+
+          // Возвращаем кнопку на клавиатуру
+          const keyboardBtns = $$('.kana-key');
+          keyboardBtns.forEach(btn => {
+            if (btn.dataset.letter === letter) {
+              btn.disabled = false;
+              btn.style.opacity = '1';
+            }
+          });
+
+          // Обновляем userAnswers
+          const wordData = findWordAtCell(row, col, placedWords);
+          if (wordData) {
+            const cellIndex = getCellIndexInWord(row, col, wordData);
+            if (cellIndex !== -1) {
+              userAnswers[wordData.word.id].filled[cellIndex] = '';
+            }
+          }
+
+          return;
+        }
+
+        // Находим слово
+        const word = findWordAtCell(row, col, placedWords);
+        if (word) {
+          selectWord(word, crosswordData, userAnswers, completedWords);
+        }
+      };
+    });
+
+    // Выбрать первое слово автоматически
+    if (placedWords.length > 0) {
+      selectWord(placedWords[0], crosswordData, userAnswers, completedWords);
+    }
+  }
+
+  function findWordAtCell(row, col, placedWords) {
+    for (const pw of placedWords) {
+      if (pw.direction === 'across') {
+        if (pw.row === row && col >= pw.col && col < pw.col + pw.word.length) {
+          return pw;
+        }
+      } else {
+        if (pw.col === col && row >= pw.row && row < pw.row + pw.word.length) {
+          return pw;
+        }
+      }
+    }
+    return null;
+  }
+
+  function getCellIndexInWord(row, col, wordData) {
+    if (wordData.direction === 'across') {
+      return col - wordData.col;
+    } else {
+      return row - wordData.row;
+    }
+  }
+
+  function selectWord(wordData, crosswordData, userAnswers, completedWords) {
+    const { grid } = crosswordData;
+    
+    // Сохраняем текущее слово
+    window.currentCrosswordWord = wordData;
+
+    // Снимаем подсветку со всех ячеек
+    $$('.grid-cell').forEach(c => c.classList.remove('highlighted', 'correct'));
+
+    // Подсвечиваем ячейки текущего слова
+    for (let i = 0; i < wordData.word.length; i++) {
+      const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
+      const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
+      const cell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+      if (cell) {
+        if (completedWords.has(wordData.word.id)) {
+          cell.classList.add('correct');
+        } else {
+          cell.classList.add('highlighted');
+        }
+      }
+    }
+
+    // Обновляем Clue Panel
+    updateCluePanel(wordData.word);
+
+    // Генерируем клавиатуру (Правило 3: Smart Intersections)
+    generateKeyboard(wordData, userAnswers, grid, crosswordData.placedWords);
+  }
+
+  function updateCluePanel(word) {
+    const panel = $('#clue-panel');
+    const kanjiEl = $('#clue-kanji');
+    const translationEl = $('#clue-translation');
+    const speakBtn = $('#clue-speak');
+
+    if (panel && kanjiEl && translationEl) {
+      panel.classList.remove('hidden');
+      kanjiEl.textContent = word.kanji;
+      translationEl.textContent = word.translation;
+
+      if (speakBtn) {
+        speakBtn.onclick = () => speak(word.kana, speakBtn);
+      }
+    }
+  }
+
+  function generateKeyboard(wordData, userAnswers, grid, placedWords) {
+    const keyboard = $('#crossword-keyboard');
+    if (!keyboard) return;
+
+    const wordAnswer = userAnswers[wordData.word.id];
+    
+    // Правило 3: Учитываем предзаполненные пересечения
+    const neededLetters = [];
+    for (let i = 0; i < wordData.word.length; i++) {
+      const letter = wordData.word.kana[i];
+      const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
+      const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
+      
+      // Проверяем, есть ли уже буква от пересекающегося слова
+      const cell = grid[r][c];
+      const isPreFilled = cell.wordIds.length > 1 && wordAnswer.filled[i] === '';
+      
+      if (isPreFilled) {
+        // Буква уже есть из другого слова, не добавляем в клавиатуру
+        continue;
+      }
+      
+      // Если ячейка ещё не заполнена пользователем
+      if (wordAnswer.filled[i] === '') {
+        neededLetters.push(letter);
+      }
+    }
+
+    // Добавляем distractors
+    const allKana = Object.keys(HIRAGANA_TO_KATAKANA);
+    const distractors = [];
+    while (distractors.length < 4) {
+      const randomKana = allKana[Math.floor(Math.random() * allKana.length)];
+      if (!wordData.word.kana.includes(randomKana) && !distractors.includes(randomKana)) {
+        distractors.push(randomKana);
+      }
+    }
+
+    const keyboardLetters = shuffleArray([...neededLetters, ...distractors]);
+
+    keyboard.innerHTML = keyboardLetters.map(letter => `
+      <button class="kana-key" data-letter="${letter}">
+        <span class="key-hira">${letter}</span>
+        <span class="key-kata">${hiraganaToKatakana(letter)}</span>
+      </button>
+    `).join('');
+
+    // Обработчики кнопок
+    $$('.kana-key').forEach(btn => {
+      btn.onclick = () => {
+        const letter = btn.dataset.letter;
+        insertLetterIntoWord(letter, btn, wordData, userAnswers, grid, placedWords);
+      };
+    });
+  }
+
+  function insertLetterIntoWord(letter, buttonElement, wordData, userAnswers, grid, placedWords) {
+    // Находим первую пустую ячейку в текущем слове
+    const wordAnswer = userAnswers[wordData.word.id];
+    let emptyIndex = -1;
+
+    for (let i = 0; i < wordData.word.length; i++) {
+      if (wordAnswer.filled[i] === '') {
+        emptyIndex = i;
+        break;
+      }
+    }
+
+    if (emptyIndex === -1) return; // Все ячейки заполнены
+
+    // Вписываем букву
+    wordAnswer.filled[emptyIndex] = letter;
+
+    // Обновляем UI
+    const r = wordData.direction === 'across' ? wordData.row : wordData.row + emptyIndex;
+    const c = wordData.direction === 'across' ? wordData.col + emptyIndex : wordData.col;
+    const cell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+
+    if (cell) {
+      const hiraSpan = cell.querySelector('.kana-hira');
+      const kataSpan = cell.querySelector('.kana-kata');
+
+      if (hiraSpan) {
+        hiraSpan.dataset.answer = letter;
+        hiraSpan.textContent = letter;
+      }
+
+      if (kataSpan) {
+        kataSpan.textContent = hiraganaToKatakana(letter);
+      }
+    }
+
+    // Скрываем кнопку
+    buttonElement.style.opacity = '0.3';
+    buttonElement.disabled = true;
+
+    // Проверяем заполненность слова
+    checkWordCompletion(wordData, userAnswers, grid, placedWords);
+  }
+
+  function checkWordCompletion(wordData, userAnswers, grid, placedWords) {
+    const wordAnswer = userAnswers[wordData.word.id];
+    
+    // Проверяем, все ли ячейки заполнены
+    const allFilled = wordAnswer.filled.every(l => l !== '');
+
+    if (allFilled) {
+      const userWord = wordAnswer.filled.join('');
+      const correctWord = wordData.word.kana;
+
+      if (userWord === correctWord) {
+        // Правильно!
+        wordAnswer.correct = true;
+
+        // Подсвечиваем зеленым
+        for (let i = 0; i < wordData.word.length; i++) {
+          const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
+          const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
+          const cell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+          if (cell) {
+            cell.classList.add('correct');
+            cell.classList.remove('highlighted');
+          }
+        }
+
+        markActivity();
+        addXP(XP_CHECK);
+        toast('✅ Правильно!');
+
+        // Добавляем в завершённые
+        if (!window.completedCrosswordWords) window.completedCrosswordWords = new Set();
+        window.completedCrosswordWords.add(wordData.word.id);
+
+        // Переходим к следующему слову
+        setTimeout(() => {
+          const nextWord = findNextIncompleteWord(placedWords, userAnswers);
+          if (nextWord) {
+            selectWord(nextWord, { grid, placedWords, clues: null, gridSize: grid.length }, userAnswers, window.completedCrosswordWords);
+          } else {
+            // Все слова разгаданы!
+            completeCrossword(placedWords.length);
+          }
+        }, 1000);
+      } else {
+        toast('❌ Неправильно, попробуйте ещё раз');
+      }
+    }
+  }
+
+  function findNextIncompleteWord(placedWords, userAnswers) {
+    for (const pw of placedWords) {
+      if (!userAnswers[pw.word.id].correct) {
+        return pw;
+      }
+    }
+    return null;
+  }
+
+  function completeCrossword(totalWords) {
+    showCompletionScreen({
+      title: 'おめでとう!',
+      subtitle: 'Кроссворд завершён!',
+      desc: `Вы разгадали все ${totalWords} слов`,
+      theme: 'success',
+      rewards: [
+        { icon: '🧩', label: `${totalWords} слов` },
+        { icon: '🪙', label: `+${totalWords * XP_CHECK} XP` }
+      ],
+      onContinue: () => {
+        nav('sensei');
+      }
+    });
+  }
+
   // ---------- Sensei (chat) ----------
-  let chatHistory = []; // {role,content}
-  let senseiTab = "chat"; // "chat" или "aiplus"
+  let chatHistory = [];
+  let senseiTab = "chat"; // Текущая вкладка: "chat" или "tools"
   
   function renderSensei() {
     // Рендерим вкладки
@@ -2413,33 +3408,19 @@ syncAvatars();
 
     const body = $("#sensei-body");
 
-    if (senseiTab === "aiplus") {
-      renderSenseiAIPlus();
+    if (senseiTab === "tools") {
+      renderSenseiTools();
       return;
     }
 
-    // Вкладка "Чат" - вставляем элементы напрямую в #sensei-body как siblings
+    // Вкладка "Чат" - вставляем элементы внутрь #sensei-body
     body.innerHTML = `
       <div class="chat-area" id="chat-area" data-testid="chat-area"></div>
+      <div class="chat-input-bar">
+        <input type="text" id="chat-input" class="chat-input" placeholder="質問してください… Задайте вопрос" data-testid="chat-input" />
+        <button class="chat-send" id="chat-send" data-testid="chat-send-btn" aria-label="Отправить">➤</button>
+      </div>
     `;
-
-    // Создаём chat-input-bar как sibling к sensei-body (прямой потомок screen-sensei)
-    const screen = $("#screen-sensei");
-    let inputBar = screen.querySelector(".chat-input-bar");
-    
-    // Удаляем старый input bar если есть
-    if (inputBar) {
-      inputBar.remove();
-    }
-    
-    // Создаём новый input bar
-    inputBar = document.createElement("div");
-    inputBar.className = "chat-input-bar";
-    inputBar.innerHTML = `
-      <input type="text" id="chat-input" class="chat-input" placeholder="質問してください… Задайте вопрос" data-testid="chat-input" />
-      <button class="chat-send" id="chat-send" data-testid="chat-send-btn" aria-label="Отправить">➤</button>
-    `;
-    screen.appendChild(inputBar);
 
     const area = $("#chat-area");
     if (chatHistory.length === 0) {
@@ -2465,25 +3446,62 @@ syncAvatars();
     syncAvatars();
   }
   
-  function renderSenseiAIPlus() {
+  function renderSenseiTools() {
     const body = $("#sensei-body");
+
+    // Удаляем chat-input-bar если он есть (на случай переключения с вкладки "Чат")
+    const inputBar = body.querySelector(".chat-input-bar");
+    if (inputBar) {
+      inputBar.remove();
+    }
+
+  // Проверяем доступность кроссворда (>= 3 полностью пройденных глав)
+  const completedLessons = Object.keys(state.chapters).reduce((total, id) => {
+    const checklist = state.chapters[id].checklist || {};
+    const completed = Object.values(checklist).filter(v => v === true).length;
+    // Глава считается пройденной только если выполнены ВСЕ 5 пунктов
+    return total + (completed === CHECK_ITEMS.length ? 1 : 0);
+  }, 0);
+  const crosswordUnlocked = completedLessons >= 3;
+
     body.innerHTML = `
-      <div style="padding: 20px;">
-        <div class="card" style="cursor: pointer; transition: transform 0.2s;" data-nav="ai-story">
-          <div style="display:flex;align-items:center;gap:16px">
-            <span style="font-size:40px">✨</span>
-            <div style="flex:1">
-              <h3 style="margin:0 0 4px">AI-история</h3>
-              <p style="margin:0;opacity:0.7;font-size:14px">Генерируйте интерактивные истории на основе ваших слабых слов</p>
-            </div>
-            <div style="font-size:24px;opacity:0.5">›</div>
-          </div>
+    <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+      <!-- AI Сенсей (бывший AI-история) -->
+      <div class="tool-card" data-nav="ai-story">
+        <span class="tool-icon">✨</span>
+        <div class="tool-info">
+          <h3>AI Сенсей</h3>
+          <p>Генерируйте интерактивные истории на основе ваших слабых слов</p>
         </div>
+        <span class="tool-arrow">›</span>
       </div>
+
+      <!-- Кроссворд -->
+      <div class="tool-card ${crosswordUnlocked ? '' : 'tool-locked'}" data-nav="crossword" data-locked="${!crosswordUnlocked}">
+        <span class="tool-icon">🧩</span>
+        <div class="tool-info">
+          <h3>Кроссворд</h3>
+          <p>${crosswordUnlocked ? 'Закрепляйте изученные слова в игровой форме' : '🔒 Откроется после полного прохождения 3 глав'}</p>
+        </div>
+        <span class="${crosswordUnlocked ? 'tool-arrow' : 'tool-lock'}">${crosswordUnlocked ? '›' : '🔒'}</span>
+      </div>
+    </div>
     `;
-    
+
     // Привязываем навигацию
-    $("[data-nav='ai-story']", body).onclick = () => nav("ai-story");
+    $$(".tool-card", body).forEach(card => {
+      card.onclick = () => {
+        const targetNav = card.dataset.nav;
+        const isLocked = card.dataset.locked === "true";
+        
+        if (isLocked) {
+          toast("🔒 Кроссворды откроются после полного прохождения 3 глав!");
+          return;
+        }
+        
+        nav(targetNav);
+      };
+    });
   }
   function escapeHtml(s) {
     var a = String.fromCharCode(38);
@@ -2845,21 +3863,191 @@ syncAvatars();
     if (storyTitle) storyTitle.textContent = story.title;
     if (storyTitleJp) storyTitleJp.textContent = story.titleJP || "";
     
-    // Используем новую функцию рендеринга для интерактивного текста
-    $("#story-body").innerHTML = `
-      <div class="story-content">
-        <div class="story-meta">
-          <span class="story-lesson-badge">Урок ${story.lesson_id}</span>
+  // Используем новую функцию рендеринга для интерактивного текста
+  $("#story-body").innerHTML = `
+  <div class="story-content">
+    <div class="story-meta">
+      <span class="story-lesson-badge">Урок ${story.lesson_id}</span>
+    </div>
+    <div class="story-text">${renderInteractiveStory(story.content)}</div>
+    ${story.questions && story.questions.length > 0 ? `
+      <div class="story-actions">
+        <button id="btn-finish-story" class="btn-primary-large">
+          📖 Завершить историю
+        </button>
+      </div>
+    ` : ''}
+  </div>
+  `;
+
+  // Добавляем обработчики переключения переводов
+  setupTranslationToggleHandlers();
+
+  // Обработчик кнопки "Завершить историю"
+  const finishBtn = document.getElementById("btn-finish-story");
+  if (finishBtn) {
+    finishBtn.onclick = () => {
+      startStoryQuiz(story);
+    };
+  }
+
+  nav("story");
+}
+
+// ===== STORY QUIZ SYSTEM =====
+function startStoryQuiz(story) {
+  // Фоллбек: если у истории нет вопросов, создаём дефолтный
+  if (!story.questions || story.questions.length === 0) {
+    story.questions = [{
+      question: "Вы внимательно прочитали историю?",
+      options: ["Да, всё понятно!", "Нет, хочу перечитать"],
+      correctAnswer: 0
+    }];
+  }
+  
+  let currentQuestionIndex = 0;
+  let attemptsCount = 0; // Счётчик попыток (для сброса при ошибке)
+  
+  function renderQuestion(index) {
+    const q = story.questions[index];
+    const storyBody = $("#story-body");
+    
+    storyBody.innerHTML = `
+      <div class="quiz-container">
+        <div class="quiz-header">
+          <button class="btn-ghost" id="quiz-back-btn">← Назад к истории</button>
+          <div class="quiz-progress">Вопрос ${index + 1} из ${story.questions.length}</div>
         </div>
-        <div class="story-text">${renderInteractiveStory(story.content)}</div>
+        <h2 class="quiz-question">${q.question}</h2>
+        <div class="quiz-options" id="quiz-options">
+          ${q.options.map((opt, i) => 
+            `<button class="quiz-option-btn" data-index="${i}">${opt}</button>`
+          ).join('')}
+        </div>
       </div>
     `;
     
-    // Добавляем обработчики переключения переводов
-    setupTranslationToggleHandlers();
+    // Обработчик кнопки "Назад"
+    const backBtn = $("#quiz-back-btn");
+    if (backBtn) {
+      backBtn.onclick = () => {
+        openStory(story.id);
+      };
+    }
     
-    nav("story");
+    // Обработчики для кнопок ответов
+    document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+      btn.onclick = () => {
+        const selectedIndex = parseInt(btn.dataset.index, 10);
+        checkAnswer(selectedIndex, q.correctAnswer, btn);
+      };
+    });
   }
+  
+  function checkAnswer(selectedIndex, correctIndex, buttonElement) {
+    const allButtons = document.querySelectorAll('.quiz-option-btn');
+    
+    // Блокируем все кнопки после клика
+    allButtons.forEach(b => b.disabled = true);
+    
+    if (selectedIndex === correctIndex) {
+      // ✅ Правильный ответ
+      buttonElement.classList.add('correct');
+      
+      setTimeout(() => {
+        currentQuestionIndex++;
+        attemptsCount = 0; // Сбрасываем счётчик попыток
+        
+        if (currentQuestionIndex < story.questions.length) {
+          renderQuestion(currentQuestionIndex);
+        } else {
+          // Все вопросы пройдены
+          completeStory(story);
+        }
+      }, 1000);
+      
+    } else {
+      // ❌ Неправильный ответ
+      buttonElement.classList.add('incorrect');
+      attemptsCount++;
+      
+      setTimeout(() => {
+        // Сбрасываем тест на первый вопрос
+        currentQuestionIndex = 0;
+        toast("❌ Попробуйте снова с начала");
+        renderQuestion(0);
+      }, 1500);
+    }
+  }
+  
+  // Начинаем с первого вопроса
+  renderQuestion(0);
+}
+
+function completeStory(story) {
+  // Инициализируем completedStories если нет
+  if (!state.completedStories) state.completedStories = [];
+  
+  // Проверяем, проходилась ли история ранее
+  const isFirstCompletion = !state.completedStories.includes(story.id);
+  
+  // Определяем награды в зависимости от статуса
+  let xpReward, coinsReward, rewardLabel;
+  
+  if (isFirstCompletion) {
+    // Полные награды за первое прохождение
+    xpReward = story.rewards?.xp || 20;
+    coinsReward = story.rewards?.coins || 15;
+    rewardLabel = "Первое прохождение!";
+    
+    // Отмечаем историю как завершённую
+    state.completedStories.push(story.id);
+  } else {
+    // Символические награды за повторное прохождение
+    xpReward = 1;
+    coinsReward = 0;
+    rewardLabel = "Повторное прохождение";
+  }
+  
+  // Начисляем награды
+  state.xp += xpReward;
+  state.coins += coinsReward;
+  
+  // Проверяем повышение уровня
+  while (state.xp >= XP_PER_LEVEL) {
+    state.xp -= XP_PER_LEVEL;
+    state.level += 1;
+    state.coins += COINS_PER_LEVEL;
+    toast(`🎉 Уровень ${state.level}! +${COINS_PER_LEVEL} 🪙`);
+  }
+  
+  save();
+  refreshStreakDisplay();
+  markActivity();
+  
+  // Показываем экран успеха с соответствующими наградами
+  const rewards = isFirstCompletion 
+    ? [
+        { icon: "📖", label: rewardLabel },
+        { icon: "🪙", label: `+${coinsReward} монет` },
+        { icon: "⭐", label: `+${xpReward} XP` }
+      ]
+    : [
+        { icon: "🔄", label: rewardLabel },
+        { icon: "⭐", label: `+${xpReward} XP` }
+      ];
+  
+  showCompletionScreen({
+    title: isFirstCompletion ? "おめでとう!" : "よくできました!",
+    subtitle: story.title,
+    desc: isFirstCompletion ? "История успешно пройдена!" : "История перечитана!",
+    theme: "success",
+    rewards: rewards,
+    onContinue: () => {
+      nav("library");
+    }
+  });
+}
 
   // ---------- Backup / Restore ----------
   async function shareProgressBackup() {
@@ -3645,6 +4833,36 @@ syncAvatars();
   async function init() {
     loadState();
     await loadLessons();
+    
+    // Миграция v1.2.1: если в главе есть отметки чек-листа, но started=false, запускаем главу
+    if (!state.migration_v1_2_1) {
+      let migrationApplied = false;
+      LESSONS.forEach((lesson) => {
+        const cs = chState(lesson.id);
+        if (!cs.started) {
+          const hasChecks = CHECK_ITEMS.some((c) => cs.checklist[c[0]]);
+          if (hasChecks) {
+            cs.started = true;
+            lesson.words.forEach((w) => {
+              if (!state.srs[w.id]) state.srs[w.id] = SRS.newCard(w.id);
+            });
+            migrationApplied = true;
+            console.log(`✅ Миграция: глава ${lesson.id} запущена (было ${Object.keys(cs.checklist).filter(k => cs.checklist[k]).length} отметок)`);
+          }
+        }
+      });
+      
+      if (migrationApplied) {
+        state.migration_v1_2_1 = true;
+        save(true);
+        console.log("✅ Миграция v1.2.1 завершена успешно");
+        toast("🔄 Данные обновлены до новой версии");
+      } else {
+        state.migration_v1_2_1 = true;
+        save(true);
+      }
+    }
+    
     state.initialized = true; save();
 
     chatHistory = state.chatHistory || [];
@@ -3658,7 +4876,20 @@ syncAvatars();
     }
 
     // global nav bindings
-    $$("[data-nav]").forEach((el) => el.onclick = () => nav(el.dataset.nav));
+    $$("[data-nav]").forEach((el) => {
+      el.onclick = () => {
+        if (el.dataset.nav === "shop") {
+          // Для магазина открываем модальное окно
+          const modal = $("#shop-modal");
+          if (modal) {
+            modal.classList.remove("hidden");
+            renderShop(); // Рендерим товары при открытии
+          }
+        } else {
+          nav(el.dataset.nav);
+        }
+      };
+    });
     
     // Логотип лисы открывает профиль
     const logoFoxes = $$(".logo-fox");
@@ -3730,7 +4961,22 @@ syncAvatars();
     applyTheme();
     applyStreakSkin();
     scheduleNotify();
-    nav("home");
+    
+    // Устанавливаем начальное состояние истории браузера
+    history.replaceState({ screen: 'home' }, '', '');
+    nav("home", null, true); // skipHistory=true для начальной загрузки
+    
+    // Обработчик кнопки "Назад" браузера
+    window.addEventListener('popstate', (event) => {
+      if (event.state && event.state.screen) {
+        // Навигация с флагом skipHistory=true, чтобы не добавлять в историю снова
+        nav(event.state.screen, event.state.opt, true);
+      } else {
+        // Если истории нет (первоначальное состояние), возвращаемся на главную
+        nav('home', null, true);
+      }
+    });
+    
     updateSrsBadge();
     syncAvatars();
     
@@ -3873,6 +5119,11 @@ syncAvatars();
       else closeOnboarding();
     }));
   }
+
+  // Автообновление таймера квестов каждую минуту
+  setInterval(() => {
+    updateMainQuestsTimer();
+  }, 60000);
 
   document.addEventListener("DOMContentLoaded", init);
 })();

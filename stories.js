@@ -10,6 +10,22 @@
       title: "Знакомство в университете",
       titleJP: "大学で出会い",
       cover_url: "image/Story1.png",
+      questions: [
+        {
+          question: "Кто такой 学生B (студент B)?",
+          options: ["Японец", "Американец", "Китаец"],
+          correctAnswer: 1
+        },
+        {
+          question: "Какая специальность у 学生B?",
+          options: ["Японский язык", "Компьютеры", "Медицина"],
+          correctAnswer: 1
+        }
+      ],
+      rewards: {
+        xp: 20,
+        coins: 15
+      },
       content: [
         {
           sentence_id: 1,
@@ -82,6 +98,17 @@
       title: "Покупки",
       titleJP: "買い物",
       cover_url: "image/Story2.png",
+      questions: [
+        {
+          question: "Сколько стоит сумка?",
+          options: ["2000 йен", "3000 йен", "4000 йен"],
+          correctAnswer: 1
+        }
+      ],
+      rewards: {
+        xp: 20,
+        coins: 15
+      },
       content: [
         {
           sentence_id: 1,
@@ -155,6 +182,17 @@
       title: "Планы на выходные",
       titleJP: "週末の予定",
       cover_url: "image/Story3.png",
+      questions: [
+        {
+          question: "Во сколько они встретятся в библиотеке?",
+          options: ["В 2:00", "В 2:30", "В 3:00"],
+          correctAnswer: 1
+        }
+      ],
+      rewards: {
+        xp: 20,
+        coins: 15
+      },
       content: [
         {
           sentence_id: 1,
@@ -278,6 +316,17 @@
       title: "Встреча в парке",
       titleJP: "公園で会いました",
       cover_url: "image/Story4.png",
+      questions: [
+        {
+          question: "Где находится супермаркет?",
+          options: ["Рядом с парком", "Рядом с больницей", "Рядом со школой"],
+          correctAnswer: 1
+        }
+      ],
+      rewards: {
+        xp: 20,
+        coins: 15
+      },
       content: [
         {
           sentence_id: 1,
@@ -430,6 +479,17 @@
       title: "Выходные в кафе",
       titleJP: "カフェで週末",
       cover_url: "image/Story5.png",
+      questions: [
+        {
+          question: "Как часто Мэри ходит в кафе?",
+          options: ["Каждый день", "Каждую неделю", "Каждый месяц"],
+          correctAnswer: 1
+        }
+      ],
+      rewards: {
+        xp: 20,
+        coins: 15
+      },
       content: [
         {
           sentence_id: 1,
@@ -571,6 +631,17 @@
       title: "Первый день занятий",
       titleJP: "最初の授業の日",
       cover_url: "image/Story6.png",
+      questions: [
+        {
+          question: "До какого времени Мэри занималась вчера?",
+          options: ["До 10 вечера", "До 11 вечера", "До 12 ночи"],
+          correctAnswer: 2
+        }
+      ],
+      rewards: {
+        xp: 20,
+        coins: 15
+      },
       content: [
         {
           sentence_id: 1,
@@ -725,6 +796,17 @@
       title: "Новый друг в классе",
       titleJP: "クラスの新しい友達",
       cover_url: "image/Story7.png",
+      questions: [
+        {
+          question: "Что изучает новый студент?",
+          options: ["Японский язык", "Музыку", "Компьютеры"],
+          correctAnswer: 1
+        }
+      ],
+      rewards: {
+        xp: 20,
+        coins: 15
+      },
       content: [
         {
           sentence_id: 1,
@@ -870,6 +952,17 @@
       title: "Выходной день",
       titleJP: "休みの日",
       cover_url: "image/Story8.png",
+      questions: [
+        {
+          question: "Куда они планируют пойти?",
+          options: ["В кафе", "В парк на барбекю", "В библиотеку"],
+          correctAnswer: 1
+        }
+      ],
+      rewards: {
+        xp: 20,
+        coins: 15
+      },
       content: [
         {
           sentence_id: 1,
