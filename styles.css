@@ -5100,6 +5100,60 @@ rt {
   flex: 1;
 }
 
+.clue-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clue-clear {
+  background: var(--bg);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clue-clear:hover {
+  background: var(--orange-soft);
+  transform: scale(1.1);
+}
+
+.clue-clear:active {
+  transform: scale(0.95);
+}
+
+.clue-hint {
+  background: var(--bg);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clue-hint:hover {
+  background: #fff3cd;
+  transform: scale(1.1);
+}
+
+.clue-hint:active {
+  transform: scale(0.95);
+}
+
 .clue-speak {
   background: var(--orange);
   border: none;
@@ -5158,6 +5212,20 @@ rt {
   background: rgba(76, 175, 80, 0.2);
   border-color: #4caf50;
   animation: correctPulse 0.5s ease;
+}
+
+.grid-cell.correct-hint {
+  background: rgba(255, 193, 7, 0.15) !important;
+  border-color: #ffc107 !important;
+}
+
+.grid-cell.correct-hint .kana-hira {
+  color: #b58100 !important;
+}
+
+.grid-cell.correct-hint .kana-kata {
+  color: #b58100 !important;
+  opacity: 0.6;
 }
 
 .cell-number {
@@ -5337,16 +5405,125 @@ rt {
   opacity: 0.8;
 }
 
+/* ===== ЗАДАЧА 2 + 3: НОВАЯ СТРУКТУРА КРОССВОРДА С ЗУМОМ ===== */
+
+.crossword-game-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.crossword-board-area {
+  flex: 1;
+  overflow: auto;
+  background: var(--bg);
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 10px;
+  padding-bottom: 280px; /* Компенсация высоты фиксированной панели */
+}
+
+.crossword-bottom-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background: var(--bg);
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+  z-index: 100;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.crossword-bottom-panel.active {
+  transform: translateY(0);
+}
+
+.crossword-grid {
+  --cw-cell-size: 40px;
+  display: inline-grid;
+  margin: 0 auto;
+  gap: 2px;
+  max-width: max-content;
+}
+
+.crossword-grid .grid-cell {
+  width: var(--cw-cell-size);
+  height: var(--cw-cell-size);
+  aspect-ratio: 1;
+}
+
+.cw-zoom-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 5;
+}
+
+.cw-zoom-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-card);
+  color: var(--text);
+  box-shadow: var(--shadow-card);
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cw-zoom-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.cw-zoom-btn:active {
+  transform: scale(0.95);
+}
+
+/* Адаптация под мобильные */
+@media (max-width: 768px) {
+  .crossword-board-area {
+    padding: 60px 10px 10px;
+  }
+  
+  .cw-zoom-controls {
+    top: 10px;
+    right: 10px;
+  }
+  
+  .cw-zoom-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+}
+
 @media (max-width: 480px) {
   .crossword-grid {
     padding: 4px;
     gap: 1px;
   }
-  
+
   .grid-cell {
     border-width: 1px;
   }
-  
+
   .kana-hira {
     font-size: 14px;
   }
