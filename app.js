@@ -1,6 +1,16 @@
 /* app.js — Kitsune Genki main controller */
-(function () {
-  "use strict";
+import { ACHIEVEMENTS, AchievementSystem } from './achievements.js';
+import { QuestsManager } from './quests.js';
+import { STORIES } from './stories.js';
+import { StudyPlan } from './studyplan.js';
+import { API } from './services.js';
+import { SRS } from './srs.js';
+import { SessionManager } from './session-manager.js';
+
+// Экспортируем глобальные объекты для обратной совместимости
+window.SRS = SRS;
+window.QuestSystem = null; // будет инициализирован позже
+window.AchievementSystem = null; // будет инициализирован позже
 
   const LS_STATE = "kitsune_state_v1";
   const LS_LESSONS = "kitsune_lessons_v1";
@@ -3514,14 +3524,6 @@ function renderProfile() {
     return null;
   }
 
-  function getCellIndexInWord(row, col, wordData) {
-    if (wordData.direction === 'across') {
-      return col - wordData.col;
-    } else {
-      return row - wordData.row;
-    }
-  }
-
   function selectWord(wordData, crosswordData, userAnswers, completedWords) {
     const { grid, placedWords } = crosswordData;
     
@@ -3563,19 +3565,13 @@ function renderProfile() {
           const wordData = window.currentCrosswordWord;
           if (!wordData) return;
 
-          // ИСПРАВЛЕНИЕ: Запрет очистки правильно угаданных слов
-          // Проверяем, есть ли у ячеек слова класс .correct
-          for (let i = 0; i < wordData.word.length; i++) {
-            const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
-            const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
-            const cell = document.querySelector(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
-            if (cell && cell.classList.contains('correct')) {
-              return; // Слово уже правильно разгадано, не очищаем
-            }
-          }
-
           const wordAnswer = userAnswers[wordData.word.id];
           if (!wordAnswer) return;
+
+          // Запрет очистки правильно угаданных слов
+          if (wordAnswer.correct) {
+            return; // Если это конкретное слово уже правильно разгадано, игнорируем очистку
+          }
 
           // Очищаем все буквы текущего слова
           for (let i = 0; i < wordData.word.length; i++) {
@@ -5694,5 +5690,4 @@ function completeStory(story) {
     if (zoomOutBtn) zoomOutBtn.onclick = () => updateZoom(-5);
   }
 
-  document.addEventListener("DOMContentLoaded", init);
-})();
+document.addEventListener("DOMContentLoaded", init);

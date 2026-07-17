@@ -1,6 +1,6 @@
 /* srs.js — SM-2 spaced repetition algorithm (pure JS) */
-(function (global) {
-  const DAY = 86400000;
+
+const DAY = 86400000;
 
   // Create a fresh SRS card record
   function newCard(id) {
@@ -46,5 +46,4 @@
     return card.due <= (ref || Date.now());
   }
 
-  global.SRS = { newCard, review, isDue, DAY };
-})(window);
+export const SRS = { newCard, review, isDue, DAY };

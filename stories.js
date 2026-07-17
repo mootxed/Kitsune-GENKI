@@ -1,9 +1,7 @@
 /* stories.js — Graded Reading Stories for Kitsune Genki */
-(function () {
-  "use strict";
 
-  // Массив историй для изучения японского языка с интерактивными токенами
-  window.STORIES = [
+// Массив историй для изучения японского языка с интерактивными токенами
+export const STORIES = [
     {
       id: 1,
       lesson_id: 1,
@@ -1629,4 +1627,3 @@
       ]
     }
   ];
-})();
