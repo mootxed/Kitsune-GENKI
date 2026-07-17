@@ -176,7 +176,9 @@
     const paddedNumber = String(iconNumber).padStart(2, '0');
 
   return {
-    name: `${leagueName} — Ступень ${iconNumber}`,
+    name: `${leagueName} — Ранг ${iconNumber}`,
+    leagueName: leagueName,
+    levelSuffix: `Ранг ${iconNumber}`,
     icon: `${league}_${paddedNumber}.png`
   };
 }
@@ -744,6 +746,7 @@ function nav(name, opt, skipHistory = false) {
 
 // ---------- Render: Profile ----------
 let heatmapMonth = null; // текущий месяц для тепловой карты (Date object)
+let chartEndOffsetDays = 0; // смещение окна графика активности (0 = последние 14 дней до сегодня)
 let achievementsExpanded = false; // состояние раскрытия списка достижений
 
 function renderProfile() {
@@ -785,10 +788,9 @@ function renderProfile() {
   const xpPercent = Math.min((currentXP / maxXP) * 100, 100);
   
   body.innerHTML = `
-  <div class="profile-header">
+    <div class="profile-header">
     <div class="profile-avatar" id="profile-avatar-display">${state.currentAvatar || "🦊"}</div>
     <h2 class="profile-name">Kitsune Genki</h2>
-    <div class="profile-rank-name">${rankData.name}</div>
     <div class="profile-title" id="profile-title">${state.currentTitle || "Новичок"}</div>
     
       <!-- Капсула: иконка ранга перекрывает белую плашку -->
@@ -810,8 +812,7 @@ function renderProfile() {
           <div class="profile-stat-label">Уровень</div>
         </div>
         <div class="profile-stat-card">
-          <div class="profile-stat-num">${state.xp}</div>
-          <div class="profile-stat-label">XP</div>
+          <div class="profile-stat-label">${rankData.name}</div>
         </div>
         <div class="profile-stat-card">
           <div class="profile-stat-num">${state.coins}</div>
@@ -834,18 +835,14 @@ function renderProfile() {
         <div class="achievements-grid ${achievementsExpanded ? '' : 'collapsed'}" id="achievements-grid"></div>
       </div>
       <div class="profile-heatmap-wrap">
-        <div class="heatmap-streak-card">
-          <div class="heatmap-streak-icon">🔥</div>
-          <div class="heatmap-streak-stats">
-            <div class="heatmap-streak-item">
-              <div class="heatmap-streak-num">${state.streak.count}</div>
-              <div class="heatmap-streak-label">Current streak</div>
-            </div>
-            <div class="heatmap-streak-divider"></div>
-            <div class="heatmap-streak-item">
-              <div class="heatmap-streak-num">${longestStreak}</div>
-              <div class="heatmap-streak-label">Longest streak</div>
-            </div>
+        <div class="heatmap-streak-card-modern">
+          <div class="streak-modern-fire-wrap">
+            <span class="streak-modern-emoji">🔥</span>
+            <span class="streak-modern-num">${state.streak.count}</span>
+          </div>
+          <div class="streak-modern-info">
+            <div class="streak-modern-title">Текущий стрик</div>
+            <div class="streak-modern-record">Рекорд: ${longestStreak} дней</div>
           </div>
         </div>
         <div class="heatmap-calendar-card">
@@ -867,9 +864,29 @@ function renderProfile() {
           <div class="heatmap-grid" id="heatmap-grid"></div>
         </div>
   </div>
+
+    <!-- График активности повторений -->
+    <div class="card chart-card" style="position: relative;">
+      <div class="chart-header-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div>
+          <h3 style="margin:0; font-size:18px;">Активность повторений</h3>
+          <p class="muted" style="margin:4px 0 0; font-size:12px;">Количество карточек, повторенных за день.</p>
+        </div>
+        <div class="chart-nav" style="display:flex; gap:8px;">
+          <button class="heatmap-nav-btn" id="chart-prev">←</button>
+          <button class="heatmap-nav-btn" id="chart-next">→</button>
+        </div>
+      </div>
+      <div class="chart-svg-container" style="width:100%; overflow-x:auto;"></div>
+    </div>
+
+    <!-- Тултип для графика и календаря -->
+    <div id="chart-tooltip" class="chart-tooltip hidden"></div>
   `;
 
   renderAchievements();
+  renderHeatmap();
+  renderActivityChart();
     
     // Обработчик кнопки разворачивания достижений
     const expandBtn = $("#achievements-expand-btn");
@@ -909,6 +926,16 @@ function renderProfile() {
     $("#heatmap-next").onclick = () => {
       heatmapMonth.setMonth(heatmapMonth.getMonth() + 1);
       renderProfile();
+    };
+    
+    // Обработчики навигации графика активности
+    $("#chart-prev").onclick = () => {
+      chartEndOffsetDays += 7; // Сдвигаем окно на 7 дней в прошлое
+      renderActivityChart();
+    };
+    $("#chart-next").onclick = () => {
+      chartEndOffsetDays = Math.max(0, chartEndOffsetDays - 7); // Возвращаем к сегодняшнему дню (максимум 0)
+      renderActivityChart();
     };
     
     syncAvatars();
@@ -1242,14 +1269,146 @@ function renderProfile() {
       
       cell.textContent = day;
       cell.title = count > 0 ? `${key}: ${count} карточек` : key;
-      cell.onclick = () => {
-        if (count > 0) {
-          toast(`${key}: ${count} карточек 📊`);
-        }
+      cell.onclick = (e) => {
+        e.stopPropagation();
+        const tooltip = $("#chart-tooltip");
+        if (!tooltip) return;
+
+        const d = new Date(key + "T00:00:00");
+        const months = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+        
+        tooltip.innerHTML = count > 0 
+          ? `<b>${count} карточек</b><br><span style="font-size:12px; opacity:0.7;">${d.getDate()} ${months[d.getMonth()]}</span>`
+          : `<b>0 карточек</b><br><span style="font-size:12px; opacity:0.7;">${d.getDate()} ${months[d.getMonth()]}</span>`;
+
+        const rect = cell.getBoundingClientRect();
+        const bodyEl = $("#profile-body");
+        const bodyRect = bodyEl.getBoundingClientRect();
+
+        tooltip.style.left = `${rect.left - bodyRect.left + rect.width / 2}px`;
+        tooltip.style.top = `${rect.bottom - bodyRect.top + bodyEl.scrollTop + 8}px`;
+        tooltip.classList.remove("hidden");
       };
       
       grid.appendChild(cell);
     }
+  }
+
+  // Генерация SVG-графика активности
+  function generateActivityChartSVG(dates, counts) {
+    const viewBoxWidth = 500;
+    const viewBoxHeight = 340;
+    const padding = { top: 30, right: 30, bottom: 60, left: 40 };
+    const chartWidth = viewBoxWidth - padding.left - padding.right;
+    const chartHeight = viewBoxHeight - padding.top - padding.bottom;
+    
+    // Минимальный лимит для maxCount
+    const maxCount = Math.max(10, Math.max(...counts));
+    
+    // Координаты точек
+    const points = dates.map((date, i) => {
+      const x = padding.left + (i / (dates.length - 1)) * chartWidth;
+      const y = padding.top + chartHeight - (counts[i] / maxCount) * chartHeight;
+      return { x, y, count: counts[i] };
+    });
+    
+    // Линия (прямые отрезки)
+    const linePath = points.map((p, i) => 
+      `${i === 0 ? 'M' : 'L'} ${p.x},${p.y}`
+    ).join(' ');
+    
+    // Заливка под линией
+    const areaPath = `M ${padding.left},${padding.top + chartHeight} ` +
+      points.map(p => `L ${p.x},${p.y}`).join(' ') +
+      ` L ${padding.left + chartWidth},${padding.top + chartHeight} Z`;
+    
+    // Точки-кружочки
+    const circles = points.map((p, i) => 
+      `<circle cx="${p.x}" cy="${p.y}" r="6" fill="var(--orange-dark)" class="chart-point" data-count="${p.count}" data-date="${dates[i]}" />`
+    ).join('');
+    
+    // Ось X
+    const axisY = padding.top + chartHeight;
+    
+    // Подписи дат (повернутые на -45 градусов)
+    const monthNames = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+    const dateLabels = dates.map((dateStr, i) => {
+      const d = new Date(dateStr + "T00:00:00");
+      const label = `${d.getDate()} ${monthNames[d.getMonth()]}`;
+      const x = points[i].x;
+      const y = axisY + 10;
+      return `<text x="${x}" y="${y}" transform="rotate(-45, ${x}, ${y})" text-anchor="end" fill="var(--text-muted)" font-size="10" font-family="inherit">${label}</text>`;
+    }).join('');
+    
+    return `
+      <svg viewBox="0 0 500 340" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:auto;">
+        <!-- Заливка -->
+        <path d="${areaPath}" fill="var(--orange)" opacity="0.15" />
+        
+        <!-- Линия -->
+        <path d="${linePath}" stroke="var(--orange)" stroke-width="4" fill="none" />
+        
+        <!-- Ось X -->
+        <line x1="${padding.left}" y1="${axisY}" x2="${padding.left + chartWidth}" y2="${axisY}" stroke="var(--border)" stroke-width="1" />
+        
+        <!-- Точки -->
+        ${circles}
+        
+        <!-- Подписи дат -->
+        ${dateLabels}
+      </svg>
+    `;
+  }
+
+  // Рендеринг графика активности
+  function renderActivityChart() {
+    const container = $(".chart-svg-container");
+    if (!container) return;
+    
+    const today = new Date();
+    const endDate = new Date(today);
+    endDate.setDate(endDate.getDate() - chartEndOffsetDays);
+    
+    const dates = [];
+    const counts = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(endDate);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      dates.push(dateStr);
+      counts.push(state.history[dateStr] || 0);
+    }
+    
+    container.innerHTML = generateActivityChartSVG(dates, counts);
+    
+    // Обработчики для тултипа
+    $$(".chart-point").forEach(point => {
+      point.onclick = (e) => {
+        e.stopPropagation();
+        const count = point.dataset.count;
+        const dateStr = point.dataset.date;
+        const d = new Date(dateStr + "T00:00:00");
+        const months = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+        
+        const tooltip = $("#chart-tooltip");
+        tooltip.innerHTML = `<b>${count} карточек</b><br><span style="font-size:12px; opacity:0.7;">${d.getDate()} ${months[d.getMonth()]}</span>`;
+        
+        const rect = point.getBoundingClientRect();
+        const bodyEl = $("#profile-body");
+        const bodyRect = bodyEl.getBoundingClientRect();
+        
+        tooltip.style.left = `${rect.left - bodyRect.left + rect.width / 2}px`;
+        tooltip.style.top = `${rect.bottom - bodyRect.top + bodyEl.scrollTop + 8}px`;
+        tooltip.classList.remove("hidden");
+      };
+    });
+    
+    // Скрытие тултипа при клике вне графика
+    document.addEventListener("click", () => {
+      const t = $("#chart-tooltip");
+      if (t) t.classList.add("hidden");
+    });
   }
 
   // ---------- Shop ----------
@@ -2324,6 +2483,17 @@ function renderProfile() {
         const quality = parseInt(b.dataset.q, 10);
         const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
         
+        // ✅ ИСПРАВЛЕНИЕ: Обновляем progress ДО answerCard (пока card.id еще валиден)
+        const srsCard = state.srs[card.id];
+        if (srsCard) {
+          if (srsCard.progress === undefined) srsCard.progress = 0;
+          
+          if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);       // Снова: -5%
+          else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);  // Трудно: -3%
+          else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5); // Хорошо: +5%
+          else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10); // Отлично: +10%
+        }
+        
         // Трекинг для квеста "5 подряд" ДО обработки ответа
         if (window.QuestsManager && sessionManager) {
           const cardState = sessionManager.getCardState(card.id);
@@ -2343,16 +2513,6 @@ function renderProfile() {
           // Fallback на старую логику
           SRS.review(state.srs[card.id], quality);
           flashIdx += 1;
-        }
-        
-        const srsCard = state.srs[card.id];
-        if (srsCard) {
-          if (srsCard.progress === undefined) srsCard.progress = 0;
-          
-          if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);       // Снова: -5%
-          else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);  // Трудно: -3%
-          else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5); // Хорошо: +5%
-          else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10); // Отлично: +10%
         }
         
         addXP(XP_CARD);
@@ -2555,6 +2715,18 @@ function renderProfile() {
     $$("#rate .rate-btn").forEach((b) => {
       b.onclick = () => {
         const quality = parseInt(b.dataset.q, 10);
+        const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+        
+        // ✅ ИСПРАВЛЕНИЕ: Добавляем обновление progress ДО answerCard
+        const srsCard = state.srs[card.id];
+        if (srsCard) {
+          if (srsCard.progress === undefined) srsCard.progress = 0;
+          
+          if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
+          else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
+          else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
+          else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
+        }
         
         // Трекинг для квеста "5 подряд" ДО обработки ответа
         if (window.QuestsManager && sessionManager) {
@@ -2820,11 +2992,16 @@ function renderProfile() {
   }
 
   function tryGenerateCrossword(gridSize = 11) {
-    // Собираем пул разблокированных слов
+    // Собираем пул разблокированных слов (исключая дубликаты чтений)
     const unlockedWords = [];
+    const seenKana = new Set();
+
     LESSONS.forEach(lesson => {
       lesson.words.forEach(word => {
         if (isWordUnlocked(word.id) && word.writing) {
+          if (seenKana.has(word.writing)) return; // Пропускаем дубликат
+          seenKana.add(word.writing);
+
           unlockedWords.push({
             id: word.id,
             kana: word.writing,
@@ -3451,6 +3628,9 @@ function renderProfile() {
           const wordAnswer = userAnswers[wordData.word.id];
           if (!wordAnswer) return;
 
+          // Помечаем флаг подсказки ДО любых проверок и модификаций
+          wordAnswer.usedHint = true;
+
           // Если слово уже разгадано, не даём подсказку
           if (wordAnswer.correct) return;
 
@@ -3463,9 +3643,6 @@ function renderProfile() {
           }
 
           if (emptyIndices.length === 0) return;
-
-          // Помечаем флаг подсказки
-          wordAnswer.usedHint = true;
 
           const srsCard = state.srs[wordData.word.id];
           if (srsCard) {
@@ -4733,9 +4910,12 @@ function completeStory(story) {
   let toastTimer;
   function toast(msg) {
     const t = $("#toast");
-    t.textContent = msg; t.classList.remove("hidden");
+    t.textContent = msg;
+    t.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.add("hidden"), 2600);
+    toastTimer = setTimeout(() => {
+      t.classList.remove("show");
+    }, 2600);
   }
   function updateSrsBadge() {
     const n = dueCards().length;
