@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  // Base path для GitHub Pages
+  base: '/Kitsune-GENKI/',
+  
   // Корневая директория проекта
   root: '.',
   
