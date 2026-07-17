@@ -1,6 +1,4 @@
 /* studyplan.js — Study plan generator for Kitsune Genki */
-(function () {
-  "use strict";
 
   const WEIGHT_VOCAB = 1;
   const WEIGHT_GRAMMAR = 0.5;
@@ -319,9 +317,8 @@
     return { words, grammar, reading, listening, tip };
   }
 
-  window.StudyPlan = {
-    generatePlan,
-    recalcPlan,
-    getHeuristicAdvice,
-  };
-})();
+export const StudyPlan = {
+  generatePlan,
+  recalcPlan,
+  getHeuristicAdvice,
+};

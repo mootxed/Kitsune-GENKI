@@ -1,6 +1,6 @@
 /* services.js — OpenRouter chat (Google Drive удалён, используется Web Share API) */
-(function (global) {
-  const OR_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+const OR_URL = "https://openrouter.ai/api/v1/chat/completions";
   function getSystemPrompt(userLevel) {
     const level = userLevel || "N5";
     return `Ты — Kitsune Sensei, дружелюбный учитель японского языка. 
@@ -153,5 +153,4 @@ throw new Error("API вернул пустой ответ. Попробуйте 
 return content;
 }
 
-global.API = { askSensei, generateAIStory, SYSTEM_PROMPT };
-})(window);
+export const API = { askSensei, generateAIStory, SYSTEM_PROMPT, getSystemPrompt };

@@ -1,6 +1,6 @@
 /* session-manager.js — Intra-session learning logic for SRS */
-(function (global) {
-  /**
+
+/**
    * SessionManager управляет очередью карточек внутри одной сессии обучения.
    * Реализует логику краткосрочного повторения при ошибках.
    * 
@@ -218,6 +218,5 @@
     }
   }
   
-  // Экспортируем класс в глобальную область
-  global.SessionManager = SessionManager;
-})(window);
+// Экспортируем класс
+export { SessionManager };

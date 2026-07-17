@@ -1,307 +1,268 @@
 /* quests.js — Daily Quests & Weekly Challenges System */
-(function (global) {
-  "use strict";
 
-  // ========== HELPERS ==========
-  
-  /**
-   * Получить дату понедельника текущей недели в формате YYYY-MM-DD
-   */
-  function getWeekStart() {
-    const now = new Date();
-    const day = now.getDay(); // 0 = Воскресенье
-    const diff = day === 0 ? -6 : 1 - day; // Сдвиг к понедельнику
-    const monday = new Date(now);
-    monday.setDate(now.getDate() + diff);
-    monday.setHours(0, 0, 0, 0);
-    return monday.toISOString().slice(0, 10); // "YYYY-MM-DD"
-  }
+// ========== HELPERS ==========
 
-  /**
-   * Получить текущую дату в формате YYYY-MM-DD
-   */
-  function todayStr() {
-    return new Date().toISOString().slice(0, 10);
-  }
+/**
+ * Получить дату понедельника текущей недели в формате YYYY-MM-DD
+ */
+function getWeekStart() {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Воскресенье
+  const diff = day === 0 ? -6 : 1 - day; // Сдвиг к понедельнику
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday.toISOString().slice(0, 10); // "YYYY-MM-DD"
+}
 
-  /**
-   * Генерировать уникальный ID для квеста
-   */
-  function generateQuestId(type, date) {
-    return `${type}_${date}_${Math.random().toString(36).substr(2, 9)}`;
-  }
+/**
+ * Получить текущую дату в формате YYYY-MM-DD
+ */
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
 
-  // ========== QUEST GENERATORS ==========
+/**
+ * Генерировать уникальный ID для квеста
+ */
+function generateQuestId(type, date) {
+  return `${type}_${date}_${Math.random().toString(36).substr(2, 9)}`;
+}
 
-  /**
-   * Генерация ежедневных квестов (2 шт)
-   */
-  function generateDailyQuests() {
-    const today = todayStr();
-    const quests = [];
+// ========== QUEST GENERATORS ==========
 
-    // Квест 1: "Выполнить N карточек" (N = 20, 30 или 50)
-    const options = [20, 30, 50];
-    const target = options[Math.floor(Math.random() * options.length)];
-    const reward = Math.floor(target / 2);
+/**
+ * Генерация ежедневных квестов (2 шт)
+ */
+function generateDailyQuests() {
+  const today = todayStr();
+  const quests = [];
 
-    quests.push({
-      id: generateQuestId("daily_cards", today),
-      type: "daily_cards",
-      title: `Выполнить ${target} карточек`,
-      desc: "Повторите карточки в режиме SRS",
-      target: target,
-      current: 0,
-      reward: { xp: reward, coins: reward },
-      completed: false,
-      claimed: false,
-      generatedDate: today,
-      icon: "🎯"
-    });
+  // Квест 1: "Выполнить N карточек" (N = 20, 30 или 50)
+  const options = [20, 30, 50];
+  const target = options[Math.floor(Math.random() * options.length)];
+  const reward = Math.floor(target / 2);
 
-    // Квест 2: "Выполнить правильно 5 карточек подряд"
-    quests.push({
-      id: generateQuestId("daily_streak", today),
-      type: "daily_streak",
-      title: "Выполнить правильно 5 карточек подряд",
-      desc: "Ответьте Good или Easy с первой попытки",
-      target: 5,
-      current: 0,
-      reward: { xp: 15, coins: 12 },
-      completed: false,
-      claimed: false,
-      generatedDate: today,
-      icon: "🔥"
-    });
+  quests.push({
+    id: generateQuestId("daily_cards", today),
+    type: "daily_cards",
+    title: `Повтори ${target} карточек`,
+    desc: `Повтори ${target} карточек сегодня`,
+    target,
+    progress: 0,
+    completed: false,
+    claimed: false,
+    reward: { xp: reward, coins: Math.floor(reward / 2) },
+    expires: today
+  });
 
-    return quests;
-  }
+  // Квест 2: "Достичь N правильных ответов подряд" (N = 5, 10 или 15)
+  const streakOptions = [5, 10, 15];
+  const streakTarget = streakOptions[Math.floor(Math.random() * streakOptions.length)];
+  const streakReward = streakTarget * 5;
 
-  /**
-   * Генерация еженедельных челленджей (2 шт)
-   */
-  function generateWeeklyChallenges() {
-    const weekStart = getWeekStart();
-    const challenges = [];
+  quests.push({
+    id: generateQuestId("streak_correct", today),
+    type: "streak_correct",
+    title: `${streakTarget} правильных подряд`,
+    desc: `Ответь правильно на ${streakTarget} карточек подряд`,
+    target: streakTarget,
+    progress: 0,
+    completed: false,
+    claimed: false,
+    reward: { xp: streakReward, coins: Math.floor(streakReward / 2) },
+    expires: today
+  });
 
-    // Челлендж 1: "Выполнить 10 ежедневных заданий"
-    challenges.push({
-      id: generateQuestId("weekly_dailies", weekStart),
-      type: "weekly_dailies",
-      title: "Выполнить 10 ежедневных заданий",
-      desc: "Завершите 10 daily квестов за неделю",
-      target: 10,
-      current: 0,
-      reward: { xp: 100, coins: 50 },
-      completed: false,
-      claimed: false,
-      generatedDate: weekStart,
-      icon: "🗡️"
-    });
+  return quests;
+}
 
-    // Челлендж 2: "Выполнить 250 карточек за неделю"
-    challenges.push({
-      id: generateQuestId("weekly_cards", weekStart),
-      type: "weekly_cards",
-      title: "Выполнить 250 карточек за неделю",
-      desc: "Повторите 250 карточек в течение недели",
-      target: 250,
-      current: 0,
-      reward: { xp: 150, coins: 75 },
-      completed: false,
-      claimed: false,
-      generatedDate: weekStart,
-      icon: "⚔️"
-    });
+/**
+ * Генерация недельных челленджей (1 шт)
+ */
+function generateWeeklyChallenges() {
+  const weekStart = getWeekStart();
+  const challenges = [];
 
-    return challenges;
-  }
+  // Челлендж: "Поддерживать стрик всю неделю" (7 дней)
+  challenges.push({
+    id: generateQuestId("weekly_streak", weekStart),
+    type: "weekly_streak",
+    title: "Стрик на всю неделю",
+    desc: "Поддерживай ежедневный стрик 7 дней подряд",
+    target: 7,
+    progress: 0,
+    completed: false,
+    claimed: false,
+    reward: { xp: 500, coins: 250 },
+    expires: weekStart
+  });
 
-  // ========== QUEST MANAGEMENT ==========
+  return challenges;
+}
 
-  /**
-   * Инициализация квестов в state
-   */
-  function initializeQuests(state) {
-    if (!state.quests) {
-      state.quests = {
-        daily: generateDailyQuests(),
-        weekly: generateWeeklyChallenges(),
-        streakCorrect: 0,
-        weeklyCards: 0,
-        dailyCompleted: 0,
-        lastDailyReset: todayStr(),
-        lastWeeklyReset: getWeekStart()
-      };
-    }
-    
-    // Проверка: если daily квестов меньше 2, перегенерируем
-    if (!state.quests.daily || state.quests.daily.length < 2) {
-      state.quests.daily = generateDailyQuests();
-      state.quests.streakCorrect = 0;
-      state.quests.lastDailyReset = todayStr();
-    }
-  }
+// ========== STATE MANAGEMENT ==========
 
-  /**
-   * Проверка и сброс квестов при смене дня/недели
-   */
-  function checkQuestReset(state) {
-    const today = todayStr();
-    const weekStart = getWeekStart();
-
-    // Сброс ежедневных квестов
-    if (state.quests.lastDailyReset !== today) {
-      // Подсчитываем завершённые квесты для weekly challenge
-      const completedToday = state.quests.daily.filter(q => q.completed).length;
-      state.quests.dailyCompleted += completedToday;
-
-      // Генерируем новые ежедневные квесты
-      state.quests.daily = generateDailyQuests();
-      state.quests.streakCorrect = 0;
-      state.quests.lastDailyReset = today;
-    }
-
-    // Сброс еженедельных челленджей
-    if (state.quests.lastWeeklyReset !== weekStart) {
-      state.quests.weekly = generateWeeklyChallenges();
-      state.quests.weeklyCards = 0;
-      state.quests.dailyCompleted = 0;
-      state.quests.lastWeeklyReset = weekStart;
-    }
-
-    // Обновляем weekly challenge с текущими значениями
-    updateWeeklyChallenges(state);
-  }
-
-  /**
-   * Обновление прогресса квеста
-   */
-  function updateQuestProgress(state, questType, amount = 1) {
-    if (!state.quests) return;
-
-    // Обновляем ежедневные квесты
-    state.quests.daily.forEach(quest => {
-      if (quest.type === questType && !quest.completed) {
-        quest.current = Math.min(quest.current + amount, quest.target);
-        if (quest.current >= quest.target) {
-          quest.completed = true;
-        }
-      }
-    });
-
-    // Обновляем еженедельные челленджи
-    if (questType === "daily_cards" || questType === "daily_streak") {
-      state.quests.weeklyCards += amount;
-    }
-
-    updateWeeklyChallenges(state);
-  }
-
-  /**
-   * Обновление weekly challenges на основе текущих счётчиков
-   */
-  function updateWeeklyChallenges(state) {
-    if (!state.quests || !state.quests.weekly) return;
-
-    state.quests.weekly.forEach(challenge => {
-      if (challenge.completed) return;
-
-      if (challenge.type === "weekly_dailies") {
-        // Подсчитываем завершённые ежедневные квесты
-        const completedDaily = state.quests.daily.filter(q => q.completed).length;
-        challenge.current = state.quests.dailyCompleted + completedDaily;
-      } else if (challenge.type === "weekly_cards") {
-        challenge.current = state.quests.weeklyCards;
-      }
-
-      if (challenge.current >= challenge.target) {
-        challenge.completed = true;
-      }
-    });
-  }
-
-  /**
-   * Инкремент счётчика правильных ответов подряд
-   */
-  function incrementStreakCorrect(state) {
-    if (!state.quests) return;
-    state.quests.streakCorrect += 1;
-    updateQuestProgress(state, "daily_streak", 1);
-  }
-
-  /**
-   * Сброс счётчика правильных ответов подряд
-   */
-  function resetStreakCorrect(state) {
-    if (!state.quests) return;
-    state.quests.streakCorrect = 0;
-    
-    // Сбрасываем прогресс квеста "5 подряд"
-    state.quests.daily.forEach(quest => {
-      if (quest.type === "daily_streak" && !quest.completed) {
-        quest.current = 0;
-      }
-    });
-  }
-
-  /**
-   * Получить награду за квест
-   */
-  function claimQuestReward(state, questId) {
-    if (!state.quests) return null;
-
-    // Ищем квест в daily
-    let quest = state.quests.daily.find(q => q.id === questId);
-    let isDaily = true;
-
-    // Если не нашли, ищем в weekly
-    if (!quest) {
-      quest = state.quests.weekly.find(q => q.id === questId);
-      isDaily = false;
-    }
-
-    if (!quest) return null;
-    if (!quest.completed || quest.claimed) return null;
-
-    // Начисляем награду
-    const reward = quest.reward;
-    quest.claimed = true;
-
-    return {
-      xp: reward.xp,
-      coins: reward.coins,
-      questTitle: quest.title
+/**
+ * Инициализация квестов (если их нет)
+ */
+function initializeQuests(state) {
+  if (!state.quests) {
+    state.quests = {
+      daily: generateDailyQuests(),
+      weekly: generateWeeklyChallenges(),
+      lastReset: todayStr(),
+      weekStart: getWeekStart(),
+      completedDaily: 0,
+      completedWeekly: 0,
+      streakCorrect: 0 // Текущий стрик правильных ответов
     };
   }
+}
 
-  /**
-   * Получить оставшееся время до сброса (в часах)
-   */
-  function getTimeUntilReset() {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    
-    const diff = tomorrow - now;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    
-    return `${hours}h left`;
+/**
+ * Проверка и сброс квестов (вызывается при загрузке приложения)
+ */
+function checkQuestReset(state) {
+  if (!state.quests) {
+    initializeQuests(state);
+    return;
   }
 
-  // ========== EXPORT ==========
-  
-  global.QuestsManager = {
-    initializeQuests,
-    checkQuestReset,
-    updateQuestProgress,
-    incrementStreakCorrect,
-    resetStreakCorrect,
-    claimQuestReward,
-    getTimeUntilReset,
-    getWeekStart,
-    todayStr
-  };
+  const today = todayStr();
+  const currentWeekStart = getWeekStart();
 
-})(window);
+  // Сброс ежедневных квестов
+  if (state.quests.lastReset !== today) {
+    // Подсчитываем завершённые квесты за вчера
+    const completedYesterday = state.quests.daily.filter(q => q.completed).length;
+    state.quests.completedDaily = (state.quests.completedDaily || 0) + completedYesterday;
+
+    // Генерируем новые ежедневные квесты
+    state.quests.daily = generateDailyQuests();
+    state.quests.lastReset = today;
+    state.quests.streakCorrect = 0; // Сбрасываем стрик правильных ответов
+  }
+
+  // Сброс недельных челленджей
+  if (state.quests.weekStart !== currentWeekStart) {
+    // Подсчитываем завершённые челленджи за прошлую неделю
+    const completedLastWeek = state.quests.weekly.filter(q => q.completed).length;
+    state.quests.completedWeekly = (state.quests.completedWeekly || 0) + completedLastWeek;
+
+    // Генерируем новые недельные челленджи
+    state.quests.weekly = generateWeeklyChallenges();
+    state.quests.weekStart = currentWeekStart;
+  }
+}
+
+/**
+ * Обновление прогресса квеста
+ */
+function updateQuestProgress(state, questType, incrementValue = 1) {
+  if (!state.quests) return;
+
+  // Обновляем ежедневные квесты
+  state.quests.daily.forEach(quest => {
+    if (quest.type === questType && !quest.completed) {
+      quest.progress += incrementValue;
+      if (quest.progress >= quest.target) {
+        quest.progress = quest.target;
+        quest.completed = true;
+      }
+    }
+  });
+
+  // Обновляем недельные челленджи
+  state.quests.weekly.forEach(quest => {
+    if (quest.type === questType && !quest.completed) {
+      quest.progress += incrementValue;
+      if (quest.progress >= quest.target) {
+        quest.progress = quest.target;
+        quest.completed = true;
+      }
+    }
+  });
+}
+
+/**
+ * Увеличить стрик правильных ответов
+ */
+function incrementStreakCorrect(state) {
+  if (!state.quests) return;
+  
+  state.quests.streakCorrect = (state.quests.streakCorrect || 0) + 1;
+  
+  // Обновляем прогресс квеста "streak_correct"
+  state.quests.daily.forEach(quest => {
+    if (quest.type === "streak_correct" && !quest.completed) {
+      quest.progress = state.quests.streakCorrect;
+      if (quest.progress >= quest.target) {
+        quest.progress = quest.target;
+        quest.completed = true;
+      }
+    }
+  });
+}
+
+/**
+ * Сбросить стрик правильных ответов
+ */
+function resetStreakCorrect(state) {
+  if (!state.quests) return;
+  state.quests.streakCorrect = 0;
+}
+
+/**
+ * Забрать награду за квест
+ */
+function claimQuestReward(state, questId) {
+  if (!state.quests) return null;
+
+  // Ищем квест в ежедневных
+  let quest = state.quests.daily.find(q => q.id === questId);
+  
+  // Если не нашли, ищем в недельных
+  if (!quest) {
+    quest = state.quests.weekly.find(q => q.id === questId);
+  }
+
+  if (!quest || !quest.completed || quest.claimed) {
+    return null;
+  }
+
+  // Помечаем квест как забранный
+  quest.claimed = true;
+
+  // Возвращаем награду
+  return quest.reward;
+}
+
+/**
+ * Получить время до сброса (для UI)
+ */
+function getTimeUntilReset() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  
+  const diff = tomorrow - now;
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  
+  return `${hours}h left`;
+}
+
+// ========== EXPORT ==========
+
+export const QuestsManager = {
+  initializeQuests,
+  checkQuestReset,
+  updateQuestProgress,
+  incrementStreakCorrect,
+  resetStreakCorrect,
+  claimQuestReward,
+  getTimeUntilReset,
+  getWeekStart,
+  todayStr
+};
