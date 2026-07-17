@@ -176,17 +176,35 @@
       // Формула: baseSteps / sessionLapses, но минимум 1
       const backSteps = Math.max(1, Math.floor(baseSteps / item.sessionLapses));
       
+      // Находим незавершённые карточки после текущей позиции (ДО удаления)
+      const afterCurrent = this.queue.slice(currentIndex + 1).filter(i => !i.completed);
+      
       // Убираем карточку из текущей позиции
       this.queue.splice(currentIndex, 1);
       
-      // Находим незавершённые карточки после текущей позиции
-      const afterCurrent = this.queue.slice(currentIndex).filter(i => !i.completed);
+      // Вычисляем новую позицию: минимум на 1 позицию вперёд от текущей
+      // После удаления: currentIndex указывает на следующий элемент
+      const desiredPosition = currentIndex + Math.max(1, backSteps);
       
-      // Вычисляем новую позицию (не дальше конца очереди)
-      const newPosition = Math.min(
-        currentIndex + backSteps,
-        currentIndex + afterCurrent.length
-      );
+      // Если afterCurrent пуст (карточка была последней незавершённой),
+      // вставляем перед последней завершённой карточкой, чтобы гарантировать сдвиг
+      let maxPosition;
+      if (afterCurrent.length === 0) {
+        // Ищем последнюю завершённую карточку
+        let lastCompletedIndex = -1;
+        for (let i = this.queue.length - 1; i >= 0; i--) {
+          if (this.queue[i].completed) {
+            lastCompletedIndex = i;
+            break;
+          }
+        }
+        // Вставляем перед ней, или в конец если завершённых нет
+        maxPosition = lastCompletedIndex >= 0 ? lastCompletedIndex : this.queue.length;
+      } else {
+        maxPosition = currentIndex + afterCurrent.length;
+      }
+      
+      const newPosition = Math.min(desiredPosition, maxPosition);
       
       // Вставляем карточку на новую позицию
       this.queue.splice(newPosition, 0, item);

@@ -2,7 +2,7 @@
 
 export const ACHIEVEMENTS = [
   // Стартовые достижения
-  { id: "first_step", emoji: "👣", title: "Первый шаг", desc: "Начни свою первую главу", check: (s) => Object.values(s.chapters).some(c => c.started), rewards: { xp: 50, coins: 30 } },
+  { id: "first_step", emoji: "👣", title: "Первый шаг", desc: "Начни свою первую главу", check: (s) => s.chapters && Object.keys(s.chapters).length > 0, rewards: { xp: 50, coins: 30 } },
   { id: "first_card", emoji: "🎴", title: "Первая карточка", desc: "Повтори свою первую SRS карточку", check: (s) => s.dailyCards > 0, rewards: { xp: 50, coins: 30 } },
   { id: "first_streak", emoji: "🔥", title: "День первый", desc: "Начни свой первый стрик", check: (s) => s.streak.count >= 1, rewards: { xp: 50, coins: 30 } },
   
