@@ -28,7 +28,7 @@ jobs:
       
       # Шаг 3: Устанавливаем зависимости
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       
       # Шаг 4: Запускаем тесты
       - name: Run tests
