@@ -1,9 +1,9 @@
 /* ui/chapter.js — Chapter screen */
 import { state, save, chState } from '../state/store.js';
 import { refreshStreakDisplay } from './shared.js';
-import { $, $$, toast } from '../src/utils.js';
-import { allCards, dueCards } from '../srs.js';
-import { XP_CHECK, XP_CHAPTER_FULL, appAddXP } from '../src/xp-system.js';
+import { $, $$ } from '../src/utils.js';
+import { allCards, dueCards } from '../src/srs-helpers.js';
+import { XP_CHECK, XP_CHAPTER_FULL, addXP } from '../src/xp-system.js';
 import { CHECK_ITEMS, getLesson, startChapter, markActivity } from './home.js';
 
 // ---------- Render: Chapter ----------

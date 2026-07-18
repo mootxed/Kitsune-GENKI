@@ -1,9 +1,9 @@
 /* ui/home.js — Home screen */
 import { state, save, chState } from '../state/store.js';
 import { refreshStreakDisplay, syncAvatars, updateSrsBadge } from './shared.js';
-import { $, todayStr, pluralDays, toast } from '../src/utils.js';
-import { dueCards, allCards } from '../srs.js';
-import { SRS } from '../src/srs-helpers.js';
+import { $, todayStr, pluralDays } from '../src/utils.js';
+import { dueCards, allCards } from '../src/srs-helpers.js';
+import { SRS } from '../srs.js';
 
 // ---------- Constants ----------
 const LS_LESSONS = "kitsune_lessons_v1";

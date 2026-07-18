@@ -1,6 +1,10 @@
 // ui/shop.js - Модуль магазина внутриигровых предметов
 
-import { $, $$, toast, syncAvatars, applyStreakSkin, applyCustomTheme } from './shared.js';
+import { $ } from '../src/utils.js';
+import { syncAvatars, applyStreakSkin, applyCustomTheme } from './shared.js';
+
+// Локальный контекст зависимостей
+let deps = null;
 
 // Глобальная переменная для текущей вкладки магазина
 let shopTab = "avatars";
@@ -45,7 +49,10 @@ const SHOP_ITEMS = [
 
 // Главная функция рендеринга магазина
 export function renderShop(state, dependencies) {
-  const { save } = dependencies;
+  if (dependencies) deps = dependencies;
+  const { save } = deps;
+  const toast = deps?.toast || window.toast || (() => {});
+  const $$ = deps?.$$ || window.$$ || ((s) => Array.from(document.querySelectorAll(s)));
   
   const body = $("#shop-body");
   if (!body) return;

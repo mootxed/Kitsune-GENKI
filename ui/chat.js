@@ -1,7 +1,11 @@
 // ui/chat.js - Модуль AI-чата с сенсеем
 
-import { $, $$, nav, toast, markActivity, syncAvatars } from './shared.js';
+import { $ } from '../src/utils.js';
+import { syncAvatars } from './shared.js';
 import { API } from '../services.js';
+
+// Локальный контекст зависимостей
+let deps = null;
 
 // Глобальные переменные модуля
 let chatHistory = [];
@@ -10,7 +14,12 @@ let chatSending = false;
 
 // Функция рендеринга главного экрана сенсея
 export function renderSensei(state, dependencies) {
-  const { CHECK_ITEMS } = dependencies;
+  if (dependencies) deps = dependencies;
+  const { CHECK_ITEMS, save, todayStr } = deps;
+  const $$ = deps?.$$ || window.$$ || ((s) => Array.from(document.querySelectorAll(s)));
+  const toast = deps?.toast || window.toast || (() => {});
+  const nav = deps?.nav || window.nav || (() => {});
+  const markActivity = deps?.markActivity || window.markActivity || (() => {});
   
   $$("[data-senseitab]").forEach(t => t.classList.toggle("active", t.dataset.senseitab === senseiTab));
 
