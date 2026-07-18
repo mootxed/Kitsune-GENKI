@@ -38,6 +38,7 @@ import {
   downloadJSON,
   shareJSON,
 } from './src/backup-manager.js';
+import { speakJapanese, stopSpeaking } from './src/audio-helper.js';
 
 // State модуль
 import {
@@ -87,6 +88,8 @@ window.QuestSystem = null; // будет инициализирован позж
 window.AchievementSystem = null; // будет инициализирован позже
 window.Achievements = null; // будет инициализирован позже
 window.QuestsManager = null; // будет инициализирован позже
+window.speakJapanese = speakJapanese; // Озвучка японского текста
+window.stopSpeaking = stopSpeaking; // Остановка озвучки
 
 // ===== КОНСТАНТЫ =====
 const LS_STATE = 'kitsune_state_v1';
@@ -193,6 +196,10 @@ function createDependencies() {
 
     // Settings
     renderSettings,
+
+    // Audio
+    speakJapanese,
+    stopSpeaking,
   };
 }
 
