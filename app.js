@@ -7,6 +7,12 @@ import { StudyPlan } from './studyplan.js';
 import { API } from './services.js';
 import { SRS } from './srs.js';
 import { SessionManager } from './session-manager.js';
+import { $, $$, todayStr, formatTimeUntilReset, pluralDays, monthLabel, heatmapLevel } from './src/utils.js';
+import {
+  XP_PER_LEVEL, XP_CARD, XP_CHECK, XP_CHAPTER_FULL, COINS_PER_LEVEL,
+  addXP, getUserRankData,
+} from './src/xp-system.js';
+import { cardChapter, wordById, isWordUnlocked, dueCards, allCards } from './src/srs-helpers.js';
 
 // Экспортируем глобальные объекты для обратной совместимости
 window.SRS = SRS;
@@ -15,20 +21,7 @@ window.AchievementSystem = null; // будет инициализирован п
 
   const LS_STATE = "kitsune_state_v1";
   const LS_LESSONS = "kitsune_lessons_v1";
-  const $ = (s, r) => (r || document).querySelector(s);
-  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
-  const todayStr = () => new Date().toISOString().slice(0, 10);
-  const XP_PER_LEVEL = 100;
-  const XP_CARD = 1;
-  const XP_CHECK = 20;
-  const XP_CHAPTER_FULL = 100;
-  const COINS_PER_LEVEL = 50;
   const DRAWING_MODE_PROBABILITY = 0.2; // 20% шанс режима рисования
-
-  const MONTHS_RU = [
-    "Январь","Февраль","Март","Апрель","Май","Июнь",
-    "Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"
-  ];
 
   // Canonical Genki chapter names (for display flavour)
   const CH_NAMES = {
@@ -147,52 +140,12 @@ window.AchievementSystem = null; // будет инициализирован п
   }
 
   // ---------- XP & Level ----------
-  function addXP(amount) {
-    state.xp += amount;
-    while (state.xp >= XP_PER_LEVEL) {
-      state.xp -= XP_PER_LEVEL;
-      state.level += 1;
-      state.coins += COINS_PER_LEVEL;
-      toast(`🎉 Уровень ${state.level}! +${COINS_PER_LEVEL} 🪙`);
-    }
-    save();
+  function appAddXP(amount) {
+    appAddXP(amount, state, {
+      onLevelUp: (level) => toast(`🎉 Уровень ${level}! +${COINS_PER_LEVEL} 🪙`),
+      onSave: save,
+    });
   }
-
-  // ---------- Rank System ----------
-  function getUserRankData(level) {
-    // Защита от выхода за рамки (максимум 96 уровень для расчета значков)
-    const effectiveLevel = Math.max(1, Math.min(96, level));
-
-    // Определяем лигу (каждая лига длится 24 уровня)
-    let league = "alpha";
-    let leagueName = "Альфа";
-    let baseLevel = effectiveLevel;
-
-    if (effectiveLevel > 72) {
-      league = "delta";
-      leagueName = "Дельта Мастер";
-      baseLevel = effectiveLevel - 72;
-    } else if (effectiveLevel > 48) {
-      league = "gamma";
-      leagueName = "Гамма";
-      baseLevel = effectiveLevel - 48;
-    } else if (effectiveLevel > 24) {
-      league = "beta";
-      leagueName = "Бета";
-      baseLevel = effectiveLevel - 24;
-    }
-
-    // Определяем номер значка от 01 до 12 (растет каждые 2 уровня)
-    const iconNumber = Math.ceil(baseLevel / 2);
-    const paddedNumber = String(iconNumber).padStart(2, '0');
-
-  return {
-    name: `${leagueName} — Ранг ${iconNumber}`,
-    leagueName: leagueName,
-    levelSuffix: `Ранг ${iconNumber}`,
-    icon: `${league}_${paddedNumber}.png`
-  };
-}
 
 // ===== COMPLETION SCREEN (ЭКРАН УСПЕХА) =====
 function showCompletionScreen(options) {
@@ -393,11 +346,6 @@ const LS_LESSON_VERSION = "kitsune_lessons_version_v1";
     save();
   }
   
-  function pluralDays(n) {
-    if (n % 10 === 1 && n % 100 !== 11) return "день";
-    if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return "дня";
-    return "дней";
-  }
   function refreshStreakDisplay() {
     const s = state.streak;
     let shown = s.count;
@@ -476,23 +424,6 @@ const LS_LESSON_VERSION = "kitsune_lessons_version_v1";
   }
 
   // ---------- SRS helpers ----------
-  function dueCards(chapterId) {
-    const now = Date.now();
-    const seen = new Set();
-    return Object.values(state.srs).filter((c) => {
-      if (chapterId && cardChapter(c.id) !== chapterId) return false;
-      if (seen.has(c.id)) return false;
-      seen.add(c.id);
-      return SRS.isDue(c, now);
-    });
-  }
-  function cardChapter(cardId) {
-    const m = /^L(\d+)_/.exec(cardId);
-    return m ? parseInt(m[1], 10) : null;
-  }
-  function allCards(chapterId) {
-    return Object.values(state.srs).filter((c) => !chapterId || cardChapter(c.id) === chapterId);
-  }
   function startChapter(id) {
     const cs = chState(id);
     if (cs.started) return;
@@ -504,23 +435,6 @@ const LS_LESSON_VERSION = "kitsune_lessons_version_v1";
     markActivity();
     toast("Глава начата! Слова добавлены в SRS 🎴");
   }
-  function wordById(id) {
-    for (const l of LESSONS) { const w = l.words.find((x) => x.id === id); if (w) return w; }
-    return null;
-  }
-  
-  // Проверка доступности слова на основе прогресса пользователя
-  function isWordUnlocked(wordId) {
-    const chapterId = cardChapter(wordId);
-    if (!chapterId) return true; // Если не можем определить главу, разрешаем доступ
-    const chapter = state.chapters[chapterId];
-    if (!chapter) return false;
-    
-    // Корректно считаем выполненные пункты в объекте checklist
-    const completedLessons = Object.values(chapter.checklist || {}).filter(val => val === true).length;
-    return completedLessons >= 3;
-  }
-
   // ---------- Navigation (Router Integration) ----------
   let router = null;
 
@@ -536,20 +450,6 @@ const LS_LESSON_VERSION = "kitsune_lessons_version_v1";
     });
   }
 
-  // ---------- Format Time Until Reset ----------
-  function formatTimeUntilReset() {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    
-    const diff = tomorrow - now;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
-    return `⏰ ${hours}ч ${minutes}м`;
-  }
-
   // ---------- Update Main Quests Timer ----------
   function updateMainQuestsTimer() {
     const timerEl = document.getElementById("main-quests-timer");
@@ -562,8 +462,8 @@ const LS_LESSON_VERSION = "kitsune_lessons_version_v1";
   function renderHome() {
     refreshStreakDisplay();
     updateMainQuestsTimer();
-    const due = dueCards().length;
-    const total = allCards().length;
+    const due = dueCards(state.srs).length;
+    const total = allCards(state.srs).length;
     $("#stat-due").textContent = due;
     $("#stat-cards").textContent = total;
     $("#stat-chapters").textContent = LESSONS.length;
@@ -920,18 +820,6 @@ function renderProfile() {
     };
     
     syncAvatars();
-  }
-
-  function monthLabel(date) {
-    return `${MONTHS_RU[date.getMonth()]} ${date.getFullYear()}`;
-  }
-
-  function heatmapLevel(count) {
-    if (count === 0) return "0";
-    if (count <= 2) return "1";
-    if (count <= 5) return "2";
-    if (count <= 10) return "3";
-    return "4";
   }
 
   function renderAchievements() {
@@ -1570,8 +1458,8 @@ function renderProfile() {
     const body = $("#chapter-body");
     const items = CHECK_ITEMS.length;
     const done = CHECK_ITEMS.filter((c) => cs.checklist[c[0]]).length;
-    const total = allCards(id).length;
-    const due = dueCards(id).length;
+    const total = allCards(state.srs, id).length;
+    const due = dueCards(state.srs, id).length;
 
     const startBlock = cs.started
       ? `<div class="card srs-mini">
@@ -1652,12 +1540,12 @@ function renderProfile() {
         cs.checklist[k] = true;
         
         // XP награды за чек-лист
-        addXP(XP_CHECK);
+        appAddXP(XP_CHECK);
         toast(`+${XP_CHECK} XP за чек-лист!`);
         
         const doneCount = CHECK_ITEMS.filter((c) => cs.checklist[c[0]]).length;
         if (doneCount === CHECK_ITEMS.length) {
-          addXP(XP_CHAPTER_FULL);
+          appAddXP(XP_CHAPTER_FULL);
           toast(`🎉 Глава пройдена! +${XP_CHAPTER_FULL} XP!`);
         }
         
@@ -1682,7 +1570,7 @@ function renderProfile() {
   
   function startFlash(chapterId) {
     flashCtx = chapterId || null;
-    const dueCardsList = dueCards(chapterId);
+    const dueCardsList = dueCards(state.srs, chapterId);
     if (dueCardsList.length === 0) { toast("Нет карточек к повторению"); return; }
     
     // Сбрасываем состояние режима рисования
@@ -1699,8 +1587,8 @@ function renderProfile() {
   }
   function renderSRSHome() {
     const body = $("#srs-body");
-    const due = dueCards();
-    const total = allCards().length;
+    const due = dueCards(state.srs);
+    const total = allCards(state.srs).length;
     
     // Обновляем активное состояние табов (табы теперь в HTML)
     const tabsContainer = $("#srs-tabs-container");
@@ -1737,8 +1625,8 @@ function renderProfile() {
     const content = $("#srs-body");
     if (!content) return;
     
-    const due = dueCards();
-    const total = allCards().length;
+    const due = dueCards(state.srs);
+    const total = allCards(state.srs).length;
     
     if (total === 0) {
       content.innerHTML = emptyState("🎴", "Пока нет карточек", "Начните главу на Главном экране, чтобы добавить слова в повторение.");
@@ -1820,7 +1708,7 @@ function renderProfile() {
       
       const wordsHtml = filteredWords.map(word => {
         // Проверяем доступность слова
-        const isUnlocked = isWordUnlocked(word.id);
+        const isUnlocked = isWordUnlocked(word.id, state.chapters);
         const chapterId = cardChapter(word.id);
         
         // Вычисляем прогресс из state.srs
@@ -1907,7 +1795,7 @@ function renderProfile() {
           return;
         }
         
-        const word = wordById(wordId);
+        const word = wordById(wordId, LESSONS);
         if (word) openDictionaryModal(word);
       };
     });
@@ -2303,7 +2191,7 @@ function renderProfile() {
             flashIdx += 1;
           }
           
-          addXP(XP_CARD);
+          appAddXP(XP_CARD);
           save(true);
           markActivity();
           flashRevealed = false;
@@ -2496,7 +2384,7 @@ function renderProfile() {
           flashIdx += 1;
         }
         
-        addXP(XP_CARD);
+        appAddXP(XP_CARD);
         save(true);
         markActivity();
         flashRevealed = false;
@@ -2564,7 +2452,7 @@ function renderProfile() {
         return;
       }
     }
-    const w = wordById(card.id);
+    const w = wordById(card.id, LESSONS);
     if (!w) {
       toast("Ошибка: карточка не найдена");
       flashIdx += 1; renderFlash();
@@ -2732,7 +2620,7 @@ function renderProfile() {
           flashIdx += 1;
         }
         
-        addXP(XP_CARD);
+        appAddXP(XP_CARD);
         save(true); 
         markActivity();
         flashRevealed = false;
@@ -2744,7 +2632,7 @@ function renderProfile() {
 
   // ---------- Extra Review (Custom Study) ----------
   function startExtraReview() {
-    const all = allCards();
+    const all = allCards(state.srs);
     if (all.length === 0) {
       toast("Нет изученных карточек. Сначала начните главу.");
       return;
@@ -2909,7 +2797,7 @@ function renderProfile() {
       .sort((a, b) => (a.easeFactor + a.lapses) - (b.easeFactor + b.lapses))
       .slice(0, limit)
       .map(card => {
-        const word = wordById(card.id);
+        const word = wordById(card.id, LESSONS);
         return word ? (word.kanji || word.writing) : null;
       })
       .filter(Boolean);
@@ -2979,7 +2867,7 @@ function renderProfile() {
 
     LESSONS.forEach(lesson => {
       lesson.words.forEach(word => {
-        if (isWordUnlocked(word.id) && word.writing) {
+        if (isWordUnlocked(word.id, state.chapters) && word.writing) {
           if (seenKana.has(word.writing)) return; // Пропускаем дубликат
           seenKana.add(word.writing);
 
@@ -3840,7 +3728,7 @@ function renderProfile() {
         // Начисляем награду только за активное слово
         if (pw.word.id === wordData.word.id) {
           markActivity();
-          addXP(XP_CHECK);
+          appAddXP(XP_CHECK);
           toast('✅ Правильно!');
           
           // Добавляем в завершённые
@@ -3894,7 +3782,7 @@ function renderProfile() {
     const coinsReward = Math.floor(xpReward / 10);
 
     // Начисляем награды в глобальное состояние игрока и сохраняем прогресс
-    addXP(xpReward);
+    appAddXP(xpReward);
     state.coins = (state.coins || 0) + coinsReward;
     save();
 
@@ -4885,7 +4773,7 @@ function completeStory(story) {
     }, 2600);
   }
   function updateSrsBadge() {
-    const n = dueCards().length;
+    const n = dueCards(state.srs).length;
     const b = $("#tab-srs-badge");
     b.textContent = n > 9 ? "9+" : n;
     b.classList.toggle("hidden", n === 0);

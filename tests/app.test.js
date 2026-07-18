@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import {
+  XP_PER_LEVEL,
+  COINS_PER_LEVEL,
+  addXP,
+  getUserRankData,
+  xpToNextLevel,
+} from '../src/xp-system.js';
 
-// Константы из app.js
-const XP_PER_LEVEL = 100;
-const COINS_PER_LEVEL = 50;
-
-// Мокаем функции из app.js для тестирования
 describe('App - XP and Level System', () => {
   let state;
   let levelUpCallbacks;
@@ -18,53 +20,48 @@ describe('App - XP and Level System', () => {
     levelUpCallbacks = [];
   });
 
-  // Функция addXP из app.js (упрощённая версия для тестов)
-  function addXP(amount) {
-    state.xp += amount;
-    while (state.xp >= XP_PER_LEVEL) {
-      state.xp -= XP_PER_LEVEL;
-      state.level += 1;
-      state.coins += COINS_PER_LEVEL;
-      levelUpCallbacks.forEach(cb => cb(state.level));
-    }
+  function testAddXP(amount) {
+    addXP(amount, state, {
+      onLevelUp: (level) => levelUpCallbacks.forEach(cb => cb(level)),
+    });
   }
 
   describe('addXP', () => {
     it('должен добавлять XP к текущему значению', () => {
-      addXP(50);
+      testAddXP(50);
       expect(state.xp).toBe(50);
     });
 
     it('должен повышать уровень при достижении XP_PER_LEVEL', () => {
-      addXP(100);
+      testAddXP(100);
       expect(state.level).toBe(2);
       expect(state.xp).toBe(0);
     });
 
     it('должен добавлять монеты при повышении уровня', () => {
-      addXP(100);
+      testAddXP(100);
       expect(state.coins).toBe(COINS_PER_LEVEL);
     });
 
     it('должен переносить остаток XP на следующий уровень', () => {
-      addXP(150);
+      testAddXP(150);
       expect(state.level).toBe(2);
       expect(state.xp).toBe(50);
     });
 
     it('должен повышать несколько уровней за раз', () => {
-      addXP(350);
+      testAddXP(350);
       expect(state.level).toBe(4); // 1 + 3 уровня
       expect(state.xp).toBe(50); // Остаток от 350
       expect(state.coins).toBe(COINS_PER_LEVEL * 3);
     });
 
     it('должен корректно работать с дробными значениями XP', () => {
-      addXP(99.5);
+      testAddXP(99.5);
       expect(state.level).toBe(1);
       expect(state.xp).toBe(99.5);
 
-      addXP(0.5);
+      testAddXP(0.5);
       expect(state.level).toBe(2);
       expect(state.xp).toBe(0);
     });
@@ -73,7 +70,7 @@ describe('App - XP and Level System', () => {
       const levelUpSpy = vi.fn();
       levelUpCallbacks.push(levelUpSpy);
 
-      addXP(250); // Должно быть 2 повышения уровня
+      testAddXP(250); // Должно быть 2 повышения уровня
 
       expect(levelUpSpy).toHaveBeenCalledTimes(2);
       expect(levelUpSpy).toHaveBeenNthCalledWith(1, 2);
@@ -82,7 +79,7 @@ describe('App - XP and Level System', () => {
 
     it('должен корректно работать при добавлении малого количества XP', () => {
       for (let i = 0; i < 100; i++) {
-        addXP(1);
+        testAddXP(1);
       }
       expect(state.level).toBe(2);
       expect(state.xp).toBe(0);
@@ -104,8 +101,6 @@ describe('App - XP and Level System', () => {
     });
 
     it('должен рассчитывать сколько XP нужно до следующего уровня', () => {
-      const xpToNextLevel = (currentXP) => XP_PER_LEVEL - currentXP;
-
       state.xp = 0;
       expect(xpToNextLevel(state.xp)).toBe(100);
 
@@ -119,39 +114,6 @@ describe('App - XP and Level System', () => {
 });
 
 describe('App - Rank System', () => {
-  // Функция getUserRankData из app.js
-  function getUserRankData(level) {
-    const effectiveLevel = Math.max(1, Math.min(96, level));
-
-    let league = 'alpha';
-    let leagueName = 'Альфа';
-    let baseLevel = effectiveLevel;
-
-    if (effectiveLevel > 72) {
-      league = 'delta';
-      leagueName = 'Дельта Мастер';
-      baseLevel = effectiveLevel - 72;
-    } else if (effectiveLevel > 48) {
-      league = 'gamma';
-      leagueName = 'Гамма';
-      baseLevel = effectiveLevel - 48;
-    } else if (effectiveLevel > 24) {
-      league = 'beta';
-      leagueName = 'Бета';
-      baseLevel = effectiveLevel - 24;
-    }
-
-    const iconNumber = Math.ceil(baseLevel / 2);
-    const paddedNumber = String(iconNumber).padStart(2, '0');
-
-    return {
-      name: `${leagueName} — Ранг ${iconNumber}`,
-      leagueName: leagueName,
-      levelSuffix: `Ранг ${iconNumber}`,
-      icon: `${league}_${paddedNumber}.png`,
-    };
-  }
-
   describe('getUserRankData', () => {
     it('должен возвращать Альфа лигу для уровней 1-24', () => {
       const rank1 = getUserRankData(1);
@@ -204,7 +166,7 @@ describe('App - Rank System', () => {
     it('должен ограничивать максимальный уровень 96', () => {
       const rank100 = getUserRankData(100);
       const rank96 = getUserRankData(96);
-      
+
       expect(rank100).toEqual(rank96);
       expect(rank100.leagueName).toBe('Дельта Мастер');
       expect(rank100.icon).toBe('delta_12.png');
@@ -213,7 +175,7 @@ describe('App - Rank System', () => {
     it('должен ограничивать минимальный уровень 1', () => {
       const rank0 = getUserRankData(0);
       const rank1 = getUserRankData(1);
-      
+
       expect(rank0).toEqual(rank1);
       expect(rank0.leagueName).toBe('Альфа');
       expect(rank0.icon).toBe('alpha_01.png');
@@ -297,18 +259,9 @@ describe('App - XP константы', () => {
 describe('Интеграционные сценарии', () => {
   it('должен корректно обрабатывать прогрессию от уровня 1 до 10', () => {
     const state = { level: 1, xp: 0, coins: 0 };
-    
-    function addXP(amount) {
-      state.xp += amount;
-      while (state.xp >= XP_PER_LEVEL) {
-        state.xp -= XP_PER_LEVEL;
-        state.level += 1;
-        state.coins += COINS_PER_LEVEL;
-      }
-    }
 
     // Симулируем накопление 900 XP
-    addXP(900);
+    addXP(900, state);
 
     expect(state.level).toBe(10);
     expect(state.xp).toBe(0);
@@ -316,72 +269,30 @@ describe('Интеграционные сценарии', () => {
   });
 
   it('должен менять ранг при повышении уровня через границу лиги', () => {
-    function getUserRankData(level) {
-      const effectiveLevel = Math.max(1, Math.min(96, level));
-      let league = 'alpha';
-      let leagueName = 'Альфа';
-      let baseLevel = effectiveLevel;
-
-      if (effectiveLevel > 72) {
-        league = 'delta';
-        leagueName = 'Дельта Мастер';
-        baseLevel = effectiveLevel - 72;
-      } else if (effectiveLevel > 48) {
-        league = 'gamma';
-        leagueName = 'Гамма';
-        baseLevel = effectiveLevel - 48;
-      } else if (effectiveLevel > 24) {
-        league = 'beta';
-        leagueName = 'Бета';
-        baseLevel = effectiveLevel - 24;
-      }
-
-      const iconNumber = Math.ceil(baseLevel / 2);
-      return { leagueName, iconNumber };
-    }
-
     const rank24 = getUserRankData(24);
     expect(rank24.leagueName).toBe('Альфа');
 
     const rank25 = getUserRankData(25);
     expect(rank25.leagueName).toBe('Бета');
-    expect(rank25.iconNumber).toBe(1); // Начинается с ранга 1
+    expect(rank25.icon).toBe('beta_01.png'); // Начинается с ранга 1
   });
 
   it('должен обрабатывать типичный игровой цикл: XP → уровни → ранги → монеты', () => {
     const state = { level: 1, xp: 0, coins: 0 };
-    
-    function addXP(amount) {
-      state.xp += amount;
-      while (state.xp >= XP_PER_LEVEL) {
-        state.xp -= XP_PER_LEVEL;
-        state.level += 1;
-        state.coins += COINS_PER_LEVEL;
-      }
-    }
-
-    function getUserRankData(level) {
-      const effectiveLevel = Math.max(1, Math.min(96, level));
-      let leagueName = 'Альфа';
-      if (effectiveLevel > 72) leagueName = 'Дельта Мастер';
-      else if (effectiveLevel > 48) leagueName = 'Гамма';
-      else if (effectiveLevel > 24) leagueName = 'Бета';
-      return { leagueName };
-    }
 
     // Игрок получает XP за задания
-    addXP(50); // За карточки
+    addXP(50, state); // За карточки
     expect(state.xp).toBe(50);
-    
-    addXP(50); // Ещё задания
+
+    addXP(50, state); // Ещё задания
     expect(state.level).toBe(2);
     expect(state.coins).toBe(50);
-    
+
     // Много активности
-    addXP(2300); // 23 уровня
+    addXP(2300, state); // 23 уровня
     expect(state.level).toBe(25); // Переход в Бета
     expect(state.coins).toBe(1200); // 24 × 50
-    
+
     const rank = getUserRankData(state.level);
     expect(rank.leagueName).toBe('Бета');
   });
