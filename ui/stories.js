@@ -49,7 +49,7 @@ export function renderStories(state, dependencies) {
       return `
       <div class="story-card ${lockedClass}" data-story-id="${story.id}" data-testid="story-${story.id}">
         <div class="story-cover-wrap">
-          <img src="${story.cover_url}" alt="${story.title}" class="story-cover" />
+          <img src="${story.cover_url}" alt="${story.title}" class="story-cover" loading="lazy" />
           ${!isUnlocked ? '<div class="story-lock-overlay"><span class="story-lock-icon">🔒</span></div>' : ''}
         </div>
         <div class="story-info">

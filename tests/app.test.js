@@ -22,7 +22,7 @@ describe('App - XP and Level System', () => {
 
   function testAddXP(amount) {
     addXP(amount, state, {
-      onLevelUp: (level) => levelUpCallbacks.forEach(cb => cb(level)),
+      onLevelUp: (level) => levelUpCallbacks.forEach((cb) => cb(level)),
     });
   }
 
@@ -118,49 +118,49 @@ describe('App - Rank System', () => {
     it('должен возвращать Альфа лигу для уровней 1-24', () => {
       const rank1 = getUserRankData(1);
       expect(rank1.leagueName).toBe('Альфа');
-      expect(rank1.icon).toBe('alpha_01.png');
+      expect(rank1.icon).toBe('alpha_01.webp');
 
       const rank24 = getUserRankData(24);
       expect(rank24.leagueName).toBe('Альфа');
-      expect(rank24.icon).toBe('alpha_12.png');
+      expect(rank24.icon).toBe('alpha_12.webp');
     });
 
     it('должен возвращать Бета лигу для уровней 25-48', () => {
       const rank25 = getUserRankData(25);
       expect(rank25.leagueName).toBe('Бета');
-      expect(rank25.icon).toBe('beta_01.png');
+      expect(rank25.icon).toBe('beta_01.webp');
 
       const rank48 = getUserRankData(48);
       expect(rank48.leagueName).toBe('Бета');
-      expect(rank48.icon).toBe('beta_12.png');
+      expect(rank48.icon).toBe('beta_12.webp');
     });
 
     it('должен возвращать Гамма лигу для уровней 49-72', () => {
       const rank49 = getUserRankData(49);
       expect(rank49.leagueName).toBe('Гамма');
-      expect(rank49.icon).toBe('gamma_01.png');
+      expect(rank49.icon).toBe('gamma_01.webp');
 
       const rank72 = getUserRankData(72);
       expect(rank72.leagueName).toBe('Гамма');
-      expect(rank72.icon).toBe('gamma_12.png');
+      expect(rank72.icon).toBe('gamma_12.webp');
     });
 
     it('должен возвращать Дельта лигу для уровней 73-96', () => {
       const rank73 = getUserRankData(73);
       expect(rank73.leagueName).toBe('Дельта Мастер');
-      expect(rank73.icon).toBe('delta_01.png');
+      expect(rank73.icon).toBe('delta_01.webp');
 
       const rank96 = getUserRankData(96);
       expect(rank96.leagueName).toBe('Дельта Мастер');
-      expect(rank96.icon).toBe('delta_12.png');
+      expect(rank96.icon).toBe('delta_12.webp');
     });
 
     it('должен правильно рассчитывать номер ранга (каждые 2 уровня)', () => {
-      expect(getUserRankData(1).icon).toBe('alpha_01.png');
-      expect(getUserRankData(2).icon).toBe('alpha_01.png');
-      expect(getUserRankData(3).icon).toBe('alpha_02.png');
-      expect(getUserRankData(4).icon).toBe('alpha_02.png');
-      expect(getUserRankData(5).icon).toBe('alpha_03.png');
+      expect(getUserRankData(1).icon).toBe('alpha_01.webp');
+      expect(getUserRankData(2).icon).toBe('alpha_01.webp');
+      expect(getUserRankData(3).icon).toBe('alpha_02.webp');
+      expect(getUserRankData(4).icon).toBe('alpha_02.webp');
+      expect(getUserRankData(5).icon).toBe('alpha_03.webp');
     });
 
     it('должен ограничивать максимальный уровень 96', () => {
@@ -169,7 +169,7 @@ describe('App - Rank System', () => {
 
       expect(rank100).toEqual(rank96);
       expect(rank100.leagueName).toBe('Дельта Мастер');
-      expect(rank100.icon).toBe('delta_12.png');
+      expect(rank100.icon).toBe('delta_12.webp');
     });
 
     it('должен ограничивать минимальный уровень 1', () => {
@@ -178,7 +178,7 @@ describe('App - Rank System', () => {
 
       expect(rank0).toEqual(rank1);
       expect(rank0.leagueName).toBe('Альфа');
-      expect(rank0.icon).toBe('alpha_01.png');
+      expect(rank0.icon).toBe('alpha_01.webp');
     });
 
     it('должен возвращать правильное полное имя', () => {
@@ -197,10 +197,10 @@ describe('App - Rank System', () => {
 
     it('должен добавлять ведущий ноль к номеру ранга', () => {
       const rank1 = getUserRankData(1);
-      expect(rank1.icon).toContain('_01.png');
+      expect(rank1.icon).toContain('_01.webp');
 
       const rank23 = getUserRankData(23);
-      expect(rank23.icon).toContain('_12.png'); // 12-й ранг, не нужен ведущий ноль
+      expect(rank23.icon).toContain('_12.webp'); // 12-й ранг, не нужен ведущий ноль
     });
   });
 
@@ -232,7 +232,7 @@ describe('App - Rank System', () => {
         { name: 'delta', start: 73, end: 96 },
       ];
 
-      leagues.forEach(league => {
+      leagues.forEach((league) => {
         const ranksInLeague = new Set();
         for (let level = league.start; level <= league.end; level++) {
           const rankData = getUserRankData(level);
@@ -274,7 +274,7 @@ describe('Интеграционные сценарии', () => {
 
     const rank25 = getUserRankData(25);
     expect(rank25.leagueName).toBe('Бета');
-    expect(rank25.icon).toBe('beta_01.png'); // Начинается с ранга 1
+    expect(rank25.icon).toBe('beta_01.webp'); // Начинается с ранга 1
   });
 
   it('должен обрабатывать типичный игровой цикл: XP → уровни → ранги → монеты', () => {
