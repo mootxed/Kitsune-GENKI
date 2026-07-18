@@ -4,6 +4,7 @@ import { $ } from '../src/utils.js';
 import { wordById, cardChapter, isWordUnlocked } from '../src/srs-helpers.js';
 import { allCards } from '../src/srs-helpers.js';
 import { SRS } from '../srs.js';
+import { speakJapanese } from '../src/audio-helper.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -313,12 +314,12 @@ function showCardAfterDrawing(
       </div>
     </div>`;
 
-  speak(writing);
+  speakJapanese(writing);
   const speakBtn = $('#flash-speak');
   if (speakBtn)
     speakBtn.onclick = (e) => {
       e.stopPropagation();
-      speak(writing);
+      speakJapanese(writing);
     };
 
   const exitBtn = $('#flash-exit');
@@ -574,22 +575,22 @@ export function renderFlash(state, dependencies) {
     if (speakBtn)
       speakBtn.onclick = (e) => {
         e.stopPropagation();
-        speak(displayWriting);
+        speakJapanese(displayWriting);
       };
     if (cardEl) {
       cardEl.onclick = () => {
         flashRevealed = true;
         cardEl.querySelector('.flash-inner').classList.add('flipped');
         rateDiv.classList.remove('hidden');
-        speak(displayWriting);
+        speakJapanese(displayWriting);
       };
     }
   } else {
-    speak(displayWriting);
+    speakJapanese(displayWriting);
     if (speakBtn)
       speakBtn.onclick = (e) => {
         e.stopPropagation();
-        speak(displayWriting);
+        speakJapanese(displayWriting);
       };
   }
 
@@ -941,6 +942,7 @@ function openDictionaryModal(word, state, dependencies) {
         <div class="dict-modal-header">
           <button class="btn-ghost" id="dict-modal-close">← Назад</button>
           <h2 class="dict-modal-title">${word.kanji || word.writing}</h2>
+          <button class="dict-modal-speak" id="dict-modal-speak" aria-label="Озвучить">🔊</button>
         </div>
         
         <div class="dict-modal-content">
@@ -970,6 +972,14 @@ function openDictionaryModal(word, state, dependencies) {
 
     const closeBtn = $('#dict-modal-close');
     if (closeBtn) closeBtn.onclick = returnToDict;
+
+    const speakBtn = $('#dict-modal-speak');
+    if (speakBtn) {
+      speakBtn.onclick = (e) => {
+        e.stopPropagation();
+        speakJapanese(word.writing);
+      };
+    }
 
     if (kanjiChars.length > 1) {
       $$('.dict-kanji-tab').forEach((tab) => {
