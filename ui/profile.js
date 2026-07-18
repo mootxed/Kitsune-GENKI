@@ -1,4 +1,4 @@
-/* ui/profile.js — Profile screen rendering and management */
+z/* ui/profile.js — Profile screen rendering and management */
 
 import { $, $$, monthLabel } from '../src/utils.js';
 import { getUserRankData } from '../src/xp-system.js';
