@@ -1,0 +1,522 @@
+{
+  "version": 1,
+  "lesson": {
+    "lesson_id": 2,
+    "title": "Урок 2",
+    "language": "japanese",
+    "created_at": "2026-06-28",
+    "importance_weight": 1.5,
+    "vocabulary": [
+      {
+        "id": "L2_V001",
+        "category": "pointing_words",
+        "kanji": "これ",
+        "writing": "これ",
+        "romaji": "kore",
+        "translation": "это (предмет близко ко мне)"
+      },
+      {
+        "id": "L2_V002",
+        "category": "pointing_words",
+        "kanji": "それ",
+        "writing": "それ",
+        "romaji": "sore",
+        "translation": "то (предмет близко к тебе)"
+      },
+      {
+        "id": "L2_V003",
+        "category": "pointing_words",
+        "kanji": "あれ",
+        "writing": "あれ",
+        "romaji": "are",
+        "translation": "вон то (предмет вдали от нас обоих)"
+      },
+      {
+        "id": "L2_V004",
+        "category": "pointing_words",
+        "kanji": "どれ",
+        "writing": "どれ",
+        "romaji": "dore",
+        "translation": "какой?, который? (из представленных)"
+      },
+      {
+        "id": "L2_V005",
+        "category": "pointing_words",
+        "kanji": "この",
+        "writing": "この",
+        "romaji": "kono",
+        "translation": "этот... (требует существительное)"
+      },
+      {
+        "id": "L2_V006",
+        "category": "pointing_words",
+        "kanji": "その",
+        "writing": "その",
+        "romaji": "sono",
+        "translation": "тот... (требует существительное)"
+      },
+      {
+        "id": "L2_V007",
+        "category": "pointing_words",
+        "kanji": "あの",
+        "writing": "あの",
+        "romaji": "ano",
+        "translation": "вон тот... (требует существительное)"
+      },
+      {
+        "id": "L2_V008",
+        "category": "pointing_words",
+        "kanji": "どの",
+        "writing": "どの",
+        "romaji": "dono",
+        "translation": "который...? (требует существительное)"
+      },
+      {
+        "id": "L2_V009",
+        "category": "pointing_words",
+        "kanji": "ここ",
+        "writing": "ここ",
+        "romaji": "koko",
+        "translation": "здесь (место рядом со мной)"
+      },
+      {
+        "id": "L2_V010",
+        "category": "pointing_words",
+        "kanji": "そこ",
+        "writing": "そこ",
+        "romaji": "soko",
+        "translation": "там (место рядом с тобой)"
+      },
+      {
+        "id": "L2_V011",
+        "category": "pointing_words",
+        "kanji": "あそこ",
+        "writing": "あそこ",
+        "romaji": "asoko",
+        "translation": "вон там (место вдали от нас обоих)"
+      },
+      {
+        "id": "L2_V012",
+        "category": "pointing_words",
+        "kanji": "どこ",
+        "writing": "どこ",
+        "romaji": "doko",
+        "translation": "где?"
+      },
+      {
+        "id": "L2_V013",
+        "category": "pointing_words",
+        "kanji": "だれ",
+        "writing": "だれ",
+        "romaji": "dare",
+        "translation": "кто?"
+      },
+      {
+        "id": "L2_V014",
+        "category": "food",
+        "kanji": "おいしい",
+        "writing": "おいしい",
+        "romaji": "oishii",
+        "translation": "вкусный"
+      },
+      {
+        "id": "L2_V015",
+        "category": "food",
+        "kanji": "魚",
+        "writing": "さかな",
+        "romaji": "sakana",
+        "translation": "рыба"
+      },
+      {
+        "id": "L2_V016",
+        "category": "food",
+        "kanji": "とんかつ",
+        "writing": "とんかつ",
+        "romaji": "tonkatsu",
+        "translation": "тонкацу (свиная отбивная в панировке)"
+      },
+      {
+        "id": "L2_V017",
+        "category": "food",
+        "kanji": "肉",
+        "writing": "にく",
+        "romaji": "niku",
+        "translation": "мясо"
+      },
+      {
+        "id": "L2_V018",
+        "category": "food",
+        "kanji": "メニュー",
+        "writing": "メニュー",
+        "romaji": "menyuu",
+        "translation": "меню"
+      },
+      {
+        "id": "L2_V019",
+        "category": "food",
+        "kanji": "野菜",
+        "writing": "やさい",
+        "romaji": "yasai",
+        "translation": "овощи"
+      },
+      {
+        "id": "L2_V020",
+        "category": "things",
+        "kanji": "傘",
+        "writing": "かさ",
+        "romaji": "kasa",
+        "translation": "зонт"
+      },
+      {
+        "id": "L2_V021",
+        "category": "things",
+        "kanji": "かばん",
+        "writing": "かばん",
+        "romaji": "kaban",
+        "translation": "сумка, портфель"
+      },
+      {
+        "id": "L2_V022",
+        "category": "things",
+        "kanji": "靴",
+        "writing": "くつ",
+        "romaji": "kutsu",
+        "translation": "обувь, туфли"
+      },
+      {
+        "id": "L2_V023",
+        "category": "things",
+        "kanji": "さいふ",
+        "writing": "さいふ",
+        "romaji": "saifu",
+        "translation": "кошелёк, бумажник"
+      },
+      {
+        "id": "L2_V024",
+        "category": "things",
+        "kanji": "ジーンズ",
+        "writing": "ジーンズ",
+        "romaji": "jiinzu",
+        "translation": "джинсы"
+      },
+      {
+        "id": "L2_V025",
+        "category": "things",
+        "kanji": "自転車",
+        "writing": "じてんしゃ",
+        "romaji": "jitensha",
+        "translation": "велосипед"
+      },
+      {
+        "id": "L2_V026",
+        "category": "things",
+        "kanji": "新聞",
+        "writing": "しんぶん",
+        "romaji": "shinbun",
+        "translation": "газета"
+      },
+      {
+        "id": "L2_V027",
+        "category": "things",
+        "kanji": "スマホ",
+        "writing": "スマホ",
+        "romaji": "sumaho",
+        "translation": "смартфон, мобильный телефон"
+      },
+      {
+        "id": "L2_V028",
+        "category": "things",
+        "kanji": "Tシャツ",
+        "writing": "Tシャツ",
+        "romaji": "tiishatsu",
+        "translation": "футболка"
+      },
+      {
+        "id": "L2_V029",
+        "category": "things",
+        "kanji": "時計",
+        "writing": "とけい",
+        "romaji": "tokee",
+        "translation": "часы (наручные / настенные)"
+      },
+      {
+        "id": "L2_V030",
+        "category": "things",
+        "kanji": "ノート",
+        "writing": "ノート",
+        "romaji": "nooto",
+        "translation": "тетрадь, блокнот"
+      },
+      {
+        "id": "L2_V031",
+        "category": "things",
+        "kanji": "ペン",
+        "writing": "ペン",
+        "romaji": "pen",
+        "translation": "ручка"
+      },
+      {
+        "id": "L2_V032",
+        "category": "things",
+        "kanji": "帽子",
+        "writing": "ぼうし",
+        "romaji": "booshi",
+        "translation": "головной убор, шляпа, кепка"
+      },
+      {
+        "id": "L2_V033",
+        "category": "things",
+        "kanji": "本",
+        "writing": "ほん",
+        "romaji": "hon",
+        "translation": "книга"
+      },
+      {
+        "id": "L2_V034",
+        "category": "places",
+        "kanji": "銀行",
+        "writing": "ぎんこう",
+        "romaji": "ginkoo",
+        "translation": "банк"
+      },
+      {
+        "id": "L2_V035",
+        "category": "places",
+        "kanji": "コンビニ",
+        "writing": "コンビニ",
+        "romaji": "konbini",
+        "translation": "круглосуточный магазин (комбини)"
+      },
+      {
+        "id": "L2_V036",
+        "category": "places",
+        "kanji": "トイレ",
+        "writing": "トイレ",
+        "romaji": "toire",
+        "translation": "туалет, уборная"
+      },
+      {
+        "id": "L2_V037",
+        "category": "places",
+        "kanji": "としょかん",
+        "writing": "としょかん",
+        "romaji": "toshokan",
+        "translation": "библиотека"
+      },
+      {
+        "id": "L2_V038",
+        "category": "places",
+        "kanji": "郵便局",
+        "writing": "ゆうびんきょく",
+        "romaji": "yuubinkyoku",
+        "translation": "почтовое отделение, почта"
+      },
+      {
+        "id": "L2_V039",
+        "category": "countries",
+        "kanji": "イギリス",
+        "writing": "イギリス",
+        "romaji": "Igirisu",
+        "translation": "Великобритания"
+      },
+      {
+        "id": "L2_V040",
+        "category": "countries",
+        "kanji": "韓国",
+        "writing": "かんこく",
+        "romaji": "Kankoku",
+        "translation": "Корея"
+      },
+      {
+        "id": "L2_V041",
+        "category": "countries",
+        "kanji": "中国",
+        "writing": "ちゅうごく",
+        "romaji": "Chuugoku",
+        "translation": "Китай"
+      },
+      {
+        "id": "L2_V042",
+        "category": "majors",
+        "kanji": "えいご",
+        "writing": "えいご",
+        "romaji": "eego",
+        "translation": "английский язык"
+      },
+      {
+        "id": "L2_V043",
+        "category": "majors",
+        "kanji": "経済",
+        "writing": "けいざい",
+        "romaji": "keezai",
+        "translation": "экономика"
+      },
+      {
+        "id": "L2_V044",
+        "category": "majors",
+        "kanji": "コンピューター",
+        "writing": "コンピューター",
+        "romaji": "konpyuutaa",
+        "translation": "компьютер, IT"
+      },
+      {
+        "id": "L2_V045",
+        "category": "majors",
+        "kanji": "ビジネス",
+        "writing": "ビジネス",
+        "romaji": "bijinesu",
+        "translation": "бизнес"
+      },
+      {
+        "id": "L2_V046",
+        "category": "majors",
+        "kanji": "歴史",
+        "writing": "れきし",
+        "romaji": "rekishi",
+        "translation": "история"
+      },
+      {
+        "id": "L2_V047",
+        "category": "family",
+        "kanji": "お母さん",
+        "writing": "おかあさん",
+        "romaji": "okaasan",
+        "translation": "мать (чья-то)"
+      },
+      {
+        "id": "L2_V048",
+        "category": "family",
+        "kanji": "お父さん",
+        "writing": "おとうさん",
+        "romaji": "otoosan",
+        "translation": "отец (чей-то)"
+      },
+      {
+        "id": "L2_V049",
+        "category": "money",
+        "kanji": "いくら",
+        "writing": "いくら",
+        "romaji": "ikura",
+        "translation": "сколько (о цене)"
+      },
+      {
+        "id": "L2_V050",
+        "category": "money",
+        "kanji": "～円",
+        "writing": "～えん",
+        "romaji": "... en",
+        "translation": "... иен (валюта Японии)"
+      },
+      {
+        "id": "L2_V051",
+        "category": "money",
+        "kanji": "高い",
+        "writing": "たかい",
+        "romaji": "takai",
+        "translation": "дорогой, высокий"
+      },
+      {
+        "id": "L2_V052",
+        "category": "expressions",
+        "kanji": "いらっしゃいませ",
+        "writing": "いらっしゃいませ",
+        "romaji": "irasshaimase",
+        "translation": "Добро пожаловать! (приветствие покупателя в магазине)"
+      },
+      {
+        "id": "L2_V053",
+        "category": "expressions",
+        "kanji": "～をおねがいします",
+        "writing": "～をおねがいします",
+        "romaji": "... o onegaishimasu",
+        "translation": "пожалуйста, будьте добры... (вежливая просьба / заказ)"
+      },
+      {
+        "id": "L2_V054",
+        "category": "expressions",
+        "kanji": "～をください",
+        "writing": "～をください",
+        "romaji": "... o kudasai",
+        "translation": "дайте, пожалуйста... (просьба о конкретном предмете)"
+      },
+      {
+        "id": "L2_V055",
+        "category": "expressions",
+        "kanji": "じゃあ",
+        "writing": "じゃあ",
+        "romaji": "jaa",
+        "translation": "тогда..., в таком случае..."
+      },
+      {
+        "id": "L2_V056",
+        "category": "expressions",
+        "kanji": "どうぞ",
+        "writing": "どうぞ",
+        "romaji": "doozo",
+        "translation": "Пожалуйста. / Вот, возьмите. (предложение предмета)"
+      },
+      {
+        "id": "L2_V057",
+        "category": "expressions",
+        "kanji": "どうも",
+        "writing": "どうも",
+        "romaji": "doomo",
+        "translation": "спасибо (кратко / разговорно)"
+      }
+    ],
+    "notes": [
+      {
+        "note_id": 1,
+        "title": "Грамматика 1: Указательные местоимения これ, それ, あれ, どれ (kore, sore, are, dore)",
+        "content": "Эти слова заменяют собой существительные и указывают на предметы. 'これ' (это) относится к предмету у говорящего. 'それ' (то) — к предмету у собеседника. 'あれ' (вон то) — к предмету, удаленному от обоих участников беседы. Вопросительное слово 'どれ' (который?) используется при выборе из нескольких предметов. Местоимения этой серии (называемой re-серией) никогда не используются вежливо для прямого указания на людей, находящихся в пределах слышимости."
+      },
+      {
+        "note_id": 2,
+        "title": "Грамматика 2: Указательные определители この, その, あの, どの (kono, sono, ano, dono)",
+        "content": "Слова этой серии всегда требуют после себя существительное (например: このとけи — «эти часы», あのがくせい — «вон тот студент»). Они выражают те же степени удаленности, что и 'kore/sore/are'. В вопросительных предложениях с 'どの' используется выделительная частица 'が' вместо тематической 'は' (например: どのがくせいがにほんじんですか — «Который из студентов японец?»)."
+      },
+      {
+        "note_id": 3,
+        "title": "Грамматика 3: Местоимения места ここ, そこ, あそこ, どこ (koko, soko, asoko, doko)",
+        "content": "Используются для указания на местоположение: 'ここ' — здесь (рядом со мной), 'そこ' — там (рядом с тобой), 'あそこ' — вон там (вдали от нас обоих), 'куда' — где?. Спросить дорогу или расположение места можно конструкцией: 'X は どこですか' (Например: すみません。ゆうびんきょくはどこですか — «Извините, а где почта?»). В ответ обычно говорят: '(ゆうびんきょくは) あそこです' — «(Почта) вон там»."
+      },
+      {
+        "note_id": 4,
+        "title": "Грамматика 4: Вопросительное слово だれの (dare no) — Чей",
+        "content": "Для выяснения владельца предмета к вопросительному слову 'だれ' (кто) добавляется притяжательная частица 'の'. Например: 'これはだれのかばんですка' — «Чья это сумка?». В ответе также используется частица 'の': 'それはソラさんのかばんです' — «Это сумка Соры»."
+      },
+      {
+        "note_id": 5,
+        "title": "Грамматика 5: Выделительная частица も (mo) — Тоже, также",
+        "content": "Частица 'も' указывает на аналогичность описываемого признака и ставится ВМЕСТО тематической частицы 'は'. Например: 'たけしさんはにほんじんです。ゆいさんもにほんじんです' — «Такеши — японец. Юи тоже японка»."
+      },
+      {
+        "note_id": 6,
+        "title": "Грамматика 6: Отрицательные конструкции с существительными (Noun じゃないです)",
+        "content": "Чтобы сделать утвердительное предложение 'X は Y です' отрицательным (X не является Y), глагол-связка 'десу' заменяется на одну из отрицательных форм:\n1. 'じゃないです' — разговорный, самый частый вариант в устной речи.\n2. 'じゃありません' — более вежливый и консервативный стиль речи.\n3. 'ではありません' — официальный и письменный стиль.\nВажно: отрицательные связки не употребляются обособленно в кратких ответах 'нет, это не так' (нельзя сказать просто 'いいえ、じゃないです'). Необходимо повторить существительное: 'いいえ、にほんじんじゃないです' — «Нет, я не японец»."
+      },
+      {
+        "note_id": 7,
+        "title": "Грамматика 7: Финальные частицы ～ね (ne) и ～よ (yo)",
+        "content": "Добавляются в самый конец предложения для придания эмоциональной окраски:\n- 'ね' — поиск согласия, подтверждения собеседника (аналог «правда?», «не так ли?»). Например: 'りーさんのせんこうはぶんがくですね' — «Специальность Ли — литература, верно?».\n- 'よ' — выражение полной уверенности, информирование собеседника о фактах, которых он может не знать (аналог «уверяю вас», «точно говорю»). Например: 'とんかつはさかなじゃないですよ' — «Тонкацу — это не рыба, уверяю вас!»."
+      },
+      {
+        "note_id": 8,
+        "title": "Особенности выражений: Вежливые просьбы ください (kudasai) и おねがいします (onegaishimasu)",
+        "content": "Для заказа или просьбы дать предмет используются две вежливые конструкции:\n- '～をください' (kudasai) — используется для просьбы о конкретных, материальных, физических вещах.\n- '～をおねがいします' (onegaishimasu) — звучит более изысканно и вежливо. Используется при заказе еды в ресторанах, а также подходит для абстрактных просьб (например, просьба объяснить грамматику или починить вещь).\n- Когда вы передаете вещь собеседнику, используется слово 'どうぞ' (Please/Here it is)."
+      },
+      {
+        "note_id": 9,
+        "title": "Особенности выражений: Японские числительные и счет сотен и тысяч",
+        "content": "При счете сотен (百 hyaku) и тысяч (千 sen) происходят фонетические изменения (озвончения) некоторых согласных в числительных:\n- 300: さんびゃく (sanbyaku) — озвончение 'h' -> 'by'\n- 600: ろっぴゃく (roppyaku) — удвоение согласной 'h' -> 'ppy'\n- 800: はっぴゃく (happyaku) — удвоение согласной 'h' -> 'ppy'\n- 3,000: さんぜん (sanzen) — озвончение 's' -> 'z'\n- 8,000: はっせん (hassen) — удвоение согласной 's' -> 'ss'\n\nДля больших чисел в японском языке используется разряд десятков тысяч — 万 (man = 10,000), а не тысяч. Например, 20,000 — это 'ни-ман' ($2 \times 10,000$), а один миллион — 'хяку-ман' ($100 \times 10,000$)."
+      }
+    ],
+    "cultural_notes": [
+      {
+        "note_id": 1,
+        "title": "Культура покупок и японские комбини (コンビニ)",
+        "content": "Японские круглосуточные минимаркеты (комбини), такие как 7-Eleven, FamilyMart или Lawson, — это важнейшая часть инфраструктуры повседневной жизни. Помимо покупки свежей еды (которую вам вежливо разогреют прямо на кассе), в комбини можно снять наличные в банкомате, оплатить коммунальные услуги, распечатать документы или отправить посылку. Персонал магазина всегда приветствует покупателя традиционным громким возгласом 'いらっしゃいませ!' (Ирассхаймясэ! — «Добро пожаловать!»)."
+      }
+    ]
+  }
+}

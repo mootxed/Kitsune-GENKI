@@ -8,27 +8,27 @@ let renderHandlers = {};
 export function initRouter(handlers) {
   // Сохраняем обработчики рендера
   renderHandlers = handlers;
-  
+
   // Создаём экземпляр роутера
   router = new Router();
-  
+
   // Регистрируем обработчики рендера для каждого экрана
-  router.registerRenderHandler('home', handlers.renderHome);
-  router.registerRenderHandler('profile', handlers.renderProfile);
-  router.registerRenderHandler('chapter', handlers.renderChapter);
-  router.registerRenderHandler('srs', handlers.renderSRSHome);
-  router.registerRenderHandler('sensei', handlers.renderSensei);
-  router.registerRenderHandler('library', handlers.renderLibrary);
-  router.registerRenderHandler('settings', handlers.renderSettings);
-  router.registerRenderHandler('plan', handlers.renderPlan);
+  router.registerRenderHandler('home', handlers.home);
+  router.registerRenderHandler('profile', handlers.profile);
+  router.registerRenderHandler('chapter', handlers.chapter);
+  router.registerRenderHandler('srs', handlers.srs);
+  router.registerRenderHandler('sensei', handlers.sensei);
+  router.registerRenderHandler('library', handlers.library);
+  router.registerRenderHandler('settings', handlers.settings);
+  router.registerRenderHandler('plan', handlers.plan);
   router.registerRenderHandler('story', () => {}); // История рендерится через openStory
-  router.registerRenderHandler('quests', handlers.renderQuests);
-  router.registerRenderHandler('ai-story', handlers.renderAIStory);
-  router.registerRenderHandler('crossword', handlers.renderCrossword);
-  
+  router.registerRenderHandler('quests', handlers.quests);
+  router.registerRenderHandler('ai-story', handlers['ai-story']);
+  router.registerRenderHandler('crossword', handlers.crossword);
+
   // Инициализация обработчика истории браузера
   router.initHistoryHandler();
-  
+
   // Устанавливаем глобальные алиасы для обратной совместимости
   window.nav = nav;
   window.updateTabIndicator = updateTabIndicator;

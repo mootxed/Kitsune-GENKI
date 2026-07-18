@@ -1,0 +1,536 @@
+{
+  "id": 5,
+  "lesson_id": 5,
+  "title": "Выходные в кафе",
+  "titleJP": "カフェで週末",
+  "cover_url": "image/Story5.png",
+  "questions": [
+    {
+      "question": "Как часто Мэри ходит в кафе?",
+      "options": [
+        "Каждый день",
+        "Каждую неделю",
+        "Каждый месяц"
+      ],
+      "correctAnswer": 1
+    }
+  ],
+  "rewards": {
+    "xp": 20,
+    "coins": 15
+  },
+  "content": [
+    {
+      "sentence_id": 1,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "たけし",
+          "writing": "たけし",
+          "translation": "Такэси",
+          "type": "Noun"
+        },
+        {
+          "kanji": "さん",
+          "writing": "さん",
+          "translation": "(вежливый суффикс)",
+          "type": "Suffix"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "今週末",
+          "writing": "こんしゅうまつ",
+          "translation": "эти выходные",
+          "type": "Noun"
+        },
+        {
+          "kanji": "何",
+          "writing": "なに",
+          "translation": "что",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "しますか",
+          "writing": "しますか",
+          "translation": "будешь делать",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Такэси, что будешь делать в эти выходные?"
+    },
+    {
+      "sentence_id": 2,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "家",
+          "writing": "うち",
+          "translation": "дом",
+          "type": "Noun"
+        },
+        {
+          "kanji": "で",
+          "writing": "で",
+          "translation": "(место)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "音楽",
+          "writing": "おんがく",
+          "translation": "музыку",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "聞きます",
+          "writing": "ききます",
+          "translation": "буду слушать",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "メアリー",
+          "writing": "メアリー",
+          "translation": "Мэри",
+          "type": "Noun"
+        },
+        {
+          "kanji": "さん",
+          "writing": "さん",
+          "translation": "(вежливый суффикс)",
+          "type": "Suffix"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Дома буду слушать музыку. А ты, Мэри?"
+    },
+    {
+      "sentence_id": 3,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "私",
+          "writing": "わたし",
+          "translation": "я",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "友達",
+          "writing": "ともだち",
+          "translation": "с другом",
+          "type": "Noun"
+        },
+        {
+          "kanji": "と",
+          "writing": "と",
+          "translation": "вместе с",
+          "type": "Particle"
+        },
+        {
+          "kanji": "カフェ",
+          "writing": "カフェ",
+          "translation": "в кафе",
+          "type": "Noun"
+        },
+        {
+          "kanji": "で",
+          "writing": "で",
+          "translation": "(место)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "コーヒー",
+          "writing": "コーヒー",
+          "translation": "кофе",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "飲みます",
+          "writing": "のみます",
+          "translation": "буду пить",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Я с другом буду пить кофе в кафе."
+    },
+    {
+      "sentence_id": 4,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "いいです",
+          "writing": "いいです",
+          "translation": "хорошо",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "よく",
+          "writing": "よく",
+          "translation": "часто",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "カフェ",
+          "writing": "カフェ",
+          "translation": "в кафе",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(направление)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行きますか",
+          "writing": "いきますか",
+          "translation": "ходишь",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Неплохо. Ты часто ходишь в кафе?"
+    },
+    {
+      "sentence_id": 5,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "はい",
+          "writing": "はい",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "毎週",
+          "writing": "まいしゅう",
+          "translation": "каждую неделю",
+          "type": "Noun"
+        },
+        {
+          "kanji": "行きます",
+          "writing": "いきます",
+          "translation": "хожу",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "そこ",
+          "writing": "そこ",
+          "translation": "там",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "で",
+          "writing": "で",
+          "translation": "(место)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "本",
+          "writing": "ほん",
+          "translation": "книги",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "読みます",
+          "writing": "よみます",
+          "translation": "читаю",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да, хожу каждую неделю. Там читаю книги."
+    },
+    {
+      "sentence_id": 6,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "何",
+          "writing": "なん",
+          "translation": "какие",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(притяжат.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "本",
+          "writing": "ほん",
+          "translation": "книги",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "読みますか",
+          "writing": "よみますか",
+          "translation": "читаешь",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Какие книги читаешь?"
+    },
+    {
+      "sentence_id": 7,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "日本語",
+          "writing": "にほんご",
+          "translation": "японского языка",
+          "type": "Noun"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(притяжат.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "本",
+          "writing": "ほん",
+          "translation": "книги",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "読みます",
+          "writing": "よみます",
+          "translation": "читаю",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "でも",
+          "writing": "でも",
+          "translation": "но",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "時々",
+          "writing": "ときどき",
+          "translation": "иногда",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "雑誌",
+          "writing": "ざっし",
+          "translation": "журналы",
+          "type": "Noun"
+        },
+        {
+          "kanji": "も",
+          "writing": "も",
+          "translation": "тоже",
+          "type": "Particle"
+        },
+        {
+          "kanji": "読みます",
+          "writing": "よみます",
+          "translation": "читаю",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Читаю книги на японском. Но иногда читаю и журналы."
+    },
+    {
+      "sentence_id": 8,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "すごい",
+          "writing": "すごい",
+          "translation": "здорово",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "じゃあ",
+          "writing": "じゃあ",
+          "translation": "тогда",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "今度",
+          "writing": "こんど",
+          "translation": "в следующий раз",
+          "type": "Noun"
+        },
+        {
+          "kanji": "一緒に",
+          "writing": "いっしょに",
+          "translation": "вместе",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "行きましょう",
+          "writing": "いきましょう",
+          "translation": "пойдём",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Здорово! Тогда в следующий раз пойдём вместе."
+    }
+  ]
+}

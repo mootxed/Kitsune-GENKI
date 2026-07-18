@@ -1,40 +1,79 @@
-/* state/store.js — Centralized state management */
+/* state/store.js — Centralized state management with versioning, migrations, and subscriptions */
 
-const LS_STATE = "kitsune_state_v1";
+const LS_STATE = 'kitsune_state_v1';
+
+// Текущая версия схемы данных
+const CURRENT_VERSION = 2;
 
 // Глобальное состояние приложения
 export let state = null;
 
+// Подписчики на изменения state
+const subscribers = new Set();
+
+// ---------- Migrations ----------
+const MIGRATIONS = {
+  2: (oldState) => {
+    // Миграция с версии 1 (или без версии) → 2
+    // Склеиваем со всеми полями из defaultState для гарантии наличия новых полей
+    const baseState = defaultState();
+    const migratedState = { ...baseState };
+
+    // Переносим существующие данные
+    Object.keys(oldState).forEach((key) => {
+      if (key !== 'version') {
+        migratedState[key] = oldState[key];
+      }
+    });
+
+    // Гарантируем наличие критичных полей (могли отсутствовать в старых версиях)
+    if (!migratedState.unlockedAchievements) migratedState.unlockedAchievements = [];
+    if (!migratedState.claimedAchievements) migratedState.claimedAchievements = [];
+    if (!migratedState.quests) migratedState.quests = null;
+    if (!migratedState.chatHistory) migratedState.chatHistory = [];
+    if (!migratedState.settings) migratedState.settings = baseState.settings;
+
+    // Backfill настроек
+    migratedState.settings = { ...baseState.settings, ...migratedState.settings };
+
+    // Проставляем версию
+    migratedState.version = 2;
+
+    return migratedState;
+  },
+};
+
 // ---------- Default State ----------
 export function defaultState() {
   return {
+    version: CURRENT_VERSION,
     initialized: false,
-    chapters: {},   // id -> {started, checklist:{}}
-    srs: {},        // cardId -> SRS record
+    chapters: {}, // id -> {started, checklist:{}}
+    srs: {}, // cardId -> SRS record
     streak: { count: 0, lastActive: null },
     savedNotes: [], // {id,title,content,date}
-    settings: { 
-      openrouterKey: "", 
-      model: "deepseek/deepseek-v4-flash", 
-      notifyEnabled: false, 
-      notifyTime: "12:00", 
-      darkMode: "auto", 
-      hideRomaji: false 
+    settings: {
+      openrouterKey: '',
+      model: 'deepseek/deepseek-v4-flash',
+      notifyEnabled: false,
+      notifyTime: '12:00',
+      darkMode: 'auto',
+      hideRomaji: false,
     },
     chatHistory: [], // {role,content}
     xp: 0,
     level: 1,
     coins: 0,
     dailyCards: 0,
-    history: {},    // {"YYYY-MM-DD": count}
-    currentAvatar: "🦊",
-    unlockedAvatars: ["🦊"],
-    currentStreakSkin: "default",
-    unlockedStreakSkins: ["default"],
-    currentTheme: "default",
-    unlockedThemes: ["default"],
-    currentTitle: "Новичок",
-    unlockedTitles: ["Новичок"],
+    history: {}, // {"YYYY-MM-DD": count}
+    currentAvatar: '🦊',
+    unlockedAvatars: ['🦊'],
+    currentStreakSkin: 'default',
+    unlockedStreakSkins: ['default'],
+    currentTheme: 'default',
+    unlockedThemes: ['default'],
+    currentTitle: 'Новичок',
+    unlockedTitles: ['Новичок'],
     unlockedAchievements: [],
     claimedAchievements: [], // ID достижений, за которые уже забрали награду
     quests: null, // Инициализируется через QuestsManager
@@ -43,39 +82,66 @@ export function defaultState() {
   };
 }
 
+// ---------- Migrations Runner ----------
+function runMigrations(loadedState) {
+  let currentVersion = loadedState.version || 1; // Старые сохранения без версии считаются версией 1
+  let migratedState = loadedState;
+
+  // Последовательно прогоняем все миграции от текущей версии до CURRENT_VERSION
+  while (currentVersion < CURRENT_VERSION) {
+    const nextVersion = currentVersion + 1;
+
+    if (MIGRATIONS[nextVersion]) {
+      console.log(`[Store] Применяю миграцию ${currentVersion} → ${nextVersion}`);
+      migratedState = MIGRATIONS[nextVersion](migratedState);
+      currentVersion = nextVersion;
+    } else {
+      console.warn(`[Store] Миграция для версии ${nextVersion} не найдена`);
+      break;
+    }
+  }
+
+  return migratedState;
+}
+
+// ---------- Pub/Sub System ----------
+export function subscribe(callback) {
+  if (typeof callback !== 'function') {
+    throw new Error('[Store] subscribe: callback должен быть функцией');
+  }
+
+  subscribers.add(callback);
+
+  // Возвращаем функцию для отписки
+  return () => subscribers.delete(callback);
+}
+
+function notify() {
+  subscribers.forEach((callback) => {
+    try {
+      callback(state);
+    } catch (err) {
+      console.error('[Store] Ошибка в подписчике:', err);
+    }
+  });
+}
+
 // ---------- Load State ----------
 export function loadState() {
-  try { 
-    state = JSON.parse(localStorage.getItem(LS_STATE)) || defaultState(); 
-  } catch { 
-    state = defaultState(); 
+  try {
+    const loaded = JSON.parse(localStorage.getItem(LS_STATE));
+
+    if (loaded) {
+      // Прогоняем миграции если версия старая
+      state = runMigrations(loaded);
+    } else {
+      state = defaultState();
+    }
+  } catch (err) {
+    console.error('[Store] Ошибка загрузки state:', err);
+    state = defaultState();
   }
-  
-  // Backfill new fields
-  const d = defaultState();
-  state.settings = Object.assign({}, d.settings, state.settings || {});
-  if (!state.streak) state.streak = d.streak;
-  if (!state.savedNotes) state.savedNotes = [];
-  if (!state.srs) state.srs = {};
-  if (!state.chapters) state.chapters = {};
-  if (!state.chatHistory) state.chatHistory = [];
-  if (state.xp === undefined) state.xp = d.xp;
-  if (state.level === undefined) state.level = d.level;
-  if (state.coins === undefined) state.coins = d.coins;
-  if (state.dailyCards === undefined) state.dailyCards = d.dailyCards;
-  if (!state.history) state.history = {};
-  if (!state.currentAvatar) state.currentAvatar = d.currentAvatar;
-  if (!state.unlockedAvatars) state.unlockedAvatars = d.unlockedAvatars;
-  if (!state.currentStreakSkin) state.currentStreakSkin = d.currentStreakSkin;
-  if (!state.unlockedStreakSkins) state.unlockedStreakSkins = d.unlockedStreakSkins;
-  if (!state.currentTheme) state.currentTheme = d.currentTheme;
-  if (!state.unlockedThemes) state.unlockedThemes = d.unlockedThemes;
-  if (!state.currentTitle) state.currentTitle = d.currentTitle;
-  if (!state.unlockedTitles) state.unlockedTitles = d.unlockedTitles;
-  if (!state.claimedAchievements) state.claimedAchievements = [];
-  if (state._dailyGoalClaimed === undefined) state._dailyGoalClaimed = false;
-  if (!state.studyPlan) state.studyPlan = null;
-  
+
   // Инициализация квестов через QuestsManager
   if (window.QuestsManager) {
     window.QuestsManager.initializeQuests(state);
@@ -102,19 +168,25 @@ export function save(immediate = false) {
 function performSave() {
   try {
     localStorage.setItem(LS_STATE, JSON.stringify(state));
+    notify(); // Уведомляем подписчиков об изменениях
   } catch (e) {
-    console.warn("localStorage переполнен. Попытка сохранить только критичные данные...");
+    console.warn('[Store] localStorage переполнен. Попытка сохранить только критичные данные...');
     const minimal = { ...state, savedNotes: state.savedNotes.slice(0, 20) };
     try {
       localStorage.setItem(LS_STATE, JSON.stringify(minimal));
-      if (window.toast) window.toast("⚠️ Данные сокращены — слишком много заметок");
+      if (window.toast) window.toast('⚠️ Данные сокращены — слишком много заметок');
     } catch {
       const emergency = { ...state, savedNotes: [] };
       localStorage.setItem(LS_STATE, JSON.stringify(emergency));
-      if (window.toast) window.toast("⚠️ Заметки удалены — не хватило места в хранилище");
+      if (window.toast) window.toast('⚠️ Заметки удалены — не хватило места в хранилище');
     }
   }
 }
+
+// ---------- Runtime-only кэш контента глав ----------
+// НЕ персистится в localStorage и не входит в схему прогресса:
+// только отслеживает, какие главы загружены в текущей сессии.
+export const loadedChapters = new Map(); // chapterId -> { lesson, story }
 
 // ---------- Chapter State Helper ----------
 export function chState(id) {

@@ -31,9 +31,11 @@ const DRAWING_MODE_PROBABILITY = 0.2;
 function isSingleKanji(text) {
   if (!text || text.length === 0) return false;
   const code = text.charCodeAt(0);
-  return (code >= 0x4E00 && code <= 0x9FFF) ||
-         (code >= 0x3400 && code <= 0x4DBF) ||
-         (code >= 0x20000 && code <= 0x2A6DF);
+  return (
+    (code >= 0x4e00 && code <= 0x9fff) ||
+    (code >= 0x3400 && code <= 0x4dbf) ||
+    (code >= 0x20000 && code <= 0x2a6df)
+  );
 }
 
 // Функция извлекает первый кандзи из текста
@@ -41,9 +43,11 @@ function getFirstKanji(text) {
   if (!text) return null;
   for (let i = 0; i < text.length; i++) {
     const code = text.charCodeAt(i);
-    if ((code >= 0x4E00 && code <= 0x9FFF) ||
-        (code >= 0x3400 && code <= 0x4DBF) ||
-        (code >= 0x20000 && code <= 0x2A6DF)) {
+    if (
+      (code >= 0x4e00 && code <= 0x9fff) ||
+      (code >= 0x3400 && code <= 0x4dbf) ||
+      (code >= 0x20000 && code <= 0x2a6df)
+    ) {
       return text[i];
     }
   }
@@ -56,9 +60,11 @@ function getAllKanji(text) {
   const kanji = [];
   for (let i = 0; i < text.length; i++) {
     const code = text.charCodeAt(i);
-    if ((code >= 0x4E00 && code <= 0x9FFF) ||
-        (code >= 0x3400 && code <= 0x4DBF) ||
-        (code >= 0x20000 && code <= 0x2A6DF)) {
+    if (
+      (code >= 0x4e00 && code <= 0x9fff) ||
+      (code >= 0x3400 && code <= 0x4dbf) ||
+      (code >= 0x20000 && code <= 0x2a6df)
+    ) {
       kanji.push(text[i]);
     }
   }
@@ -67,45 +73,57 @@ function getAllKanji(text) {
 
 // Отрисовка ячеек прогресса
 function renderKanjiProgressCells() {
-  const container = document.getElementById("kanji-progress-cells");
+  const container = document.getElementById('kanji-progress-cells');
   if (!container || kanjiSequence.length === 0) {
-    if (container) container.innerHTML = "";
+    if (container) container.innerHTML = '';
     return;
   }
 
-  container.innerHTML = kanjiSequence.map((k, idx) => {
-    const classes = ['kanji-cell'];
-    if (idx < currentKanjiIndex) classes.push('completed');
-    if (idx === currentKanjiIndex) classes.push('current');
-    
-    const displayChar = idx < currentKanjiIndex ? k.kanji : '';
-    return `<div class="${classes.join(' ')}">${displayChar}</div>`;
-  }).join('');
+  container.innerHTML = kanjiSequence
+    .map((k, idx) => {
+      const classes = ['kanji-cell'];
+      if (idx < currentKanjiIndex) classes.push('completed');
+      if (idx === currentKanjiIndex) classes.push('current');
+
+      const displayChar = idx < currentKanjiIndex ? k.kanji : '';
+      return `<div class="${classes.join(' ')}">${displayChar}</div>`;
+    })
+    .join('');
 }
 
 // Функция инициализации режима рисования с HanziWriter
-function initDrawingMode(kanji, writing, translation, category, hideRomaji, romaji, state, dependencies) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, renderSRSHome } = dependencies;
-  
-  const target = document.getElementById("kanji-writer-target");
+function initDrawingMode(
+  kanji,
+  writing,
+  translation,
+  category,
+  hideRomaji,
+  romaji,
+  state,
+  dependencies
+) {
+  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, renderSRSHome } =
+    dependencies;
+
+  const target = document.getElementById('kanji-writer-target');
   if (!target || !kanji || typeof HanziWriter === 'undefined') {
-    toast("⚠️ HanziWriter не загружен");
+    toast('⚠️ HanziWriter не загружен');
     return;
   }
 
   // 🛑 ВАЖНО: Блокируем скролл страницы при рисовании пальцем на мобилке
-  target.style.touchAction = "none"; 
+  target.style.touchAction = 'none';
 
   // Инициализация последовательности, если это первый кандзи
   if (kanjiSequence.length === 0) {
     const kanjiChars = getAllKanji(kanji);
-    kanjiSequence = kanjiChars.map(k => ({
+    kanjiSequence = kanjiChars.map((k) => ({
       kanji: k,
       writing: writing,
       translation: translation,
       category: category,
       hideRomaji: hideRomaji,
-      romaji: romaji
+      romaji: romaji,
     }));
     currentKanjiIndex = 0;
     totalDrawingMistakes = 0;
@@ -113,13 +131,13 @@ function initDrawingMode(kanji, writing, translation, category, hideRomaji, roma
 
   renderKanjiProgressCells();
   drawingMistakes = 0;
-    
+
   const currentKanji = kanjiSequence[currentKanjiIndex].kanji;
 
   function startQuiz() {
     drawingMistakes = 0;
     if (!currentWriter) return;
-    
+
     currentWriter.quiz({
       leniency: 1.2,
       onMistake: (strokeData) => {
@@ -128,21 +146,21 @@ function initDrawingMode(kanji, writing, translation, category, hideRomaji, roma
         if (drawingMistakes >= 3) {
           currentWriter.updateColor('outlineColor', '#bbbbbb');
           currentWriter.showOutline();
-          toast("💡 Слишком много ошибок. Дорисуйте по контуру");
+          toast('💡 Слишком много ошибок. Дорисуйте по контуру');
         }
       },
       onComplete: (summaryData) => {
         currentKanjiIndex++;
-        
+
         if (currentKanjiIndex < kanjiSequence.length) {
           const nextKanji = kanjiSequence[currentKanjiIndex];
           renderKanjiProgressCells();
-          
-          const target = document.getElementById("kanji-writer-target");
-          if (target) target.innerHTML = "";
+
+          const target = document.getElementById('kanji-writer-target');
+          if (target) target.innerHTML = '';
           currentWriter = null;
           drawingMistakes = 0;
-          
+
           initDrawingMode(
             nextKanji.kanji,
             nextKanji.writing,
@@ -155,53 +173,52 @@ function initDrawingMode(kanji, writing, translation, category, hideRomaji, roma
           );
           return;
         }
-        
+
         // Все кандзи нарисованы
         const quality = totalDrawingMistakes >= 3 ? 0 : 5;
         const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
-        
-        const resultText = quality === 5 
-          ? "✅ Отлично! Нарисовано без подсказок" 
-          : "📝 Нарисовано с подсказками";
+
+        const resultText =
+          quality === 5 ? '✅ Отлично! Нарисовано без подсказок' : '📝 Нарисовано с подсказками';
         toast(resultText);
-        
+
         if (window.QuestsManager && sessionManager) {
           const cardState = sessionManager.getCardState(card.id);
           const isFirstAttempt = cardState.sessionLapses === 0;
-          
+
           if (quality >= 4 && isFirstAttempt) {
             window.QuestsManager.incrementStreakCorrect(state);
           } else if (quality < 3) {
             window.QuestsManager.resetStreakCorrect(state);
           }
         }
-        
+
         if (sessionManager) {
           sessionManager.answerCard(card.id, quality, state.srs);
         } else {
           SRS.review(state.srs[card.id], quality);
           flashIdx += 1;
         }
-        
+
         appAddXP(XP_CARD);
         save(true);
         markActivity();
         flashRevealed = false;
-        
+
         kanjiSequence = [];
         currentKanjiIndex = 0;
-        
+
         setTimeout(() => {
           renderFlash(state, dependencies);
           updateSrsBadge();
         }, 300);
-      }
+      },
     });
   }
 
   try {
-    target.innerHTML = "";
-    
+    target.innerHTML = '';
+
     currentWriter = HanziWriter.create(target, currentKanji, {
       width: 280,
       height: 280,
@@ -210,20 +227,20 @@ function initDrawingMode(kanji, writing, translation, category, hideRomaji, roma
       delayBetweenStrokes: 200,
       showOutline: false,
       showCharacter: false,
-      
+
       strokeColor: '#1e293b',
       drawingColor: '#1e293b',
       radicalColor: '#168F16',
       outlineColor: '#f2f2f2',
-      
+
       drawingWidth: 16,
       drawingFadeDuration: 150,
       strokeFadeDuration: 200,
       strokeMismatchThreshold: 0.85,
-      leniency: 1.6
+      leniency: 1.6,
     });
 
-    const undoBtn = document.getElementById("drawing-undo");
+    const undoBtn = document.getElementById('drawing-undo');
     if (undoBtn) {
       undoBtn.onclick = () => {
         if (currentWriter) {
@@ -233,28 +250,38 @@ function initDrawingMode(kanji, writing, translation, category, hideRomaji, roma
       };
     }
 
-    const startBtn = document.getElementById("drawing-start");
+    const startBtn = document.getElementById('drawing-start');
     if (startBtn) {
       startBtn.onclick = () => {
         startQuiz();
       };
     }
-    
+
     startQuiz();
   } catch (error) {
-    console.error("Ошибка инициализации HanziWriter:", error);
-    toast("⚠️ Ошибка загрузки кандзи: " + error.message);
+    console.error('Ошибка инициализации HanziWriter:', error);
+    toast('⚠️ Ошибка загрузки кандзи: ' + error.message);
     flashRevealed = true;
     renderFlash(state, dependencies);
   }
 }
 
 // Функция показа карточки после завершения рисования
-function showCardAfterDrawing(kanji, writing, translation, category, hideRomaji, romaji, state, dependencies) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, renderSRSHome } = dependencies;
-  
-  const body = $("#srs-body");
-  
+function showCardAfterDrawing(
+  kanji,
+  writing,
+  translation,
+  category,
+  hideRomaji,
+  romaji,
+  state,
+  dependencies
+) {
+  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, renderSRSHome } =
+    dependencies;
+
+  const body = $('#srs-body');
+
   body.innerHTML = `
     <div class="flash-wrap">
       <div class="flash-top">
@@ -271,8 +298,8 @@ function showCardAfterDrawing(kanji, writing, translation, category, hideRomaji,
           </div>
           <div class="flash-back">
             <p class="flash-tr">${translation}</p>
-            ${kanji !== writing ? `<p class="flash-reading">${writing}</p>` : ""}
-            ${hideRomaji ? "" : `<p class="flash-romaji">${romaji}</p>`}
+            ${kanji !== writing ? `<p class="flash-reading">${writing}</p>` : ''}
+            ${hideRomaji ? '' : `<p class="flash-romaji">${romaji}</p>`}
           </div>
         </div>
       </div>
@@ -287,74 +314,78 @@ function showCardAfterDrawing(kanji, writing, translation, category, hideRomaji,
     </div>`;
 
   speak(writing);
-  const speakBtn = $("#flash-speak");
-  if (speakBtn) speakBtn.onclick = (e) => { e.stopPropagation(); speak(writing); };
+  const speakBtn = $('#flash-speak');
+  if (speakBtn)
+    speakBtn.onclick = (e) => {
+      e.stopPropagation();
+      speak(writing);
+    };
 
-  const exitBtn = $("#flash-exit");
+  const exitBtn = $('#flash-exit');
   if (exitBtn) {
     exitBtn.onclick = (e) => {
       e.preventDefault();
       e.stopImmediatePropagation();
-      
+
       if (sessionManager) {
         const stats = sessionManager.getStats();
         if (stats.reviewed > 0) {
           showCompletionScreen({
-            title: "おつかれさま!",
-            subtitle: "Хорошая работа!",
+            title: 'おつかれさま!',
+            subtitle: 'Хорошая работа!',
             desc: `Вы повторили часть карточек`,
-            theme: "success",
+            theme: 'success',
             rewards: [
-              { icon: "📚", label: `${stats.reviewed} карточек` },
-              { icon: "✨", label: `${stats.perfect} без ошибок` },
-              { icon: "🪙", label: `+${stats.reviewed} XP` }
+              { icon: '📚', label: `${stats.reviewed} карточек` },
+              { icon: '✨', label: `${stats.perfect} без ошибок` },
+              { icon: '🪙', label: `+${stats.reviewed} XP` },
             ],
             onContinue: () => {
               sessionManager = null;
-              flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
-            }
+              flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+            },
           });
           return;
         }
       }
       sessionManager = null;
-      flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
+      flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
     };
   }
 
-  $$("#rate .rate-btn").forEach((b) => {
+  $$('#rate .rate-btn').forEach((b) => {
     b.onclick = () => {
       const quality = parseInt(b.dataset.q, 10);
       const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
-      
+
       const srsCard = state.srs[card.id];
       if (srsCard) {
         if (srsCard.progress === undefined) srsCard.progress = 0;
-        
+
         if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
         else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
         else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
         else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
       }
-      
+
       if (window.QuestsManager && sessionManager) {
         const cardState = sessionManager.getCardState(card.id);
         const isFirstAttempt = cardState.sessionLapses === 0;
-        
+
         if (quality >= 4 && isFirstAttempt) {
           window.QuestsManager.incrementStreakCorrect(state);
         } else if (quality < 3) {
           window.QuestsManager.resetStreakCorrect(state);
         }
       }
-      
+
       if (sessionManager) {
         sessionManager.answerCard(card.id, quality, state.srs);
       } else {
         SRS.review(state.srs[card.id], quality);
         flashIdx += 1;
       }
-      
+
       appAddXP(XP_CARD);
       save(true);
       markActivity();
@@ -367,33 +398,34 @@ function showCardAfterDrawing(kanji, writing, translation, category, hideRomaji,
 
 // Главная функция рендеринга карточки
 export function renderFlash(state, dependencies) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, renderSRSHome, LESSONS } = dependencies;
-  
-  const body = $("#srs-body");
+  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, renderSRSHome, LESSONS } =
+    dependencies;
+
+  const body = $('#srs-body');
   if (!body) return;
 
   let card;
-  
+
   if (sessionManager) {
     card = sessionManager.getNextCard();
-    
+
     if (!card) {
       const stats = sessionManager.getStats();
       showCompletionScreen({
-        title: "おめでとう！",
-        subtitle: "Сессия завершена!",
-        desc: "Отличная работа! Вы справились со всеми карточками.",
-        theme: "success",
+        title: 'おめでとう！',
+        subtitle: 'Сессия завершена!',
+        desc: 'Отличная работа! Вы справились со всеми карточками.',
+        theme: 'success',
         rewards: [
-          { icon: "📚", label: `${stats.reviewed} карточек` },
-          { icon: "✨", label: `${stats.perfect} без ошибок` },
-          { icon: "🎯", label: `${Math.round(stats.accuracy)}% точность` },
-          { icon: "🪙", label: `+${stats.reviewed} XP` }
+          { icon: '📚', label: `${stats.reviewed} карточек` },
+          { icon: '✨', label: `${stats.perfect} без ошибок` },
+          { icon: '🎯', label: `${Math.round(stats.accuracy)}% точность` },
+          { icon: '🪙', label: `+${stats.reviewed} XP` },
         ],
         onContinue: () => {
           sessionManager = null;
-          flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
-        }
+          flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+        },
       });
       return;
     }
@@ -401,17 +433,17 @@ export function renderFlash(state, dependencies) {
     if (flashIdx >= flashQueue.length) {
       const count = flashQueue.length;
       showCompletionScreen({
-        title: "おめでとう！",
-        subtitle: "Повторение завершено!",
-        desc: "Вы успешно повторили все карточки.",
-        theme: "success",
+        title: 'おめでとう！',
+        subtitle: 'Повторение завершено!',
+        desc: 'Вы успешно повторили все карточки.',
+        theme: 'success',
         rewards: [
-          { icon: "📚", label: `${count} карточек` },
-          { icon: "🪙", label: `+${count} XP` }
+          { icon: '📚', label: `${count} карточек` },
+          { icon: '🪙', label: `+${count} XP` },
         ],
         onContinue: () => {
-          flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
-        }
+          flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+        },
       });
       return;
     }
@@ -428,9 +460,9 @@ export function renderFlash(state, dependencies) {
   const displayKanji = word.kanji || word.writing;
   const displayWriting = word.writing;
   const displayTranslation = word.translation;
-  const displayCategory = word.category || "Слово";
+  const displayCategory = word.category || 'Слово';
   const hideRomaji = state.settings?.hideRomaji || false;
-  const displayRomaji = word.romaji || "";
+  const displayRomaji = word.romaji || '';
 
   const allKanji = getAllKanji(displayKanji);
   const isDrawingMode = allKanji.length > 0 && Math.random() < DRAWING_MODE_PROBABILITY;
@@ -458,39 +490,48 @@ export function renderFlash(state, dependencies) {
         </div>
       </div>`;
 
-    const exitBtn = $("#flash-exit");
+    const exitBtn = $('#flash-exit');
     if (exitBtn) {
       exitBtn.onclick = (e) => {
         e.preventDefault();
         e.stopImmediatePropagation();
-        
+
         if (sessionManager) {
           const stats = sessionManager.getStats();
           if (stats.reviewed > 0) {
             showCompletionScreen({
-              title: "おつかれさま!",
-              subtitle: "Хорошая работа!",
+              title: 'おつかれさま!',
+              subtitle: 'Хорошая работа!',
               desc: `Вы повторили часть карточек`,
-              theme: "success",
+              theme: 'success',
               rewards: [
-                { icon: "📚", label: `${stats.reviewed} карточек` },
-                { icon: "✨", label: `${stats.perfect} без ошибок` },
-                { icon: "🪙", label: `+${stats.reviewed} XP` }
+                { icon: '📚', label: `${stats.reviewed} карточек` },
+                { icon: '✨', label: `${stats.perfect} без ошибок` },
+                { icon: '🪙', label: `+${stats.reviewed} XP` },
               ],
               onContinue: () => {
                 sessionManager = null;
-                flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
-              }
+                flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+              },
             });
             return;
           }
         }
         sessionManager = null;
-        flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
+        flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
       };
     }
 
-    initDrawingMode(displayKanji, displayWriting, displayTranslation, displayCategory, hideRomaji, displayRomaji, state, dependencies);
+    initDrawingMode(
+      displayKanji,
+      displayWriting,
+      displayTranslation,
+      displayCategory,
+      hideRomaji,
+      displayRomaji,
+      state,
+      dependencies
+    );
     return;
   }
 
@@ -501,7 +542,7 @@ export function renderFlash(state, dependencies) {
         <button class="btn-ghost" id="flash-exit">Выйти</button>
       </div>
       <div class="flash-card-3d" id="flash-card" data-testid="flash-card">
-        <div class="flash-inner ${flashRevealed ? "flipped" : ""}">
+        <div class="flash-inner ${flashRevealed ? 'flipped' : ''}">
           <div class="flash-front">
             <button class="flash-speak" id="flash-speak" aria-label="Озвучить">🔊</button>
             <div class="flash-cat">${displayCategory}</div>
@@ -510,12 +551,12 @@ export function renderFlash(state, dependencies) {
           </div>
           <div class="flash-back">
             <p class="flash-tr">${displayTranslation}</p>
-            ${displayKanji !== displayWriting ? `<p class="flash-reading">${displayWriting}</p>` : ""}
-            ${hideRomaji ? "" : `<p class="flash-romaji">${displayRomaji}</p>`}
+            ${displayKanji !== displayWriting ? `<p class="flash-reading">${displayWriting}</p>` : ''}
+            ${hideRomaji ? '' : `<p class="flash-romaji">${displayRomaji}</p>`}
           </div>
         </div>
       </div>
-      <div id="rate" class="${flashRevealed ? "" : "hidden"}">
+      <div id="rate" class="${flashRevealed ? '' : 'hidden'}">
         <div class="rate-row">
           <button class="rate-btn rate-again" data-q="0" data-testid="rate-again">Снова</button>
           <button class="rate-btn rate-hard" data-q="3" data-testid="rate-hard">Трудно</button>
@@ -525,90 +566,98 @@ export function renderFlash(state, dependencies) {
       </div>
     </div>`;
 
-  const cardEl = $("#flash-card");
-  const rateDiv = $("#rate");
-  const speakBtn = $("#flash-speak");
+  const cardEl = $('#flash-card');
+  const rateDiv = $('#rate');
+  const speakBtn = $('#flash-speak');
 
   if (!flashRevealed) {
-    if (speakBtn) speakBtn.onclick = (e) => { e.stopPropagation(); speak(displayWriting); };
+    if (speakBtn)
+      speakBtn.onclick = (e) => {
+        e.stopPropagation();
+        speak(displayWriting);
+      };
     if (cardEl) {
       cardEl.onclick = () => {
         flashRevealed = true;
-        cardEl.querySelector(".flash-inner").classList.add("flipped");
-        rateDiv.classList.remove("hidden");
+        cardEl.querySelector('.flash-inner').classList.add('flipped');
+        rateDiv.classList.remove('hidden');
         speak(displayWriting);
       };
     }
   } else {
     speak(displayWriting);
-    if (speakBtn) speakBtn.onclick = (e) => { e.stopPropagation(); speak(displayWriting); };
+    if (speakBtn)
+      speakBtn.onclick = (e) => {
+        e.stopPropagation();
+        speak(displayWriting);
+      };
   }
 
-  const exitBtn = $("#flash-exit");
+  const exitBtn = $('#flash-exit');
   if (exitBtn) {
     exitBtn.onclick = (e) => {
       e.preventDefault();
       e.stopImmediatePropagation();
-      
+
       if (sessionManager) {
         const stats = sessionManager.getStats();
         if (stats.reviewed > 0) {
           showCompletionScreen({
-            title: "おつかれさま!",
-            subtitle: "Хорошая работа!",
+            title: 'おつかれさま!',
+            subtitle: 'Хорошая работа!',
             desc: `Вы повторили часть карточек`,
-            theme: "success",
+            theme: 'success',
             rewards: [
-              { icon: "📚", label: `${stats.reviewed} карточек` },
-              { icon: "✨", label: `${stats.perfect} без ошибок` },
-              { icon: "🪙", label: `+${stats.reviewed} XP` }
+              { icon: '📚', label: `${stats.reviewed} карточек` },
+              { icon: '✨', label: `${stats.perfect} без ошибок` },
+              { icon: '🪙', label: `+${stats.reviewed} XP` },
             ],
             onContinue: () => {
               sessionManager = null;
-              flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
-            }
+              flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+            },
           });
           return;
         }
       }
       sessionManager = null;
-      flashCtx ? nav("chapter", flashCtx) : renderSRSHome();
+      flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
     };
   }
 
-  $$("#rate .rate-btn").forEach((b) => {
+  $$('#rate .rate-btn').forEach((b) => {
     b.onclick = () => {
       const quality = parseInt(b.dataset.q, 10);
       const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
-      
+
       const srsCard = state.srs[card.id];
       if (srsCard) {
         if (srsCard.progress === undefined) srsCard.progress = 0;
-        
+
         if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
         else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
         else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
         else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
       }
-      
+
       if (window.QuestsManager && sessionManager) {
         const cardState = sessionManager.getCardState(card.id);
         const isFirstAttempt = cardState.sessionLapses === 0;
-        
+
         if (quality >= 4 && isFirstAttempt) {
           window.QuestsManager.incrementStreakCorrect(state);
         } else if (quality < 3) {
           window.QuestsManager.resetStreakCorrect(state);
         }
       }
-      
+
       if (sessionManager) {
         sessionManager.answerCard(card.id, quality, state.srs);
       } else {
         SRS.review(state.srs[card.id], quality);
         flashIdx += 1;
       }
-      
+
       appAddXP(XP_CARD);
       save(true);
       markActivity();
@@ -620,12 +669,17 @@ export function renderFlash(state, dependencies) {
 }
 
 // Функция рендеринга словаря
-export function renderDictionary(state, dependencies) {
-  const { LESSONS } = dependencies;
-  
-  const content = $("#srs-body");
+export async function renderDictionary(state, dependencies) {
+  const { CONTENT_INDEX, ensureLesson } = dependencies;
+
+  const content = $('#srs-body');
   if (!content) return;
-  
+
+  // Словарь показывает слова всех глав — догружаем недостающие уроки
+  if (CONTENT_INDEX && ensureLesson) {
+    await Promise.all(CONTENT_INDEX.map((ch) => ensureLesson(ch.id).catch(() => null)));
+  }
+
   content.innerHTML = `
     <div class="dict-search-wrap">
       <input 
@@ -638,13 +692,13 @@ export function renderDictionary(state, dependencies) {
     </div>
     <div id="dict-lessons-container"></div>
   `;
-  
+
   renderDictionaryLessons(state, dependencies);
-  
-  const searchInput = $("#dict-search");
+
+  const searchInput = $('#dict-search');
   let searchTimeout;
   if (searchInput) {
-    searchInput.addEventListener("input", (e) => {
+    searchInput.addEventListener('input', (e) => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
         filterDictionaryWords(e.target.value, state, dependencies);
@@ -654,48 +708,53 @@ export function renderDictionary(state, dependencies) {
 }
 
 // Функция рендеринга списка уроков и слов
-function renderDictionaryLessons(state, dependencies, searchQuery = "") {
+function renderDictionaryLessons(state, dependencies, searchQuery = '') {
   const { LESSONS } = dependencies;
-  
-  const container = $("#dict-lessons-container");
+
+  const container = $('#dict-lessons-container');
   if (!container) return;
-  
+
   const query = searchQuery.toLowerCase().trim();
   let totalVisible = 0;
-  
+
   container.innerHTML = LESSONS.map((lesson) => {
     const words = lesson.words || [];
-    
-    const filteredWords = query ? words.filter(word => {
-      return (word.kanji && word.kanji.toLowerCase().includes(query)) ||
-             (word.writing && word.writing.toLowerCase().includes(query)) ||
-             (word.romaji && word.romaji.toLowerCase().includes(query)) ||
-             (word.translation && word.translation.toLowerCase().includes(query));
-    }) : words;
-    
+
+    const filteredWords = query
+      ? words.filter((word) => {
+          return (
+            (word.kanji && word.kanji.toLowerCase().includes(query)) ||
+            (word.writing && word.writing.toLowerCase().includes(query)) ||
+            (word.romaji && word.romaji.toLowerCase().includes(query)) ||
+            (word.translation && word.translation.toLowerCase().includes(query))
+          );
+        })
+      : words;
+
     if (filteredWords.length === 0 && query) {
       return '';
     }
-    
+
     totalVisible += filteredWords.length;
-    
-    const wordsHtml = filteredWords.map(word => {
-      const isUnlocked = isWordUnlocked(word.id, state.chapters);
-      const chapterId = cardChapter(word.id);
-      
-      const srsRecord = state.srs[word.id];
-      let progress = 0;
-      let progressClass = 'progress-none';
-      
-      if (srsRecord) {
-        progress = srsRecord.progress || 0;
-        if (progress >= 75) progressClass = 'progress-high';
-        else if (progress >= 25) progressClass = 'progress-medium';
-        else progressClass = 'progress-low';
-      }
-      
-      if (!isUnlocked) {
-        return `
+
+    const wordsHtml = filteredWords
+      .map((word) => {
+        const isUnlocked = isWordUnlocked(word.id, state.chapters);
+        const chapterId = cardChapter(word.id);
+
+        const srsRecord = state.srs[word.id];
+        let progress = 0;
+        let progressClass = 'progress-none';
+
+        if (srsRecord) {
+          progress = srsRecord.progress || 0;
+          if (progress >= 75) progressClass = 'progress-high';
+          else if (progress >= 25) progressClass = 'progress-medium';
+          else progressClass = 'progress-low';
+        }
+
+        if (!isUnlocked) {
+          return `
           <div class="dict-word-card word-locked" data-word-id="${word.id}" data-chapter-id="${chapterId}">
             <div class="dict-word-main">
               <div class="dict-word-lock-icon">🔒</div>
@@ -713,9 +772,9 @@ function renderDictionaryLessons(state, dependencies, searchQuery = "") {
             </div>
           </div>
         `;
-      }
-      
-      return `
+        }
+
+        return `
         <div class="dict-word-card" data-word-id="${word.id}">
           <div class="dict-word-main">
             <div class="dict-word-kanji">${word.kanji || word.writing}</div>
@@ -732,8 +791,9 @@ function renderDictionaryLessons(state, dependencies, searchQuery = "") {
           </div>
         </div>
       `;
-    }).join('');
-    
+      })
+      .join('');
+
     return `
       <div class="dict-lesson">
         <div class="dict-lesson-header">
@@ -746,22 +806,26 @@ function renderDictionaryLessons(state, dependencies, searchQuery = "") {
       </div>
     `;
   }).join('');
-  
+
   if (query && totalVisible === 0) {
-    container.innerHTML = emptyState("🔍", "Ничего не найдено", `По запросу "${searchQuery}" слова не найдены.`);
+    container.innerHTML = emptyState(
+      '🔍',
+      'Ничего не найдено',
+      `По запросу "${searchQuery}" слова не найдены.`
+    );
     return;
   }
-  
-  $$(".dict-word-card").forEach(card => {
+
+  $$('.dict-word-card').forEach((card) => {
     card.onclick = () => {
       const wordId = card.dataset.wordId;
-      
+
       if (card.classList.contains('word-locked')) {
         const chapterId = card.dataset.chapterId;
         toast(`🔒 Начните Главу ${chapterId}, чтобы разблокировать это слово`);
         return;
       }
-      
+
       const word = wordById(wordId, LESSONS);
       if (word) openDictionaryModal(word, state, dependencies);
     };
@@ -775,49 +839,103 @@ function filterDictionaryWords(searchQuery, state, dependencies) {
 
 // Маппинг упрощенных японских кандзи на традиционные китайские
 const kanjiSimplifiedToTraditional = {
-  '専': '專', '学': '學', '図': '圖', '実': '實', '医': '醫',
-  '体': '體', '国': '國', '会': '會', '帰': '歸', '万': '萬',
-  '円': '圓', '亜': '亞', '仏': '佛', '単': '單', '号': '號',
-  '売': '賣', '変': '變', '声': '聲', '寝': '寢', '広': '廣',
-  '従': '從', '恵': '惠', '応': '應', '斎': '齋', '旧': '舊',
-  '権': '權', '楽': '樂', '気': '氣', '温': '溫', '湾': '灣',
-  '点': '點', '為': '爲', '画': '畫', '祈': '祈', '禅': '禪',
-  '糸': '絲', '経': '經', '絵': '繪', '続': '續', '聴': '聽',
-  '脳': '腦', '臓': '臟', '薬': '藥', '虫': '蟲', '号': '號',
-  '覚': '覺', '観': '觀', '訳': '譯', '証': '證', '読': '讀',
-  '辞': '辭', '鉄': '鐵', '関': '關', '雑': '雜', '霊': '靈',
-  '顔': '顏', '駅': '驛', '黄': '黃', '黒': '黑', '歯': '齒'
+  専: '專',
+  学: '學',
+  図: '圖',
+  実: '實',
+  医: '醫',
+  体: '體',
+  国: '國',
+  会: '會',
+  帰: '歸',
+  万: '萬',
+  円: '圓',
+  亜: '亞',
+  仏: '佛',
+  単: '單',
+  号: '號',
+  売: '賣',
+  変: '變',
+  声: '聲',
+  寝: '寢',
+  広: '廣',
+  従: '從',
+  恵: '惠',
+  応: '應',
+  斎: '齋',
+  旧: '舊',
+  権: '權',
+  楽: '樂',
+  気: '氣',
+  温: '溫',
+  湾: '灣',
+  点: '點',
+  為: '爲',
+  画: '畫',
+  祈: '祈',
+  禅: '禪',
+  糸: '絲',
+  経: '經',
+  絵: '繪',
+  続: '續',
+  聴: '聽',
+  脳: '腦',
+  臓: '臟',
+  薬: '藥',
+  虫: '蟲',
+  覚: '覺',
+  観: '觀',
+  訳: '譯',
+  証: '證',
+  読: '讀',
+  辞: '辭',
+  鉄: '鐵',
+  関: '關',
+  雑: '雜',
+  霊: '靈',
+  顔: '顏',
+  駅: '驛',
+  黄: '黃',
+  黒: '黑',
+  歯: '齒',
 };
 
 // Функция открытия модального окна словаря
 function openDictionaryModal(word, state, dependencies) {
   const { renderSRSHome } = dependencies;
-  
-  const body = $("#srs-body");
+
+  const body = $('#srs-body');
   if (!body) return;
-  
+
   const kanjiChars = getAllKanji(word.kanji || word.writing);
   const hasKanji = kanjiChars.length > 0;
-  
+
   const returnToDict = () => {
     renderSRSHome();
   };
-  
+
   let currentKanjiIdx = 0;
-  
+
   const renderModalContent = () => {
     const selectedKanji = hasKanji ? kanjiChars[currentKanjiIdx] : null;
-    
-    const kanjiTabsHtml = kanjiChars.length > 1 ? `
+
+    const kanjiTabsHtml =
+      kanjiChars.length > 1
+        ? `
       <div class="dict-kanji-tabs">
-        ${kanjiChars.map((k, idx) => `
+        ${kanjiChars
+          .map(
+            (k, idx) => `
           <button class="dict-kanji-tab ${idx === currentKanjiIdx ? 'active' : ''}" data-kanji-idx="${idx}">
             ${k}
           </button>
-        `).join('')}
+        `
+          )
+          .join('')}
       </div>
-    ` : '';
-    
+    `
+        : '';
+
     body.innerHTML = `
       <div class="dict-modal">
         <div class="dict-modal-header">
@@ -832,7 +950,9 @@ function openDictionaryModal(word, state, dependencies) {
             ${word.romaji ? `<p class="dict-modal-romaji">${word.romaji}</p>` : ''}
           </div>
           
-          ${hasKanji ? `
+          ${
+            hasKanji
+              ? `
             ${kanjiTabsHtml}
             <div class="dict-kanji-writer-container">
               <div id="dict-kanji-writer-target"></div>
@@ -841,69 +961,74 @@ function openDictionaryModal(word, state, dependencies) {
               <button class="btn-secondary" id="dict-animate-btn">🎬 Анимация черт</button>
               <button class="btn-secondary" id="dict-quiz-btn">✍️ Пропись</button>
             </div>
-          ` : '<p class="dict-no-kanji">В этом слове нет кандзи для отрисовки</p>'}
+          `
+              : '<p class="dict-no-kanji">В этом слове нет кандзи для отрисовки</p>'
+          }
         </div>
       </div>
     `;
-    
-    const closeBtn = $("#dict-modal-close");
+
+    const closeBtn = $('#dict-modal-close');
     if (closeBtn) closeBtn.onclick = returnToDict;
-    
+
     if (kanjiChars.length > 1) {
-      $$(".dict-kanji-tab").forEach(tab => {
+      $$('.dict-kanji-tab').forEach((tab) => {
         tab.onclick = () => {
           currentKanjiIdx = parseInt(tab.dataset.kanjiIdx);
           renderModalContent();
         };
       });
     }
-    
+
     if (hasKanji && selectedKanji) {
       initDictionaryKanjiWriter(selectedKanji);
     }
   };
-  
+
   renderModalContent();
 }
 
 // Функция инициализации HanziWriter для словаря
 async function initDictionaryKanjiWriter(kanji) {
-  const target = document.getElementById("dict-kanji-writer-target");
+  const target = document.getElementById('dict-kanji-writer-target');
   const container = target?.parentElement;
-  const controls = document.querySelector(".dict-kanji-controls");
-  
+  const controls = document.querySelector('.dict-kanji-controls');
+
   if (!target || typeof HanziWriter === 'undefined') {
-    toast("⚠️ HanziWriter не загружен");
+    toast('⚠️ HanziWriter не загружен');
     return;
   }
-  
-  target.innerHTML = "";
-  target.style.touchAction = "none";
-  
+
+  target.innerHTML = '';
+  target.style.touchAction = 'none';
+
   const loadKanjiData = async (char) => {
     try {
-      const response = await fetch(`https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${char}.json`);
-      
+      const response = await fetch(
+        `https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${char}.json`
+      );
+
       if (response.ok) {
         return await response.json();
       }
-      
+
       if (response.status === 404 && kanjiSimplifiedToTraditional[char]) {
         const traditionalChar = kanjiSimplifiedToTraditional[char];
-        const fallbackResponse = await fetch(`https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${traditionalChar}.json`);
-        
+        const fallbackResponse = await fetch(
+          `https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${traditionalChar}.json`
+        );
+
         if (fallbackResponse.ok) {
           return await fallbackResponse.json();
         }
       }
-      
+
       throw new Error(`Данные для символа "${char}" недоступны`);
-      
     } catch (error) {
       throw error;
     }
   };
-  
+
   try {
     const screenWidth = window.innerWidth;
     let writerSize = 280;
@@ -912,7 +1037,7 @@ async function initDictionaryKanjiWriter(kanji) {
     } else if (screenWidth <= 768) {
       writerSize = 200;
     }
-    
+
     const writer = HanziWriter.create(target, kanji, {
       width: writerSize,
       height: writerSize,
@@ -921,13 +1046,13 @@ async function initDictionaryKanjiWriter(kanji) {
       delayBetweenStrokes: 200,
       showOutline: true,
       showCharacter: true,
-      
+
       strokeColor: '#1e293b',
       radicalColor: '#168F16',
       outlineColor: '#DDD',
       drawingColor: '#1e293b',
       drawingWidth: 16,
-      
+
       charDataLoader: loadKanjiData,
       onLoadCharDataError: (error) => {
         console.warn(`Не удалось загрузить данные для "${kanji}":`, error);
@@ -939,30 +1064,30 @@ async function initDictionaryKanjiWriter(kanji) {
           message.textContent = `Данные для отрисовки символа "${kanji}" недоступны`;
           container.parentElement.insertBefore(message, container);
         }
-      }
+      },
     });
-    
-    const animateBtn = $("#dict-animate-btn");
+
+    const animateBtn = $('#dict-animate-btn');
     if (animateBtn) {
       animateBtn.onclick = () => {
         writer.animateCharacter();
       };
     }
-    
-    const quizBtn = $("#dict-quiz-btn");
+
+    const quizBtn = $('#dict-quiz-btn');
     if (quizBtn) {
       quizBtn.onclick = () => {
         writer.quiz({
           showOutline: true,
           leniency: 1.2,
           onComplete: () => {
-            toast("✅ Отлично!");
-          }
+            toast('✅ Отлично!');
+          },
         });
       };
     }
   } catch (error) {
-    console.error("Ошибка инициализации HanziWriter:", error);
+    console.error('Ошибка инициализации HanziWriter:', error);
     if (container) container.style.display = 'none';
     if (controls) controls.style.display = 'none';
     if (container && container.parentElement) {
@@ -977,24 +1102,24 @@ async function initDictionaryKanjiWriter(kanji) {
 // Функция запуска дополнительного повторения
 export function startExtraReview(state, dependencies) {
   const { save, updateSrsBadge, renderHome, startFlash } = dependencies;
-  
+
   const all = allCards(state.srs);
   if (all.length === 0) {
-    toast("Нет изученных карточек. Сначала начните главу.");
+    toast('Нет изученных карточек. Сначала начните главу.');
     return;
   }
-  
+
   const shuffled = [...all];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  
+
   const selected = shuffled.slice(0, Math.min(10, shuffled.length));
   selected.forEach((card) => {
     card.due = Date.now();
   });
-  
+
   save();
   toast(`🍀 ${selected.length} старых карточек добавлены к повторению!`);
   renderHome();

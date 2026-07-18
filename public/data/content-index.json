@@ -1,0 +1,181 @@
+{
+  "version": 1,
+  "chapters": [
+    {
+      "id": 1,
+      "title": "Урок 1",
+      "lesson": "data/lessons/lesson-01.json",
+      "story": "data/stories/story-01.json",
+      "storyMeta": {
+        "storyId": 1,
+        "title": "Знакомство в университете",
+        "titleJP": "大学で出会い",
+        "cover_url": "image/Story1.png",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Урок 2",
+      "lesson": "data/lessons/lesson-02.json",
+      "story": "data/stories/story-02.json",
+      "storyMeta": {
+        "storyId": 2,
+        "title": "Покупки",
+        "titleJP": "買い物",
+        "cover_url": "image/Story2.png",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Урок 3",
+      "lesson": "data/lessons/lesson-03.json",
+      "story": "data/stories/story-03.json",
+      "storyMeta": {
+        "storyId": 3,
+        "title": "Планы на выходные",
+        "titleJP": "週末の予定",
+        "cover_url": "image/Story3.png",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Урок 4",
+      "lesson": "data/lessons/lesson-04.json",
+      "story": "data/stories/story-04.json",
+      "storyMeta": {
+        "storyId": 4,
+        "title": "Встреча в парке",
+        "titleJP": "公園で会いました",
+        "cover_url": "image/Story4.png",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Урок 5",
+      "lesson": "data/lessons/lesson-05.json",
+      "story": "data/stories/story-05.json",
+      "storyMeta": {
+        "storyId": 5,
+        "title": "Выходные в кафе",
+        "titleJP": "カフェで週末",
+        "cover_url": "image/Story5.png",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Урок 6",
+      "lesson": "data/lessons/lesson-06.json",
+      "story": "data/stories/story-06.json",
+      "storyMeta": {
+        "storyId": 6,
+        "title": "Первый день занятий",
+        "titleJP": "最初の授業の日",
+        "cover_url": "image/Story6.png",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Урок 7",
+      "lesson": "data/lessons/lesson-07.json",
+      "story": "data/stories/story-07.json",
+      "storyMeta": {
+        "storyId": 7,
+        "title": "Новый друг в классе",
+        "titleJP": "クラスの新しい友達",
+        "cover_url": "image/Story7.png",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Урок 8",
+      "lesson": "data/lessons/lesson-08.json",
+      "story": "data/stories/story-08.json",
+      "storyMeta": {
+        "storyId": 8,
+        "title": "Выходной день",
+        "titleJP": "休みの日",
+        "cover_url": "image/Story8.png",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Урок 9",
+      "lesson": "data/lessons/lesson-09.json",
+      "story": "data/stories/story-09.json",
+      "storyMeta": {
+        "storyId": 9,
+        "title": "Концерт",
+        "titleJP": "コンサート",
+        "cover_url": "image/Story9.png"
+      }
+    },
+    {
+      "id": 10,
+      "title": "Урок 10",
+      "lesson": "data/lessons/lesson-10.json",
+      "story": "data/stories/story-10.json",
+      "storyMeta": {
+        "storyId": 10,
+        "title": "Зимние каникулы",
+        "titleJP": "冬休み",
+        "cover_url": "image/Story10.png"
+      }
+    },
+    {
+      "id": 11,
+      "title": "Урок 11",
+      "lesson": "data/lessons/lesson-11.json",
+      "story": "data/stories/story-11.json",
+      "storyMeta": {
+        "storyId": 11,
+        "title": "Планы на лето",
+        "titleJP": "夏の予定",
+        "cover_url": "image/Story11.png"
+      }
+    },
+    {
+      "id": 12,
+      "title": "Урок 12",
+      "lesson": "data/lessons/lesson-12.json",
+      "story": "data/stories/story-12.json",
+      "storyMeta": {
+        "storyId": 12,
+        "title": "Болезнь",
+        "titleJP": "病気",
+        "cover_url": "image/Story12.png"
+      }
+    }
+  ]
+}

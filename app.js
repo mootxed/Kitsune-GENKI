@@ -6,7 +6,6 @@
 import { Router } from './router.js';
 import { ACHIEVEMENTS, AchievementSystem } from './achievements.js';
 import { QuestsManager } from './quests.js';
-import { STORIES } from './stories.js';
 import { StudyPlan } from './studyplan.js';
 import { API } from './services.js';
 import { SRS } from './srs.js';
@@ -63,8 +62,11 @@ import {
   CH_NAMES,
   CHECK_ITEMS,
   LESSONS,
+  CONTENT_INDEX,
   loadLessons,
   getLesson,
+  ensureLesson,
+  ensureLessonsForSrs,
   markActivity,
   resetDailyGoalFlag,
   startChapter,
@@ -128,10 +130,13 @@ function createDependencies() {
     markActivity,
     startChapter,
     getLesson,
+    ensureLesson,
+    ensureLessonsForSrs,
     renderHome,
 
     // Constants
     LESSONS,
+    CONTENT_INDEX,
     CH_NAMES,
     CHECK_ITEMS,
     XP_PER_LEVEL,
@@ -162,7 +167,6 @@ function createDependencies() {
     API,
     QuestsManager,
     AchievementSystem,
-    STORIES,
     StudyPlan,
 
     // Backup
@@ -197,21 +201,21 @@ let toastTimeout = null;
 function toast(msg, options = {}) {
   const t = $('#toast');
   if (!t) return;
-  
+
   if (toastTimeout) {
     clearTimeout(toastTimeout);
     toastTimeout = null;
   }
-  
+
   // Поддержка HTML контента
   if (options.html) {
     t.innerHTML = msg;
   } else {
     t.textContent = msg;
   }
-  
+
   t.classList.add('show');
-  
+
   const duration = options.duration !== undefined ? options.duration : 3000;
   if (duration > 0) {
     toastTimeout = setTimeout(() => {
@@ -252,9 +256,12 @@ function setupRouter() {
   router = initRouter({
     home: () => renderHome(state, dependencies),
     chapter: (id) => renderChapter(parseInt(id), state, dependencies),
-    srs: () => {
+    srs: async () => {
       const body = $('#srs-body');
       if (!body) return;
+
+      // Подгружаем уроки для всех карточек в SRS (ленивая загрузка)
+      await ensureLessonsForSrs();
 
       // Простая заглушка для SRS - основная логика в ui/flashcards.js
       const due = dueCards(state.srs);
@@ -336,7 +343,7 @@ async function init() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/sw.js')
+      .register(`${import.meta.env.BASE_URL}sw.js`)
       .then((registration) => {
         console.log('✅ Service Worker зарегистрирован');
 
@@ -394,7 +401,7 @@ function showUpdateNotification(worker) {
       updateBtn.addEventListener('click', () => {
         console.log('👆 Пользователь запросил обновление');
         worker.postMessage({ type: 'SKIP_WAITING' });
-        
+
         // Закрываем toast
         const t = $('#toast');
         if (t) t.classList.remove('show');

@@ -1,0 +1,463 @@
+{
+  "id": 3,
+  "lesson_id": 3,
+  "title": "Планы на выходные",
+  "titleJP": "週末の予定",
+  "cover_url": "image/Story3.png",
+  "questions": [
+    {
+      "question": "Во сколько они встретятся в библиотеке?",
+      "options": [
+        "В 2:00",
+        "В 2:30",
+        "В 3:00"
+      ],
+      "correctAnswer": 1
+    }
+  ],
+  "rewards": {
+    "xp": 20,
+    "coins": 15
+  },
+  "content": [
+    {
+      "sentence_id": 1,
+      "speaker": "けん",
+      "tokens": [
+        {
+          "kanji": "今日",
+          "writing": "きょう",
+          "translation": "сегодня",
+          "type": "Noun"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "図書館",
+          "writing": "としょかん",
+          "translation": "библиотека",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(направление)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行きませんか",
+          "writing": "いきませんか",
+          "translation": "не пойдем ли",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Не хотите сходить сегодня в библиотеку?"
+    },
+    {
+      "sentence_id": 2,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "ええ",
+          "writing": "ええ",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "いい",
+          "writing": "いい",
+          "translation": "хороший",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "何時",
+          "writing": "なんじ",
+          "translation": "во сколько",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(время)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行きます",
+          "writing": "いきます",
+          "translation": "пойдем",
+          "type": "Verb"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да, хорошая идея. Во сколько пойдем?"
+    },
+    {
+      "sentence_id": 3,
+      "speaker": "けん",
+      "tokens": [
+        {
+          "kanji": "二時半",
+          "writing": "にじはん",
+          "translation": "2:30",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "どう",
+          "writing": "どう",
+          "translation": "как",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Как насчет половины третьего?"
+    },
+    {
+      "sentence_id": 4,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "はい",
+          "writing": "はい",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "私",
+          "writing": "わたし",
+          "translation": "я",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "よく",
+          "writing": "よく",
+          "translation": "часто",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "図書館",
+          "writing": "としょかん",
+          "translation": "библиотека",
+          "type": "Noun"
+        },
+        {
+          "kanji": "で",
+          "writing": "で",
+          "translation": "(место)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "本",
+          "writing": "ほん",
+          "translation": "книга",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "読みます",
+          "writing": "よみます",
+          "translation": "читаю",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Хорошо. Я часто читаю книги в библиотеке."
+    },
+    {
+      "sentence_id": 5,
+      "speaker": "けん",
+      "tokens": [
+        {
+          "kanji": "私",
+          "writing": "わたし",
+          "translation": "я",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "あまり",
+          "writing": "あまり",
+          "translation": "не очень",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "読みません",
+          "writing": "よみません",
+          "translation": "не читаю",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "たいてい",
+          "writing": "たいてい",
+          "translation": "обычно",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "音楽",
+          "writing": "おんがく",
+          "translation": "музыка",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "聞きます",
+          "writing": "ききます",
+          "translation": "слушаю",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "А я не очень много читаю. Обычно слушаю музыку."
+    },
+    {
+      "sentence_id": 6,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "そう",
+          "writing": "そう",
+          "translation": "так",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "じゃあ",
+          "writing": "じゃあ",
+          "translation": "тогда",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "明日",
+          "writing": "あした",
+          "translation": "завтра",
+          "type": "Noun"
+        },
+        {
+          "kanji": "テニス",
+          "writing": "テニス",
+          "translation": "теннис",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "しませんか",
+          "writing": "しませんか",
+          "translation": "не сыграем ли",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Понятно. Тогда может завтра сыграем в теннис?"
+    },
+    {
+      "sentence_id": 7,
+      "speaker": "けん",
+      "tokens": [
+        {
+          "kanji": "明日",
+          "writing": "あした",
+          "translation": "завтра",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "ちょっと",
+          "writing": "ちょっと",
+          "translation": "немного",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "...",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "明日",
+          "writing": "あした",
+          "translation": "завтра",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "映画",
+          "writing": "えいが",
+          "translation": "фильм",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "見ます",
+          "writing": "みます",
+          "translation": "смотрю",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Завтра как-то... Завтра я буду смотреть фильм."
+    }
+  ]
+}

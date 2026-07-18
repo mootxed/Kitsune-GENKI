@@ -1,0 +1,560 @@
+{
+  "id": 7,
+  "lesson_id": 7,
+  "title": "Новый друг в классе",
+  "titleJP": "クラスの新しい友達",
+  "cover_url": "image/Story7.png",
+  "questions": [
+    {
+      "question": "Что изучает новый студент?",
+      "options": [
+        "Японский язык",
+        "Музыку",
+        "Компьютеры"
+      ],
+      "correctAnswer": 1
+    }
+  ],
+  "rewards": {
+    "xp": 20,
+    "coins": 15
+  },
+  "content": [
+    {
+      "sentence_id": 1,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "たけし",
+          "writing": "たけし",
+          "translation": "Такэси",
+          "type": "Noun"
+        },
+        {
+          "kanji": "さん",
+          "writing": "さん",
+          "translation": "(вежливый суффикс)",
+          "type": "Suffix"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "新しい",
+          "writing": "あたらしい",
+          "translation": "новый",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "学生",
+          "writing": "がくせい",
+          "translation": "студент",
+          "type": "Noun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "来ました",
+          "writing": "きました",
+          "translation": "пришёл",
+          "type": "Verb"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Такэси, пришёл новый студент."
+    },
+    {
+      "sentence_id": 2,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "ええ",
+          "writing": "ええ",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "彼",
+          "writing": "かれ",
+          "translation": "он",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "どんな",
+          "writing": "どんな",
+          "translation": "какой",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "人",
+          "writing": "ひと",
+          "translation": "человек",
+          "type": "Noun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да. Какой он?"
+    },
+    {
+      "sentence_id": 3,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "背",
+          "writing": "せ",
+          "translation": "рост",
+          "type": "Noun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "高くて",
+          "writing": "たかくて",
+          "translation": "высокий и",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "髪",
+          "writing": "かみ",
+          "translation": "волосы",
+          "type": "Noun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "短い",
+          "writing": "みじかい",
+          "translation": "короткие",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "めがね",
+          "writing": "めがね",
+          "translation": "очки",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "かけています",
+          "writing": "かけています",
+          "translation": "носит",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Высокий, у него короткие волосы. Носит очки."
+    },
+    {
+      "sentence_id": 4,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "彼",
+          "writing": "かれ",
+          "translation": "он",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "どこ",
+          "writing": "どこ",
+          "translation": "где",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(место)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "住んでいます",
+          "writing": "すんでいます",
+          "translation": "живёт",
+          "type": "Verb"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Где он живёт?"
+    },
+    {
+      "sentence_id": 5,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "大学",
+          "writing": "だいがく",
+          "translation": "университет",
+          "type": "Noun"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(притяжат.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "近く",
+          "writing": "ちかく",
+          "translation": "рядом",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(место)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "住んでいます",
+          "writing": "すんでいます",
+          "translation": "живёт",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "彼",
+          "writing": "かれ",
+          "translation": "он",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "とても",
+          "writing": "とても",
+          "translation": "очень",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "親切",
+          "writing": "しんせつ",
+          "translation": "добрый",
+          "type": "Na-adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Живёт рядом с университетом. Он очень добрый."
+    },
+    {
+      "sentence_id": 6,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "彼",
+          "writing": "かれ",
+          "translation": "он",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "何",
+          "writing": "なに",
+          "translation": "что",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "勉強",
+          "writing": "べんきょう",
+          "translation": "учёбу",
+          "type": "Noun"
+        },
+        {
+          "kanji": "していますか",
+          "writing": "していますか",
+          "translation": "учит",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Что он изучает?"
+    },
+    {
+      "sentence_id": 7,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "音楽",
+          "writing": "おんがく",
+          "translation": "музыку",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "勉強",
+          "writing": "べんきょう",
+          "translation": "учёбу",
+          "type": "Noun"
+        },
+        {
+          "kanji": "しています",
+          "writing": "しています",
+          "translation": "делает",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "音楽",
+          "writing": "おんがく",
+          "translation": "музыка",
+          "type": "Noun"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(притяжат.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "サークル",
+          "writing": "サークル",
+          "translation": "кружок",
+          "type": "Noun"
+        },
+        {
+          "kanji": "で",
+          "writing": "で",
+          "translation": "(место)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "よく",
+          "writing": "よく",
+          "translation": "часто",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "歌",
+          "writing": "うた",
+          "translation": "песни",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "歌います",
+          "writing": "うたいます",
+          "translation": "поёт",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Изучает музыку. В музыкальном кружке часто поёт песни."
+    },
+    {
+      "sentence_id": 8,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "いいですね",
+          "writing": "いいですね",
+          "translation": "хорошо",
+          "type": "Expression"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "ぼく",
+          "writing": "ぼく",
+          "translation": "я",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "も",
+          "writing": "も",
+          "translation": "тоже",
+          "type": "Particle"
+        },
+        {
+          "kanji": "彼",
+          "writing": "かれ",
+          "translation": "с ним",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "と",
+          "writing": "と",
+          "translation": "вместе с",
+          "type": "Particle"
+        },
+        {
+          "kanji": "話したい",
+          "writing": "はなしたい",
+          "translation": "хочу поговорить",
+          "type": "Verb"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Хорошо. Я тоже хочу с ним поговорить."
+    }
+  ]
+}

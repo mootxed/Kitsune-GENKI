@@ -1,0 +1,233 @@
+{
+  "id": 2,
+  "lesson_id": 2,
+  "title": "Покупки",
+  "titleJP": "買い物",
+  "cover_url": "image/Story2.png",
+  "questions": [
+    {
+      "question": "Сколько стоит сумка?",
+      "options": [
+        "2000 йен",
+        "3000 йен",
+        "4000 йен"
+      ],
+      "correctAnswer": 1
+    }
+  ],
+  "rewards": {
+    "xp": 20,
+    "coins": 15
+  },
+  "content": [
+    {
+      "sentence_id": 1,
+      "speaker": "店員",
+      "tokens": [
+        {
+          "kanji": "いらっしゃいませ",
+          "writing": "いらっしゃいませ",
+          "translation": "добро пожаловать",
+          "type": "Expression"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Добро пожаловать!"
+    },
+    {
+      "sentence_id": 2,
+      "speaker": "客",
+      "tokens": [
+        {
+          "kanji": "あのう",
+          "writing": "あのう",
+          "translation": "извините",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "この",
+          "writing": "この",
+          "translation": "этот",
+          "type": "Determiner"
+        },
+        {
+          "kanji": "かばん",
+          "writing": "かばん",
+          "translation": "сумка",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "いくら",
+          "writing": "いくら",
+          "translation": "сколько",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Извините, сколько стоит эта сумка?"
+    },
+    {
+      "sentence_id": 3,
+      "speaker": "店員",
+      "tokens": [
+        {
+          "kanji": "それ",
+          "writing": "それ",
+          "translation": "это",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "三千円",
+          "writing": "さんぜんえん",
+          "translation": "3000 йен",
+          "type": "Noun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Она стоит 3000 йен."
+    },
+    {
+      "sentence_id": 4,
+      "speaker": "客",
+      "tokens": [
+        {
+          "kanji": "高い",
+          "writing": "たかい",
+          "translation": "дорогой",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "じゃあ",
+          "writing": "じゃあ",
+          "translation": "тогда",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "その",
+          "writing": "その",
+          "translation": "тот",
+          "type": "Determiner"
+        },
+        {
+          "kanji": "Tシャツ",
+          "writing": "ティーシャツ",
+          "translation": "футболка",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "ください",
+          "writing": "ください",
+          "translation": "дайте",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Дорого. Тогда дайте мне ту футболку."
+    },
+    {
+      "sentence_id": 5,
+      "speaker": "店員",
+      "tokens": [
+        {
+          "kanji": "どうぞ",
+          "writing": "どうぞ",
+          "translation": "пожалуйста",
+          "type": "Expression"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Пожалуйста."
+    }
+  ]
+}

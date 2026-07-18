@@ -1,0 +1,521 @@
+{
+  "id": 12,
+  "lesson_id": 12,
+  "title": "Болезнь",
+  "titleJP": "病気",
+  "cover_url": "image/Story12.png",
+  "content": [
+    {
+      "sentence_id": 1,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "ソラ",
+          "writing": "ソラ",
+          "translation": "Сора",
+          "type": "Noun"
+        },
+        {
+          "kanji": "さん",
+          "writing": "さん",
+          "translation": "(вежливый суффикс)",
+          "type": "Suffix"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "どう",
+          "writing": "どう",
+          "translation": "как",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "した",
+          "writing": "した",
+          "translation": "случилось",
+          "type": "Verb"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(объяснение)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "？",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "顔色",
+          "writing": "かおいろ",
+          "translation": "цвет лица",
+          "type": "Noun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "悪い",
+          "writing": "わるい",
+          "translation": "плохой",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "よ",
+          "writing": "よ",
+          "translation": "(эмфаза)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Сора, что случилось? У тебя плохой цвет лица."
+    },
+    {
+      "sentence_id": 2,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "うん",
+          "writing": "うん",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "熱",
+          "writing": "ねつ",
+          "translation": "температура",
+          "type": "Noun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "あって",
+          "writing": "あって",
+          "translation": "есть",
+          "type": "Verb"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "頭",
+          "writing": "あたま",
+          "translation": "голова",
+          "type": "Noun"
+        },
+        {
+          "kanji": "も",
+          "writing": "も",
+          "translation": "тоже",
+          "type": "Particle"
+        },
+        {
+          "kanji": "痛い",
+          "writing": "いたい",
+          "translation": "болит",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "んだ",
+          "writing": "んだ",
+          "translation": "(объяснение)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да. У меня температура, и голова тоже болит."
+    },
+    {
+      "sentence_id": 3,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "それ",
+          "writing": "それ",
+          "translation": "это",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "大変",
+          "writing": "たいへん",
+          "translation": "тяжело",
+          "type": "Na-adjective"
+        },
+        {
+          "kanji": "だ",
+          "writing": "だ",
+          "translation": "(связка)",
+          "type": "Copula"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "薬",
+          "writing": "くすり",
+          "translation": "лекарство",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "飲んだ",
+          "writing": "のんだ",
+          "translation": "выпила",
+          "type": "Verb"
+        },
+        {
+          "kanji": "方",
+          "writing": "ほう",
+          "translation": "(способ)",
+          "type": "Noun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "いい",
+          "writing": "いい",
+          "translation": "лучше",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "よ",
+          "writing": "よ",
+          "translation": "(эмфаза)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Это тяжело. Лучше выпить лекарство."
+    },
+    {
+      "sentence_id": 4,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "うん",
+          "writing": "うん",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "でも",
+          "writing": "でも",
+          "translation": "но",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "薬",
+          "writing": "くすり",
+          "translation": "лекарства",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "持っていない",
+          "writing": "もっていない",
+          "translation": "не имею",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да, но у меня нет лекарства."
+    },
+    {
+      "sentence_id": 5,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "じゃあ",
+          "writing": "じゃあ",
+          "translation": "тогда",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "病院",
+          "writing": "びょういん",
+          "translation": "в больницу",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(направление)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行った",
+          "writing": "いった",
+          "translation": "пойти",
+          "type": "Verb"
+        },
+        {
+          "kanji": "方",
+          "writing": "ほう",
+          "translation": "(способ)",
+          "type": "Noun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "いい",
+          "writing": "いい",
+          "translation": "лучше",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "と",
+          "writing": "と",
+          "translation": "(цитата)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "思う",
+          "writing": "おもう",
+          "translation": "думаю",
+          "type": "Verb"
+        },
+        {
+          "kanji": "よ",
+          "writing": "よ",
+          "translation": "(эмфаза)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Тогда думаю, лучше пойти в больницу."
+    },
+    {
+      "sentence_id": 6,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "そう",
+          "writing": "そう",
+          "translation": "понятно",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "だ",
+          "writing": "だ",
+          "translation": "(связка)",
+          "type": "Copula"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "一緒",
+          "writing": "いっしょ",
+          "translation": "вместе",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(совместность)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行って",
+          "writing": "いって",
+          "translation": "пойдёшь",
+          "type": "Verb"
+        },
+        {
+          "kanji": "くれる",
+          "writing": "くれる",
+          "translation": "(для меня)",
+          "type": "Verb"
+        },
+        {
+          "kanji": "？",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Точно. Пойдёшь со мной?"
+    },
+    {
+      "sentence_id": 7,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "もちろん",
+          "writing": "もちろん",
+          "translation": "конечно",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "すぐ",
+          "writing": "すぐ",
+          "translation": "сразу",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(время)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行こう",
+          "writing": "いこう",
+          "translation": "пойдём",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Конечно. Пойдём сразу."
+    },
+    {
+      "sentence_id": 8,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "ありがとう",
+          "writing": "ありがとう",
+          "translation": "спасибо",
+          "type": "Expression"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "助かる",
+          "writing": "たすかる",
+          "translation": "выручаешь",
+          "type": "Verb"
+        },
+        {
+          "kanji": "よ",
+          "writing": "よ",
+          "translation": "(эмфаза)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Спасибо. Ты меня выручаешь."
+    }
+  ]
+}

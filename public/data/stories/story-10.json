@@ -1,0 +1,449 @@
+{
+  "id": 10,
+  "lesson_id": 10,
+  "title": "Зимние каникулы",
+  "titleJP": "冬休み",
+  "cover_url": "image/Story10.png",
+  "content": [
+    {
+      "sentence_id": 1,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "メアリー",
+          "writing": "メアリー",
+          "translation": "Мэри",
+          "type": "Noun"
+        },
+        {
+          "kanji": "さん",
+          "writing": "さん",
+          "translation": "(вежливый суффикс)",
+          "type": "Suffix"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "冬休み",
+          "writing": "ふゆやすみ",
+          "translation": "зимние каникулы",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "どこ",
+          "writing": "どこ",
+          "translation": "куда",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(неопред.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(направление)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行った",
+          "writing": "いった",
+          "translation": "ездила",
+          "type": "Verb"
+        },
+        {
+          "kanji": "？",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Мэри, ты куда-нибудь ездила на зимние каникулы?"
+    },
+    {
+      "sentence_id": 2,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "うん",
+          "writing": "うん",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "北海道",
+          "writing": "ほっかいどう",
+          "translation": "на Хоккайдо",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(направление)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行って",
+          "writing": "いって",
+          "translation": "поехав",
+          "type": "Verb"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "スキー",
+          "writing": "スキー",
+          "translation": "на лыжах",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "した",
+          "writing": "した",
+          "translation": "каталась",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да, ездила на Хоккайдо и каталась на лыжах."
+    },
+    {
+      "sentence_id": 3,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "いいな",
+          "writing": "いいな",
+          "translation": "хорошо же",
+          "type": "Expression"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "誰",
+          "writing": "だれ",
+          "translation": "с кем",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "と",
+          "writing": "と",
+          "translation": "(совместность)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行った",
+          "writing": "いった",
+          "translation": "ездила",
+          "type": "Verb"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(объяснение)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "？",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Хорошо же. С кем ездила?"
+    },
+    {
+      "sentence_id": 4,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "友達",
+          "writing": "ともだち",
+          "translation": "с подругой",
+          "type": "Noun"
+        },
+        {
+          "kanji": "と",
+          "writing": "と",
+          "translation": "(совместность)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "すごく",
+          "writing": "すごく",
+          "translation": "очень",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "楽しかった",
+          "writing": "たのしかった",
+          "translation": "было весело",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "よ",
+          "writing": "よ",
+          "translation": "(эмфаза)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "С подругой. Было очень весело!"
+    },
+    {
+      "sentence_id": 5,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "そう",
+          "writing": "そう",
+          "translation": "понятно",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "ホテル",
+          "writing": "ホテル",
+          "translation": "отель",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "どう",
+          "writing": "どう",
+          "translation": "как",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "だった",
+          "writing": "だった",
+          "translation": "был",
+          "type": "Copula"
+        },
+        {
+          "kanji": "？",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Понятно. Как был отель?"
+    },
+    {
+      "sentence_id": 6,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "とても",
+          "writing": "とても",
+          "translation": "очень",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "きれい",
+          "writing": "きれい",
+          "translation": "красивым",
+          "type": "Na-adjective"
+        },
+        {
+          "kanji": "で",
+          "writing": "で",
+          "translation": "(соединение)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "料理",
+          "writing": "りょうり",
+          "translation": "еда",
+          "type": "Noun"
+        },
+        {
+          "kanji": "も",
+          "writing": "も",
+          "translation": "тоже",
+          "type": "Particle"
+        },
+        {
+          "kanji": "おいしかった",
+          "writing": "おいしかった",
+          "translation": "была вкусной",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Очень красивым, и еда тоже была вкусной."
+    },
+    {
+      "sentence_id": 7,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "写真",
+          "writing": "しゃしん",
+          "translation": "фотографии",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "たくさん",
+          "writing": "たくさん",
+          "translation": "много",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "撮った",
+          "writing": "とった",
+          "translation": "сделала",
+          "type": "Verb"
+        },
+        {
+          "kanji": "？",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Много фотографий сделала?"
+    },
+    {
+      "sentence_id": 8,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "うん",
+          "writing": "うん",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "撮った",
+          "writing": "とった",
+          "translation": "сделала",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "今度",
+          "writing": "こんど",
+          "translation": "в следующий раз",
+          "type": "Noun"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "見せて",
+          "writing": "みせて",
+          "translation": "покажу",
+          "type": "Verb"
+        },
+        {
+          "kanji": "あげる",
+          "writing": "あげる",
+          "translation": "(тебе)",
+          "type": "Verb"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да, сделала. В следующий раз покажу тебе."
+    }
+  ]
+}
