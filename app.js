@@ -1,4 +1,5 @@
 /* app.js — Kitsune Genki main controller */
+import { Router } from './router.js';
 import { ACHIEVEMENTS, AchievementSystem } from './achievements.js';
 import { QuestsManager } from './quests.js';
 import { STORIES } from './stories.js';
@@ -520,42 +521,12 @@ const LS_LESSON_VERSION = "kitsune_lessons_version_v1";
     return completedLessons >= 3;
   }
 
-  // ---------- Tab Indicator Animation ----------
-  function updateTabIndicator() {
-    const activeTab = $(".tab.active");
-    const indicator = $(".tab-indicator");
-    if (activeTab && indicator) {
-      indicator.style.transform = `translateX(${activeTab.offsetLeft}px)`;
-      indicator.style.width = `${activeTab.offsetWidth}px`;
-    }
-  }
+  // ---------- Navigation (Router Integration) ----------
+  let router = null;
 
-  // ---------- Navigation ----------
-  const SCREENS = ["home", "profile", "chapter", "srs", "sensei", "library", "settings", "plan", "story", "quests", "ai-story", "crossword"];
-function nav(name, opt, skipHistory = false) {
-  SCREENS.forEach((s) => $("#screen-" + s).classList.toggle("hidden", s !== name));
-  $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.nav === name));
-  updateTabIndicator();
-  
-  // Добавляем в историю браузера (кроме случаев, когда skipHistory=true)
-  if (!skipHistory) {
-    history.pushState({ screen: name, opt: opt }, '', '');
-  }
-  
-  if (name === "home") renderHome();
-  if (name === "profile") renderProfile();
-  if (name === "srs") renderSRSHome();
-  if (name === "library") renderLibrary();
-  if (name === "settings") renderSettings();
-  if (name === "sensei") renderSensei();
-  if (name === "chapter") renderChapter(opt);
-  if (name === "plan") renderPlan();
-  if (name === "quests") renderQuests();
-  if (name === "ai-story") renderAIStory();
-  if (name === "crossword") renderCrossword();
-  window.scrollTo(0, 0);
-  syncAvatars();
-}
+  // Глобальные алиасы для обратной совместимости
+  window.nav = null;
+  window.updateTabIndicator = null;
 
   // ---------- Avatar Sync ----------
   function syncAvatars() {
@@ -5536,6 +5507,33 @@ function completeStory(story) {
     if (!state.onboardingCompleted) {
       setTimeout(() => showOnboarding(), 500);
     }
+  }
+
+  // ---------- Router initialization ----------
+  function initRouter() {
+    // Создаём экземпляр роутера
+    router = new Router();
+    
+    // Регистрируем обработчики рендера для каждого экрана
+    router.registerRenderHandler('home', renderHome);
+    router.registerRenderHandler('profile', renderProfile);
+    router.registerRenderHandler('chapter', renderChapter);
+    router.registerRenderHandler('srs', renderSRSHome);
+    router.registerRenderHandler('sensei', renderSensei);
+    router.registerRenderHandler('library', renderLibrary);
+    router.registerRenderHandler('settings', renderSettings);
+    router.registerRenderHandler('plan', renderPlan);
+    router.registerRenderHandler('story', () => {}); // История рендерится через openStory
+    router.registerRenderHandler('quests', renderQuests);
+    router.registerRenderHandler('ai-story', renderAIStory);
+    router.registerRenderHandler('crossword', renderCrossword);
+    
+    // Инициализация обработчика истории браузера
+    router.initHistoryHandler();
+    
+    // Устанавливаем глобальные алиасы для обратной совместимости
+    window.nav = (name, opt, skipHistory) => router.navigate(name, opt, skipHistory);
+    window.updateTabIndicator = () => router.updateTabIndicator();
   }
 
   // ===== ONBOARDING WIZARD =====
