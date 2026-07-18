@@ -337,6 +337,14 @@ async function init() {
 
   // Применение кастомной темы (если выбрана)
   applyCustomTheme();
+
+  // Скрытие загрузочного экрана после полной инициализации
+  const loader = document.getElementById('app-loader');
+  if (loader) {
+    loader.style.transition = 'opacity 0.3s ease';
+    loader.style.opacity = '0';
+    setTimeout(() => loader.remove(), 300);
+  }
 }
 
 // ===== SERVICE WORKER РЕГИСТРАЦИЯ =====
