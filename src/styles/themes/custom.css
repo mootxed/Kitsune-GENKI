@@ -1,0 +1,299 @@
+/* ===== Custom Themes ===== */
+/* Внимание: темы НЕ переопределяют --streak-bg-start/--streak-bg-end,
+   чтобы не конфликтовать со скинами карточки стрика (data-skin). */
+
+/* --- Тема: Сакура (Sakura) --- */
+[data-theme='sakura'] {
+  --primary: #ff8da1;
+  --primary-dark: #d81b60;
+  --color-orange: #ff8da1;
+  --color-orange-dark: #d81b60;
+  --color-orange-soft: #ffe0e6;
+  --btn-shadow: 0 4px 0 #c2185b;
+  --btn-shadow-hover: 0 4px 0 #c2185b;
+  --streak-text-color: #fff;
+  --bg: #fff0f3;
+  --bg-card: #fff5f7;
+  --bg-tag: #ffe0e6;
+  --text: #4a1942;
+  --color-ink: #4a1942;
+  --text-muted: #a85d82;
+  --color-muted: #a85d82;
+  --color-line: #ffe0e6;
+  --color-tag: #ffe0e6;
+  --color-card: #fff5f7;
+  --color-cream: #fff0f3;
+  --header-bg: #fff0f3;
+  --tabbar-bg: #fff5f7;
+  --tabbar-border: #ffe0e6;
+  --shop-bg: #ffe8ec;
+  --modal-bg: #fff5f7;
+  --border: #ffe0e6;
+  --shadow: 0 4px 12px rgba(194, 24, 91, 0.08);
+  --shadow-card: 0 4px 12px rgba(194, 24, 91, 0.06);
+  --modal-shadow: 0 12px 40px rgba(194, 24, 91, 0.3);
+  --toast-bg: #4a1942;
+  --toast-color: #fff0f3;
+  --btn-disabled-bg: #ffd0d8;
+  --btn-disabled-text: #a85d82;
+  --pre-bg: #4a1942;
+  --pre-color: #fff0f3;
+  --heat-0: #ffe0e6;
+  --heat-1: #ffb6c1;
+  --heat-2: #ff8da1;
+  --heat-3: #d81b60;
+  --heat-4: #c2185b;
+}
+
+/* --- Тема: Маття (Matcha) --- */
+[data-theme='matcha'] {
+  --primary: #8bc34a;
+  --primary-dark: #558b2f;
+  --color-orange: #8bc34a;
+  --color-orange-dark: #558b2f;
+  --color-orange-soft: #e8f5e0;
+  --btn-shadow: 0 4px 0 #33691e;
+  --btn-shadow-hover: 0 4px 0 #33691e;
+  --streak-text-color: #1b3a0a;
+  --bg: #f1f8e9;
+  --bg-card: #f5f9f0;
+  --bg-tag: #d7e8c8;
+  --text: #1b3a0a;
+  --color-ink: #1b3a0a;
+  --text-muted: #5d7a3c;
+  --color-muted: #5d7a3c;
+  --color-line: #d7e8c8;
+  --color-tag: #d7e8c8;
+  --color-card: #f5f9f0;
+  --color-cream: #f1f8e9;
+  --header-bg: #f1f8e9;
+  --tabbar-bg: #f5f9f0;
+  --tabbar-border: #d7e8c8;
+  --shop-bg: #e0f0d0;
+  --modal-bg: #f5f9f0;
+  --border: #d7e8c8;
+  --shadow: 0 4px 12px rgba(51, 105, 30, 0.08);
+  --shadow-card: 0 4px 12px rgba(51, 105, 30, 0.06);
+  --modal-shadow: 0 12px 40px rgba(51, 105, 30, 0.3);
+  --toast-bg: #1b3a0a;
+  --toast-color: #f1f8e9;
+  --btn-disabled-bg: #c8d8b8;
+  --btn-disabled-text: #5d7a3c;
+  --pre-bg: #1b3a0a;
+  --pre-color: #f1f8e9;
+  --heat-0: #e0f0d0;
+  --heat-1: #aed581;
+  --heat-2: #8bc34a;
+  --heat-3: #558b2f;
+  --heat-4: #33691e;
+}
+
+/* --- Тема: Ночной Токио (Neo Tokyo) --- */
+[data-theme='neo_tokyo'] {
+  --primary: #ab47bc;
+  --primary-dark: #6a1b9a;
+  --color-orange: #ab47bc;
+  --color-orange-dark: #6a1b9a;
+  --color-orange-soft: #f3e5f5;
+  --btn-shadow: 0 4px 0 #4a148c;
+  --btn-shadow-hover: 0 4px 0 #4a148c;
+  --streak-text-color: #fff;
+  --bg: #1a0a2e;
+  --bg-card: #2a1a4e;
+  --bg-tag: #2a1a4e;
+  --text: #e8d5f5;
+  --color-ink: #e8d5f5;
+  --text-muted: #9b7fb8;
+  --color-muted: #9b7fb8;
+  --color-line: #3a2a5e;
+  --color-tag: #2a1a4e;
+  --color-card: #2a1a4e;
+  --color-cream: #1a0a2e;
+  --header-bg: #1a0a2e;
+  --tabbar-bg: #2a1a4e;
+  --tabbar-border: #3a2a5e;
+  --shop-bg: #2a1a4e;
+  --modal-bg: #2a1a4e;
+  --border: #3a2a5e;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --modal-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --toast-bg: #e8d5f5;
+  --toast-color: #1a0a2e;
+  --btn-disabled-bg: #3a2a5e;
+  --btn-disabled-text: #9b7fb8;
+  --pre-bg: #0a0015;
+  --pre-color: #e8d5f5;
+  --heat-0: #2a1a4e;
+  --heat-1: #4a2a7e;
+  --heat-2: #6a3aae;
+  --heat-3: #9c27b0;
+  --heat-4: #ce93d8;
+}
+
+/* --- Тема: Волна Канагавы (Kanagawa) --- */
+[data-theme='kanagawa'] {
+  --primary: #29b6f6;
+  --primary-dark: #0277bd;
+  --color-orange: #29b6f6;
+  --color-orange-dark: #0277bd;
+  --color-orange-soft: #e1f5fe;
+  --btn-shadow: 0 4px 0 #01579b;
+  --btn-shadow-hover: 0 4px 0 #01579b;
+  --streak-text-color: #fff;
+  --bg: #e3f2fd;
+  --bg-card: #eff8ff;
+  --bg-tag: #bbdefb;
+  --text: #0a2a4a;
+  --color-ink: #0a2a4a;
+  --text-muted: #4a7a9a;
+  --color-muted: #4a7a9a;
+  --color-line: #bbdefb;
+  --color-tag: #bbdefb;
+  --color-card: #eff8ff;
+  --color-cream: #e3f2fd;
+  --header-bg: #e3f2fd;
+  --tabbar-bg: #eff8ff;
+  --tabbar-border: #bbdefb;
+  --shop-bg: #d0e8f8;
+  --modal-bg: #eff8ff;
+  --border: #bbdefb;
+  --shadow: 0 4px 12px rgba(1, 87, 155, 0.08);
+  --shadow-card: 0 4px 12px rgba(1, 87, 155, 0.06);
+  --modal-shadow: 0 12px 40px rgba(1, 87, 155, 0.3);
+  --toast-bg: #0a2a4a;
+  --toast-color: #e3f2fd;
+  --btn-disabled-bg: #b0d4e8;
+  --btn-disabled-text: #4a7a9a;
+  --pre-bg: #0a2a4a;
+  --pre-color: #e3f2fd;
+  --heat-0: #bbdefb;
+  --heat-1: #4fc3f7;
+  --heat-2: #29b6f6;
+  --heat-3: #0277bd;
+  --heat-4: #01579b;
+}
+
+/* --- Тема: Красный Дракон (Akaryu) --- */
+[data-theme='akaryu'] {
+  --primary: #ef5350;
+  --primary-dark: #c62828;
+  --color-orange: #ef5350;
+  --color-orange-dark: #c62828;
+  --color-orange-soft: #ffebee;
+  --btn-shadow: 0 4px 0 #b71c1c;
+  --btn-shadow-hover: 0 4px 0 #b71c1c;
+  --streak-text-color: #fff;
+  --bg: #ffebee;
+  --bg-card: #fff5f5;
+  --bg-tag: #ffcdd2;
+  --text: #4a0a0a;
+  --color-ink: #4a0a0a;
+  --text-muted: #a84a4a;
+  --color-muted: #a84a4a;
+  --color-line: #ffcdd2;
+  --color-tag: #ffcdd2;
+  --color-card: #fff5f5;
+  --color-cream: #ffebee;
+  --header-bg: #ffebee;
+  --tabbar-bg: #fff5f5;
+  --tabbar-border: #ffcdd2;
+  --shop-bg: #ffd8db;
+  --modal-bg: #fff5f5;
+  --border: #ffcdd2;
+  --shadow: 0 4px 12px rgba(183, 28, 28, 0.08);
+  --shadow-card: 0 4px 12px rgba(183, 28, 28, 0.06);
+  --modal-shadow: 0 12px 40px rgba(183, 28, 28, 0.3);
+  --toast-bg: #4a0a0a;
+  --toast-color: #ffebee;
+  --btn-disabled-bg: #f0b8bb;
+  --btn-disabled-text: #a84a4a;
+  --pre-bg: #4a0a0a;
+  --pre-color: #ffebee;
+  --heat-0: #ffcdd2;
+  --heat-1: #ef9a9a;
+  --heat-2: #ef5350;
+  --heat-3: #c62828;
+  --heat-4: #b71c1c;
+}
+
+/* --- Тема: Эдо (Nezumi / Мышиный) --- */
+[data-theme='nezumi'] {
+  --primary: #8a8c8e;
+  --primary-dark: #5c5e60;
+  --color-orange: #8a8c8e;
+  --color-orange-dark: #5c5e60;
+  --color-orange-soft: #eaebec;
+  --btn-shadow: 0 4px 0 #3b3c3d;
+  --btn-shadow-hover: 0 4px 0 #3b3c3d;
+  --streak-text-color: #f5f5f5;
+  --bg: #e8e8e8;
+  --bg-card: #f0f0f0;
+  --bg-tag: #d8d8d8;
+  --text: #2b2b2b;
+  --color-ink: #2b2b2b;
+  --text-muted: #7a7a7a;
+  --color-muted: #7a7a7a;
+  --color-line: #d0d0d0;
+  --color-tag: #d8d8d8;
+  --color-card: #f0f0f0;
+  --color-cream: #e8e8e8;
+  --header-bg: #e8e8e8;
+  --tabbar-bg: #f0f0f0;
+  --tabbar-border: #d0d0d0;
+  --shop-bg: #d8d8d8;
+  --modal-bg: #f0f0f0;
+  --border: #d0d0d0;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --modal-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  --toast-bg: #2b2b2b;
+  --toast-color: #e8e8e8;
+  --btn-disabled-bg: #c0c0c0;
+  --btn-disabled-text: #7a7a7a;
+  --pre-bg: #2b2b2b;
+  --pre-color: #e8e8e8;
+  --heat-0: #d0d0d0;
+  --heat-1: #a0a0a0;
+  --heat-2: #707070;
+  --heat-3: #505050;
+  --heat-4: #303030;
+  --grid-line: #b0b0b0;
+}
+
+/* ===== Streak Card Skins ===== */
+.streak-card[data-skin='sakura'] {
+  background: linear-gradient(135deg, #ffb6c1 0%, #e91e63 100%);
+  box-shadow: 0 8px 22px rgba(233, 30, 99, 0.28);
+  --streak-text-color: #fff;
+}
+
+.streak-card[data-skin='matcha'] {
+  background: linear-gradient(135deg, #aed581 0%, #33691e 100%);
+  box-shadow: 0 8px 22px rgba(51, 105, 30, 0.28);
+  --streak-text-color: #fff;
+}
+
+.streak-card[data-skin='neo_tokyo'] {
+  background: linear-gradient(135deg, #9c27b0 0%, #1a237e 100%);
+  box-shadow: 0 8px 22px rgba(26, 35, 126, 0.28);
+  --streak-text-color: #fff;
+}
+
+.streak-card[data-skin='kanagawa'] {
+  background: linear-gradient(135deg, #4fc3f7 0%, #01579b 100%);
+  box-shadow: 0 8px 22px rgba(1, 87, 155, 0.28);
+  --streak-text-color: #fff;
+}
+
+.streak-card[data-skin='akaryu'] {
+  background: linear-gradient(135deg, #e53935 0%, #b71c1c 100%);
+  box-shadow: 0 8px 22px rgba(183, 28, 28, 0.28);
+  --streak-text-color: #fff;
+}
+
+.streak-card[data-skin='nezumi'] {
+  background: linear-gradient(135deg, #7a7c7d 0%, #3b3c3d 100%);
+  box-shadow: 0 8px 22px rgba(92, 94, 96, 0.25);
+  --streak-text-color: #f5f5f5;
+}
