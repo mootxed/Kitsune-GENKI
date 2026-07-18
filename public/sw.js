@@ -1,43 +1,183 @@
 /* sw.js — Kitsune Genki Service Worker */
-const CACHE = "kitsune-genki-v1";
-const ASSETS = [
-  "index.html",
-  "styles.css",
-  "app.js",
-  "srs.js",
-  "services.js",
-  "session-manager.js",
-  "studyplan.js",
-  "stories.js",
-  "achievements.js",
-  "quests.js",
-  "lesson.json",
-  "manifest.json",
-  "icon.svg"
+
+// ===== ВЕРСИОНИРОВАННЫЕ КЕШИ =====
+const CACHE_VERSION = '1';
+const CACHE_STATIC = `kitsune-static-v${CACHE_VERSION}`;
+const CACHE_DYNAMIC = `kitsune-dynamic-v${CACHE_VERSION}`;
+const CACHE_LESSON = `kitsune-lesson-v${CACHE_VERSION}`;
+
+// ===== СТАТИЧЕСКИЕ РЕСУРСЫ (Cache-First) =====
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/styles.css',
+  '/app.js',
+  '/router.js',
+  '/srs.js',
+  '/services.js',
+  '/session-manager.js',
+  '/studyplan.js',
+  '/stories.js',
+  '/achievements.js',
+  '/quests.js',
+  '/manifest.json',
+  '/icon.svg',
+  '/offline.html',
 ];
 
-self.addEventListener("install", (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((cache) => {
-      return Promise.allSettled(
-        ASSETS.map((url) => cache.add(url).catch(() => {}))
-      );
-    })
+// ===== ФАЙЛЫ УРОКОВ (Stale-While-Revalidate) =====
+const LESSON_FILES = ['/lesson.json'];
+
+// ===== INSTALL EVENT =====
+self.addEventListener('install', (event) => {
+  console.log('[SW] Installing...');
+  event.waitUntil(
+    Promise.all([
+      // Кэшируем статические ресурсы
+      caches.open(CACHE_STATIC).then((cache) => {
+        return Promise.allSettled(
+          STATIC_ASSETS.map((url) =>
+            cache.add(url).catch((err) => {
+              console.warn(`[SW] Failed to cache ${url}:`, err);
+            })
+          )
+        );
+      }),
+      // Кэшируем файлы уроков
+      caches.open(CACHE_LESSON).then((cache) => {
+        return Promise.allSettled(
+          LESSON_FILES.map((url) =>
+            cache.add(url).catch((err) => {
+              console.warn(`[SW] Failed to cache ${url}:`, err);
+            })
+          )
+        );
+      }),
+    ])
   );
-  self.skipWaiting();
+  // НЕ вызываем skipWaiting автоматически - только по команде пользователя
 });
 
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+// ===== ACTIVATE EVENT =====
+self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating...');
+  const validCaches = [CACHE_STATIC, CACHE_DYNAMIC, CACHE_LESSON];
+
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => {
+        return Promise.all(
+          keys
+            .filter((key) => !validCaches.includes(key))
+            .map((key) => {
+              console.log(`[SW] Deleting old cache: ${key}`);
+              return caches.delete(key);
+            })
+        );
+      })
+      .then(() => {
+        console.log('[SW] Activated and claimed clients');
+        return self.clients.claim();
+      })
   );
-  self.clients.claim();
 });
 
-self.addEventListener("fetch", (e) => {
-  e.respondWith(
-    caches.match(e.request).then((cached) => cached || fetch(e.request))
+// ===== MESSAGE EVENT (для контролируемого обновления) =====
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[SW] Received SKIP_WAITING command');
+    self.skipWaiting();
+  }
+});
+
+// ===== FETCH EVENT (стратегии кэширования) =====
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Игнорируем запросы к внешним доменам (CDN, API и т.д.)
+  if (url.origin !== location.origin) {
+    return;
+  }
+
+  // ===== STALE-WHILE-REVALIDATE для lesson.json =====
+  if (LESSON_FILES.some((file) => url.pathname === file)) {
+    event.respondWith(
+      caches.open(CACHE_LESSON).then((cache) => {
+        return cache.match(request).then((cachedResponse) => {
+          const fetchPromise = fetch(request)
+            .then((networkResponse) => {
+              // Обновляем кеш в фоне
+              cache.put(request, networkResponse.clone());
+              return networkResponse;
+            })
+            .catch((err) => {
+              console.warn('[SW] Network fetch failed for lesson:', err);
+              return cachedResponse; // Возвращаем кешированную версию при ошибке
+            });
+
+          // Возвращаем кешированную версию сразу, если есть
+          return cachedResponse || fetchPromise;
+        });
+      })
+    );
+    return;
+  }
+
+  // ===== CACHE-FIRST для статических ресурсов =====
+  if (STATIC_ASSETS.some((asset) => url.pathname === asset || url.pathname.startsWith('/src/') || url.pathname.startsWith('/ui/') || url.pathname.startsWith('/state/'))) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        // Если нет в кеше, загружаем из сети и кешируем
+        return fetch(request)
+          .then((networkResponse) => {
+            return caches.open(CACHE_STATIC).then((cache) => {
+              cache.put(request, networkResponse.clone());
+              return networkResponse;
+            });
+          })
+          .catch((err) => {
+            console.warn('[SW] Failed to fetch static asset:', err);
+            throw err;
+          });
+      })
+    );
+    return;
+  }
+
+  // ===== NETWORK-FIRST для остального контента =====
+  event.respondWith(
+    fetch(request)
+      .then((networkResponse) => {
+        // Кешируем успешные GET запросы в динамический кеш
+        if (request.method === 'GET' && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_DYNAMIC).then((cache) => {
+            cache.put(request, responseToCache);
+          });
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        // Если сеть недоступна, пытаемся вернуть из кеша
+        return caches.match(request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // Для навигационных запросов показываем offline страницу
+          if (request.mode === 'navigate') {
+            return caches.match('/offline.html');
+          }
+          // Для остальных возвращаем ошибку
+          return new Response('Network error', {
+            status: 408,
+            headers: { 'Content-Type': 'text/plain' },
+          });
+        });
+      })
   );
 });
