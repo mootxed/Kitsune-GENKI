@@ -1,0 +1,17 @@
+# Build output
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Public assets
+public/
+
+# IDE
+.vscode/
+.idea/
+
+# Cache
+.eslintcache
+.prettiercache
