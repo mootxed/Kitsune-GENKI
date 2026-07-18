@@ -1101,7 +1101,7 @@ async function initDictionaryKanjiWriter(kanji) {
 
 // Функция запуска дополнительного повторения
 export function startExtraReview(state, dependencies) {
-  const { save, updateSrsBadge, renderHome, startFlash } = dependencies;
+  const { save, updateSrsBadge, renderHome, startFlash, toast } = dependencies;
 
   const all = allCards(state.srs);
   if (all.length === 0) {

@@ -198,7 +198,7 @@ function createDependencies() {
 
 // ===== TOAST ФУНКЦИЯ =====
 let toastTimeout = null;
-function toast(msg, options = {}) {
+export function toast(msg, options = {}) {
   const t = $('#toast');
   if (!t) return;
 
