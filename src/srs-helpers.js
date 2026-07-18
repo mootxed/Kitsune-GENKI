@@ -20,7 +20,9 @@ export function isWordUnlocked(wordId, chapters) {
   const chapter = chapters[chapterId];
   if (!chapter) return false;
 
-  const completedLessons = Object.values(chapter.checklist || {}).filter(val => val === true).length;
+  const completedLessons = Object.values(chapter.checklist || {}).filter(
+    (val) => val === true
+  ).length;
   return completedLessons >= 3;
 }
 

@@ -1,420 +1,547 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#FF7A1A" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#12121E" media="(prefers-color-scheme: dark)" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🦊</text></svg>">
-  <title>Kitsune Genki</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="apple-touch-icon" href="icon.svg" />
-  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
-</head>
-<body>
-  <div id="app">
-  <!-- Grid Background -->
-  <div class="grid-background"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#FF7A1A" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#12121E" media="(prefers-color-scheme: dark)" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🦊</text></svg>"
+    />
+    <title>Kitsune Genki</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="apple-touch-icon" href="icon.svg" />
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Grid Background -->
+      <div class="grid-background"></div>
 
-  <!-- Loading Screen -->
-  <div id="app-loader" class="app-loader">
-    <div class="loader-content">
-      <div class="loader-fox">🦊</div>
-      <div class="loader-spinner"></div>
-      <div class="loader-text">Загрузка...</div>
-    </div>
-  </div>
-
-  <!-- ===== HOME ===== -->
-  <section class="screen" id="screen-home" data-testid="screen-home">
-    <header class="app-header">
-      <div class="app-header-left">
-        <span class="logo-fox">🦊</span>
-        <div>
-          <h1 class="app-title">Kitsune Genki</h1>
-          <p class="app-subtitle">Тренажёр японского</p>
+      <!-- Loading Screen -->
+      <div id="app-loader" class="app-loader">
+        <div class="loader-content">
+          <div class="loader-fox">🦊</div>
+          <div class="loader-spinner"></div>
+          <div class="loader-text">Загрузка...</div>
         </div>
       </div>
-      <div class="app-header-right">
-        <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
-        <button class="icon-btn" data-nav="settings" data-testid="header-settings-btn" aria-label="Настройки">⚙️</button>
-      </div>
-    </header>
-    <div class="screen-scroll">
-      <!-- XP & Streak -->
-      <div class="streak-card" data-testid="streak-card">
-        <div class="streak-label">ЕЖЕДНЕВНЫЙ СТРИК</div>
-        <div class="streak-row">
-          <div class="streak-circle-wrap">
-            <div class="streak-circle-progress" id="streak-circle-progress">
-              <div class="streak-circle-inner" id="streak-circle-inner">0/10</div>
+
+      <!-- ===== HOME ===== -->
+      <section class="screen" id="screen-home" data-testid="screen-home">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="logo-fox">🦊</span>
+            <div>
+              <h1 class="app-title">Kitsune Genki</h1>
+              <p class="app-subtitle">Тренажёр японского</p>
             </div>
           </div>
-          <div class="streak-info">
-            <div class="streak-num-row">
-              <span class="streak-num" id="streak-num" data-testid="streak-number">0</span>
-              <span class="streak-days" id="streak-days-label">дней</span>
+          <div class="app-header-right">
+            <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
+            <button
+              class="icon-btn"
+              data-nav="settings"
+              data-testid="header-settings-btn"
+              aria-label="Настройки"
+            >
+              ⚙️
+            </button>
+          </div>
+        </header>
+        <div class="screen-scroll">
+          <!-- XP & Streak -->
+          <div class="streak-card" data-testid="streak-card">
+            <div class="streak-label">ЕЖЕДНЕВНЫЙ СТРИК</div>
+            <div class="streak-row">
+              <div class="streak-circle-wrap">
+                <div class="streak-circle-progress" id="streak-circle-progress">
+                  <div class="streak-circle-inner" id="streak-circle-inner">0/10</div>
+                </div>
+              </div>
+              <div class="streak-info">
+                <div class="streak-num-row">
+                  <span class="streak-num" id="streak-num" data-testid="streak-number">0</span>
+                  <span class="streak-days" id="streak-days-label">дней</span>
+                </div>
+                <div class="streak-hint" id="streak-hint">
+                  Решите 10 карточек, чтобы продлить стрик!
+                </div>
+              </div>
             </div>
-            <div class="streak-hint" id="streak-hint">Решите 10 карточек, чтобы продлить стрик!</div>
+            <!-- XP Bar -->
+            <div class="xp-bar-wrap">
+              <div class="xp-bar-header">
+                <span id="level-text">Уровень 1</span>
+                <span id="xp-bar-text">0 / 100 XP</span>
+              </div>
+              <div class="xp-bar-track">
+                <div class="xp-bar-fill" id="xp-bar-fill" style="width: 0%"></div>
+              </div>
+            </div>
+            <!-- Монеты -->
+            <div class="coins-row" id="coins-display">🪙 0</div>
           </div>
-        </div>
-        <!-- XP Bar -->
-        <div class="xp-bar-wrap">
-          <div class="xp-bar-header">
-            <span id="level-text">Уровень 1</span>
-            <span id="xp-bar-text">0 / 100 XP</span>
+          <span class="streak-flame">🔥</span>
+
+          <div class="stat-row">
+            <div class="stat-box">
+              <div class="stat-num accent" id="stat-due" data-testid="stat-due">0</div>
+              <div class="stat-cap">К повторению</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-num" id="stat-cards" data-testid="stat-cards">0</div>
+              <div class="stat-cap">Карточек</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-num" id="stat-chapters" data-testid="stat-chapters">0</div>
+              <div class="stat-cap">Глав</div>
+            </div>
           </div>
-          <div class="xp-bar-track">
-            <div class="xp-bar-fill" id="xp-bar-fill" style="width:0%"></div>
+
+          <button class="btn-primary btn-study" id="btn-study-due" data-testid="study-due-btn">
+            <div class="deck-wrapper">
+              <div class="deck-card card-1"><span class="kanji">狐</span></div>
+              <div class="deck-card card-2"><span class="kanji">語</span></div>
+              <div class="deck-card card-3"><span class="kanji">学</span></div>
+            </div>
+            <span id="study-due-label">Повторить карточки</span>
+          </button>
+
+          <div class="card plan-entry-card" data-testid="plan-entry-btn">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span style="font-size: 32px">📅</span>
+              <div>
+                <h3 style="margin: 0">План обучения</h3>
+                <p style="margin: 0; opacity: 0.7; font-size: 14px">
+                  Составьте индивидуальный учебный план
+                </p>
+              </div>
+            </div>
           </div>
+
+          <div class="card" data-nav="quests" data-testid="quests-entry-btn">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 12px"
+            >
+              <div style="display: flex; align-items: center; gap: 12px">
+                <span style="font-size: 32px">⚡</span>
+                <div>
+                  <h3 style="margin: 0">Квесты и челленджи</h3>
+                  <p style="margin: 0; opacity: 0.7; font-size: 14px">
+                    Выполняйте задания и получайте награды
+                  </p>
+                </div>
+              </div>
+              <span id="main-quests-timer" class="main-quests-timer">⏰ --:--</span>
+            </div>
+          </div>
+
+          <h2 class="section-title">ГЛАВЫ</h2>
+          <div id="chapter-list" data-testid="chapter-list"></div>
+          <div class="bottom-pad"></div>
         </div>
-        <!-- Монеты -->
-        <div class="coins-row" id="coins-display">🪙 0</div>
-      </div>
-      <span class="streak-flame">🔥</span>
+      </section>
 
-    <div class="stat-row">
-      <div class="stat-box"><div class="stat-num accent" id="stat-due" data-testid="stat-due">0</div><div class="stat-cap">К повторению</div></div>
-      <div class="stat-box"><div class="stat-num" id="stat-cards" data-testid="stat-cards">0</div><div class="stat-cap">Карточек</div></div>
-      <div class="stat-box"><div class="stat-num" id="stat-chapters" data-testid="stat-chapters">0</div><div class="stat-cap">Глав</div></div>
-    </div>
+      <!-- ===== PROFILE ===== -->
+      <section class="screen hidden" id="screen-profile" data-testid="screen-profile">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="logo-fox">🦊</span>
+            <div><h1 class="app-title">Профиль</h1></div>
+          </div>
+          <div class="app-header-right">
+            <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
+            <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
+          </div>
+        </header>
+        <div class="screen-scroll" id="profile-body"></div>
+      </section>
 
-    <button class="btn-primary btn-study" id="btn-study-due" data-testid="study-due-btn">
-      <div class="deck-wrapper">
-        <div class="deck-card card-1"><span class="kanji">狐</span></div>
-        <div class="deck-card card-2"><span class="kanji">語</span></div>
-        <div class="deck-card card-3"><span class="kanji">学</span></div>
-      </div>
-      <span id="study-due-label">Повторить карточки</span>
-    </button>
-
-    <div class="card plan-entry-card" data-testid="plan-entry-btn">
-      <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:32px">📅</span>
-        <div>
-          <h3 style="margin:0">План обучения</h3>
-          <p style="margin:0;opacity:0.7;font-size:14px">Составьте индивидуальный учебный план</p>
+      <!-- ===== QUESTS ===== -->
+      <section class="screen hidden" id="screen-quests" data-testid="screen-quests">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="logo-fox">⚡</span>
+            <div><h1 class="app-title">Квесты</h1></div>
+          </div>
+          <button
+            class="icon-btn back-btn"
+            data-nav="home"
+            data-testid="quests-back-btn"
+            aria-label="Назад"
+          >
+            ‹
+          </button>
+        </header>
+        <div class="screen-scroll">
+          <div id="quests-container"></div>
+          <div class="bottom-pad"></div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <div class="card" data-nav="quests" data-testid="quests-entry-btn">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-size:32px">⚡</span>
+      <!-- ===== CHAPTER DETAIL ===== -->
+      <section class="screen hidden" id="screen-chapter" data-testid="screen-chapter">
+        <header class="app-header">
+          <button
+            class="icon-btn back-btn"
+            data-nav="home"
+            data-testid="chapter-back-btn"
+            aria-label="Назад"
+          >
+            ‹
+          </button>
           <div>
-            <h3 style="margin:0">Квесты и челленджи</h3>
-            <p style="margin:0;opacity:0.7;font-size:14px">Выполняйте задания и получайте награды</p>
+            <h1 class="app-title" id="chapter-title">Глава</h1>
+            <p class="app-subtitle" id="chapter-jp"></p>
+          </div>
+        </header>
+        <div class="screen-scroll" id="chapter-body"></div>
+      </section>
+
+      <!-- ===== SRS / FLASHCARDS ===== -->
+      <section class="screen hidden" id="screen-srs" data-testid="screen-srs">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="logo-fox">🦊</span>
+            <div>
+              <h1 class="app-title">Kitsune Genki</h1>
+              <p class="app-subtitle">Система интервальных повторений</p>
+            </div>
+          </div>
+          <div class="app-header-right">
+            <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
+            <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
+          </div>
+        </header>
+        <div class="lib-tabs" id="srs-tabs-container">
+          <button class="lib-tab active" data-tab="repetition">Повторение</button>
+          <button class="lib-tab" data-tab="dictionary">Словарь</button>
+        </div>
+        <div class="screen-scroll" id="srs-body"></div>
+      </section>
+
+      <!-- ===== SENSEI ===== -->
+      <section class="screen hidden" id="screen-sensei" data-testid="screen-sensei">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="logo-fox">🦊</span>
+            <div><h1 class="app-title">AI Сенсей</h1></div>
+          </div>
+          <div class="app-header-right">
+            <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
+            <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
+          </div>
+        </header>
+        <div class="lib-tabs">
+          <button class="lib-tab active" data-senseitab="chat" data-testid="senseitab-chat">
+            Чат
+          </button>
+          <button class="lib-tab" data-senseitab="tools" data-testid="senseitab-tools">
+            🛠️ Инструменты
+          </button>
+        </div>
+        <div class="screen-scroll" id="sensei-body"></div>
+      </section>
+
+      <!-- ===== AI STORY GENERATOR ===== -->
+      <section class="screen hidden" id="screen-ai-story" data-testid="screen-ai-story">
+        <header class="app-header">
+          <button
+            class="icon-btn back-btn"
+            data-nav="sensei"
+            data-testid="ai-story-back-btn"
+            aria-label="Назад"
+          >
+            ‹
+          </button>
+          <div>
+            <h1 class="app-title">AI-история</h1>
+            <p class="app-subtitle">Генератор персонализированных историй</p>
+          </div>
+        </header>
+        <div class="screen-scroll" id="ai-story-body"></div>
+      </section>
+
+      <!-- ===== CROSSWORD ===== -->
+      <section class="screen hidden" id="screen-crossword" data-testid="screen-crossword">
+        <header class="app-header">
+          <button
+            class="icon-btn back-btn"
+            data-nav="sensei"
+            data-testid="crossword-back-btn"
+            aria-label="Назад"
+          >
+            ‹
+          </button>
+          <div>
+            <h1 class="app-title">🧩 Кроссворд</h1>
+            <p class="app-subtitle">Закрепление изученных слов</p>
+          </div>
+        </header>
+        <div class="screen-scroll" id="crossword-body"></div>
+      </section>
+
+      <!-- ===== LIBRARY ===== -->
+      <section class="screen hidden" id="screen-library" data-testid="screen-library">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="logo-fox">📚</span>
+            <h1 class="app-title">Мини-учебник</h1>
+          </div>
+          <div class="app-header-right">
+            <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
+            <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
+          </div>
+        </header>
+        <div class="lib-tabs">
+          <button class="lib-tab active" data-libtab="grammar" data-testid="libtab-grammar">
+            Грамматика
+          </button>
+          <button class="lib-tab" data-libtab="notes" data-testid="libtab-notes">Заметки</button>
+          <button class="lib-tab" data-libtab="stories" data-testid="libtab-stories">
+            Истории
+          </button>
+        </div>
+        <div class="screen-scroll" id="library-body"></div>
+      </section>
+
+      <!-- ===== STORY READING ===== -->
+      <section class="screen hidden" id="screen-story" data-testid="screen-story">
+        <header class="app-header">
+          <button
+            class="icon-btn back-btn"
+            data-nav="library"
+            data-testid="story-back-btn"
+            aria-label="Назад"
+          >
+            ‹
+          </button>
+          <div>
+            <h1 class="app-title" id="story-title">История</h1>
+            <p class="app-subtitle" id="story-title-jp"></p>
+          </div>
+        </header>
+        <div class="screen-scroll" id="story-body"></div>
+      </section>
+
+      <!-- ===== SETTINGS ===== -->
+      <section class="screen hidden" id="screen-settings" data-testid="screen-settings">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="logo-fox">⚙️</span>
+            <h1 class="app-title">Настройки</h1>
+          </div>
+        </header>
+        <div class="screen-scroll" id="settings-body"></div>
+      </section>
+
+      <!-- ===== STUDY PLAN ===== -->
+      <section class="screen hidden" id="screen-plan" data-testid="screen-plan">
+        <div class="screen-scroll">
+          <div class="screen-header">
+            <button class="back-btn" data-testid="plan-back-btn">‹</button>
+            <h1>План обучения</h1>
+          </div>
+
+          <!-- Форма создания плана -->
+          <div id="plan-form-container">
+            <h3>Создать новый план</h3>
+
+            <div class="form-group">
+              <label class="form-label">Дата начала</label>
+              <input
+                type="date"
+                id="plan-start-date"
+                class="form-input"
+                data-testid="plan-start-date"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Способ выбора срока</label>
+              <div class="plan-deadline-toggle">
+                <button class="toggle-btn active" data-mode="days" data-testid="deadline-mode-days">
+                  Количество дней
+                </button>
+                <button class="toggle-btn" data-mode="date" data-testid="deadline-mode-date">
+                  Дата дедлайна
+                </button>
+              </div>
+            </div>
+
+            <div id="plan-days-input" class="form-group">
+              <label class="form-label">Срок (дней)</label>
+              <input
+                type="number"
+                id="plan-total-days"
+                class="form-input"
+                min="12"
+                value="90"
+                data-testid="plan-total-days"
+              />
+            </div>
+
+            <div id="plan-deadline-input" class="form-group hidden">
+              <label class="form-label">Дата дедлайна</label>
+              <input
+                type="date"
+                id="plan-deadline-date"
+                class="form-input"
+                data-testid="plan-deadline-date"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Дни недели</label>
+              <div class="weekday-selector">
+                <button class="weekday-btn active" data-day="1" data-testid="weekday-1">Пн</button>
+                <button class="weekday-btn active" data-day="2" data-testid="weekday-2">Вт</button>
+                <button class="weekday-btn active" data-day="3" data-testid="weekday-3">Ср</button>
+                <button class="weekday-btn active" data-day="4" data-testid="weekday-4">Чт</button>
+                <button class="weekday-btn active" data-day="5" data-testid="weekday-5">Пт</button>
+                <button class="weekday-btn" data-day="6" data-testid="weekday-6">Сб</button>
+                <button class="weekday-btn" data-day="0" data-testid="weekday-0">Вс</button>
+              </div>
+            </div>
+
+            <label class="form-label">Уже изученные главы</label>
+            <p style="font-size: 0.875rem; color: #666; margin-bottom: 1rem">
+              Отметьте главы, которые вы уже изучили. Они не будут включены в план обучения.
+            </p>
+            <div id="completed-chapters-list" class="completed-chapters-list"></div>
+
+            <div id="plan-warning" class="plan-warning hidden"></div>
+
+            <button class="btn btn-primary" id="plan-generate-btn" data-testid="plan-generate-btn">
+              Создать план
+            </button>
+            <button
+              class="btn btn-secondary hidden"
+              id="plan-recalc-btn"
+              data-testid="plan-recalc-btn"
+            >
+              Пересчитать план
+            </button>
+          </div>
+
+          <!-- Контейнер плана (показывается после генерации) -->
+          <div id="plan-view-container" class="hidden">
+            <!-- Переключатель вида -->
+            <div class="plan-view-toggle card">
+              <button class="toggle-btn active" data-view="timeline" data-testid="view-timeline">
+                📋 Таймлайн
+              </button>
+              <button class="toggle-btn" data-view="grid" data-testid="view-grid">
+                📅 Календарь
+              </button>
+            </div>
+
+            <!-- Таймлайн (список сегментов) -->
+            <div id="plan-timeline" class="plan-timeline"></div>
+
+            <!-- Календарная сетка -->
+            <div id="plan-calendar-grid" class="plan-calendar-grid hidden"></div>
+
+            <!-- Рекомендации по распределению времени -->
+            <div id="plan-advice-container" class="card hidden">
+              <h3>Распределение времени</h3>
+              <p class="advice-subtitle">Рекомендации оптимального баланса</p>
+              <div id="plan-advice-bar" class="advice-bar"></div>
+              <div id="plan-advice-percentages" class="advice-percentages"></div>
+              <p id="plan-advice-tip" class="advice-tip"></p>
+            </div>
           </div>
         </div>
-        <span id="main-quests-timer" class="main-quests-timer">⏰ --:--</span>
-      </div>
-    </div>
+      </section>
 
-    <h2 class="section-title">ГЛАВЫ</h2>
-    <div id="chapter-list" data-testid="chapter-list"></div>
-    <div class="bottom-pad"></div>
-    </div>
-  </section>
+      <!-- ===== BOTTOM NAV ===== -->
+      <nav class="tabbar" data-testid="tabbar">
+        <div class="tab-indicator"></div>
+        <button class="tab active" data-nav="home" data-testid="tab-home">
+          <span class="tab-ic">🏠</span><span>Главная</span>
+        </button>
+        <button class="tab" data-nav="srs" data-testid="tab-srs">
+          <span class="tab-ic">🎴</span><span class="tab-badge hidden" id="tab-srs-badge">0</span
+          ><span>SRS</span>
+        </button>
+        <button class="tab" data-nav="sensei" data-testid="tab-sensei">
+          <span class="tab-ic">🤖</span><span>Инструменты</span>
+        </button>
+        <button class="tab" data-nav="library" data-testid="tab-library">
+          <span class="tab-ic">📖</span><span>Учебник</span>
+        </button>
+        <button class="tab" data-nav="profile" data-testid="tab-profile">
+          <span class="tab-ic">👤</span><span>Профиль</span>
+        </button>
+      </nav>
 
-<!-- ===== PROFILE ===== -->
-<section class="screen hidden" id="screen-profile" data-testid="screen-profile">
-  <header class="app-header">
-    <div class="app-header-left">
-      <span class="logo-fox">🦊</span>
-      <div><h1 class="app-title">Профиль</h1></div>
-    </div>
-    <div class="app-header-right">
-      <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
-      <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
-    </div>
-  </header>
-  <div class="screen-scroll" id="profile-body"></div>
-</section>
+      <div id="toast" data-testid="toast"></div>
 
-<!-- ===== QUESTS ===== -->
-<section class="screen hidden" id="screen-quests" data-testid="screen-quests">
-  <header class="app-header">
-    <div class="app-header-left">
-      <span class="logo-fox">⚡</span>
-      <div><h1 class="app-title">Квесты</h1></div>
-    </div>
-    <button class="icon-btn back-btn" data-nav="home" data-testid="quests-back-btn" aria-label="Назад">‹</button>
-  </header>
-  <div class="screen-scroll">
-    <div id="quests-container"></div>
-    <div class="bottom-pad"></div>
-  </div>
-</section>
-
-<!-- ===== CHAPTER DETAIL ===== -->
-<section class="screen hidden" id="screen-chapter" data-testid="screen-chapter">
-  <header class="app-header">
-    <button class="icon-btn back-btn" data-nav="home" data-testid="chapter-back-btn" aria-label="Назад">‹</button>
-    <div>
-      <h1 class="app-title" id="chapter-title">Глава</h1>
-      <p class="app-subtitle" id="chapter-jp"></p>
-    </div>
-  </header>
-  <div class="screen-scroll" id="chapter-body"></div>
-</section>
-
-<!-- ===== SRS / FLASHCARDS ===== -->
-<section class="screen hidden" id="screen-srs" data-testid="screen-srs">
-  <header class="app-header">
-    <div class="app-header-left">
-      <span class="logo-fox">🦊</span>
-      <div>
-        <h1 class="app-title">Kitsune Genki</h1>
-        <p class="app-subtitle">Система интервальных повторений</p>
-      </div>
-    </div>
-    <div class="app-header-right">
-      <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
-      <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
-    </div>
-  </header>
-  <div class="lib-tabs" id="srs-tabs-container">
-    <button class="lib-tab active" data-tab="repetition">Повторение</button>
-    <button class="lib-tab" data-tab="dictionary">Словарь</button>
-  </div>
-  <div class="screen-scroll" id="srs-body"></div>
-</section>
-
-<!-- ===== SENSEI ===== -->
-<section class="screen hidden" id="screen-sensei" data-testid="screen-sensei">
-  <header class="app-header">
-    <div class="app-header-left">
-      <span class="logo-fox">🦊</span>
-      <div><h1 class="app-title">AI Сенсей</h1></div>
-    </div>
-    <div class="app-header-right">
-      <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
-      <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
-    </div>
-  </header>
-  <div class="lib-tabs">
-    <button class="lib-tab active" data-senseitab="chat" data-testid="senseitab-chat">Чат</button>
-    <button class="lib-tab" data-senseitab="tools" data-testid="senseitab-tools">🛠️ Инструменты</button>
-  </div>
-  <div class="screen-scroll" id="sensei-body"></div>
-</section>
-
-<!-- ===== AI STORY GENERATOR ===== -->
-<section class="screen hidden" id="screen-ai-story" data-testid="screen-ai-story">
-  <header class="app-header">
-    <button class="icon-btn back-btn" data-nav="sensei" data-testid="ai-story-back-btn" aria-label="Назад">‹</button>
-    <div>
-      <h1 class="app-title">AI-история</h1>
-      <p class="app-subtitle">Генератор персонализированных историй</p>
-    </div>
-  </header>
-  <div class="screen-scroll" id="ai-story-body"></div>
-</section>
-
-<!-- ===== CROSSWORD ===== -->
-<section class="screen hidden" id="screen-crossword" data-testid="screen-crossword">
-  <header class="app-header">
-    <button class="icon-btn back-btn" data-nav="sensei" data-testid="crossword-back-btn" aria-label="Назад">‹</button>
-    <div>
-      <h1 class="app-title">🧩 Кроссворд</h1>
-      <p class="app-subtitle">Закрепление изученных слов</p>
-    </div>
-  </header>
-  <div class="screen-scroll" id="crossword-body"></div>
-</section>
-
-<!-- ===== LIBRARY ===== -->
-<section class="screen hidden" id="screen-library" data-testid="screen-library">
-  <header class="app-header">
-    <div class="app-header-left"><span class="logo-fox">📚</span><h1 class="app-title">Мини-учебник</h1></div>
-    <div class="app-header-right">
-      <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
-      <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
-    </div>
-  </header>
-  <div class="lib-tabs">
-    <button class="lib-tab active" data-libtab="grammar" data-testid="libtab-grammar">Грамматика</button>
-    <button class="lib-tab" data-libtab="notes" data-testid="libtab-notes">Заметки</button>
-    <button class="lib-tab" data-libtab="stories" data-testid="libtab-stories">Истории</button>
-  </div>
-  <div class="screen-scroll" id="library-body"></div>
-</section>
-
-<!-- ===== STORY READING ===== -->
-<section class="screen hidden" id="screen-story" data-testid="screen-story">
-  <header class="app-header">
-    <button class="icon-btn back-btn" data-nav="library" data-testid="story-back-btn" aria-label="Назад">‹</button>
-    <div>
-      <h1 class="app-title" id="story-title">История</h1>
-      <p class="app-subtitle" id="story-title-jp"></p>
-    </div>
-  </header>
-  <div class="screen-scroll" id="story-body"></div>
-</section>
-
-<!-- ===== SETTINGS ===== -->
-<section class="screen hidden" id="screen-settings" data-testid="screen-settings">
-  <header class="app-header">
-    <div class="app-header-left"><span class="logo-fox">⚙️</span><h1 class="app-title">Настройки</h1></div>
-  </header>
-  <div class="screen-scroll" id="settings-body"></div>
-</section>
-
-<!-- ===== STUDY PLAN ===== -->
-<section class="screen hidden" id="screen-plan" data-testid="screen-plan">
-  <div class="screen-scroll">
-    <div class="screen-header">
-      <button class="back-btn" data-testid="plan-back-btn">‹</button>
-      <h1>План обучения</h1>
-    </div>
-
-    <!-- Форма создания плана -->
-    <div id="plan-form-container">
-      <h3>Создать новый план</h3>
-
-      <div class="form-group">
-        <label class="form-label">Дата начала</label>
-        <input type="date" id="plan-start-date" class="form-input" data-testid="plan-start-date">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Способ выбора срока</label>
-        <div class="plan-deadline-toggle">
-          <button class="toggle-btn active" data-mode="days" data-testid="deadline-mode-days">Количество дней</button>
-          <button class="toggle-btn" data-mode="date" data-testid="deadline-mode-date">Дата дедлайна</button>
+      <!-- ===== SHOP MODAL ===== -->
+      <div id="shop-modal" class="modal-overlay hidden" data-testid="shop-modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">🦊 Магазин Кицунэ</h2>
+            <button class="modal-close" id="shop-modal-close" aria-label="Закрыть магазин">
+              ✕
+            </button>
+          </div>
+          <div class="shop-tabs" id="shop-tabs">
+            <button class="shop-tab active" data-shop-tab="avatars">🦊 Аватарки</button>
+            <button class="shop-tab" data-shop-tab="skins">🎴 Скины карточек</button>
+            <button class="shop-tab" data-shop-tab="themes">🎨 Темы</button>
+            <button class="shop-tab" data-shop-tab="titles">🏷️ Титулы</button>
+          </div>
+          <div id="shop-body"></div>
         </div>
       </div>
 
-      <div id="plan-days-input" class="form-group">
-        <label class="form-label">Срок (дней)</label>
-        <input type="number" id="plan-total-days" class="form-input" min="12" value="90" data-testid="plan-total-days">
-      </div>
-
-      <div id="plan-deadline-input" class="form-group hidden">
-        <label class="form-label">Дата дедлайна</label>
-        <input type="date" id="plan-deadline-date" class="form-input" data-testid="plan-deadline-date">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Дни недели</label>
-        <div class="weekday-selector">
-          <button class="weekday-btn active" data-day="1" data-testid="weekday-1">Пн</button>
-          <button class="weekday-btn active" data-day="2" data-testid="weekday-2">Вт</button>
-          <button class="weekday-btn active" data-day="3" data-testid="weekday-3">Ср</button>
-          <button class="weekday-btn active" data-day="4" data-testid="weekday-4">Чт</button>
-          <button class="weekday-btn active" data-day="5" data-testid="weekday-5">Пт</button>
-          <button class="weekday-btn" data-day="6" data-testid="weekday-6">Сб</button>
-          <button class="weekday-btn" data-day="0" data-testid="weekday-0">Вс</button>
+      <!-- ===== WORD BOTTOM SHEET ===== -->
+      <div id="word-bottom-sheet" class="bottom-sheet">
+        <div class="bottom-sheet-backdrop"></div>
+        <div class="bottom-sheet-content">
+          <div class="bottom-sheet-handle"></div>
+          <div class="bottom-sheet-body">
+            <div class="bottom-sheet-header">
+              <h2 id="modal-kanji" class="word-kanji"></h2>
+              <span id="modal-type" class="word-type-badge"></span>
+            </div>
+            <p id="modal-reading" class="word-reading"></p>
+            <p id="modal-translation" class="word-translation"></p>
+          </div>
         </div>
       </div>
 
-      <label class="form-label">Уже изученные главы</label>
-      <p style="font-size: 0.875rem; color: #666; margin-bottom: 1rem;">Отметьте главы, которые вы уже изучили. Они не будут включены в план обучения.</p>
-      <div id="completed-chapters-list" class="completed-chapters-list"></div>
+      <!-- ===== COMPLETION OVERLAY ===== -->
+      <div id="completion-overlay" class="completion-overlay hidden">
+        <div class="completion-content">
+          <div class="completion-icon" id="completion-icon">🎉</div>
+          <h2 class="completion-title" id="completion-title">おめでとう!</h2>
+          <h3 class="completion-subtitle" id="completion-subtitle">Congratulations!</h3>
+          <p class="completion-desc" id="completion-desc">You completed the session!</p>
 
-      <div id="plan-warning" class="plan-warning hidden"></div>
+          <div class="completion-rewards" id="completion-rewards"></div>
+        </div>
 
-      <button class="btn btn-primary" id="plan-generate-btn" data-testid="plan-generate-btn">Создать план</button>
-      <button class="btn btn-secondary hidden" id="plan-recalc-btn" data-testid="plan-recalc-btn">Пересчитать план</button>
-    </div>
-
-    <!-- Контейнер плана (показывается после генерации) -->
-    <div id="plan-view-container" class="hidden">
-
-      <!-- Переключатель вида -->
-      <div class="plan-view-toggle card">
-        <button class="toggle-btn active" data-view="timeline" data-testid="view-timeline">📋 Таймлайн</button>
-        <button class="toggle-btn" data-view="grid" data-testid="view-grid">📅 Календарь</button>
+        <div class="completion-bottom">
+          <button id="btn-completion-continue" class="btn-primary-large">CONTINUE</button>
+        </div>
       </div>
-
-      <!-- Таймлайн (список сегментов) -->
-      <div id="plan-timeline" class="plan-timeline"></div>
-
-      <!-- Календарная сетка -->
-      <div id="plan-calendar-grid" class="plan-calendar-grid hidden"></div>
-
-      <!-- Рекомендации по распределению времени -->
-      <div id="plan-advice-container" class="card hidden">
-        <h3>Распределение времени</h3>
-        <p class="advice-subtitle">Рекомендации оптимального баланса</p>
-        <div id="plan-advice-bar" class="advice-bar"></div>
-        <div id="plan-advice-percentages" class="advice-percentages"></div>
-        <p id="plan-advice-tip" class="advice-tip"></p>
-      </div>
-
     </div>
+    <!-- #app -->
 
-  </div>
-</section>
-
-<!-- ===== BOTTOM NAV ===== -->
-<nav class="tabbar" data-testid="tabbar">
-  <div class="tab-indicator"></div>
-  <button class="tab active" data-nav="home" data-testid="tab-home"><span class="tab-ic">🏠</span><span>Главная</span></button>
-  <button class="tab" data-nav="srs" data-testid="tab-srs"><span class="tab-ic">🎴</span><span class="tab-badge hidden" id="tab-srs-badge">0</span><span>SRS</span></button>
-  <button class="tab" data-nav="sensei" data-testid="tab-sensei"><span class="tab-ic">🤖</span><span>Инструменты</span></button>
-  <button class="tab" data-nav="library" data-testid="tab-library"><span class="tab-ic">📖</span><span>Учебник</span></button>
-  <button class="tab" data-nav="profile" data-testid="tab-profile"><span class="tab-ic">👤</span><span>Профиль</span></button>
-</nav>
-
-<div id="toast" data-testid="toast"></div>
-
-<!-- ===== SHOP MODAL ===== -->
-<div id="shop-modal" class="modal-overlay hidden" data-testid="shop-modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2 class="modal-title">🦊 Магазин Кицунэ</h2>
-      <button class="modal-close" id="shop-modal-close" aria-label="Закрыть магазин">✕</button>
-    </div>
-    <div class="shop-tabs" id="shop-tabs">
-      <button class="shop-tab active" data-shop-tab="avatars">🦊 Аватарки</button>
-      <button class="shop-tab" data-shop-tab="skins">🎴 Скины карточек</button>
-      <button class="shop-tab" data-shop-tab="themes">🎨 Темы</button>
-      <button class="shop-tab" data-shop-tab="titles">🏷️ Титулы</button>
-    </div>
-    <div id="shop-body"></div>
-  </div>
-</div>
-
-<!-- ===== WORD BOTTOM SHEET ===== -->
-<div id="word-bottom-sheet" class="bottom-sheet">
-  <div class="bottom-sheet-backdrop"></div>
-  <div class="bottom-sheet-content">
-    <div class="bottom-sheet-handle"></div>
-    <div class="bottom-sheet-body">
-      <div class="bottom-sheet-header">
-        <h2 id="modal-kanji" class="word-kanji"></h2>
-        <span id="modal-type" class="word-type-badge"></span>
-      </div>
-      <p id="modal-reading" class="word-reading"></p>
-      <p id="modal-translation" class="word-translation"></p>
-    </div>
-  </div>
-</div>
-
-<!-- ===== COMPLETION OVERLAY ===== -->
-<div id="completion-overlay" class="completion-overlay hidden">
-  <div class="completion-content">
-    <div class="completion-icon" id="completion-icon">🎉</div>
-    <h2 class="completion-title" id="completion-title">おめでとう!</h2>
-    <h3 class="completion-subtitle" id="completion-subtitle">Congratulations!</h3>
-    <p class="completion-desc" id="completion-desc">You completed the session!</p>
-
-    <div class="completion-rewards" id="completion-rewards"></div>
-  </div>
-
-  <div class="completion-bottom">
-    <button id="btn-completion-continue" class="btn-primary-large">CONTINUE</button>
-  </div>
-</div>
-
-  </div><!-- #app -->
-
-<script type="module" src="/app.js"></script>
-</body>
+    <script type="module" src="/app.js"></script>
+  </body>
 </html>

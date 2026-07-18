@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 describe('Crossword System', () => {
   // Заглушка для будущих тестов кроссворда
   // Когда модуль кроссворда будет реализован, эти тесты будут расширены
-  
+
   describe('Placeholder tests', () => {
     it('should be implemented when crossword module is added', () => {
       // Этот тест всегда проходит - заглушка для будущей реализации

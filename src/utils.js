@@ -19,14 +19,24 @@ export function formatTimeUntilReset() {
 }
 
 export function pluralDays(n) {
-  if (n % 10 === 1 && n % 100 !== 11) return "день";
-  if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return "дня";
-  return "дней";
+  if (n % 10 === 1 && n % 100 !== 11) return 'день';
+  if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return 'дня';
+  return 'дней';
 }
 
 const MONTHS_RU = [
-  "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-  "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
+  'Январь',
+  'Февраль',
+  'Март',
+  'Апрель',
+  'Май',
+  'Июнь',
+  'Июль',
+  'Август',
+  'Сентябрь',
+  'Октябрь',
+  'Ноябрь',
+  'Декабрь',
 ];
 
 export function monthLabel(date) {
@@ -34,9 +44,9 @@ export function monthLabel(date) {
 }
 
 export function heatmapLevel(count) {
-  if (count === 0) return "0";
-  if (count <= 2) return "1";
-  if (count <= 5) return "2";
-  if (count <= 10) return "3";
-  return "4";
+  if (count === 0) return '0';
+  if (count <= 2) return '1';
+  if (count <= 5) return '2';
+  if (count <= 10) return '3';
+  return '4';
 }
