@@ -10,7 +10,7 @@
         "storyId": 1,
         "title": "Знакомство в университете",
         "titleJP": "大学で出会い",
-        "cover_url": "image/Story1.png",
+        "cover_url": "image/Story1.webp",
         "rewards": {
           "xp": 20,
           "coins": 15
@@ -26,7 +26,7 @@
         "storyId": 2,
         "title": "Покупки",
         "titleJP": "買い物",
-        "cover_url": "image/Story2.png",
+        "cover_url": "image/Story2.webp",
         "rewards": {
           "xp": 20,
           "coins": 15
@@ -42,7 +42,7 @@
         "storyId": 3,
         "title": "Планы на выходные",
         "titleJP": "週末の予定",
-        "cover_url": "image/Story3.png",
+        "cover_url": "image/Story3.webp",
         "rewards": {
           "xp": 20,
           "coins": 15
@@ -58,7 +58,7 @@
         "storyId": 4,
         "title": "Встреча в парке",
         "titleJP": "公園で会いました",
-        "cover_url": "image/Story4.png",
+        "cover_url": "image/Story4.webp",
         "rewards": {
           "xp": 20,
           "coins": 15
@@ -74,7 +74,7 @@
         "storyId": 5,
         "title": "Выходные в кафе",
         "titleJP": "カフェで週末",
-        "cover_url": "image/Story5.png",
+        "cover_url": "image/Story5.webp",
         "rewards": {
           "xp": 20,
           "coins": 15
@@ -90,7 +90,7 @@
         "storyId": 6,
         "title": "Первый день занятий",
         "titleJP": "最初の授業の日",
-        "cover_url": "image/Story6.png",
+        "cover_url": "image/Story6.webp",
         "rewards": {
           "xp": 20,
           "coins": 15
@@ -106,7 +106,7 @@
         "storyId": 7,
         "title": "Новый друг в классе",
         "titleJP": "クラスの新しい友達",
-        "cover_url": "image/Story7.png",
+        "cover_url": "image/Story7.webp",
         "rewards": {
           "xp": 20,
           "coins": 15
@@ -122,7 +122,7 @@
         "storyId": 8,
         "title": "Выходной день",
         "titleJP": "休みの日",
-        "cover_url": "image/Story8.png",
+        "cover_url": "image/Story8.webp",
         "rewards": {
           "xp": 20,
           "coins": 15
@@ -138,7 +138,7 @@
         "storyId": 9,
         "title": "Концерт",
         "titleJP": "コンサート",
-        "cover_url": "image/Story9.png"
+        "cover_url": "image/Story9.webp"
       }
     },
     {
@@ -150,7 +150,7 @@
         "storyId": 10,
         "title": "Зимние каникулы",
         "titleJP": "冬休み",
-        "cover_url": "image/Story10.png"
+        "cover_url": "image/Story10.webp"
       }
     },
     {
@@ -162,7 +162,7 @@
         "storyId": 11,
         "title": "Планы на лето",
         "titleJP": "夏の予定",
-        "cover_url": "image/Story11.png"
+        "cover_url": "image/Story11.webp"
       }
     },
     {
@@ -174,7 +174,7 @@
         "storyId": 12,
         "title": "Болезнь",
         "titleJP": "病気",
-        "cover_url": "image/Story12.png"
+        "cover_url": "image/Story12.webp"
       }
     }
   ]
