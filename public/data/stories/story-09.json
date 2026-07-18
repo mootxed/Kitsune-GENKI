@@ -1,0 +1,497 @@
+{
+  "id": 9,
+  "lesson_id": 9,
+  "title": "Концерт",
+  "titleJP": "コンサート",
+  "cover_url": "image/Story9.png",
+  "content": [
+    {
+      "sentence_id": 1,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "メアリー",
+          "writing": "メアリー",
+          "translation": "Мэри",
+          "type": "Noun"
+        },
+        {
+          "kanji": "さん",
+          "writing": "さん",
+          "translation": "(вежливый суффикс)",
+          "type": "Suffix"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "ギター",
+          "writing": "ギター",
+          "translation": "гитару",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "弾く",
+          "writing": "ひく",
+          "translation": "играть",
+          "type": "Verb"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(субстантивация)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "好き",
+          "writing": "すき",
+          "translation": "нравится",
+          "type": "Na-adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Мэри, тебе нравится играть на гитаре?"
+    },
+    {
+      "sentence_id": 2,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "ええ",
+          "writing": "ええ",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "大好き",
+          "writing": "だいすき",
+          "translation": "очень нравится",
+          "type": "Na-adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "でも",
+          "writing": "でも",
+          "translation": "но",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "まだ",
+          "writing": "まだ",
+          "translation": "ещё",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "下手",
+          "writing": "へた",
+          "translation": "плохо",
+          "type": "Na-adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да, очень нравится. Но ещё плохо играю."
+    },
+    {
+      "sentence_id": 3,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "今度",
+          "writing": "こんど",
+          "translation": "в следующий раз",
+          "type": "Noun"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "コンサート",
+          "writing": "コンサート",
+          "translation": "концерт",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(направление)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行きませんか",
+          "writing": "いきませんか",
+          "translation": "не пойдём ли",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "В следующий раз не пойдём ли на концерт?"
+    },
+    {
+      "sentence_id": 4,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "いいですね",
+          "writing": "いいですね",
+          "translation": "хорошо",
+          "type": "Expression"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "いつ",
+          "writing": "いつ",
+          "translation": "когда",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Хорошо. Когда?"
+    },
+    {
+      "sentence_id": 5,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "来週",
+          "writing": "らいしゅう",
+          "translation": "на следующей неделе",
+          "type": "Noun"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(притяжат.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "土曜日",
+          "writing": "どようび",
+          "translation": "в субботу",
+          "type": "Noun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "七時",
+          "writing": "しちじ",
+          "translation": "в семь часов",
+          "type": "Noun"
+        },
+        {
+          "kanji": "から",
+          "writing": "から",
+          "translation": "с",
+          "type": "Particle"
+        },
+        {
+          "kanji": "始まります",
+          "writing": "はじまります",
+          "translation": "начинается",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "В субботу на следующей неделе. Начинается в семь часов."
+    },
+    {
+      "sentence_id": 6,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "チケット",
+          "writing": "チケット",
+          "translation": "билет",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "もう",
+          "writing": "もう",
+          "translation": "уже",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "買いました",
+          "writing": "かいました",
+          "translation": "купил",
+          "type": "Verb"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Ты уже купил билет?"
+    },
+    {
+      "sentence_id": 7,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "ううん",
+          "writing": "ううん",
+          "translation": "нет",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "まだ",
+          "writing": "まだ",
+          "translation": "ещё не",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "есть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "明日",
+          "writing": "あした",
+          "translation": "завтра",
+          "type": "Noun"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "ネット",
+          "writing": "ネット",
+          "translation": "в интернете",
+          "type": "Noun"
+        },
+        {
+          "kanji": "で",
+          "writing": "で",
+          "translation": "(место действия)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "買う",
+          "writing": "かう",
+          "translation": "куплю",
+          "type": "Verb"
+        },
+        {
+          "kanji": "と",
+          "writing": "と",
+          "translation": "(цитата мысли)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "思います",
+          "writing": "おもいます",
+          "translation": "думаю",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Нет, ещё. Думаю завтра купить в интернете."
+    },
+    {
+      "sentence_id": 8,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "そう",
+          "writing": "そう",
+          "translation": "понятно",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "楽しみ",
+          "writing": "たのしみ",
+          "translation": "с нетерпением жду",
+          "type": "Na-adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "ぜひ",
+          "writing": "ぜひ",
+          "translation": "обязательно",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "行きましょう",
+          "writing": "いきましょう",
+          "translation": "давайте пойдём",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Понятно. С нетерпением жду. Обязательно пойдём."
+    }
+  ]
+}

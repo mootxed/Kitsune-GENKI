@@ -1,0 +1,271 @@
+{
+  "id": 1,
+  "lesson_id": 1,
+  "title": "Знакомство в университете",
+  "titleJP": "大学で出会い",
+  "cover_url": "image/Story1.png",
+  "questions": [
+    {
+      "question": "Кто такой 学生B (студент B)?",
+      "options": [
+        "Японец",
+        "Американец",
+        "Китаец"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "question": "Какая специальность у 学生B?",
+      "options": [
+        "Японский язык",
+        "Компьютеры",
+        "Медицина"
+      ],
+      "correctAnswer": 1
+    }
+  ],
+  "rewards": {
+    "xp": 20,
+    "coins": 15
+  },
+  "content": [
+    {
+      "sentence_id": 1,
+      "speaker": "学生A",
+      "tokens": [
+        {
+          "kanji": "あのう",
+          "writing": "あのう",
+          "translation": "извините",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "留学生",
+          "writing": "りゅうがくせい",
+          "translation": "иностранный студент",
+          "type": "Noun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Извините, вы иностранный студент?"
+    },
+    {
+      "sentence_id": 2,
+      "speaker": "学生B",
+      "tokens": [
+        {
+          "kanji": "はい",
+          "writing": "はい",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "そう",
+          "writing": "そう",
+          "translation": "так",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "私",
+          "writing": "わたし",
+          "translation": "я",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "アメリカ人",
+          "writing": "アメリカじん",
+          "translation": "американец",
+          "type": "Noun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да, верно. Я американец."
+    },
+    {
+      "sentence_id": 3,
+      "speaker": "学生A",
+      "tokens": [
+        {
+          "kanji": "そう",
+          "writing": "そう",
+          "translation": "так",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "専攻",
+          "writing": "せんこう",
+          "translation": "специальность",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "何",
+          "writing": "なん",
+          "translation": "что",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Понятно. Какая у вас специальность?"
+    },
+    {
+      "sentence_id": 4,
+      "speaker": "学生B",
+      "tokens": [
+        {
+          "kanji": "コンピューター",
+          "writing": "コンピューター",
+          "translation": "компьютеры",
+          "type": "Noun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "先生",
+          "writing": "せんせい",
+          "translation": "учитель",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "日本人",
+          "writing": "にほんじん",
+          "translation": "японец",
+          "type": "Noun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Компьютеры. Вы японец?"
+    }
+  ]
+}

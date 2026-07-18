@@ -1,0 +1,503 @@
+{
+  "id": 11,
+  "lesson_id": 11,
+  "title": "Планы на лето",
+  "titleJP": "夏の予定",
+  "cover_url": "image/Story11.png",
+  "content": [
+    {
+      "sentence_id": 1,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "ソラ",
+          "writing": "ソラ",
+          "translation": "Сора",
+          "type": "Noun"
+        },
+        {
+          "kanji": "さん",
+          "writing": "さん",
+          "translation": "(вежливый суффикс)",
+          "type": "Suffix"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "夏休み",
+          "writing": "なつやすみ",
+          "translation": "летние каникулы",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(время)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "何",
+          "writing": "なに",
+          "translation": "что",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "したい",
+          "writing": "したい",
+          "translation": "хочешь сделать",
+          "type": "Verb"
+        },
+        {
+          "kanji": "？",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Сора, что хочешь сделать на летние каникулы?"
+    },
+    {
+      "sentence_id": 2,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "海",
+          "writing": "うみ",
+          "translation": "на море",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(направление)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行きたい",
+          "writing": "いきたい",
+          "translation": "хочу поехать",
+          "type": "Verb"
+        },
+        {
+          "kanji": "な",
+          "writing": "な",
+          "translation": "(желание)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "泳いだり",
+          "writing": "およいだり",
+          "translation": "плавать",
+          "type": "Verb"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "友達",
+          "writing": "ともだち",
+          "translation": "с друзьями",
+          "type": "Noun"
+        },
+        {
+          "kanji": "と",
+          "writing": "と",
+          "translation": "(совместность)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "遊んだり",
+          "writing": "あそんだり",
+          "translation": "играть",
+          "type": "Verb"
+        },
+        {
+          "kanji": "したい",
+          "writing": "したい",
+          "translation": "хочу",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Хочу поехать на море. Хочу плавать и играть с друзьями."
+    },
+    {
+      "sentence_id": 3,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "いいね",
+          "writing": "いいね",
+          "translation": "хорошо",
+          "type": "Expression"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "家族",
+          "writing": "かぞく",
+          "translation": "семья",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "連れていく",
+          "writing": "つれていく",
+          "translation": "возьмёшь с собой",
+          "type": "Verb"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(объяснение)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "？",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Хорошо. Возьмёшь семью с собой?"
+    },
+    {
+      "sentence_id": 4,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "うん",
+          "writing": "うん",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "両親",
+          "writing": "りょうしん",
+          "translation": "родителей",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "連れていきたい",
+          "writing": "つれていきたい",
+          "translation": "хочу взять",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да, хочу взять родителей."
+    },
+    {
+      "sentence_id": 5,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "前",
+          "writing": "まえ",
+          "translation": "раньше",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(время)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "海",
+          "writing": "うみ",
+          "translation": "на море",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(направление)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行った",
+          "writing": "いった",
+          "translation": "ездил",
+          "type": "Verb"
+        },
+        {
+          "kanji": "こと",
+          "writing": "こと",
+          "translation": "(опыт)",
+          "type": "Noun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "ある",
+          "writing": "ある",
+          "translation": "есть",
+          "type": "Verb"
+        },
+        {
+          "kanji": "？",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Раньше бывал на море?"
+    },
+    {
+      "sentence_id": 6,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "うん",
+          "writing": "うん",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "子供",
+          "writing": "こども",
+          "translation": "ребёнком",
+          "type": "Noun"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(притяжат.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "時",
+          "writing": "とき",
+          "translation": "когда был",
+          "type": "Noun"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "よく",
+          "writing": "よく",
+          "translation": "часто",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "行った",
+          "writing": "いった",
+          "translation": "ездил",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да, когда был ребёнком, часто ездил."
+    },
+    {
+      "sentence_id": 7,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "そう",
+          "writing": "そう",
+          "translation": "понятно",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "じゃあ",
+          "writing": "じゃあ",
+          "translation": "тогда",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "いい",
+          "writing": "いい",
+          "translation": "хорошее",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "所",
+          "writing": "ところ",
+          "translation": "место",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "知っている",
+          "writing": "しっている",
+          "translation": "знаешь",
+          "type": "Verb"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Понятно. Тогда знаешь хорошие места."
+    },
+    {
+      "sentence_id": 8,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "うん",
+          "writing": "うん",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "今度",
+          "writing": "こんど",
+          "translation": "в следующий раз",
+          "type": "Noun"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "たけし",
+          "writing": "たけし",
+          "translation": "Такэси",
+          "type": "Noun"
+        },
+        {
+          "kanji": "さん",
+          "writing": "さん",
+          "translation": "(вежливый суффикс)",
+          "type": "Suffix"
+        },
+        {
+          "kanji": "も",
+          "writing": "も",
+          "translation": "тоже",
+          "type": "Particle"
+        },
+        {
+          "kanji": "連れていって",
+          "writing": "つれていって",
+          "translation": "возьму с собой",
+          "type": "Verb"
+        },
+        {
+          "kanji": "あげる",
+          "writing": "あげる",
+          "translation": "(для тебя)",
+          "type": "Verb"
+        },
+        {
+          "kanji": "よ",
+          "writing": "よ",
+          "translation": "(эмфаза)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да. В следующий раз тебя тоже возьму с собой."
+    }
+  ]
+}

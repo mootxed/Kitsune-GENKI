@@ -1,0 +1,614 @@
+{
+  "id": 6,
+  "lesson_id": 6,
+  "title": "Первый день занятий",
+  "titleJP": "最初の授業の日",
+  "cover_url": "image/Story6.png",
+  "questions": [
+    {
+      "question": "До какого времени Мэри занималась вчера?",
+      "options": [
+        "До 10 вечера",
+        "До 11 вечера",
+        "До 12 ночи"
+      ],
+      "correctAnswer": 2
+    }
+  ],
+  "rewards": {
+    "xp": 20,
+    "coins": 15
+  },
+  "content": [
+    {
+      "sentence_id": 1,
+      "speaker": "ロバート",
+      "tokens": [
+        {
+          "kanji": "メアリー",
+          "writing": "メアリー",
+          "translation": "Мэри",
+          "type": "Noun"
+        },
+        {
+          "kanji": "さん",
+          "writing": "さん",
+          "translation": "(вежливый суффикс)",
+          "type": "Suffix"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "今日",
+          "writing": "きょう",
+          "translation": "сегодня",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "忙しい",
+          "writing": "いそがしい",
+          "translation": "занятой",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Мэри, ты сегодня занята?"
+    },
+    {
+      "sentence_id": 2,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "はい",
+          "writing": "はい",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "とても",
+          "writing": "とても",
+          "translation": "очень",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "忙しい",
+          "writing": "いそがしい",
+          "translation": "занятая",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "今日",
+          "writing": "きょう",
+          "translation": "сегодня",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "日本語",
+          "writing": "にほんご",
+          "translation": "японского языка",
+          "type": "Noun"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(притяжат.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "テスト",
+          "writing": "テスト",
+          "translation": "тест",
+          "type": "Noun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "あります",
+          "writing": "あります",
+          "translation": "есть",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да, очень занята. Сегодня тест по японскому."
+    },
+    {
+      "sentence_id": 3,
+      "speaker": "ロバート",
+      "tokens": [
+        {
+          "kanji": "大変",
+          "writing": "たいへん",
+          "translation": "тяжело",
+          "type": "Na-adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "昨日",
+          "writing": "きのう",
+          "translation": "вчера",
+          "type": "Noun"
+        },
+        {
+          "kanji": "たくさん",
+          "writing": "たくさん",
+          "translation": "много",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "勉強",
+          "writing": "べんきょう",
+          "translation": "учёба",
+          "type": "Noun"
+        },
+        {
+          "kanji": "しました",
+          "writing": "しました",
+          "translation": "делала",
+          "type": "Verb"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Тяжело. Ты вчера много занималась?"
+    },
+    {
+      "sentence_id": 4,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "ええ",
+          "writing": "ええ",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "夜",
+          "writing": "よる",
+          "translation": "ночью",
+          "type": "Noun"
+        },
+        {
+          "kanji": "十二時",
+          "writing": "じゅうにじ",
+          "translation": "двенадцать часов",
+          "type": "Noun"
+        },
+        {
+          "kanji": "まで",
+          "writing": "まで",
+          "translation": "до",
+          "type": "Particle"
+        },
+        {
+          "kanji": "勉強",
+          "writing": "べんきょう",
+          "translation": "учёбу",
+          "type": "Noun"
+        },
+        {
+          "kanji": "しました",
+          "writing": "しました",
+          "translation": "делала",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да, занималась до двенадцати ночи."
+    },
+    {
+      "sentence_id": 5,
+      "speaker": "ロバート",
+      "tokens": [
+        {
+          "kanji": "すごい",
+          "writing": "すごい",
+          "translation": "здорово",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "テスト",
+          "writing": "テスト",
+          "translation": "тест",
+          "type": "Noun"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(притяжат.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "後",
+          "writing": "あと",
+          "translation": "после",
+          "type": "Noun"
+        },
+        {
+          "kanji": "で",
+          "writing": "で",
+          "translation": "(время/обст.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "何",
+          "writing": "なに",
+          "translation": "что",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "しますか",
+          "writing": "しますか",
+          "translation": "будешь делать",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Здорово! Что будешь делать после теста?"
+    },
+    {
+      "sentence_id": 6,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "友達",
+          "writing": "ともだち",
+          "translation": "с друзьями",
+          "type": "Noun"
+        },
+        {
+          "kanji": "と",
+          "writing": "と",
+          "translation": "вместе с",
+          "type": "Particle"
+        },
+        {
+          "kanji": "カフェ",
+          "writing": "カフェ",
+          "translation": "в кафе",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(направление)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行きます",
+          "writing": "いきます",
+          "translation": "пойду",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "そこ",
+          "writing": "そこ",
+          "translation": "там",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "きれい",
+          "writing": "きれい",
+          "translation": "красивое",
+          "type": "Na-adjective"
+        },
+        {
+          "kanji": "で",
+          "writing": "で",
+          "translation": "и",
+          "type": "Particle"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "静か",
+          "writing": "しずか",
+          "translation": "тихое",
+          "type": "Na-adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Пойду с друзьями в кафе. Там красиво и тихо."
+    },
+    {
+      "sentence_id": 7,
+      "speaker": "ロバート",
+      "tokens": [
+        {
+          "kanji": "いい",
+          "writing": "いい",
+          "translation": "хорошее",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "カフェ",
+          "writing": "カフェ",
+          "translation": "кафе",
+          "type": "Noun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "ぼく",
+          "writing": "ぼく",
+          "translation": "я",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "も",
+          "writing": "も",
+          "translation": "тоже",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行きたい",
+          "writing": "いきたい",
+          "translation": "хочу пойти",
+          "type": "Verb"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Хорошее кафе. Я тоже хочу пойти."
+    },
+    {
+      "sentence_id": 8,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "じゃあ",
+          "writing": "じゃあ",
+          "translation": "тогда",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "一緒に",
+          "writing": "いっしょに",
+          "translation": "вместе",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "行きましょう",
+          "writing": "いきましょう",
+          "translation": "пойдём",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "三時",
+          "writing": "さんじ",
+          "translation": "в три часа",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(время)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "図書館",
+          "writing": "としょかん",
+          "translation": "у библиотеки",
+          "type": "Noun"
+        },
+        {
+          "kanji": "で",
+          "writing": "で",
+          "translation": "(место встречи)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "会いましょう",
+          "writing": "あいましょう",
+          "translation": "встретимся",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Тогда пойдём вместе. Встретимся в три у библиотеки."
+    }
+  ]
+}

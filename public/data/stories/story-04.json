@@ -1,0 +1,602 @@
+{
+  "id": 4,
+  "lesson_id": 4,
+  "title": "Встреча в парке",
+  "titleJP": "公園で会いました",
+  "cover_url": "image/Story4.png",
+  "questions": [
+    {
+      "question": "Где находится супермаркет?",
+      "options": [
+        "Рядом с парком",
+        "Рядом с больницей",
+        "Рядом со школой"
+      ],
+      "correctAnswer": 1
+    }
+  ],
+  "rewards": {
+    "xp": 20,
+    "coins": 15
+  },
+  "content": [
+    {
+      "sentence_id": 1,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "あっ",
+          "writing": "あっ",
+          "translation": "а",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "メアリー",
+          "writing": "メアリー",
+          "translation": "Мэри",
+          "type": "Noun"
+        },
+        {
+          "kanji": "さん",
+          "writing": "さん",
+          "translation": "(вежливый суффикс)",
+          "type": "Suffix"
+        },
+        {
+          "kanji": "！",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "昨日",
+          "writing": "きのう",
+          "translation": "вчера",
+          "type": "Noun"
+        },
+        {
+          "kanji": "も",
+          "writing": "も",
+          "translation": "тоже",
+          "type": "Particle"
+        },
+        {
+          "kanji": "ここ",
+          "writing": "ここ",
+          "translation": "здесь",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(направление)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "来ました",
+          "writing": "きました",
+          "translation": "приходил",
+          "type": "Verb"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "А, Мэри! Ты вчера тоже приходила сюда?"
+    },
+    {
+      "sentence_id": 2,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "はい",
+          "writing": "はい",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "来ました",
+          "writing": "きました",
+          "translation": "приходила",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "友達",
+          "writing": "ともだち",
+          "translation": "друг",
+          "type": "Noun"
+        },
+        {
+          "kanji": "と",
+          "writing": "と",
+          "translation": "вместе с",
+          "type": "Particle"
+        },
+        {
+          "kanji": "公園",
+          "writing": "こうえん",
+          "translation": "парк",
+          "type": "Noun"
+        },
+        {
+          "kanji": "で",
+          "writing": "で",
+          "translation": "(место)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "写真",
+          "writing": "しゃしん",
+          "translation": "фотографии",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "たくさん",
+          "writing": "たくさん",
+          "translation": "много",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "取りました",
+          "writing": "とりました",
+          "translation": "делала",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да, приходила. С другом делали много фотографий в парке."
+    },
+    {
+      "sentence_id": 3,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "そう",
+          "writing": "そう",
+          "translation": "так",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "私",
+          "writing": "わたし",
+          "translation": "я",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "も",
+          "writing": "も",
+          "translation": "тоже",
+          "type": "Particle"
+        },
+        {
+          "kanji": "昨日",
+          "writing": "きのう",
+          "translation": "вчера",
+          "type": "Noun"
+        },
+        {
+          "kanji": "ここ",
+          "writing": "ここ",
+          "translation": "здесь",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(место)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "いました",
+          "writing": "いました",
+          "translation": "был",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Понятно. Я тоже вчера здесь был."
+    },
+    {
+      "sentence_id": 4,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "えっ",
+          "writing": "えっ",
+          "translation": "что",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "本当",
+          "writing": "ほんとう",
+          "translation": "правда",
+          "type": "Noun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "何時間",
+          "writing": "なんじかん",
+          "translation": "сколько часов",
+          "type": "Noun"
+        },
+        {
+          "kanji": "ぐらい",
+          "writing": "ぐらい",
+          "translation": "около",
+          "type": "Particle"
+        },
+        {
+          "kanji": "いました",
+          "writing": "いました",
+          "translation": "был",
+          "type": "Verb"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Что, правда? Сколько времени примерно был?"
+    },
+    {
+      "sentence_id": 5,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "一時間",
+          "writing": "いちじかん",
+          "translation": "один час",
+          "type": "Noun"
+        },
+        {
+          "kanji": "ぐらい",
+          "writing": "ぐらい",
+          "translation": "около",
+          "type": "Particle"
+        },
+        {
+          "kanji": "いました",
+          "writing": "いました",
+          "translation": "был",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "犬",
+          "writing": "いぬ",
+          "translation": "собака",
+          "type": "Noun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "たくさん",
+          "writing": "たくさん",
+          "translation": "много",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "いました",
+          "writing": "いました",
+          "translation": "было",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Около часа был. Там было много собак."
+    },
+    {
+      "sentence_id": 6,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "そう",
+          "writing": "そう",
+          "translation": "так",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "あのう",
+          "writing": "あのう",
+          "translation": "извините",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "スーパー",
+          "writing": "スーパー",
+          "translation": "супермаркет",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "どこ",
+          "writing": "どこ",
+          "translation": "где",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Точно. Извини, а где здесь супермаркет?"
+    },
+    {
+      "sentence_id": 7,
+      "speaker": "たけし",
+      "tokens": [
+        {
+          "kanji": "スーパー",
+          "writing": "スーパー",
+          "translation": "супермаркет",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "病院",
+          "writing": "びょういん",
+          "translation": "больница",
+          "type": "Noun"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(притяжат.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "隣",
+          "writing": "となり",
+          "translation": "рядом",
+          "type": "Noun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "公園",
+          "writing": "こうえん",
+          "translation": "парк",
+          "type": "Noun"
+        },
+        {
+          "kanji": "の",
+          "writing": "の",
+          "translation": "(притяжат.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "近く",
+          "writing": "ちかく",
+          "translation": "рядом",
+          "type": "Noun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "быть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "よ",
+          "writing": "よ",
+          "translation": "(утвержд.)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Супермаркет рядом с больницей. Недалеко от парка."
+    },
+    {
+      "sentence_id": 8,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "わかりました",
+          "writing": "わかりました",
+          "translation": "поняла",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "じゃあ",
+          "writing": "じゃあ",
+          "translation": "тогда",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "また",
+          "writing": "また",
+          "translation": "снова",
+          "type": "Adverb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Поняла. Тогда до встречи!"
+    }
+  ]
+}

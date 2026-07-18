@@ -1,7 +1,7 @@
 /* sw.js — Kitsune Genki Service Worker */
 
 // ===== ВЕРСИОНИРОВАННЫЕ КЕШИ =====
-const CACHE_VERSION = '1';
+const CACHE_VERSION = '3';
 const CACHE_STATIC = `kitsune-static-v${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `kitsune-dynamic-v${CACHE_VERSION}`;
 const CACHE_LESSON = `kitsune-lesson-v${CACHE_VERSION}`;
@@ -17,7 +17,6 @@ const STATIC_ASSETS = [
   '/services.js',
   '/session-manager.js',
   '/studyplan.js',
-  '/stories.js',
   '/achievements.js',
   '/quests.js',
   '/manifest.json',
@@ -25,8 +24,12 @@ const STATIC_ASSETS = [
   '/offline.html',
 ];
 
-// ===== ФАЙЛЫ УРОКОВ (Stale-While-Revalidate) =====
-const LESSON_FILES = ['/lesson.json'];
+// ===== КОНТЕНТ ГЛАВ (Stale-While-Revalidate) =====
+// Индекс кэшируем на install — он лёгкий; чанки уроков/историй
+// кэшируются в фоне по мере обращения, не раздувая shell-кэш.
+const LESSON_FILES = ['/data/content-index.json'];
+// Проверка по суффиксу: работает и при base-пути (GitHub Pages /Kitsune-GENKI/)
+const CONTENT_CHUNK_RE = /\/data\/(lessons|stories)\/(lesson|story)-\d+\.json$/;
 
 // ===== INSTALL EVENT =====
 self.addEventListener('install', (event) => {
@@ -101,8 +104,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ===== STALE-WHILE-REVALIDATE для lesson.json =====
-  if (LESSON_FILES.some((file) => url.pathname === file)) {
+  // ===== STALE-WHILE-REVALIDATE для контента глав =====
+  // Перехватываем индекс и wildcard-чанки /data/lessons/lesson-*.json, /data/stories/story-*.json
+  if (LESSON_FILES.some((file) => url.pathname.endsWith(file)) || CONTENT_CHUNK_RE.test(url.pathname)) {
     event.respondWith(
       caches.open(CACHE_LESSON).then((cache) => {
         return cache.match(request).then((cachedResponse) => {

@@ -1,0 +1,481 @@
+{
+  "id": 8,
+  "lesson_id": 8,
+  "title": "Выходной день",
+  "titleJP": "休みの日",
+  "cover_url": "image/Story8.png",
+  "questions": [
+    {
+      "question": "Куда они планируют пойти?",
+      "options": [
+        "В кафе",
+        "В парк на барбекю",
+        "В библиотеку"
+      ],
+      "correctAnswer": 1
+    }
+  ],
+  "rewards": {
+    "xp": 20,
+    "coins": 15
+  },
+  "content": [
+    {
+      "sentence_id": 1,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "メアリー",
+          "writing": "メアリー",
+          "translation": "Мэри",
+          "type": "Noun"
+        },
+        {
+          "kanji": "さん",
+          "writing": "さん",
+          "translation": "(вежливый суффикс)",
+          "type": "Suffix"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "明日",
+          "writing": "あした",
+          "translation": "завтра",
+          "type": "Noun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "晴れ",
+          "writing": "はれ",
+          "translation": "ясная погода",
+          "type": "Noun"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "будет",
+          "type": "Copula"
+        },
+        {
+          "kanji": "ね",
+          "writing": "ね",
+          "translation": "(согласие)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Мэри, завтра будет ясная погода."
+    },
+    {
+      "sentence_id": 2,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "うん",
+          "writing": "うん",
+          "translation": "да",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "天気予報",
+          "writing": "てんきよほう",
+          "translation": "прогноз погоды",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "見ました",
+          "writing": "みました",
+          "translation": "посмотрела",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Да. Я посмотрела прогноз погоды."
+    },
+    {
+      "sentence_id": 3,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "じゃあ",
+          "writing": "じゃあ",
+          "translation": "тогда",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "公園",
+          "writing": "こうえん",
+          "translation": "в парк",
+          "type": "Noun"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(направление)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "バーベキュー",
+          "writing": "バーベキュー",
+          "translation": "на барбекю",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(цель)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "し",
+          "writing": "し",
+          "translation": "делать",
+          "type": "Verb"
+        },
+        {
+          "kanji": "に",
+          "writing": "に",
+          "translation": "(цель)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "行きませんか",
+          "writing": "いきませんか",
+          "translation": "не пойдем ли",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Тогда не пойдём ли в парк на барбекю?"
+    },
+    {
+      "sentence_id": 4,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "いいですね",
+          "writing": "いいですね",
+          "translation": "хорошая идея",
+          "type": "Expression"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "何",
+          "writing": "なに",
+          "translation": "что",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "要ります",
+          "writing": "いります",
+          "translation": "нужно",
+          "type": "Verb"
+        },
+        {
+          "kanji": "か",
+          "writing": "か",
+          "translation": "(вопрос)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Хорошая идея. Что нужно?"
+    },
+    {
+      "sentence_id": 5,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "私",
+          "writing": "わたし",
+          "translation": "я",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "野菜",
+          "writing": "やさい",
+          "translation": "овощи",
+          "type": "Noun"
+        },
+        {
+          "kanji": "を",
+          "writing": "を",
+          "translation": "(объект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "切ります",
+          "writing": "きります",
+          "translation": "порежу",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "メアリー",
+          "writing": "メアリー",
+          "translation": "Мэри",
+          "type": "Noun"
+        },
+        {
+          "kanji": "さん",
+          "writing": "さん",
+          "translation": "(вежливый суффикс)",
+          "type": "Suffix"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "料理",
+          "writing": "りょうり",
+          "translation": "готовку",
+          "type": "Noun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "上手",
+          "writing": "じょうず",
+          "translation": "умелая",
+          "type": "Na-adjective"
+        },
+        {
+          "kanji": "ですから",
+          "writing": "ですから",
+          "translation": "поэтому",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "お願いします",
+          "writing": "おねがいします",
+          "translation": "прошу",
+          "type": "Expression"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Я порежу овощи. Мэри, ты умеешь готовить, поэтому прошу тебя."
+    },
+    {
+      "sentence_id": 6,
+      "speaker": "メアリー",
+      "tokens": [
+        {
+          "kanji": "ううん",
+          "writing": "ううん",
+          "translation": "нет",
+          "type": "Interjection"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "私",
+          "writing": "わたし",
+          "translation": "я",
+          "type": "Pronoun"
+        },
+        {
+          "kanji": "は",
+          "writing": "は",
+          "translation": "(тема)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "料理",
+          "writing": "りょうり",
+          "translation": "готовка",
+          "type": "Noun"
+        },
+        {
+          "kanji": "が",
+          "writing": "が",
+          "translation": "(субъект)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "下手",
+          "writing": "へた",
+          "translation": "неумелая",
+          "type": "Na-adjective"
+        },
+        {
+          "kanji": "です",
+          "writing": "です",
+          "translation": "есть",
+          "type": "Copula"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "でも",
+          "writing": "でも",
+          "translation": "но",
+          "type": "Conjunction"
+        },
+        {
+          "kanji": "、",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "やってみます",
+          "writing": "やってみます",
+          "translation": "попробую",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Нет, я плохо готовлю. Но попробую."
+    },
+    {
+      "sentence_id": 7,
+      "speaker": "ソラ",
+      "tokens": [
+        {
+          "kanji": "みんなで",
+          "writing": "みんなで",
+          "translation": "все вместе",
+          "type": "Expression"
+        },
+        {
+          "kanji": "作りましょう",
+          "writing": "つくりましょう",
+          "translation": "давайте сделаем",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        },
+        {
+          "kanji": "楽しい",
+          "writing": "たのしい",
+          "translation": "весёлый",
+          "type": "Adjective"
+        },
+        {
+          "kanji": "と",
+          "writing": "と",
+          "translation": "(цитата мнения)",
+          "type": "Particle"
+        },
+        {
+          "kanji": "思います",
+          "writing": "おもいます",
+          "translation": "думаю",
+          "type": "Verb"
+        },
+        {
+          "kanji": "。",
+          "writing": "",
+          "translation": "",
+          "type": "Punctuation"
+        }
+      ],
+      "translation": "Давайте сделаем все вместе. Думаю, будет весело."
+    }
+  ]
+}
