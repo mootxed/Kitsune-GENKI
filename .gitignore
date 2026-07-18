@@ -25,6 +25,10 @@ npm-debug.log*
 dist/
 build/
 
+# Linter & Formatter Cache
+.eslintcache
+.prettiercache
+
 # Cline rules
 /.clinerules
 /.design.md

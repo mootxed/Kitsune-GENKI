@@ -1,0 +1,85 @@
+import js from '@eslint/js';
+import prettier from 'eslint-plugin-prettier';
+import prettierConfig from 'eslint-config-prettier';
+
+export default [
+  js.configs.recommended,
+  prettierConfig,
+  {
+    files: ['**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        // Browser globals
+        window: 'readonly',
+        document: 'readonly',
+        navigator: 'readonly',
+        console: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        fetch: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        FormData: 'readonly',
+        crypto: 'readonly',
+        Notification: 'readonly',
+        location: 'readonly',
+        history: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        requestAnimationFrame: 'readonly',
+        Blob: 'readonly',
+        File: 'readonly',
+        confirm: 'readonly',
+        alert: 'readonly',
+        prompt: 'readonly',
+        // Service Worker
+        self: 'readonly',
+        caches: 'readonly',
+        clients: 'readonly',
+        importScripts: 'readonly',
+        skipWaiting: 'readonly',
+        // Vitest globals for tests
+        describe: 'readonly',
+        test: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        vi: 'readonly',
+        // App-specific globals (defined in app.js)
+        toast: 'readonly',
+        nav: 'readonly',
+        speak: 'readonly',
+        HanziWriter: 'readonly',
+        appAddXP: 'readonly',
+        markActivity: 'readonly',
+        $$: 'readonly',
+        emptyState: 'readonly',
+      },
+    },
+    plugins: {
+      prettier,
+    },
+    rules: {
+      'prettier/prettier': 'error',
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-console': 'off',
+      'no-debugger': 'warn',
+      'no-undef': 'error',
+      'no-useless-catch': 'warn',
+      'no-useless-assignment': 'warn',
+      'no-dupe-keys': 'error',
+      'no-control-regex': 'warn',
+      'preserve-caught-error': 'off',
+    },
+  },
+  {
+    ignores: ['dist/**', 'node_modules/**', 'public/**', '.vscode/**'],
+  },
+];
