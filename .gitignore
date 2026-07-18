@@ -28,6 +28,3 @@ build/
 # Cline rules
 /.clinerules
 /.design.md
-
-# Kimi code
-/.kimicode

@@ -1,7 +1,10 @@
 // ui/settings.js - Модуль настроек приложения
 
-import { $, toast } from './shared.js';
+import { $ } from '../src/utils.js';
 import { exportFullProgress, importFullProgress, validateImportData, shareJSON, downloadJSON } from '../src/backup-manager.js';
+
+// Локальный контекст зависимостей
+let deps = null;
 
 // Константы localStorage
 const LS_STATE = "kitsune_state";
@@ -12,7 +15,9 @@ const LS_THEME = "kitsune_theme";
 
 // Функция рендеринга настроек
 export function renderSettings(state, dependencies) {
-  const { save, nav, loadState, shareProgressBackup, restoreProgressBackup, scheduleNotify, showNotification, applyTheme, applyCustomTheme, applyStreakSkin } = dependencies;
+  if (dependencies) deps = dependencies;
+  const { save, nav, loadState, shareProgressBackup, restoreProgressBackup, scheduleNotify, showNotification, applyTheme, applyCustomTheme, applyStreakSkin } = deps;
+  const toast = deps?.toast || window.toast || (() => {});
   
   const s = state.settings;
   const body = $("#settings-body");

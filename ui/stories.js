@@ -1,6 +1,9 @@
 // ui/stories.js - Модуль интерактивных историй
 
-import { $, $$, nav, toast, emptyState, markActivity } from './shared.js';
+import { $ } from '../src/utils.js';
+
+// Локальный контекст зависимостей
+let deps = null;
 
 // Глобальные переменные для квиза
 let currentQuestionIndex = 0;
@@ -8,7 +11,13 @@ let attemptsCount = 0;
 
 // Функция рендеринга списка историй
 export function renderStories(state, dependencies) {
-  const { STORIES, CH_NAMES, chState } = dependencies;
+  if (dependencies) deps = dependencies;
+  const { STORIES, CH_NAMES, chState } = deps;
+  const $$ = deps?.$$ || window.$$ || ((s) => Array.from(document.querySelectorAll(s)));
+  const toast = deps?.toast || window.toast || (() => {});
+  const nav = deps?.nav || window.nav || (() => {});
+  const markActivity = deps?.markActivity || window.markActivity || (() => {});
+  const emptyState = (icon, title, desc) => `<div class="empty"><div class="em">${icon}</div><h3>${title}</h3><p>${desc}</p></div>`;
   
   const body = $("#library-body");
   

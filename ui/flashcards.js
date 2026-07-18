@@ -1,8 +1,12 @@
 // ui/flashcards.js - Модуль для работы с карточками SRS и словарём
 
-import { $, $$, nav, toast, emptyState, speak, markActivity } from './shared.js';
-import { wordById, cardChapter, isWordUnlocked } from '../services.js';
-import { SRS, allCards } from '../srs.js';
+import { $ } from '../src/utils.js';
+import { wordById, cardChapter, isWordUnlocked } from '../src/srs-helpers.js';
+import { allCards } from '../src/srs-helpers.js';
+import { SRS } from '../srs.js';
+
+// Локальный контекст зависимостей
+let deps = null;
 
 // Глобальные переменные модуля
 let flashQueue = [];
