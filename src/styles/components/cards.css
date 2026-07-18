@@ -1,0 +1,304 @@
+/* ===== Card Components ===== */
+/* Карточки глав, статистики, стрика и общие card-контейнеры */
+
+/* === Chapter Cards === */
+.chapters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.chapter-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition:
+    var(--transition-theme),
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chapter-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary);
+}
+
+.chapter-card:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: var(--shadow-card);
+}
+
+.chapter-emoji {
+  font-size: 42px;
+  line-height: 1;
+}
+
+.chapter-title {
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+  line-height: 1.3;
+  transition: var(--transition-theme);
+}
+
+.chapter-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.2;
+  transition: var(--transition-theme);
+}
+
+.chapter-card.completed::after {
+  content: '✓';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: var(--color-ok);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(52, 199, 89, 0.3);
+}
+
+/* === Streak Card === */
+.streak-card {
+  background: linear-gradient(135deg, var(--streak-bg-start) 0%, var(--streak-bg-end) 100%);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  box-shadow: 0 8px 22px rgba(255, 75, 43, 0.25);
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition-theme);
+  margin-bottom: 16px;
+}
+
+.streak-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -30%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.streak-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.streak-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.streak-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--streak-text-color);
+  opacity: 0.9;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.streak-count {
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--streak-text-color);
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.streak-emoji {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.streak-subtitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--streak-text-color);
+  opacity: 0.85;
+}
+
+.streak-circle-wrapper {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  flex-shrink: 0;
+}
+
+.streak-circle {
+  width: 90px;
+  height: 90px;
+  transform: rotate(-90deg);
+}
+
+.streak-circle-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 8;
+}
+
+.streak-circle-progress {
+  fill: none;
+  stroke: var(--streak-text-color);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 251.2;
+  stroke-dashoffset: 251.2;
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.streak-xp-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.streak-xp-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--streak-text-color);
+  line-height: 1;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.streak-xp-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--streak-text-color);
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* === Stat Cards === */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  box-shadow: var(--shadow-card);
+  transition: var(--transition-theme);
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 6px;
+  transition: var(--transition-theme);
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+  transition: var(--transition-theme);
+}
+
+.stat-value .emoji {
+  font-size: 24px;
+  margin-left: 4px;
+}
+
+/* === Generic Cards === */
+.card {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+  transition: var(--transition-theme);
+  margin-bottom: 12px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  transition: var(--transition-theme);
+}
+
+.card-body {
+  color: var(--text);
+  line-height: 1.5;
+  transition: var(--transition-theme);
+}
+
+/* === Tag Cards === */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tag {
+  background: var(--bg-tag);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  transition: var(--transition-theme);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tag.active {
+  background: var(--primary);
+  color: #fff;
+}

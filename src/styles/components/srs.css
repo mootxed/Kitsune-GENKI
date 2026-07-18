@@ -1,0 +1,300 @@
+/* ===== SRS Component ===== */
+/* Интерфейс интервального повторения */
+
+/* SRS Mini Stats */
+.srs-mini {
+  display: flex;
+  justify-content: space-around;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow-card);
+  transition: var(--transition-theme);
+}
+
+.srs-mini .m {
+  text-align: center;
+  flex: 1;
+}
+
+.srs-mini .m b {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 2px;
+  transition: var(--transition-theme);
+}
+
+.srs-mini .m.due b {
+  color: var(--primary);
+}
+
+.srs-mini .m span {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: var(--transition-theme);
+}
+
+/* 3D Flashcard Container */
+.flash-wrap {
+  position: relative;
+  perspective: 1200px;
+  margin-bottom: 20px;
+  width: 100%;
+  aspect-ratio: 1.4;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.flash-top {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.flash-count {
+  background: var(--bg-card);
+  color: var(--text-muted);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: var(--transition-theme);
+}
+
+.flash-card-3d {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flash-inner {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flash-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.flash-front,
+.flash-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 12px;
+  transition: var(--transition-theme);
+}
+
+.flash-back {
+  transform: rotateY(180deg);
+}
+
+.flash-jp {
+  font-size: clamp(32px, 8vw, 48px);
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.2;
+  transition: var(--transition-theme);
+}
+
+.flash-romaji {
+  font-size: clamp(16px, 4vw, 20px);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: center;
+  transition: var(--transition-theme);
+}
+
+.flash-reading {
+  font-size: clamp(14px, 3.5vw, 18px);
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 8px;
+  text-align: center;
+  transition: var(--transition-theme);
+}
+
+.flash-tr {
+  font-size: clamp(18px, 4.5vw, 24px);
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.3;
+  transition: var(--transition-theme);
+}
+
+.flash-cat {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 4px 10px;
+  background: var(--bg-tag);
+  border-radius: 12px;
+  margin-top: 8px;
+  transition: var(--transition-theme);
+}
+
+.flash-tap-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  opacity: 0.7;
+  transition: var(--transition-theme);
+}
+
+.flash-speak {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--bg-tag);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition:
+    var(--transition-theme),
+    transform var(--transition-fast);
+}
+
+.flash-speak:active {
+  transform: scale(0.9);
+}
+
+/* Rating Buttons */
+.rate-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.rate-btn {
+  padding: 12px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: var(--transition-theme);
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.rate-btn:active {
+  transform: scale(0.96);
+}
+
+.rate-again {
+  background: #ffebee;
+  border-color: #ef5350;
+}
+
+.rate-again:active {
+  background: #ffcdd2;
+}
+
+.rate-hard {
+  background: #fff3e0;
+  border-color: #ffa726;
+}
+
+.rate-hard:active {
+  background: #ffe0b2;
+}
+
+.rate-good {
+  background: #e8f5e9;
+  border-color: #66bb6a;
+}
+
+.rate-good:active {
+  background: #c8e6c9;
+}
+
+.rate-easy {
+  background: #e1f5fe;
+  border-color: #42a5f5;
+}
+
+.rate-easy:active {
+  background: #b3e5fc;
+}
+
+/* SRS Tabs */
+.srs-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.srs-tab {
+  padding: 10px 16px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition-theme);
+  color: var(--text);
+}
+
+.srs-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.srs-tab:hover {
+  border-color: var(--primary);
+}
+
+#srs-tab-content {
+  min-height: 200px;
+}
