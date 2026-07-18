@@ -33,21 +33,21 @@ export function xpToNextLevel(currentXP) {
 export function getUserRankData(level) {
   const effectiveLevel = Math.max(1, Math.min(96, level));
 
-  let league = "alpha";
-  let leagueName = "Альфа";
+  let league = 'alpha';
+  let leagueName = 'Альфа';
   let baseLevel = effectiveLevel;
 
   if (effectiveLevel > 72) {
-    league = "delta";
-    leagueName = "Дельта Мастер";
+    league = 'delta';
+    leagueName = 'Дельта Мастер';
     baseLevel = effectiveLevel - 72;
   } else if (effectiveLevel > 48) {
-    league = "gamma";
-    leagueName = "Гамма";
+    league = 'gamma';
+    leagueName = 'Гамма';
     baseLevel = effectiveLevel - 48;
   } else if (effectiveLevel > 24) {
-    league = "beta";
-    leagueName = "Бета";
+    league = 'beta';
+    leagueName = 'Бета';
     baseLevel = effectiveLevel - 24;
   }
 
@@ -58,6 +58,6 @@ export function getUserRankData(level) {
     name: `${leagueName} — Ранг ${iconNumber}`,
     leagueName,
     levelSuffix: `Ранг ${iconNumber}`,
-    icon: `${league}_${paddedNumber}.png`,
+    icon: `${league}_${paddedNumber}.webp`,
   };
 }
