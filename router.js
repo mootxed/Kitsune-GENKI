@@ -3,9 +3,18 @@
 export class Router {
   constructor() {
     this.screens = [
-      "home", "profile", "chapter", "srs", "sensei", 
-      "library", "settings", "plan", "story", "quests", 
-      "ai-story", "crossword"
+      'home',
+      'profile',
+      'chapter',
+      'srs',
+      'sensei',
+      'library',
+      'settings',
+      'plan',
+      'story',
+      'quests',
+      'ai-story',
+      'crossword',
     ];
     this.renderHandlers = {};
   }
@@ -28,16 +37,16 @@ export class Router {
   navigate(name, opt, skipHistory = false) {
     // Переключение видимости экранов
     this.screens.forEach((s) => {
-      const screen = document.getElementById("screen-" + s);
+      const screen = document.getElementById('screen-' + s);
       if (screen) {
-        screen.classList.toggle("hidden", s !== name);
+        screen.classList.toggle('hidden', s !== name);
       }
     });
 
     // Управление активными табами
-    const tabs = document.querySelectorAll(".tab");
+    const tabs = document.querySelectorAll('.tab');
     tabs.forEach((t) => {
-      t.classList.toggle("active", t.dataset.nav === name);
+      t.classList.toggle('active', t.dataset.nav === name);
     });
 
     // Обновление индикатора табов
@@ -55,7 +64,7 @@ export class Router {
 
     // Прокрутка наверх и синхронизация аватаров
     window.scrollTo(0, 0);
-    
+
     // Вызываем глобальную функцию syncAvatars, если она существует
     if (typeof window.syncAvatars === 'function') {
       window.syncAvatars();
@@ -66,13 +75,33 @@ export class Router {
    * Обновление позиции индикатора активного таба
    */
   updateTabIndicator() {
-    const activeTab = document.querySelector(".tab.active");
-    const indicator = document.querySelector(".tab-indicator");
-    
+    const activeTab = document.querySelector('.tab.active');
+    const indicator = document.querySelector('.tab-indicator');
+
     if (activeTab && indicator) {
       indicator.style.transform = `translateX(${activeTab.offsetLeft}px)`;
       indicator.style.width = `${activeTab.offsetWidth}px`;
     }
+  }
+
+  /**
+   * Инициализация обработчиков кликов для кнопок табара и навигации
+   */
+  initTabbarListeners() {
+    // Делегирование событий для всех кнопок с data-nav
+    const navButtons = document.querySelectorAll('[data-nav]');
+    
+    navButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetScreen = btn.dataset.nav;
+        
+        // Проверяем, что это валидный экран
+        if (this.screens.includes(targetScreen) || this.renderHandlers[targetScreen]) {
+          this.navigate(targetScreen);
+        }
+      });
+    });
   }
 
   /**
@@ -88,6 +117,9 @@ export class Router {
         this.navigate('home', null, true);
       }
     });
+
+    // Инициализация обработчиков табара после загрузки DOM
+    this.initTabbarListeners();
   }
 
   /**
@@ -95,6 +127,6 @@ export class Router {
    */
   initInitialState() {
     history.replaceState({ screen: 'home' }, '', '');
-    this.navigate("home", null, true);
+    this.navigate('home', null, true);
   }
 }
