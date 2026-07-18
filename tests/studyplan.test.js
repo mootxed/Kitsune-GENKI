@@ -79,8 +79,8 @@ describe('StudyPlan', () => {
       expect(plan.error).toBeUndefined();
       // Проверяем что глава 1 не включена в план
       const chaptersInPlan = plan.segments
-        .filter(s => s.type === 'chapter')
-        .map(s => s.chapterId);
+        .filter((s) => s.type === 'chapter')
+        .map((s) => s.chapterId);
       expect(chaptersInPlan).not.toContain(1);
       expect(chaptersInPlan).toContain(2);
       expect(chaptersInPlan).toContain(3);
@@ -135,19 +135,21 @@ describe('StudyPlan', () => {
 
       const plan = StudyPlan.generatePlan(params, lessons, []);
 
-      const chapter1Days = plan.segments.find(s => s.chapterId === 1)?.days || 0;
-      const chapter2Days = plan.segments.find(s => s.chapterId === 2)?.days || 0;
+      const chapter1Days = plan.segments.find((s) => s.chapterId === 1)?.days || 0;
+      const chapter2Days = plan.segments.find((s) => s.chapterId === 2)?.days || 0;
 
       // Глава 2 должна получить больше дней чем глава 1
       expect(chapter2Days).toBeGreaterThan(chapter1Days);
     });
 
     it('должен включить дни для повторения каждые 3 главы', () => {
-      const manyLessons = Array(9).fill(null).map((_, i) => ({
-        id: i + 1,
-        words: Array(20).fill({ word: 'test' }),
-        grammar: ['rule1', 'rule2'],
-      }));
+      const manyLessons = Array(9)
+        .fill(null)
+        .map((_, i) => ({
+          id: i + 1,
+          words: Array(20).fill({ word: 'test' }),
+          grammar: ['rule1', 'rule2'],
+        }));
 
       const params = {
         startDate: '2026-01-01',
@@ -158,7 +160,7 @@ describe('StudyPlan', () => {
       const plan = StudyPlan.generatePlan(params, manyLessons, []);
 
       // Должны быть дни для повторения
-      const reviewSegments = plan.segments.filter(s => s.type === 'review');
+      const reviewSegments = plan.segments.filter((s) => s.type === 'review');
       expect(reviewSegments.length).toBeGreaterThan(0);
     });
 
@@ -171,7 +173,7 @@ describe('StudyPlan', () => {
 
       const plan = StudyPlan.generatePlan(params, mockLessons, []);
 
-      plan.segments.forEach(segment => {
+      plan.segments.forEach((segment) => {
         expect(segment.startDate).toBeDefined();
         expect(segment.endDate).toBeDefined();
         expect(new Date(segment.startDate)).toBeInstanceOf(Date);
@@ -189,7 +191,7 @@ describe('StudyPlan', () => {
       const plan = StudyPlan.generatePlan(params, mockLessons, []);
 
       // Проверяем что все даты соответствуют выбранным дням недели
-      plan.segments.forEach(segment => {
+      plan.segments.forEach((segment) => {
         const startDay = new Date(segment.startDate).getDay();
         const endDay = new Date(segment.endDate).getDay();
         expect([1, 3, 5]).toContain(startDay);
@@ -206,8 +208,8 @@ describe('StudyPlan', () => {
 
       const plan = StudyPlan.generatePlan(params, mockLessons, []);
 
-      const chapterSegments = plan.segments.filter(s => s.type === 'chapter');
-      chapterSegments.forEach(segment => {
+      const chapterSegments = plan.segments.filter((s) => s.type === 'chapter');
+      chapterSegments.forEach((segment) => {
         expect(segment.days).toBeGreaterThanOrEqual(1);
       });
     });
@@ -242,8 +244,8 @@ describe('StudyPlan', () => {
       const recalculated = StudyPlan.recalcPlan(originalPlan, mockLessons, completedChapters);
 
       const chaptersInPlan = recalculated.segments
-        .filter(s => s.type === 'chapter')
-        .map(s => s.chapterId);
+        .filter((s) => s.type === 'chapter')
+        .map((s) => s.chapterId);
       expect(chaptersInPlan).not.toContain(1);
       expect(chaptersInPlan).not.toContain(2);
       expect(chaptersInPlan).toContain(3);
@@ -332,11 +334,13 @@ describe('StudyPlan', () => {
 
   describe('Интеграционные сценарии', () => {
     it('должен создать полный план для 12 глав Genki за 3 месяца', () => {
-      const genkiLessons = Array(12).fill(null).map((_, i) => ({
-        id: i + 1,
-        words: Array(25 + Math.floor(Math.random() * 10)).fill({ word: 'test' }),
-        grammar: Array(4 + Math.floor(Math.random() * 3)).fill('rule'),
-      }));
+      const genkiLessons = Array(12)
+        .fill(null)
+        .map((_, i) => ({
+          id: i + 1,
+          words: Array(25 + Math.floor(Math.random() * 10)).fill({ word: 'test' }),
+          grammar: Array(4 + Math.floor(Math.random() * 3)).fill('rule'),
+        }));
 
       const params = {
         startDate: '2026-01-01',
@@ -348,11 +352,11 @@ describe('StudyPlan', () => {
 
       expect(plan.error).toBeUndefined();
       expect(plan.segments.length).toBeGreaterThan(12); // Главы + дни повторения
-      
+
       // Проверяем что все 12 глав включены
       const chaptersInPlan = plan.segments
-        .filter(s => s.type === 'chapter')
-        .map(s => s.chapterId);
+        .filter((s) => s.type === 'chapter')
+        .map((s) => s.chapterId);
       expect(chaptersInPlan).toHaveLength(12);
       expect(Math.min(...chaptersInPlan)).toBe(1);
       expect(Math.max(...chaptersInPlan)).toBe(12);
@@ -380,7 +384,7 @@ describe('StudyPlan', () => {
       // Интенсивный план должен покрыть больший период
       expect(intensivePlan.error).toBeUndefined();
       expect(relaxedPlan.error).toBeUndefined();
-      
+
       // Даты deadline должны отличаться
       expect(intensivePlan.deadline).not.toBe(relaxedPlan.deadline);
     });
@@ -394,16 +398,16 @@ describe('StudyPlan', () => {
 
       // Начальный план
       let plan = StudyPlan.generatePlan(params, mockLessons, []);
-      expect(plan.segments.filter(s => s.type === 'chapter')).toHaveLength(3);
+      expect(plan.segments.filter((s) => s.type === 'chapter')).toHaveLength(3);
 
       // Завершили главу 1
       plan = StudyPlan.recalcPlan(plan, mockLessons, [1]);
-      expect(plan.segments.filter(s => s.type === 'chapter')).toHaveLength(2);
+      expect(plan.segments.filter((s) => s.type === 'chapter')).toHaveLength(2);
 
       // Завершили главы 1 и 2
       plan = StudyPlan.recalcPlan(plan, mockLessons, [1, 2]);
-      expect(plan.segments.filter(s => s.type === 'chapter')).toHaveLength(1);
-      expect(plan.segments.find(s => s.chapterId === 3)).toBeDefined();
+      expect(plan.segments.filter((s) => s.type === 'chapter')).toHaveLength(1);
+      expect(plan.segments.find((s) => s.chapterId === 3)).toBeDefined();
     });
   });
 });

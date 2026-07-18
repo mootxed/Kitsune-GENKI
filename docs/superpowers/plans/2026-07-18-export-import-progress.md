@@ -6,6 +6,7 @@
 ## Архитектура
 
 ### Структура экспорта
+
 ```json
 {
   "app": "kitsune_genki",
@@ -13,7 +14,7 @@
   "schemaVersion": "2.0",
   "timestamp": "2026-07-18T12:16:00.056Z",
   "data": {
-    "state": { /* полный state */ },
+    "state": {/* полный state */},
     "lessonVersion": "123",
     "lastActivityDay": "2026-07-18",
     "theme": "dark"
@@ -22,6 +23,7 @@
 ```
 
 ### Ключи localStorage для экспорта
+
 - ✅ `LS_STATE` — основное состояние (chapters, srs, streak, xp, achievements, quests, chatHistory)
 - ❌ `LS_LESSONS` — исключён (кэш уроков, слишком большой)
 - ✅ `LS_LESSON_VERSION` — версия уроков
@@ -67,30 +69,30 @@
 
 ```javascript
 // 1. Проверка формата
-if (!data.exportType || data.exportType !== "full_localstorage") {
-  return "Неверный тип экспорта";
+if (!data.exportType || data.exportType !== 'full_localstorage') {
+  return 'Неверный тип экспорта';
 }
 
 // 2. Проверка версии схемы
-if (!data.schemaVersion || data.schemaVersion !== "2.0") {
-  return "Несовместимая версия схемы данных";
+if (!data.schemaVersion || data.schemaVersion !== '2.0') {
+  return 'Несовместимая версия схемы данных';
 }
 
 // 3. Проверка обязательных полей
 if (!data.data || !data.data.state) {
-  return "Отсутствуют обязательные данные";
+  return 'Отсутствуют обязательные данные';
 }
 
 // 4. Диалог подтверждения
 const currentProgress = {
   xp: state.xp,
   level: state.level,
-  streak: state.streak.count
+  streak: state.streak.count,
 };
 const importProgress = {
   xp: data.data.state.xp,
   level: data.data.state.level,
-  streak: data.data.state.streak.count
+  streak: data.data.state.streak.count,
 };
 
 // 5. Обработка API-ключа
@@ -102,6 +104,7 @@ if (data.data.state.settings?.openrouterKey && state.settings.openrouterKey) {
 ### Дополнения к существующему бэкапу
 
 В функцию `shareProgressBackup()` добавить недостающие поля:
+
 - `unlockedAchievements`
 - `claimedAchievements`
 - `quests`

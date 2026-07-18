@@ -44,8 +44,8 @@ function generateDailyQuests() {
   const reward = Math.floor(target / 2);
 
   quests.push({
-    id: generateQuestId("daily_cards", today),
-    type: "daily_cards",
+    id: generateQuestId('daily_cards', today),
+    type: 'daily_cards',
     title: `Повтори ${target} карточек`,
     desc: `Повтори ${target} карточек сегодня`,
     target,
@@ -53,7 +53,7 @@ function generateDailyQuests() {
     completed: false,
     claimed: false,
     reward: { xp: reward, coins: Math.floor(reward / 2) },
-    expires: today
+    expires: today,
   });
 
   // Квест 2: "Достичь N правильных ответов подряд" (N = 5, 10 или 15)
@@ -62,8 +62,8 @@ function generateDailyQuests() {
   const streakReward = streakTarget * 5;
 
   quests.push({
-    id: generateQuestId("streak_correct", today),
-    type: "streak_correct",
+    id: generateQuestId('streak_correct', today),
+    type: 'streak_correct',
     title: `${streakTarget} правильных подряд`,
     desc: `Ответь правильно на ${streakTarget} карточек подряд`,
     target: streakTarget,
@@ -71,7 +71,7 @@ function generateDailyQuests() {
     completed: false,
     claimed: false,
     reward: { xp: streakReward, coins: Math.floor(streakReward / 2) },
-    expires: today
+    expires: today,
   });
 
   return quests;
@@ -86,16 +86,16 @@ function generateWeeklyChallenges() {
 
   // Челлендж: "Поддерживать стрик всю неделю" (7 дней)
   challenges.push({
-    id: generateQuestId("weekly_streak", weekStart),
-    type: "weekly_streak",
-    title: "Стрик на всю неделю",
-    desc: "Поддерживай ежедневный стрик 7 дней подряд",
+    id: generateQuestId('weekly_streak', weekStart),
+    type: 'weekly_streak',
+    title: 'Стрик на всю неделю',
+    desc: 'Поддерживай ежедневный стрик 7 дней подряд',
     target: 7,
     progress: 0,
     completed: false,
     claimed: false,
     reward: { xp: 500, coins: 250 },
-    expires: weekStart
+    expires: weekStart,
   });
 
   return challenges;
@@ -115,7 +115,7 @@ function initializeQuests(state) {
       weekStart: getWeekStart(),
       completedDaily: 0,
       completedWeekly: 0,
-      streakCorrect: 0 // Текущий стрик правильных ответов
+      streakCorrect: 0, // Текущий стрик правильных ответов
     };
   }
 }
@@ -135,7 +135,7 @@ function checkQuestReset(state) {
   // Сброс ежедневных квестов
   if (state.quests.lastReset !== today) {
     // Подсчитываем завершённые квесты за вчера
-    const completedYesterday = state.quests.daily.filter(q => q.completed).length;
+    const completedYesterday = state.quests.daily.filter((q) => q.completed).length;
     state.quests.completedDaily = (state.quests.completedDaily || 0) + completedYesterday;
 
     // Генерируем новые ежедневные квесты
@@ -147,7 +147,7 @@ function checkQuestReset(state) {
   // Сброс недельных челленджей
   if (state.quests.weekStart !== currentWeekStart) {
     // Подсчитываем завершённые челленджи за прошлую неделю
-    const completedLastWeek = state.quests.weekly.filter(q => q.completed).length;
+    const completedLastWeek = state.quests.weekly.filter((q) => q.completed).length;
     state.quests.completedWeekly = (state.quests.completedWeekly || 0) + completedLastWeek;
 
     // Генерируем новые недельные челленджи
@@ -163,7 +163,7 @@ function updateQuestProgress(state, questType, incrementValue = 1) {
   if (!state.quests) return;
 
   // Обновляем ежедневные квесты
-  state.quests.daily.forEach(quest => {
+  state.quests.daily.forEach((quest) => {
     if (quest.type === questType && !quest.completed) {
       quest.progress += incrementValue;
       if (quest.progress >= quest.target) {
@@ -174,7 +174,7 @@ function updateQuestProgress(state, questType, incrementValue = 1) {
   });
 
   // Обновляем недельные челленджи
-  state.quests.weekly.forEach(quest => {
+  state.quests.weekly.forEach((quest) => {
     if (quest.type === questType && !quest.completed) {
       quest.progress += incrementValue;
       if (quest.progress >= quest.target) {
@@ -190,12 +190,12 @@ function updateQuestProgress(state, questType, incrementValue = 1) {
  */
 function incrementStreakCorrect(state) {
   if (!state.quests) return;
-  
+
   state.quests.streakCorrect = (state.quests.streakCorrect || 0) + 1;
-  
+
   // Обновляем прогресс квеста "streak_correct"
-  state.quests.daily.forEach(quest => {
-    if (quest.type === "streak_correct" && !quest.completed) {
+  state.quests.daily.forEach((quest) => {
+    if (quest.type === 'streak_correct' && !quest.completed) {
       quest.progress = state.quests.streakCorrect;
       if (quest.progress >= quest.target) {
         quest.progress = quest.target;
@@ -220,11 +220,11 @@ function claimQuestReward(state, questId) {
   if (!state.quests) return null;
 
   // Ищем квест в ежедневных
-  let quest = state.quests.daily.find(q => q.id === questId);
-  
+  let quest = state.quests.daily.find((q) => q.id === questId);
+
   // Если не нашли, ищем в недельных
   if (!quest) {
-    quest = state.quests.weekly.find(q => q.id === questId);
+    quest = state.quests.weekly.find((q) => q.id === questId);
   }
 
   if (!quest || !quest.completed || quest.claimed) {
@@ -246,10 +246,10 @@ function getTimeUntilReset() {
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(0, 0, 0, 0);
-  
+
   const diff = tomorrow - now;
   const hours = Math.floor(diff / (1000 * 60 * 60));
-  
+
   return `${hours}h left`;
 }
 
@@ -264,5 +264,5 @@ export const QuestsManager = {
   claimQuestReward,
   getTimeUntilReset,
   getWeekStart,
-  todayStr
+  todayStr,
 };

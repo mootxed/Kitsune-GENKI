@@ -20,23 +20,25 @@
 
 ## File Structure
 
-| File | Responsibility |
-|------|----------------|
-| `src/utils.js` | DOM selectors (`$`, `$$`), date formatting (`todayStr`, `formatTimeUntilReset`, `monthLabel`), Russian pluralization (`pluralDays`). |
-| `src/xp-system.js` | XP/level/rank constants and rules (`addXP`, `getUserRankData`, `xpToNextLevel`). |
-| `src/srs-helpers.js` | Pure queries over SRS records (`dueCards`, `allCards`, `cardChapter`, `wordById`, `isWordUnlocked`). |
-| `app.js` | Main controller; imports the modules above and removes the extracted definitions. |
-| `tests/app.test.js` | Updated to import `addXP`, `getUserRankData`, etc. from the new modules. |
+| File                 | Responsibility                                                                                                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/utils.js`       | DOM selectors (`$`, `$$`), date formatting (`todayStr`, `formatTimeUntilReset`, `monthLabel`), Russian pluralization (`pluralDays`). |
+| `src/xp-system.js`   | XP/level/rank constants and rules (`addXP`, `getUserRankData`, `xpToNextLevel`).                                                     |
+| `src/srs-helpers.js` | Pure queries over SRS records (`dueCards`, `allCards`, `cardChapter`, `wordById`, `isWordUnlocked`).                                 |
+| `app.js`             | Main controller; imports the modules above and removes the extracted definitions.                                                    |
+| `tests/app.test.js`  | Updated to import `addXP`, `getUserRankData`, etc. from the new modules.                                                             |
 
 ---
 
 ### Task 1: Extract utility functions to `src/utils.js`
 
 **Files:**
+
 - Create: `src/utils.js`
 - Modify: `app.js:18-20`, `app.js:396-400`, `app.js:540-551`, `app.js:925-935`
 
 **Interfaces:**
+
 - Produces: `export const $`, `export const $$`, `export const todayStr`, `export const formatTimeUntilReset`, `export const pluralDays`, `export const monthLabel`, `export const heatmapLevel`.
 
 - [ ] **Step 1: Create `src/utils.js`**
@@ -63,14 +65,24 @@ export function formatTimeUntilReset() {
 }
 
 export function pluralDays(n) {
-  if (n % 10 === 1 && n % 100 !== 11) return "день";
-  if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return "дня";
-  return "дней";
+  if (n % 10 === 1 && n % 100 !== 11) return 'день';
+  if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return 'дня';
+  return 'дней';
 }
 
 const MONTHS_RU = [
-  "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-  "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
+  'Январь',
+  'Февраль',
+  'Март',
+  'Апрель',
+  'Май',
+  'Июнь',
+  'Июль',
+  'Август',
+  'Сентябрь',
+  'Октябрь',
+  'Ноябрь',
+  'Декабрь',
 ];
 
 export function monthLabel(date) {
@@ -78,17 +90,18 @@ export function monthLabel(date) {
 }
 
 export function heatmapLevel(count) {
-  if (count === 0) return "0";
-  if (count <= 2) return "1";
-  if (count <= 5) return "2";
-  if (count <= 10) return "3";
-  return "4";
+  if (count === 0) return '0';
+  if (count <= 2) return '1';
+  if (count <= 5) return '2';
+  if (count <= 10) return '3';
+  return '4';
 }
 ```
 
 - [ ] **Step 2: Remove duplicated definitions from `app.js`**
 
 Delete these lines from `app.js`:
+
 - `const $ = (s, r) => ...;`
 - `const $$ = (s, r) => ...;`
 - `const todayStr = () => ...;`
@@ -101,7 +114,15 @@ Delete these lines from `app.js`:
 Add at the top of `app.js` (after existing imports):
 
 ```javascript
-import { $, $$, todayStr, formatTimeUntilReset, pluralDays, monthLabel, heatmapLevel } from './src/utils.js';
+import {
+  $,
+  $$,
+  todayStr,
+  formatTimeUntilReset,
+  pluralDays,
+  monthLabel,
+  heatmapLevel,
+} from './src/utils.js';
 ```
 
 - [ ] **Step 3: Run the existing test suite**
@@ -121,11 +142,13 @@ git commit -m "refactor: extract stateless utilities into src/utils.js"
 ### Task 2: Extract XP/Level/Rank system to `src/xp-system.js`
 
 **Files:**
+
 - Create: `src/xp-system.js`
 - Modify: `app.js:21-25`, `app.js:150-195`
 - Modify: `tests/app.test.js`
 
 **Interfaces:**
+
 - Produces:
   - `XP_PER_LEVEL`, `XP_CARD`, `XP_CHECK`, `XP_CHAPTER_FULL`, `COINS_PER_LEVEL`
   - `addXP(amount, state, callbacks)` — mutates `state.xp`, `state.level`, `state.coins`; calls `callbacks.onLevelUp(level)` and `callbacks.onSave()` when level changes.
@@ -169,21 +192,21 @@ export function xpToNextLevel(currentXP) {
 export function getUserRankData(level) {
   const effectiveLevel = Math.max(1, Math.min(96, level));
 
-  let league = "alpha";
-  let leagueName = "Альфа";
+  let league = 'alpha';
+  let leagueName = 'Альфа';
   let baseLevel = effectiveLevel;
 
   if (effectiveLevel > 72) {
-    league = "delta";
-    leagueName = "Дельта Мастер";
+    league = 'delta';
+    leagueName = 'Дельта Мастер';
     baseLevel = effectiveLevel - 72;
   } else if (effectiveLevel > 48) {
-    league = "gamma";
-    leagueName = "Гамма";
+    league = 'gamma';
+    leagueName = 'Гамма';
     baseLevel = effectiveLevel - 48;
   } else if (effectiveLevel > 24) {
-    league = "beta";
-    leagueName = "Бета";
+    league = 'beta';
+    leagueName = 'Бета';
     baseLevel = effectiveLevel - 24;
   }
 
@@ -205,12 +228,19 @@ Add import:
 
 ```javascript
 import {
-  XP_PER_LEVEL, XP_CARD, XP_CHECK, XP_CHAPTER_FULL, COINS_PER_LEVEL,
-  addXP, getUserRankData, xpToNextLevel,
+  XP_PER_LEVEL,
+  XP_CARD,
+  XP_CHECK,
+  XP_CHAPTER_FULL,
+  COINS_PER_LEVEL,
+  addXP,
+  getUserRankData,
+  xpToNextLevel,
 } from './src/xp-system.js';
 ```
 
 Delete from `app.js`:
+
 - `const XP_PER_LEVEL = 100;` and the other XP/COIN constants
 - `function addXP(amount) { ... }`
 - `function getUserRankData(level) { ... }`
@@ -234,7 +264,13 @@ Replace the duplicated `addXP` and `getUserRankData` implementations with import
 
 ```javascript
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { XP_PER_LEVEL, COINS_PER_LEVEL, addXP, getUserRankData, xpToNextLevel } from '../src/xp-system.js';
+import {
+  XP_PER_LEVEL,
+  COINS_PER_LEVEL,
+  addXP,
+  getUserRankData,
+  xpToNextLevel,
+} from '../src/xp-system.js';
 ```
 
 Update the test helpers to use the imported functions. The existing test state object stays the same, but `addXP` now requires the state to be passed:
@@ -242,7 +278,7 @@ Update the test helpers to use the imported functions. The existing test state o
 ```javascript
 function testAddXP(amount) {
   addXP(amount, state, {
-    onLevelUp: (level) => levelUpCallbacks.forEach(cb => cb(level)),
+    onLevelUp: (level) => levelUpCallbacks.forEach((cb) => cb(level)),
   });
 }
 ```
@@ -266,10 +302,12 @@ git commit -m "refactor: extract XP/level/rank system into src/xp-system.js"
 ### Task 3: Extract SRS helpers to `src/srs-helpers.js`
 
 **Files:**
+
 - Create: `src/srs-helpers.js`
 - Modify: `app.js:479-522`
 
 **Interfaces:**
+
 - Produces:
   - `cardChapter(cardId)`
   - `wordById(wordId, lessons)`
@@ -303,7 +341,9 @@ export function isWordUnlocked(wordId, chapters) {
   const chapter = chapters[chapterId];
   if (!chapter) return false;
 
-  const completedLessons = Object.values(chapter.checklist || {}).filter(val => val === true).length;
+  const completedLessons = Object.values(chapter.checklist || {}).filter(
+    (val) => val === true
+  ).length;
   return completedLessons >= 3;
 }
 
@@ -333,6 +373,7 @@ import { cardChapter, wordById, isWordUnlocked, dueCards, allCards } from './src
 Delete the old definitions of `cardChapter`, `wordById`, `isWordUnlocked`, `dueCards`, `allCards`.
 
 Replace call sites to pass state explicitly:
+
 - `dueCards(chapterId)` → `dueCards(state.srs, chapterId)`
 - `allCards(chapterId)` → `allCards(state.srs, chapterId)`
 - `wordById(id)` → `wordById(id, LESSONS)`
@@ -355,6 +396,7 @@ git commit -m "refactor: extract SRS query helpers into src/srs-helpers.js"
 ### Task 4: Remove dead code and verify build
 
 **Files:**
+
 - Modify: `app.js`
 
 - [ ] **Step 1: Remove any now-unused imports or variables**

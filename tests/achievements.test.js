@@ -29,7 +29,7 @@ describe('AchievementSystem', () => {
     });
 
     it('каждое достижение должно иметь обязательные поля', () => {
-      ACHIEVEMENTS.forEach(ach => {
+      ACHIEVEMENTS.forEach((ach) => {
         expect(ach.id).toBeDefined();
         expect(typeof ach.id).toBe('string');
         expect(ach.emoji).toBeDefined();
@@ -43,7 +43,7 @@ describe('AchievementSystem', () => {
     });
 
     it('все ID достижений должны быть уникальными', () => {
-      const ids = ACHIEVEMENTS.map(ach => ach.id);
+      const ids = ACHIEVEMENTS.map((ach) => ach.id);
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(ids.length);
     });
@@ -60,12 +60,12 @@ describe('AchievementSystem', () => {
   describe('checkAll - Стартовые достижения', () => {
     it('должен разблокировать "Первый шаг" при начале главы', () => {
       mockState.chapters = {
-        1: { checklist: {} }
+        1: { checklist: {} },
       };
 
       const newUnlocks = AchievementSystem.checkAll(mockState);
 
-      expect(newUnlocks.some(a => a.id === 'first_step')).toBe(true);
+      expect(newUnlocks.some((a) => a.id === 'first_step')).toBe(true);
       expect(mockState.unlockedAchievements).toContain('first_step');
     });
 
@@ -74,7 +74,7 @@ describe('AchievementSystem', () => {
 
       const newUnlocks = AchievementSystem.checkAll(mockState);
 
-      expect(newUnlocks.some(a => a.id === 'first_card')).toBe(true);
+      expect(newUnlocks.some((a) => a.id === 'first_card')).toBe(true);
       expect(mockState.unlockedAchievements).toContain('first_card');
     });
 
@@ -83,7 +83,7 @@ describe('AchievementSystem', () => {
 
       const newUnlocks = AchievementSystem.checkAll(mockState);
 
-      expect(newUnlocks.some(a => a.id === 'first_streak')).toBe(true);
+      expect(newUnlocks.some((a) => a.id === 'first_streak')).toBe(true);
       expect(mockState.unlockedAchievements).toContain('first_streak');
     });
   });
@@ -97,10 +97,10 @@ describe('AchievementSystem', () => {
         { count: 100, id: 'streak_100' },
       ];
 
-      streakTests.forEach(test => {
+      streakTests.forEach((test) => {
         const state = { ...mockState, streak: { count: test.count }, unlockedAchievements: [] };
         const newUnlocks = AchievementSystem.checkAll(state);
-        
+
         expect(state.unlockedAchievements).toContain(test.id);
       });
     });
@@ -126,10 +126,10 @@ describe('AchievementSystem', () => {
         { level: 20, id: 'level_20' },
       ];
 
-      levelTests.forEach(test => {
+      levelTests.forEach((test) => {
         const state = { ...mockState, level: test.level, unlockedAchievements: [] };
         AchievementSystem.checkAll(state);
-        
+
         expect(state.unlockedAchievements).toContain(test.id);
       });
     });
@@ -143,10 +143,10 @@ describe('AchievementSystem', () => {
         { cards: 100, id: 'cards_100' },
       ];
 
-      cardTests.forEach(test => {
+      cardTests.forEach((test) => {
         const state = { ...mockState, dailyCards: test.cards, unlockedAchievements: [] };
         AchievementSystem.checkAll(state);
-        
+
         expect(state.unlockedAchievements).toContain(test.id);
       });
     });
@@ -172,8 +172,8 @@ describe('AchievementSystem', () => {
             vocab: true,
             grammar: true,
             kanji: true,
-          }
-        }
+          },
+        },
       };
 
       AchievementSystem.checkAll(mockState);
@@ -188,8 +188,8 @@ describe('AchievementSystem', () => {
             vocab: true,
             grammar: false, // Не завершена грамматика
             kanji: true,
-          }
-        }
+          },
+        },
       };
 
       AchievementSystem.checkAll(mockState);
@@ -202,7 +202,7 @@ describe('AchievementSystem', () => {
       mockState.chapters = {};
       for (let i = 1; i <= 5; i++) {
         mockState.chapters[i] = {
-          checklist: { vocab: true, grammar: true, kanji: true }
+          checklist: { vocab: true, grammar: true, kanji: true },
         };
       }
 
@@ -216,7 +216,7 @@ describe('AchievementSystem', () => {
       mockState.chapters = {};
       for (let i = 1; i <= 12; i++) {
         mockState.chapters[i] = {
-          checklist: { vocab: true, grammar: true, kanji: true }
+          checklist: { vocab: true, grammar: true, kanji: true },
         };
       }
 
@@ -234,10 +234,10 @@ describe('AchievementSystem', () => {
         { coins: 1000, id: 'coins_1000' },
       ];
 
-      coinTests.forEach(test => {
+      coinTests.forEach((test) => {
         const state = { ...mockState, coins: test.coins, unlockedAchievements: [] };
         AchievementSystem.checkAll(state);
-        
+
         expect(state.unlockedAchievements).toContain(test.id);
       });
     });
@@ -246,9 +246,7 @@ describe('AchievementSystem', () => {
   describe('checkAll - Квесты', () => {
     it('должен разблокировать достижение за первый квест', () => {
       mockState.quests = {
-        daily: [
-          { id: 'quest1', completed: true }
-        ],
+        daily: [{ id: 'quest1', completed: true }],
         completedDaily: 1,
       };
 
@@ -309,11 +307,11 @@ describe('AchievementSystem', () => {
       mockState.unlockedAchievements = ['first_card']; // Уже разблокировано
 
       const firstCheck = AchievementSystem.checkAll(mockState);
-      
+
       // cards_10 должно разблокироваться, но first_card не должно дублироваться
-      expect(firstCheck.some(a => a.id === 'cards_10')).toBe(true);
-      expect(firstCheck.some(a => a.id === 'first_card')).toBe(false);
-      
+      expect(firstCheck.some((a) => a.id === 'cards_10')).toBe(true);
+      expect(firstCheck.some((a) => a.id === 'first_card')).toBe(false);
+
       // Проверяем что в массиве нет дубликатов
       const uniqueAchievements = new Set(mockState.unlockedAchievements);
       expect(uniqueAchievements.size).toBe(mockState.unlockedAchievements.length);
@@ -326,8 +324,8 @@ describe('AchievementSystem', () => {
       const newUnlocks = AchievementSystem.checkAll(mockState);
 
       // Должно вернуть только level_10, level_5 уже было
-      expect(newUnlocks.some(a => a.id === 'level_10')).toBe(true);
-      expect(newUnlocks.some(a => a.id === 'level_5')).toBe(false);
+      expect(newUnlocks.some((a) => a.id === 'level_10')).toBe(true);
+      expect(newUnlocks.some((a) => a.id === 'level_5')).toBe(false);
     });
 
     it('должен корректно работать при повторных вызовах', () => {
@@ -365,7 +363,7 @@ describe('AchievementSystem', () => {
     });
 
     it('должен вернуть 100% при всех разблокированных достижениях', () => {
-      mockState.unlockedAchievements = ACHIEVEMENTS.map(a => a.id);
+      mockState.unlockedAchievements = ACHIEVEMENTS.map((a) => a.id);
 
       const progress = AchievementSystem.getProgress(mockState);
 
@@ -385,15 +383,15 @@ describe('AchievementSystem', () => {
 
   describe('Награды за достижения', () => {
     it('все достижения должны иметь положительные награды', () => {
-      ACHIEVEMENTS.forEach(ach => {
+      ACHIEVEMENTS.forEach((ach) => {
         expect(ach.rewards.xp).toBeGreaterThan(0);
         expect(ach.rewards.coins).toBeGreaterThan(0);
       });
     });
 
     it('более сложные достижения должны давать больше наград', () => {
-      const streak3 = ACHIEVEMENTS.find(a => a.id === 'streak_3');
-      const streak100 = ACHIEVEMENTS.find(a => a.id === 'streak_100');
+      const streak3 = ACHIEVEMENTS.find((a) => a.id === 'streak_3');
+      const streak100 = ACHIEVEMENTS.find((a) => a.id === 'streak_100');
 
       expect(streak100.rewards.xp).toBeGreaterThan(streak3.rewards.xp);
       expect(streak100.rewards.coins).toBeGreaterThan(streak3.rewards.coins);
@@ -421,21 +419,21 @@ describe('AchievementSystem', () => {
       // День 1: Начало
       mockState.chapters[1] = { checklist: {} };
       let newUnlocks = AchievementSystem.checkAll(mockState);
-      expect(newUnlocks.some(a => a.id === 'first_step')).toBe(true);
+      expect(newUnlocks.some((a) => a.id === 'first_step')).toBe(true);
 
       // День 2: Первая карточка
       mockState.dailyCards = 1;
       mockState.streak.count = 1;
       newUnlocks = AchievementSystem.checkAll(mockState);
-      expect(newUnlocks.some(a => a.id === 'first_card')).toBe(true);
-      expect(newUnlocks.some(a => a.id === 'first_streak')).toBe(true);
+      expect(newUnlocks.some((a) => a.id === 'first_card')).toBe(true);
+      expect(newUnlocks.some((a) => a.id === 'first_streak')).toBe(true);
 
       // Через неделю
       mockState.streak.count = 7;
       mockState.dailyCards = 50;
       newUnlocks = AchievementSystem.checkAll(mockState);
-      expect(newUnlocks.some(a => a.id === 'streak_7')).toBe(true);
-      expect(newUnlocks.some(a => a.id === 'cards_50')).toBe(true);
+      expect(newUnlocks.some((a) => a.id === 'streak_7')).toBe(true);
+      expect(newUnlocks.some((a) => a.id === 'cards_50')).toBe(true);
 
       // Проверяем общий прогресс
       const progress = AchievementSystem.getProgress(mockState);

@@ -3,20 +3,20 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   // Base path для GitHub Pages
   base: '/Kitsune-GENKI/',
-  
+
   // Корневая директория проекта
   root: '.',
-  
+
   // Публичная директория (для статических ресурсов)
   publicDir: 'public',
-  
+
   // Настройки сервера разработки
   server: {
     port: 3000,
     open: true,
     // Прокси не требуется, так как используется прямой URL к OpenRouter
   },
-  
+
   // Настройки сборки
   build: {
     outDir: 'dist',
@@ -28,13 +28,13 @@ export default defineConfig({
     // Разделение кода для оптимизации
     rollupOptions: {
       output: {
-        manualChunks: {}
-      }
-    }
+        manualChunks: {},
+      },
+    },
   },
-  
+
   // Оптимизация зависимостей
   optimizeDeps: {
-    include: []
-  }
+    include: [],
+  },
 });
