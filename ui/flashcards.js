@@ -1349,7 +1349,7 @@ async function initDictionaryKanjiWriter(kanji) {
 
 // Функция запуска дополнительного повторения
 export function startExtraReview(state, dependencies) {
-  const { save, updateSrsBadge, renderHome, startFlash, toast } = dependencies;
+  const { save, updateSrsBadge, toast } = dependencies;
 
   const all = allCards(state.srs);
   if (all.length === 0) {
@@ -1370,9 +1370,16 @@ export function startExtraReview(state, dependencies) {
 
   save();
   toast(`🍀 ${selected.length} старых карточек добавлены к повторению!`);
-  renderHome();
   updateSrsBadge();
-  startFlash(null);
+
+  // Чистый старт сессии доп. повторения (без несуществующего startFlash)
+  document.getElementById('completion-overlay')?.classList.add('hidden');
+  sessionManager = null;
+  flashCtx = null;
+  flashRevealed = false;
+  flashIdx = 0;
+  flashQueue = selected;
+  renderFlash(state, dependencies);
 }
 
 // Экспорт функций для установки глобальных переменных из app.js

@@ -12,11 +12,7 @@ import {
 // Локальный контекст зависимостей
 let deps = null;
 
-// Константы localStorage
-const LS_STATE = 'kitsune_state';
-const LS_LESSONS = 'kitsune_lessons';
-const LS_LESSON_VERSION = 'kitsune_lessons_version';
-const LS_LAST_ACTIVITY_DAY = 'kitsune_last_activity_day';
+// Константа localStorage (ключ темы; ключи state/lessons см. state/store.js и src/backup-manager.js)
 const LS_THEME = 'kitsune_theme';
 
 // Функция рендеринга настроек
@@ -26,8 +22,6 @@ export function renderSettings(state, dependencies) {
     save,
     nav,
     loadState,
-    shareProgressBackup,
-    restoreProgressBackup,
     scheduleNotify,
     showNotification,
     applyTheme,
@@ -155,19 +149,22 @@ export function renderSettings(state, dependencies) {
 
   bindEvent('#btn-reset', 'click', () => {
     if (confirm('Сбросить весь прогресс? Это действие необратимо.')) {
-      localStorage.removeItem(LS_STATE);
-      localStorage.removeItem(LS_LESSONS);
-      localStorage.removeItem(LS_LESSON_VERSION);
-      localStorage.removeItem(LS_LAST_ACTIVITY_DAY);
+      // Чистим ВСЕ ключи приложения (включая все ключи SRS/FSRS внутри kitsune_state_v1),
+      // тему оформления оставляем.
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith('kitsune_') && k !== LS_THEME)
+        .forEach((k) => localStorage.removeItem(k));
+      // Перечитываем состояние: получаем чистый defaultState (chapters = {}, srs = {})
       loadState();
-      save();
-      toast('Прогресс сброшен');
+      // Явно сохраняем в localStorage немедленно (без дебаунса)
+      save(true);
+      toast('Прогресс сброшен. Доступна только Глава 1');
       nav('home');
     }
   });
 
-  bindEvent('#btn-share-backup', 'click', shareProgressBackup);
-  bindEvent('#btn-restore-backup', 'click', restoreProgressBackup);
+  bindEvent('#btn-share-backup', 'click', () => handleFullExport(state, toast));
+  bindEvent('#btn-restore-backup', 'click', () => handleFullImport(state, dependencies, toast));
 
   bindEvent('#btn-export-full', 'click', () => handleFullExport(state, toast));
   bindEvent('#btn-import-full', 'click', () => handleFullImport(state, dependencies, toast));

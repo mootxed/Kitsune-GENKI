@@ -76,7 +76,16 @@ import {
 } from './ui/home.js';
 import { renderChapter } from './ui/chapter.js';
 import { renderProfile, renderQuests, claimQuest, claimAchievementReward } from './ui/profile.js';
-import { renderFlash, renderDictionary, startExtraReview } from './ui/flashcards.js';
+import {
+  renderFlash,
+  renderDictionary,
+  startExtraReview,
+  setFlashQueue,
+  setFlashIdx,
+  setFlashRevealed,
+  setFlashCtx,
+  setSessionManager,
+} from './ui/flashcards.js';
 import { renderShop, SHOP_ITEMS } from './ui/shop.js';
 import { renderStories, openWordBottomSheet, closeWordBottomSheet } from './ui/stories.js';
 import { renderSensei } from './ui/chat.js';
@@ -118,6 +127,7 @@ function createDependencies() {
     save,
     loadState,
     chState,
+    todayStr,
 
     // Navigation
     nav,
@@ -297,36 +307,64 @@ let router = null;
 function setupRouter() {
   const dependencies = createDependencies();
 
+  // Рендер вкладки «Повторение» экрана SRS.
+  // Страховки против «залипшего» оверлея завершения:
+  // 1) всегда прячем completion-overlay при входе;
+  // 2) сбрасываем устаревшее состояние сессии и строим очередь заново из due-карточек.
+  const renderSrsRepetition = async () => {
+    const body = $('#srs-body');
+    if (!body) return;
+
+    document.getElementById('completion-overlay')?.classList.add('hidden');
+
+    // Привязка вкладок SRS (Повторение / Словарь)
+    $$('#srs-tabs-container .lib-tab').forEach((tab) => {
+      tab.classList.toggle('active', tab.dataset.tab === 'repetition');
+      tab.onclick = () => {
+        if (tab.dataset.tab === 'dictionary') {
+          $$('#srs-tabs-container .lib-tab').forEach((t) =>
+            t.classList.toggle('active', t === tab)
+          );
+          renderDictionary(state, dependencies);
+        } else {
+          renderSrsRepetition();
+        }
+      };
+    });
+
+    // Подгружаем уроки для всех карточек в SRS (ленивая загрузка)
+    await ensureLessonsForSrs();
+
+    const due = dueCards(state.srs);
+    if (due.length === 0) {
+      body.innerHTML = `
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-num accent">0</div><div class="stat-cap">К повтору</div></div>
+          <div class="stat-box"><div class="stat-num">${allCards(state.srs).length}</div><div class="stat-cap">Всего карточек</div></div>
+        </div>
+        <button class="btn-primary" disabled>Всё повторено на сегодня!</button>
+        <button class="btn-extra-review" id="srs-extra-review">➕ Доп. повторение (10 карточек)</button>
+      `;
+
+      const extraBtn = $('#srs-extra-review');
+      if (extraBtn) {
+        extraBtn.onclick = () => startExtraReview(state, dependencies);
+      }
+    } else {
+      // Чистый старт сессии повторения: никакого устаревшего flashIdx/sessionManager
+      setSessionManager(null);
+      setFlashCtx(null);
+      setFlashRevealed(false);
+      setFlashIdx(0);
+      setFlashQueue(due);
+      renderFlash(state, dependencies);
+    }
+  };
+
   router = initRouter({
     home: () => renderHome(state, dependencies),
     chapter: (id) => renderChapter(parseInt(id), state, dependencies),
-    srs: async () => {
-      const body = $('#srs-body');
-      if (!body) return;
-
-      // Подгружаем уроки для всех карточек в SRS (ленивая загрузка)
-      await ensureLessonsForSrs();
-
-      // Простая заглушка для SRS - основная логика в ui/flashcards.js
-      const due = dueCards(state.srs);
-      if (due.length === 0) {
-        body.innerHTML = `
-          <div class="stat-row">
-            <div class="stat-box"><div class="stat-num accent">0</div><div class="stat-cap">К повтору</div></div>
-            <div class="stat-box"><div class="stat-num">${allCards(state.srs).length}</div><div class="stat-cap">Всего карточек</div></div>
-          </div>
-          <button class="btn-primary" disabled>Всё повторено на сегодня!</button>
-          <button class="btn-extra-review" id="srs-extra-review">➕ Доп. повторение (10 карточек)</button>
-        `;
-
-        const extraBtn = $('#srs-extra-review');
-        if (extraBtn) {
-          extraBtn.onclick = () => startExtraReview(state, dependencies);
-        }
-      } else {
-        renderFlash(state, dependencies);
-      }
-    },
+    srs: renderSrsRepetition,
     profile: () => renderProfile(state, dependencies),
     shop: () => renderShop(state, dependencies),
     library: () => renderStories(state, dependencies),
@@ -363,6 +401,11 @@ async function init() {
 
   // Настройка роутера
   setupRouter();
+
+  // Первичный рендер главного экрана: роутер при старте сам обработчик не вызывает,
+  // без этого список глав остаётся пустым до первого клика по табам
+  history.replaceState({ screen: 'home' }, '', '');
+  nav('home', null, true);
 
   // Начальная отрисовка
   if (!state.initialized) {

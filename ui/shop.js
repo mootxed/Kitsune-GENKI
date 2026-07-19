@@ -180,6 +180,16 @@ export function renderShop(state, dependencies) {
   const toast = deps?.toast || window.toast || (() => {});
   const $$ = deps?.$$ || window.$$ || ((s) => Array.from(document.querySelectorAll(s)));
 
+  // Магазин — модалка: открываем её и привязываем кнопку закрытия
+  const modal = $('#shop-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    const closeBtn = $('#shop-modal-close');
+    if (closeBtn) {
+      closeBtn.onclick = () => modal.classList.add('hidden');
+    }
+  }
+
   const body = $('#shop-body');
   if (!body) return;
 
