@@ -19,6 +19,11 @@
 @import url('./src/styles/components/tabbar.css');
 @import url('./src/styles/components/buttons.css');
 @import url('./src/styles/components/cards.css');
+@import url('./src/styles/components/home.css');
+@import url('./src/styles/components/plan.css');
+@import url('./src/styles/components/shop.css');
+@import url('./src/styles/components/tabs.css');
+@import url('./src/styles/components/overlays.css');
 @import url('./src/styles/components/profile.css');
 @import url('./src/styles/components/srs.css');
 @import url('./src/styles/components/ui.css');

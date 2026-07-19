@@ -1,0 +1,257 @@
+.bottom-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  transition: var(--transition-theme);
+}
+
+.bottom-sheet.active {
+  pointer-events: auto;
+}
+
+.bottom-sheet.active .bottom-sheet-backdrop {
+  opacity: 1;
+}
+
+.bottom-sheet.active .bottom-sheet-content {
+  transform: translateY(0);
+}
+
+.bottom-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+  cursor: pointer;
+}
+
+.bottom-sheet-backdrop {
+  opacity: 1;
+}
+
+.bottom-sheet-body {
+  padding: 20px 24px 32px;
+  overflow-y: auto;
+  max-height: calc(70vh - 50px);
+}
+
+.bottom-sheet-body {
+    padding: 16px 20px 28px;
+    max-height: calc(80vh - 40px);
+  }
+
+.bottom-sheet-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 70vh;
+  background: var(--bg-card);
+  border-radius: 24px 24px 0 0;
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.bottom-sheet-content {
+  transform: translateY(0);
+}
+
+.bottom-sheet-content {
+    max-height: 80vh;
+  }
+
+.bottom-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 12px auto 8px;
+  flex-shrink: 0;
+}
+
+.bottom-sheet-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.completion-bottom {
+  width: 100%;
+  padding: 0 24px 32px 24px;
+  padding-bottom: calc(32px + var(--safe-b));
+}
+
+.completion-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px;
+  animation: slideUp 0.5s ease;
+}
+
+.completion-desc {
+  font-size: 16px;
+  margin: 0 0 32px 0;
+  opacity: 0.8;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.completion-icon {
+  font-size: 80px;
+  margin-bottom: 24px;
+  animation: bounce 0.6s ease;
+}
+
+.completion-icon {
+    font-size: 64px;
+  }
+
+.completion-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100dvh;
+  z-index: 10000;
+  background: linear-gradient(135deg, #1e3a2f 0%, #2e4a3f 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.completion-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.completion-overlay[data-theme='levelup'] {
+  background: linear-gradient(135deg, #1a0a2e 0%, #2a1a4e 100%);
+}
+
+.completion-rewards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.completion-subtitle {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  opacity: 0.9;
+}
+
+.completion-subtitle {
+    font-size: 18px;
+  }
+
+.completion-title {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  letter-spacing: 0.02em;
+}
+
+.completion-title {
+    font-size: 28px;
+  }
+
+.dict-word-kanji {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.dict-word-kanji {
+  filter: blur(4px);
+  user-select: none;
+  pointer-events: none;
+}
+
+.dict-word-reading {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.dict-word-reading {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.dict-word-translation {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.dict-word-translation {
+  color: var(--orange);
+  font-weight: 600;
+}
+
+.word-kanji {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.word-kanji {
+    font-size: 28px;
+  }
+
+.word-reading {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.word-reading {
+    font-size: 16px;
+  }
+
+.word-translation {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.word-translation {
+    font-size: 18px;
+  }
+
+.word-type-badge {
+  padding: 4px 12px;
+  background: var(--orange-soft);
+  color: var(--primary);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.word-type-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+  }

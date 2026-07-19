@@ -1,0 +1,34 @@
+.lib-tab {
+  flex: 1;
+  border: none;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border-radius: 14px;
+  padding: 14px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  min-height: 48px;
+  touch-action: manipulation;
+  transition:
+    var(--transition-theme),
+    transform 0.15s ease;
+}
+
+.lib-tab:active {
+  transform: scale(0.97);
+}
+
+.lib-tab.active {
+  background: var(--orange);
+  color: #fff;
+  box-shadow: 0 4px 0 var(--orange-dark);
+}
+
+.lib-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 8px;
+  width: 100%;
+}

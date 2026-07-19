@@ -1,0 +1,213 @@
+.achievements-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.achievements-toggle-btn:hover {
+  background: var(--bg);
+  border-color: var(--orange);
+  transform: translateY(-1px);
+}
+
+.advice-bar {
+  display: flex;
+  height: 32px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.advice-percentages {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.advice-subtitle {
+  font-size: 14px;
+  opacity: 0.7;
+  margin: 4px 0 16px;
+}
+
+.advice-tip {
+  background: rgba(255, 122, 26, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 12px 0;
+  border-left: 3px solid var(--orange);
+}
+
+.completed-chapters-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-size: 16px;
+  background: var(--bg);
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+.form-label {
+  display: block;
+  font-weight: 600;
+  margin: 16px 0 6px;
+  font-size: 14px;
+}
+
+.heatmap-weekday {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 700;
+  padding: 4px 0;
+}
+
+.heatmap-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.plan-calendar-grid {
+  margin-top: 16px;
+}
+
+.plan-deadline-toggle,
+.plan-view-toggle {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.plan-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-view-toggle {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.plan-warning {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+  color: #856404;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 48px;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.toggle-btn:hover {
+  border-color: var(--orange);
+  background: rgba(255, 122, 26, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 122, 26, 0.15);
+}
+
+.toggle-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-btn.active {
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+  color: white;
+  border-color: var(--orange);
+  box-shadow: 0 4px 12px rgba(255, 122, 26, 0.3);
+  transform: translateY(0);
+}
+
+.toggle-btn.active:hover {
+  box-shadow: 0 6px 16px rgba(255, 122, 26, 0.4);
+  transform: translateY(-1px);
+}
+
+.weekday-btn {
+  flex: 1;
+  padding: 10px 2px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 40px;
+  min-height: 44px;
+  position: relative;
+  overflow: hidden;
+}
+
+.weekday-btn:hover {
+  border-color: var(--orange);
+  background: rgba(255, 122, 26, 0.05);
+  transform: translateY(-1px);
+}
+
+.weekday-btn:active {
+  transform: translateY(0);
+}
+
+.weekday-btn.active {
+  background: var(--orange);
+  color: white;
+  border-color: var(--orange);
+  box-shadow: 0 4px 12px rgba(255, 122, 26, 0.3);
+}
+
+.weekday-btn.active:hover {
+  background: var(--orange-dark);
+  border-color: var(--orange-dark);
+}
+
+.weekday-selector {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0;
+}

@@ -1,7 +1,7 @@
 /* sw.js — Kitsune Genki Service Worker */
 
 // ===== ВЕРСИОНИРОВАННЫЕ КЕШИ =====
-const CACHE_VERSION = '9';
+const CACHE_VERSION = '10';
 const CACHE_STATIC = `kitsune-static-v${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `kitsune-dynamic-v${CACHE_VERSION}`;
 const CACHE_LESSON = `kitsune-lesson-v${CACHE_VERSION}`;
