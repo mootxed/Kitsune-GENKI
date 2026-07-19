@@ -24,6 +24,12 @@
 @import url('./src/styles/components/shop.css');
 @import url('./src/styles/components/tabs.css');
 @import url('./src/styles/components/overlays.css');
+@import url('./src/styles/components/chapter.css');
+@import url('./src/styles/components/quests.css');
+@import url('./src/styles/components/stories.css');
+@import url('./src/styles/components/chat.css');
+@import url('./src/styles/components/achievements.css');
+@import url('./src/styles/components/dictionary.css');
 @import url('./src/styles/components/profile.css');
 @import url('./src/styles/components/srs.css');
 @import url('./src/styles/components/ui.css');
