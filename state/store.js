@@ -1,9 +1,11 @@
 /* state/store.js — Centralized state management with versioning, migrations, and subscriptions */
 
+import { SRS } from '../srs.js';
+
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-const CURRENT_VERSION = 2;
+const CURRENT_VERSION = 3;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -38,6 +40,25 @@ const MIGRATIONS = {
 
     // Проставляем версию
     migratedState.version = 2;
+
+    return migratedState;
+  },
+  3: (oldState) => {
+    // Миграция с версии 2 → 3: перевод SRS-карточек с SM-2 на FSRS.
+    // Атомарно проходим по всем записям; `due` (nextReview) не перезаписывается.
+    const migratedState = { ...oldState };
+    const srs = migratedState.srs || {};
+
+    Object.keys(srs).forEach((cardId) => {
+      try {
+        srs[cardId] = SRS.migrateSM2ToFSRS(srs[cardId]);
+      } catch (err) {
+        console.error(`[Store] Ошибка миграции карточки ${cardId} на FSRS:`, err);
+      }
+    });
+
+    migratedState.srs = srs;
+    migratedState.version = 3;
 
     return migratedState;
   },

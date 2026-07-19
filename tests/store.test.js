@@ -14,9 +14,9 @@ describe('Store - Версионирование и миграции', () => {
   });
 
   describe('defaultState', () => {
-    it('должен содержать поле version со значением 2', () => {
+    it('должен содержать поле version со значением 3', () => {
       const state = defaultState();
-      expect(state.version).toBe(2);
+      expect(state.version).toBe(3);
     });
 
     it('должен содержать все необходимые поля', () => {
@@ -35,12 +35,12 @@ describe('Store - Версионирование и миграции', () => {
   });
 
   describe('Миграции', () => {
-    it('должен создать новое состояние с версией 2 при первой загрузке', () => {
+    it('должен создать новое состояние с версией 3 при первой загрузке', () => {
       loadState();
-      expect(state.version).toBe(2);
+      expect(state.version).toBe(3);
     });
 
-    it('должен мигрировать старое состояние без версии → версия 2', () => {
+    it('должен мигрировать старое состояние без версии → версия 3', () => {
       const oldState = {
         initialized: true,
         xp: 500,
@@ -53,7 +53,7 @@ describe('Store - Версионирование и миграции', () => {
       loadState();
 
       // Проверяем что версия проставлена
-      expect(state.version).toBe(2);
+      expect(state.version).toBe(3);
 
       // Проверяем что старые данные сохранились
       expect(state.xp).toBe(500);
@@ -78,7 +78,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       loadState();
 
-      expect(state.version).toBe(2);
+      expect(state.version).toBe(3);
       expect(state.unlockedAchievements).toEqual(['first_steps', 'quick_learner']);
       expect(state.claimedAchievements).toEqual(['first_steps']);
     });
@@ -94,7 +94,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       loadState();
 
-      expect(state.version).toBe(2);
+      expect(state.version).toBe(3);
       expect(state.settings.openrouterKey).toBe('test_key');
       expect(state.settings.darkMode).toBe('dark');
       // Проверяем что дефолтные настройки добавлены
@@ -102,9 +102,9 @@ describe('Store - Версионирование и миграции', () => {
       expect(state.settings.notifyEnabled).toBe(false);
     });
 
-    it('не должен перезаписывать данные если версия уже 2', () => {
+    it('не должен перезаписывать данные если версия уже 3', () => {
       const currentState = {
-        version: 2,
+        version: 3,
         xp: 1000,
         level: 10,
         unlockedAchievements: ['achievement1', 'achievement2'],
@@ -113,10 +113,57 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(currentState));
       loadState();
 
-      expect(state.version).toBe(2);
+      expect(state.version).toBe(3);
       expect(state.xp).toBe(1000);
       expect(state.level).toBe(10);
       expect(state.unlockedAchievements).toEqual(['achievement1', 'achievement2']);
+    });
+
+    it('должен мигрировать SM-2 карточки в FSRS при переходе на версию 3', () => {
+      const legacyDue = 1700000000000;
+      const oldState = {
+        version: 2,
+        srs: {
+          L1_w1: {
+            id: 'L1_w1',
+            ef: 2.5,
+            interval: 6,
+            reps: 2,
+            due: legacyDue,
+            lastReview: 1699990000000,
+          },
+          L1_w2: {
+            id: 'L1_w2',
+            ef: 1.8,
+            interval: 20,
+            reps: 7,
+            due: legacyDue + 1000,
+            lastReview: null,
+          },
+        },
+      };
+
+      localStorage.setItem(LS_STATE, JSON.stringify(oldState));
+      loadState();
+
+      expect(state.version).toBe(3);
+
+      const card = state.srs.L1_w1;
+      // FSRS-схема
+      expect(typeof card.stability).toBe('number');
+      expect(card.stability).toBeGreaterThan(0);
+      expect(card.difficulty).toBeGreaterThanOrEqual(1);
+      expect(card.difficulty).toBeLessThanOrEqual(10);
+      expect(card).not.toHaveProperty('ef');
+      expect(card).not.toHaveProperty('interval');
+      // КРИТИЧНО: абсолютные метки времени не перезаписаны
+      expect(card.due).toBe(legacyDue);
+      expect(card.lastReview).toBe(1699990000000);
+
+      const hardCard = state.srs.L1_w2;
+      // Более низкий EF → более высокая сложность
+      expect(hardCard.difficulty).toBeGreaterThan(card.difficulty);
+      expect(hardCard.due).toBe(legacyDue + 1000);
     });
   });
 
@@ -236,7 +283,7 @@ describe('Store - Версионирование и миграции', () => {
       loadState();
 
       // Должен вернуться к defaultState
-      expect(state.version).toBe(2);
+      expect(state.version).toBe(3);
       expect(state.xp).toBe(0);
       expect(state.level).toBe(1);
     });
@@ -256,7 +303,7 @@ describe('Store - Версионирование и миграции', () => {
         // Эмулируем перезагрузку страницы
         loadState();
 
-        expect(state.version).toBe(2);
+        expect(state.version).toBe(3);
         expect(state.xp).toBe(999);
         expect(state.level).toBe(15);
         expect(state.coins).toBe(500);
