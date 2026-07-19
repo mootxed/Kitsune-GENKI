@@ -323,6 +323,11 @@ function setupRouter() {
     setFlashRevealed(false);
     setFlashIdx(0);
     setFlashQueue(due);
+
+    // Скрываем табы SRS во время сессии
+    const tabsContainer = document.getElementById('srs-tabs-container');
+    if (tabsContainer) tabsContainer.classList.add('hidden');
+
     renderFlash(state, dependencies);
   };
 
@@ -332,6 +337,10 @@ function setupRouter() {
     if (!body) return;
 
     document.getElementById('completion-overlay')?.classList.add('hidden');
+
+    // Показываем табы на dashboard
+    const tabsContainer = document.getElementById('srs-tabs-container');
+    if (tabsContainer) tabsContainer.classList.remove('hidden');
 
     // Привязка вкладок SRS (Повторение / Словарь)
     $$('#srs-tabs-container .lib-tab').forEach((tab) => {
