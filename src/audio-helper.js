@@ -24,14 +24,14 @@ function initVoices() {
 
     const loadVoices = () => {
       const voices = window.speechSynthesis.getVoices();
-      
+
       if (voices.length > 0) {
         voicesLoaded = true;
-        
+
         // Ищем японский голос с приоритетом ja-JP
-        japaneseVoice = voices.find(v => v.lang === 'ja-JP') || 
-                        voices.find(v => v.lang.startsWith('ja'));
-        
+        japaneseVoice =
+          voices.find((v) => v.lang === 'ja-JP') || voices.find((v) => v.lang.startsWith('ja'));
+
         if (japaneseVoice) {
           console.log('✅ Японский голос найден:', japaneseVoice.name, japaneseVoice.lang);
           resolve(true);
@@ -46,7 +46,7 @@ function initVoices() {
             loadVoices();
           };
         }
-        
+
         // Fallback: повторная попытка через 100ms
         setTimeout(() => {
           const retryVoices = window.speechSynthesis.getVoices();
@@ -84,7 +84,9 @@ export async function speakJapanese(text, options = {}) {
   if (!voicesLoaded) {
     const success = await initVoices();
     if (!success && window.toast) {
-      window.toast('Японский голос не найден в системе. Пожалуйста, установите языковой пакет ja-JP в настройках ОС/браузера.');
+      window.toast(
+        'Японский голос не найден в системе. Пожалуйста, установите языковой пакет ja-JP в настройках ОС/браузера.'
+      );
       return;
     }
   }
@@ -105,7 +107,10 @@ export async function speakJapanese(text, options = {}) {
 
     // Обработка ошибок
     utterance.onerror = (event) => {
-      console.error('Ошибка озвучивания:', event.error);
+      // "interrupted" — нормальная ситуация при смене карточки или быстрых кликах
+      if (event.error !== 'interrupted') {
+        console.error('Ошибка озвучивания:', event.error);
+      }
     };
 
     window.speechSynthesis.speak(utterance);
@@ -129,7 +134,7 @@ export function stopSpeaking() {
  */
 export async function getAvailableVoices() {
   if (!('speechSynthesis' in window)) return [];
-  
+
   await initVoices();
   return window.speechSynthesis.getVoices();
 }
