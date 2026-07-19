@@ -1,15 +1,15 @@
 /* sw.js — Kitsune Genki Service Worker */
 
 // ===== ВЕРСИОНИРОВАННЫЕ КЕШИ =====
-const CACHE_VERSION = '7';
+const CACHE_VERSION = '8';
 const CACHE_STATIC = `kitsune-static-v${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `kitsune-dynamic-v${CACHE_VERSION}`;
 const CACHE_LESSON = `kitsune-lesson-v${CACHE_VERSION}`;
 
 // ===== СТАТИЧЕСКИЕ РЕСУРСЫ (Cache-First) =====
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
+  './',
+  'index.html',
   'styles.css',
   'app.js',
   'router.js',
@@ -19,9 +19,9 @@ const STATIC_ASSETS = [
   'studyplan.js',
   'achievements.js',
   'quests.js',
-  '/manifest.json',
-  '/icon.svg',
-  '/offline.html',
+  'manifest.json',
+  'icon.svg',
+  'offline.html',
   // Модульные CSS файлы
   'src/styles/tokens.css',
   'src/styles/base.css',
