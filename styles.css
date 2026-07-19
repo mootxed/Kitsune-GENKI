@@ -6301,7 +6301,6 @@ rt {
   height: 100dvh;
   z-index: 10000;
   background: linear-gradient(135deg, #1e3a2f 0%, #2e4a3f 100%);
-  display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
@@ -6310,11 +6309,12 @@ rt {
   transition: opacity 0.3s ease;
 }
 
+.completion-overlay:not(.hidden) {
+  display: flex;
+}
+
 .completion-overlay.hidden {
-  display: none !important;
-  opacity: 0;
-  pointer-events: none;
-  z-index: -1;
+  display: none;
 }
 
 .completion-content {
