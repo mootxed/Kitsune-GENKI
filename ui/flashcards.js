@@ -1,6 +1,6 @@
 // ui/flashcards.js - Модуль для работы с карточками SRS и словарём
 
-import { $ } from '../src/utils.js';
+import { $, $$ } from '../src/utils.js';
 import { wordById, cardChapter, isWordUnlocked } from '../src/srs-helpers.js';
 import { allCards } from '../src/srs-helpers.js';
 import { SRS } from '../srs.js';
