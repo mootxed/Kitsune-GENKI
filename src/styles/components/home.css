@@ -1,0 +1,297 @@
+/* ===== HOME SCREEN COMPONENTS ===== */
+
+/* Streak & XP Card */
+.streak-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: nowrap;
+}
+
+.streak-circle-wrap {
+  flex-shrink: 0;
+}
+
+.streak-circle-inner {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--orange-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.streak-num-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.streak-num {
+  font-size: clamp(24px, 6vw, 32px);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--streak-text-color, #fff);
+}
+
+.streak-days {
+  font-size: clamp(14px, 3.5vw, 18px);
+  font-weight: 800;
+}
+
+.streak-days#streak-days-label {
+  margin-top: 2px;
+}
+
+.streak-hint {
+  font-size: clamp(11px, 2.8vw, 13px);
+  opacity: 0.92;
+  margin-top: 2px;
+}
+
+.streak-flame {
+  position: absolute;
+  right: -8px;
+  bottom: -18px;
+  font-size: clamp(80px, 20vw, 120px);
+  opacity: 0.12;
+  pointer-events: none;
+  filter: brightness(0) invert(1);
+}
+
+/* Modern Streak Card Alternative */
+.heatmap-streak-card-modern {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(135deg, var(--orange) 0%, #ff4b2b 100%);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(255, 75, 43, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.heatmap-streak-card-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at 15% 50%,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0) 60%
+  );
+  pointer-events: none;
+}
+
+.streak-modern-emoji {
+  font-size: 32px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.streak-modern-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.streak-modern-title {
+  font-size: 16px;
+  font-weight: 800;
+  opacity: 0.95;
+}
+
+.streak-modern-fire-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+}
+
+.streak-modern-num {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+.streak-modern-record {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* XP Bar */
+.xp-bar-wrap {
+  margin-top: 6px;
+  width: 100%;
+}
+
+.xp-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: clamp(11px, 2.8vw, 13px);
+  font-weight: 800;
+  opacity: 0.95;
+  margin-bottom: 3px;
+}
+
+.xp-bar-track {
+  height: 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+  width: 100%;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  transition: width 0.4s ease;
+}
+
+/* Coins Display */
+.coins-row {
+  margin-top: 4px;
+  font-size: clamp(13px, 3.2vw, 15px);
+  font-weight: 800;
+  opacity: 0.95;
+}
+
+/* Stats Row */
+.stat-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.stat-box {
+  flex: 1;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 14px 8px;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+  transition: var(--transition-theme);
+}
+
+.stat-num {
+  font-size: clamp(20px, 5.5vw, 24px);
+  font-weight: 900;
+}
+
+.stat-num.accent {
+  color: var(--orange);
+}
+
+.stat-cap {
+  font-size: clamp(10px, 2.5vw, 12px);
+  color: var(--text-muted);
+  margin-top: 2px;
+  font-weight: 700;
+  transition: var(--transition-theme);
+}
+
+/* Section Titles */
+.section-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 1.5px;
+  margin: 6px 2px 12px;
+  text-transform: uppercase;
+  transition: var(--transition-theme);
+}
+
+/* Deck Cards Animation */
+.card-1,
+.card-2,
+.card-3 {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card-1 {
+  background: linear-gradient(135deg, #ff8da1 0%, #d81b60 100%);
+  top: 0;
+  left: 0;
+  z-index: 3;
+  transform: translate3d(0, 0, 0) rotateX(8deg) rotateY(-8deg);
+  animation:
+    deck-bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) both,
+    deck-float 2.5s ease-in-out 0.6s infinite;
+}
+
+.card-2 {
+  background: linear-gradient(135deg, #aed581 0%, #558b2f 100%);
+  top: 2px;
+  left: 2px;
+  z-index: 2;
+  transform: translate3d(0, 0, -5px) rotateX(5deg) rotateY(-5deg);
+  animation:
+    deck-bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.1s both,
+    deck-float 2.5s ease-in-out 0.8s infinite;
+}
+
+.card-3 {
+  background: linear-gradient(135deg, #ba68c8 0%, #4a148c 100%);
+  top: 4px;
+  left: 4px;
+  z-index: 1;
+  transform: translate3d(0, 0, -10px) rotateX(3deg) rotateY(-3deg);
+  animation:
+    deck-bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.2s both,
+    deck-float 2.5s ease-in-out 1s infinite;
+}
+
+/* Plan Entry Card */
+.plan-entry-card {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.plan-entry-card:active {
+  transform: scale(0.98);
+}
+
+/* Main Quests Timer */
+.main-quests-timer {
+  font-size: clamp(12px, 3vw, 14px);
+  font-weight: 700;
+  color: var(--orange);
+  background: var(--orange-soft);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  opacity: 0.9;
+  transition: var(--transition-theme);
+}
+
+/* Profile Stats */
+.profile-stat-num {
+  font-size: clamp(22px, 6vw, 28px);
+  font-weight: 900;
+  color: var(--orange);
+}

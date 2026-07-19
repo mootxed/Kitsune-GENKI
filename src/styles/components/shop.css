@@ -1,0 +1,82 @@
+/* ===== SHOP MODAL COMPONENTS ===== */
+
+/* Shop Tabs */
+.shop-tabs {
+  display: flex;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.shop-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.shop-tab {
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  border: none;
+}
+
+.shop-tab:hover {
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.shop-tab.active {
+  background: var(--orange);
+  color: white;
+  box-shadow: 0 2px 8px rgba(255, 122, 26, 0.3);
+}
+
+/* Shop Items */
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.shop-item:hover {
+  border-color: var(--orange);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+
+.shop-item-emoji {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.shop-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.shop-item-name {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.shop-item-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--orange);
+}
