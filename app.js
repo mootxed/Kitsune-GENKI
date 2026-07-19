@@ -172,6 +172,11 @@ function createDependencies() {
         onLevelUp: (level) => toast(`🎉 Уровень ${level}! +${COINS_PER_LEVEL} 🪙`),
         onSave: save,
       }),
+    appAddXP: (amount) =>
+      addXP(amount, state, {
+        onLevelUp: (level) => toast(`🎉 Уровень ${level}! +${COINS_PER_LEVEL} 🪙`),
+        onSave: save,
+      }),
     getUserRankData,
 
     // SRS helpers
@@ -307,11 +312,22 @@ let router = null;
 function setupRouter() {
   const dependencies = createDependencies();
 
-  // Рендер вкладки «Повторение» экрана SRS.
-  // Страховки против «залипшего» оверлея завершения:
-  // 1) всегда прячем completion-overlay при входе;
-  // 2) сбрасываем устаревшее состояние сессии и строим очередь заново из due-карточек.
-  const renderSrsRepetition = async () => {
+  // Функция запуска сессии повторения карточек
+  const startSrsSession = async () => {
+    await ensureLessonsForSrs();
+    const due = dueCards(state.srs);
+
+    // Чистый старт сессии повторения
+    setSessionManager(null);
+    setFlashCtx(null);
+    setFlashRevealed(false);
+    setFlashIdx(0);
+    setFlashQueue(due);
+    renderFlash(state, dependencies);
+  };
+
+  // Рендер dashboard экрана SRS (меню с кнопками)
+  const renderSrsDashboard = async () => {
     const body = $('#srs-body');
     if (!body) return;
 
@@ -327,7 +343,7 @@ function setupRouter() {
           );
           renderDictionary(state, dependencies);
         } else {
-          renderSrsRepetition();
+          renderSrsDashboard();
         }
       };
     });
@@ -336,35 +352,35 @@ function setupRouter() {
     await ensureLessonsForSrs();
 
     const due = dueCards(state.srs);
-    if (due.length === 0) {
-      body.innerHTML = `
-        <div class="stat-row">
-          <div class="stat-box"><div class="stat-num accent">0</div><div class="stat-cap">К повтору</div></div>
-          <div class="stat-box"><div class="stat-num">${allCards(state.srs).length}</div><div class="stat-cap">Всего карточек</div></div>
-        </div>
-        <button class="btn-primary" disabled>Всё повторено на сегодня!</button>
-        <button class="btn-extra-review" id="srs-extra-review">➕ Доп. повторение (10 карточек)</button>
-      `;
 
-      const extraBtn = $('#srs-extra-review');
-      if (extraBtn) {
-        extraBtn.onclick = () => startExtraReview(state, dependencies);
-      }
-    } else {
-      // Чистый старт сессии повторения: никакого устаревшего flashIdx/sessionManager
-      setSessionManager(null);
-      setFlashCtx(null);
-      setFlashRevealed(false);
-      setFlashIdx(0);
-      setFlashQueue(due);
-      renderFlash(state, dependencies);
+    // ВСЕГДА показываем dashboard с кнопкой, даже если есть карточки к повтору
+    body.innerHTML = `
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-num accent">${due.length}</div><div class="stat-cap">К повтору</div></div>
+        <div class="stat-box"><div class="stat-num">${allCards(state.srs).length}</div><div class="stat-cap">Всего карточек</div></div>
+      </div>
+      <button class="btn-primary" id="srs-start-session" ${due.length === 0 ? 'disabled' : ''}>
+        ${due.length === 0 ? 'Всё повторено на сегодня!' : '▶️ Начать повторение'}
+      </button>
+      <button class="btn-extra-review" id="srs-extra-review">➕ Доп. повторение (10 карточек)</button>
+    `;
+
+    // Привязываем обработчики к кнопкам
+    const startBtn = $('#srs-start-session');
+    if (startBtn && due.length > 0) {
+      startBtn.onclick = () => startSrsSession();
+    }
+
+    const extraBtn = $('#srs-extra-review');
+    if (extraBtn) {
+      extraBtn.onclick = () => startExtraReview(state, dependencies);
     }
   };
 
   router = initRouter({
     home: () => renderHome(state, dependencies),
     chapter: (id) => renderChapter(parseInt(id), state, dependencies),
-    srs: renderSrsRepetition,
+    srs: renderSrsDashboard,
     profile: () => renderProfile(state, dependencies),
     shop: () => renderShop(state, dependencies),
     library: () => renderStories(state, dependencies),
