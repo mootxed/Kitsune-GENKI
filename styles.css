@@ -1,40 +1,24 @@
-/* ===== Kitsune App Styles ===== */
-/* Modular CSS Architecture */
+/* styles.css — Единая точка входа для модульных стилей */
 
-/* 1. Design Tokens */
-@import './src/styles/tokens.css';
+/* ===== ТОКЕНЫ И ПЕРЕМЕННЫЕ ===== */
+@import url('./src/styles/tokens.css');
 
-/* 2. Themes */
-@import './src/styles/themes/light.css';
-@import './src/styles/themes/dark.css';
-@import './src/styles/themes/custom.css';
+/* ===== БАЗОВЫЕ СТИЛИ ===== */
+@import url('./src/styles/base.css');
 
-/* 3. Base Styles */
-@import './src/styles/base.css';
+/* ===== LAYOUT СТИЛИ ===== */
+@import url('./src/styles/layout.css');
 
-/* 4. Layout */
-@import './src/styles/layout.css';
+/* ===== ТЕМЫ ===== */
+@import url('./src/styles/themes/light.css');
+@import url('./src/styles/themes/dark.css');
+@import url('./src/styles/themes/custom.css');
 
-/* 5. Components */
-@import './src/styles/components/header.css';
-@import './src/styles/components/tabbar.css';
-@import './src/styles/components/buttons.css';
-@import './src/styles/components/cards.css';
-@import './src/styles/components/srs.css';
-@import './src/styles/components/profile.css';
-@import './src/styles/components/ui.css';
-
-/* 
- * ВАЖНО: Старый файл styles.css (7102 строки) теперь разбит на модули.
- * Все оставшиеся стили (Stories, Shop, Quests, Achievements, Chat, и т.д.)
- * остались в оригинальном файле и будут извлечены позже при необходимости.
- * 
- * Текущая архитектура покрывает основные компоненты:
- * - Design tokens и темы (light, dark, 6 кастомных)
- * - Базовые стили и layout
- * - Header, Tabbar, Buttons
- * - Cards (chapter, streak, stat)
- * - SRS и flashcards
- * - Profile и heatmap
- * - UI (modals, toast, forms, loader, settings)
- */
+/* ===== КОМПОНЕНТЫ ===== */
+@import url('./src/styles/components/header.css');
+@import url('./src/styles/components/tabbar.css');
+@import url('./src/styles/components/buttons.css');
+@import url('./src/styles/components/cards.css');
+@import url('./src/styles/components/profile.css');
+@import url('./src/styles/components/srs.css');
+@import url('./src/styles/components/ui.css');
