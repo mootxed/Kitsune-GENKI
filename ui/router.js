@@ -29,6 +29,15 @@ export function initRouter(handlers) {
   // Инициализация обработчика истории браузера
   router.initHistoryHandler();
 
+  // Кнопки магазина (data-nav="shop") — это модалка, а не экран роутера.
+  // Роутер их игнорирует, поэтому привязываем открытие модалки напрямую.
+  document.querySelectorAll('[data-nav="shop"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof renderHandlers.shop === 'function') renderHandlers.shop();
+    });
+  });
+
   // Устанавливаем глобальные алиасы для обратной совместимости
   window.nav = nav;
   window.updateTabIndicator = updateTabIndicator;

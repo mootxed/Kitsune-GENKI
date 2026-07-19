@@ -22,6 +22,21 @@ export function renderStories(state, dependencies) {
   const emptyState = (icon, title, desc) =>
     `<div class="empty"><div class="em">${icon}</div><h3>${title}</h3><p>${desc}</p></div>`;
 
+  // Привязка вкладок библиотеки (Грамматика / Заметки / Истории)
+  $$('.lib-tab[data-libtab]').forEach((tab) => {
+    tab.classList.toggle('active', tab.dataset.libtab === 'stories');
+    tab.onclick = () => {
+      $$('.lib-tab[data-libtab]').forEach((t) => t.classList.toggle('active', t === tab));
+      if (tab.dataset.libtab === 'notes') {
+        renderLibraryNotes(state, dependencies);
+      } else if (tab.dataset.libtab === 'grammar') {
+        renderLibraryGrammar(state, dependencies);
+      } else {
+        renderStories(state, dependencies);
+      }
+    };
+  });
+
   const body = $('#library-body');
 
   // Список историй строится из лёгкого content-index (без полного контента)
@@ -84,6 +99,79 @@ export function renderStories(state, dependencies) {
         toast('⚠️ Не удалось загрузить историю');
       }
     };
+  });
+}
+
+// Локальный экранировщик HTML для пользовательского контента
+function escapeHtmlLocal(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Вкладка «Заметки» — сохранённые ответы Сенсея
+function renderLibraryNotes(state, dependencies) {
+  const { save } = deps || dependencies;
+  const body = $('#library-body');
+  if (!body) return;
+
+  const notes = state.savedNotes || [];
+  if (notes.length === 0) {
+    body.innerHTML = `<div class="empty"><div class="em">📝</div><h3>Заметок пока нет</h3><p>Сохраняйте ответы Сенсея кнопкой «＋ Сохранить в учебник».</p></div>`;
+    return;
+  }
+
+  body.innerHTML = notes
+    .map(
+      (n) => `
+      <div class="note-card" data-note-id="${escapeHtmlLocal(n.id)}">
+        <div class="note-head">
+          <h3 class="note-title">${escapeHtmlLocal(n.title)}</h3>
+          <span class="note-date">${escapeHtmlLocal(n.date || '')}</span>
+        </div>
+        <div class="note-content">${escapeHtmlLocal(n.content)}</div>
+        <button class="btn-ghost note-delete">🗑 Удалить</button>
+      </div>`
+    )
+    .join('');
+
+  body.querySelectorAll('.note-delete').forEach((btn) => {
+    btn.onclick = () => {
+      const id = btn.closest('.note-card').dataset.noteId;
+      state.savedNotes = (state.savedNotes || []).filter((n) => n.id !== id);
+      save();
+      renderLibraryNotes(state, dependencies);
+    };
+  });
+}
+
+// Вкладка «Грамматика» — список глав с переходом к уроку
+function renderLibraryGrammar(state, dependencies) {
+  const { CH_NAMES, chState } = deps || dependencies;
+  const navFn = deps?.nav || window.nav || (() => {});
+  const body = $('#library-body');
+  if (!body) return;
+
+  if (!CONTENT_INDEX || CONTENT_INDEX.length === 0) {
+    body.innerHTML = `<div class="empty"><div class="em">📚</div><h3>Уроки не загружены</h3></div>`;
+    return;
+  }
+
+  body.innerHTML = CONTENT_INDEX.map((ch) => {
+    const unlocked = chState(ch.id).started;
+    const name = (CH_NAMES[ch.id] || [`Урок ${ch.id}`, ''])[0];
+    return `
+      <div class="story-card ${unlocked ? '' : 'story-locked'}" data-chapter-id="${ch.id}">
+        <div class="story-info">
+          <h3 class="story-title">${unlocked ? '📖' : '🔒'} Урок ${ch.id}: ${escapeHtmlLocal(name)}</h3>
+        </div>
+      </div>`;
+  }).join('');
+
+  body.querySelectorAll('[data-chapter-id]').forEach((card) => {
+    card.onclick = () => navFn('chapter', parseInt(card.dataset.chapterId, 10));
   });
 }
 

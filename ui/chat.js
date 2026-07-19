@@ -1,6 +1,6 @@
 // ui/chat.js - Модуль AI-чата с сенсеем
 
-import { $ } from '../src/utils.js';
+import { $, todayStr as getTodayStr } from '../src/utils.js';
 import { syncAvatars } from './shared.js';
 import { API } from '../services.js';
 
@@ -216,7 +216,9 @@ function md(text) {
 
 // Функция добавления сообщения бота
 function addBotMessage(content, state, dependencies, saveable = true) {
-  const { save, todayStr } = dependencies;
+  const { save } = dependencies;
+  // Fallback: deps могут не содержать todayStr — берём утилиту напрямую
+  const todayStr = dependencies?.todayStr || getTodayStr;
 
   const area = $('#chat-area');
   const wrap = document.createElement('div');
