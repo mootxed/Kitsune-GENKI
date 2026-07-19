@@ -248,6 +248,36 @@ function initDrawingMode(
     });
   }
 
+  // Функция загрузки данных кандзи с fallback на традиционную форму
+  const loadKanjiData = async (char) => {
+    try {
+      const response = await fetch(
+        `https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${char}.json`
+      );
+
+      if (response.ok) {
+        return await response.json();
+      }
+
+      // Fallback на традиционную форму для японских упрощённых иероглифов
+      if (response.status === 404 && kanjiSimplifiedToTraditional[char]) {
+        const traditionalChar = kanjiSimplifiedToTraditional[char];
+        const fallbackResponse = await fetch(
+          `https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${traditionalChar}.json`
+        );
+
+        if (fallbackResponse.ok) {
+          console.log(`✅ Используется традиционная форма ${traditionalChar} для ${char}`);
+          return await fallbackResponse.json();
+        }
+      }
+
+      throw new Error(`Данные для символа "${char}" недоступны`);
+    } catch (error) {
+      throw error;
+    }
+  };
+
   try {
     target.innerHTML = '';
 
@@ -270,6 +300,18 @@ function initDrawingMode(
       strokeFadeDuration: 200,
       strokeMismatchThreshold: 0.85,
       leniency: 1.6,
+
+      charDataLoader: loadKanjiData,
+      onLoadCharDataError: (error) => {
+        console.warn(`Не удалось загрузить данные для "${currentKanji}":`, error);
+        toast(`⚠️ Данные для отрисовки "${currentKanji}" недоступны. Пропускаем режим рисования.`);
+        
+        // Пропускаем режим рисования и переходим к следующей карточке
+        flashRevealed = true;
+        kanjiSequence = [];
+        currentKanjiIndex = 0;
+        renderFlash(state, dependencies);
+      },
     });
 
     const undoBtn = document.getElementById('drawing-undo');
