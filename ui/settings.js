@@ -169,8 +169,8 @@ export function renderSettings(state, dependencies) {
   bindEvent('#btn-share-backup', 'click', shareProgressBackup);
   bindEvent('#btn-restore-backup', 'click', restoreProgressBackup);
 
-  bindEvent('#btn-export-full', 'click', () => handleFullExport(state));
-  bindEvent('#btn-import-full', 'click', () => handleFullImport(state, dependencies));
+  bindEvent('#btn-export-full', 'click', () => handleFullExport(state, toast));
+  bindEvent('#btn-import-full', 'click', () => handleFullImport(state, dependencies, toast));
 }
 
 // Функция сохранения темы
@@ -199,7 +199,7 @@ function setThemeAndSave(theme, state, dependencies) {
 }
 
 // Обработчик полного экспорта
-async function handleFullExport(state) {
+async function handleFullExport(state, toastFn) {
   try {
     const data = exportFullProgress();
     const filename = `kitsune_genki_full_${new Date().toISOString().split('T')[0]}.json`;
@@ -208,18 +208,18 @@ async function handleFullExport(state) {
 
     if (!shared) {
       downloadJSON(data, filename);
-      toast('📦 Файл сохранён в Загрузки');
+      toastFn('📦 Файл сохранён в Загрузки');
     } else {
-      toast('✓ Меню «Поделиться» открыто');
+      toastFn('✓ Меню «Поделиться» открыто');
     }
   } catch (error) {
     console.error('Ошибка экспорта:', error);
-    toast('⚠️ Ошибка экспорта: ' + error.message);
+    toastFn('⚠️ Ошибка экспорта: ' + error.message);
   }
 }
 
 // Обработчик полного импорта
-function handleFullImport(state, dependencies) {
+function handleFullImport(state, dependencies, toastFn) {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'application/json';
@@ -234,14 +234,14 @@ function handleFullImport(state, dependencies) {
 
       const validation = validateImportData(data);
       if (!validation.valid) {
-        toast('⚠️ ' + validation.error);
+        toastFn('⚠️ ' + validation.error);
         return;
       }
 
-      showImportConfirmDialog(data, state, dependencies);
+      showImportConfirmDialog(data, state, dependencies, toastFn);
     } catch (error) {
       console.error('Ошибка импорта:', error);
-      toast('⚠️ Неверный формат файла');
+      toastFn('⚠️ Неверный формат файла');
     }
   };
 
@@ -249,7 +249,7 @@ function handleFullImport(state, dependencies) {
 }
 
 // Диалог подтверждения импорта
-function showImportConfirmDialog(data, state, dependencies) {
+function showImportConfirmDialog(data, state, dependencies, toastFn) {
   const { save, loadState } = dependencies;
   const currentState = state;
   const importState = data.data.state;
@@ -314,13 +314,13 @@ function showImportConfirmDialog(data, state, dependencies) {
       save();
 
       overlay.remove();
-      toast('✓ Данные восстановлены');
+      toastFn('✓ Данные восстановлены');
 
       setTimeout(() => {
         window.location.reload();
       }, 1000);
     } else {
-      toast('⚠️ Ошибка импорта: ' + result.error);
+      toastFn('⚠️ Ошибка импорта: ' + result.error);
       overlay.remove();
     }
   };

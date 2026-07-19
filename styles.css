@@ -6311,8 +6311,10 @@ rt {
 }
 
 .completion-overlay.hidden {
+  display: none !important;
   opacity: 0;
   pointer-events: none;
+  z-index: -1;
 }
 
 .completion-content {
