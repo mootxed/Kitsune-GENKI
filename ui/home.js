@@ -5,6 +5,7 @@ import { $, todayStr, pluralDays } from '../src/utils.js';
 import { dueCards, allCards, cardChapter } from '../src/srs-helpers.js';
 import { SRS } from '../srs.js';
 import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
+import { toast } from '../app.js';
 
 // ---------- Constants ----------
 const LS_LESSONS = 'kitsune_lessons_v1';

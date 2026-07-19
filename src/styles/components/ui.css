@@ -326,3 +326,227 @@ textarea {
 .settings-toggle.active::after {
   transform: translateX(22px);
 }
+
+/* === UTILITY CLASSES === */
+.accent {
+  color: var(--orange);
+}
+
+.btn {
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 52px;
+  touch-action: manipulation;
+  font-family: inherit;
+  transition: all 0.2s;
+  display: inline-block;
+  text-align: center;
+}
+
+.muted {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.loader-fox {
+  font-size: 64px;
+  animation: loader-bounce-fox 1s ease-in-out infinite;
+}
+
+@keyframes loader-bounce-fox {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+/* === Settings Components === */
+.set-group {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.set-group:last-child {
+  border-bottom: none;
+}
+
+.set-item {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  transition: var(--transition-theme);
+}
+
+.set-item label {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: var(--spacing-xs);
+  transition: var(--transition-theme);
+}
+
+.set-item input[type='text'],
+.set-item input[type='password'],
+.set-item input[type='number'],
+.set-item textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text);
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.set-item input:focus,
+.set-item textarea:focus {
+  outline: none;
+  border-color: var(--orange);
+  background: var(--bg);
+}
+
+.set-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: var(--spacing-xs);
+  transition: var(--transition-theme);
+}
+
+.set-warning {
+  font-size: 13px;
+  color: var(--orange);
+  background: var(--orange-soft);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  margin-top: var(--spacing-sm);
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+/* Switch Toggle */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch .slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--bg-elevated);
+  border: 2px solid var(--border);
+  transition: all 0.3s;
+  border-radius: 28px;
+}
+
+.switch .slider:before {
+  position: absolute;
+  content: '';
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background: white;
+  transition: all 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.switch input:checked + .slider {
+  background: var(--orange);
+  border-color: var(--orange);
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+/* Range Slider */
+.slider-container {
+  margin-top: var(--spacing-sm);
+}
+
+input[type='range'].slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg-elevated);
+  outline: none;
+  transition: var(--transition-theme);
+}
+
+input[type='range'].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--orange);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 122, 26, 0.3);
+  transition: all 0.2s;
+}
+
+input[type='range'].slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(255, 122, 26, 0.4);
+}
+
+input[type='range'].slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--orange);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(255, 122, 26, 0.3);
+  transition: all 0.2s;
+}
+
+input[type='range'].slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(255, 122, 26, 0.4);
+}
+
+.slider-value {
+  display: inline-block;
+  margin-left: var(--spacing-sm);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--orange);
+  min-width: 40px;
+}

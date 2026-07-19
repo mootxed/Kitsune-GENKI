@@ -235,3 +235,79 @@
   border: 2px solid var(--primary);
   box-shadow: 0 0 0 2px var(--color-orange-soft);
 }
+
+/* Heatmap Navigation */
+.heatmap-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.heatmap-nav-btn {
+  padding: 8px 16px;
+  background: var(--bg-elevated);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heatmap-nav-btn:hover {
+  background: var(--bg-card);
+  border-color: var(--orange);
+  transform: scale(1.05);
+}
+
+.heatmap-nav-btn:active {
+  transform: scale(0.95);
+}
+
+.heatmap-month-label {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  min-width: 120px;
+  text-align: center;
+  transition: var(--transition-theme);
+}
+
+/* Heatmap Legend Dots */
+.heatmap-legend-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  transition: var(--transition-theme);
+}
+
+.heatmap-legend-dot.practice {
+  background: var(--heat-3);
+}
+
+.heatmap-legend-dot.restore {
+  background: var(--heat-2);
+}
+
+/* Achievement Claimed Badge */
+.achievement-claimed-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--green-soft, #e8f5e9);
+  color: var(--green, #4caf50);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: var(--spacing-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
