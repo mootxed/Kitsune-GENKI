@@ -136,54 +136,52 @@ export function renderCrossword(state, dependencies) {
   });
 
   body.innerHTML = `
-    <div class="crossword-game-layout">
-      <!-- Кнопки зума -->
-      <div class="cw-zoom-controls">
-        <button class="cw-zoom-btn" id="cw-zoom-in">+</button>
-        <button class="cw-zoom-btn" id="cw-zoom-out">−</button>
-      </div>
+    <!-- Кнопки зума -->
+    <div class="cw-zoom-controls">
+      <button class="cw-zoom-btn" id="cw-zoom-in">+</button>
+      <button class="cw-zoom-btn" id="cw-zoom-out">−</button>
+    </div>
 
-      <!-- Сетка кроссворда напрямую -->
-      <div class="crossword-grid" id="crossword-grid" style="
-        grid-template-columns: repeat(${gridSize}, var(--cw-cell-size));
-        grid-template-rows: repeat(${gridSize}, var(--cw-cell-size));
-      ">
-        ${renderGridCells(grid, gridSize)}
-      </div>
+    <!-- Сетка кроссворда напрямую -->
+    <div class="crossword-grid" id="crossword-grid" style="
+      grid-template-columns: repeat(${gridSize}, var(--cw-cell-size));
+      grid-template-rows: repeat(${gridSize}, var(--cw-cell-size));
+    ">
+      ${renderGridCells(grid, gridSize)}
+    </div>
 
-      <!-- Фиксированная нижняя панель -->
-      <div class="crossword-bottom-panel">
-        <!-- Активная подсказка -->
-        <div class="clue-panel hidden" id="clue-panel">
-          <div class="clue-content">
-            <span class="clue-translation" id="clue-translation"></span>
-            <div class="clue-actions">
-              <button class="clue-clear" id="clue-clear">🗑️</button>
-              <button class="clue-hint" id="clue-hint">❓</button>
-              <button class="clue-speak" id="clue-speak">🔊</button>
-            </div>
+    <!-- Фиксированная нижняя панель -->
+    <div class="crossword-bottom-panel">
+      <!-- Активная подсказка -->
+      <div class="clue-panel hidden" id="clue-panel">
+        <div class="clue-content">
+          <span class="clue-translation" id="clue-translation"></span>
+          <div class="clue-actions">
+            <button class="clue-clear" id="clue-clear">🗑️</button>
+            <button class="clue-hint" id="clue-hint">❓</button>
+            <button class="clue-speak" id="clue-speak">🔊</button>
           </div>
         </div>
-
-        <!-- Кастомная клавиатура -->
-        <div class="crossword-keyboard" id="crossword-keyboard"></div>
       </div>
 
-      <!-- Скрытые подсказки -->
-      <div class="crossword-clues" style="display: none;">
-        <details>
-          <summary><strong>По горизонтали</strong></summary>
-          <ol>
-            ${clues.across.map((c) => `<li value="${c.number}">${c.clue}</li>`).join('')}
-          </ol>
-        </details>
-        <details>
-          <summary><strong>По вертикали</strong></summary>
-          <ol>
-            ${clues.down.map((c) => `<li value="${c.number}">${c.clue}</li>`).join('')}
-          </ol>
-        </details>
-      </div>
+      <!-- Кастомная клавиатура -->
+      <div class="crossword-keyboard hidden" id="crossword-keyboard"></div>
+    </div>
+
+    <!-- Скрытые подсказки -->
+    <div class="crossword-clues" style="display: none;">
+      <details>
+        <summary><strong>По горизонтали</strong></summary>
+        <ol>
+          ${clues.across.map((c) => `<li value="${c.number}">${c.clue}</li>`).join('')}
+        </ol>
+      </details>
+      <details>
+        <summary><strong>По вертикали</strong></summary>
+        <ol>
+          ${clues.down.map((c) => `<li value="${c.number}">${c.clue}</li>`).join('')}
+        </ol>
+      </details>
     </div>
   `;
 
@@ -445,6 +443,9 @@ function generateKeyboard(wordData, userAnswers, grid, placedWords) {
   const keyboard = $('#crossword-keyboard');
   if (!keyboard) return;
 
+  // Показываем клавиатуру
+  keyboard.classList.remove('hidden');
+
   const wordAnswer = userAnswers[wordData.word.id];
 
   // Учитываем предзаполненные пересечения
@@ -463,17 +464,24 @@ function generateKeyboard(wordData, userAnswers, grid, placedWords) {
     }
   }
 
-  // Добавляем distractors
+  // Ограничиваем до максимум 7 уникальных нужных букв
+  const uniqueNeeded = [...new Set(neededLetters)].slice(0, 7);
+
+  // Добавляем distractors до ровно 8 символов
   const allKana = Object.keys(HIRAGANA_TO_KATAKANA);
   const distractors = [];
-  while (distractors.length < 4) {
+  const targetTotal = 8;
+  const distractorCount = targetTotal - uniqueNeeded.length;
+
+  while (distractors.length < distractorCount) {
     const randomKana = allKana[Math.floor(Math.random() * allKana.length)];
     if (!wordData.word.kana.includes(randomKana) && !distractors.includes(randomKana)) {
       distractors.push(randomKana);
     }
   }
 
-  const keyboardLetters = shuffleArray([...neededLetters, ...distractors]);
+  // Перемешиваем и гарантируем ровно 8 символов
+  const keyboardLetters = shuffleArray([...uniqueNeeded, ...distractors]).slice(0, 8);
 
   keyboard.innerHTML = keyboardLetters
     .map(

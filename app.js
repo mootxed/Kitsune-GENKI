@@ -90,6 +90,7 @@ import { renderShop, SHOP_ITEMS } from './ui/shop.js';
 import { renderStories, openWordBottomSheet, closeWordBottomSheet } from './ui/stories.js';
 import { renderSensei } from './ui/chat.js';
 import { renderSettings } from './ui/settings.js';
+import { renderCrossword } from './ui/crossword.js';
 
 // ===== ГЛОБАЛЬНЫЕ ЭКСПОРТЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ =====
 window.SRS = SRS;
@@ -209,6 +210,7 @@ function createDependencies() {
     renderFlash,
     renderDictionary,
     startExtraReview,
+    startChapterFlashcards: null, // Будет назначено в setupRouter
 
     // Profile
     renderProfile,
@@ -312,6 +314,29 @@ let router = null;
 function setupRouter() {
   const dependencies = createDependencies();
 
+  // Функция запуска карточек из конкретной главы
+  const startChapterFlashcards = async (chapterId, chapterDue) => {
+    await ensureLesson(chapterId);
+
+    // Чистый старт сессии повторения карточек главы
+    setSessionManager(null);
+    setFlashCtx(chapterId);
+    setFlashRevealed(false);
+    setFlashIdx(0);
+    setFlashQueue(chapterDue);
+
+    // Скрываем табы SRS во время сессии
+    const tabsContainer = document.getElementById('srs-tabs-container');
+    if (tabsContainer) tabsContainer.classList.add('hidden');
+
+    // Переходим на экран SRS и запускаем карточки
+    nav('srs');
+    renderFlash(state, dependencies);
+  };
+
+  // Назначаем функцию в dependencies
+  dependencies.startChapterFlashcards = startChapterFlashcards;
+
   // Функция запуска сессии повторения карточек
   const startSrsSession = async () => {
     await ensureLessonsForSrs();
@@ -395,6 +420,13 @@ function setupRouter() {
     library: () => renderStories(state, dependencies),
     sensei: () => renderSensei(state, dependencies),
     settings: () => renderSettings(state, dependencies),
+    plan: () => {}, // План обучения (пока заглушка)
+    quests: () => renderQuests(state, dependencies),
+    'ai-story': () => {
+      // AI-история рендерится через отдельный механизм
+      console.log('AI-Story screen');
+    },
+    crossword: () => renderCrossword(state, dependencies),
   });
 
   // Глобальные алиасы для обратной совместимости

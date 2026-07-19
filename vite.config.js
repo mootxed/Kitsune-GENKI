@@ -14,7 +14,12 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
-    // Прокси не требуется, так как используется прямой URL к OpenRouter
+    watch: {
+      // Полностью отключаем chokidar-вотчер для стабильного старта без дескрипторов
+      usePolling: true,
+      interval: 500,
+      ignored: ['**/node_modules/**', '**/.git/**', '**/dist/**'],
+    },
   },
 
   // Настройки сборки

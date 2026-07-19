@@ -6849,10 +6849,9 @@ rt {
 }
 
 .crossword-keyboard {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-  justify-content: center;
   padding: 16px;
   background: var(--card-bg);
   border-radius: 12px;
@@ -6998,15 +6997,8 @@ rt {
 
 /* ===== ЗАДАЧА 2 + 3: НОВАЯ СТРУКТУРА КРОССВОРДА С ЗУМОМ ===== */
 
-.crossword-game-layout {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
+#crossword-body {
   overflow: auto;
-  position: relative;
-  padding: 80px 8px 280px 8px;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -7047,13 +7039,13 @@ rt {
 }
 
 .cw-zoom-controls {
-  position: absolute;
+  position: fixed;
   top: 20px;
   right: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  z-index: 5;
+  z-index: 500;
 }
 
 .cw-zoom-btn {

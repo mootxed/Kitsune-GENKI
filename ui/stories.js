@@ -18,7 +18,7 @@ export function renderStories(state, dependencies) {
   const $$ = deps?.$$ || window.$$ || ((s) => Array.from(document.querySelectorAll(s)));
   const toast = deps?.toast || window.toast || (() => {});
   const nav = deps?.nav || window.nav || (() => {});
-  const markActivity = deps?.markActivity || window.markActivity || (() => {});
+  const markActivity = deps?.markActivity || window.markActivity || ((toastFn) => {});
   const emptyState = (icon, title, desc) =>
     `<div class="empty"><div class="em">${icon}</div><h3>${title}</h3><p>${desc}</p></div>`;
 
@@ -415,7 +415,7 @@ function completeStory(story, state, dependencies) {
 
   save();
   refreshStreakDisplay();
-  markActivity();
+  markActivity(deps?.toast || window.toast);
 
   const rewards = isFirstCompletion
     ? [
