@@ -25,8 +25,39 @@ let totalDrawingMistakes = 0;
 let kanjiSequence = [];
 let currentKanjiIndex = 0;
 
-// Константа вероятности режима рисования
+// Константы вероятности режимов карточек
 const DRAWING_MODE_PROBABILITY = 0.2;
+const MEANING_TO_KANJI_PROBABILITY = 0.3;
+const TYPING_MODE_PROBABILITY = 0.2;
+// Оставшиеся 30% — стандартный режим kanji-to-meaning
+
+// Типы режимов карточек
+const CARD_MODES = {
+  DRAWING: 'drawing',
+  MEANING_TO_KANJI: 'meaning-to-kanji',
+  TYPING: 'typing',
+  KANJI_TO_MEANING: 'kanji-to-meaning',
+};
+
+// Функция определения режима карточки
+function determineCardMode(word) {
+  const rand = Math.random();
+  const hasKanji = getAllKanji(word.kanji || word.writing).length > 0;
+
+  // Режимы рисования и ввода доступны только для слов с кандзи
+  if (hasKanji && rand < DRAWING_MODE_PROBABILITY) {
+    return CARD_MODES.DRAWING;
+  } else if (hasKanji && rand < DRAWING_MODE_PROBABILITY + TYPING_MODE_PROBABILITY) {
+    return CARD_MODES.TYPING;
+  } else if (
+    rand <
+    DRAWING_MODE_PROBABILITY + TYPING_MODE_PROBABILITY + MEANING_TO_KANJI_PROBABILITY
+  ) {
+    return CARD_MODES.MEANING_TO_KANJI;
+  } else {
+    return CARD_MODES.KANJI_TO_MEANING;
+  }
+}
 
 // Функция проверки, является ли строка одиночным кандзи
 function isSingleKanji(text) {
@@ -397,6 +428,183 @@ function showCardAfterDrawing(
   });
 }
 
+// Функция рендеринга режима ввода с клавиатуры
+function renderTypingMode(word, state, dependencies) {
+  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, renderSRSHome } =
+    dependencies;
+
+  const body = $('#srs-body');
+  const displayKanji = word.kanji || word.writing;
+  const displayWriting = word.writing;
+  const displayTranslation = word.translation;
+  const displayCategory = word.category || 'Слово';
+
+  let isChecked = false;
+  let isCorrect = false;
+
+  body.innerHTML = `
+    <div class="flash-wrap">
+      <div class="flash-top">
+        <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
+        <button class="btn-ghost" id="flash-exit">Выйти</button>
+      </div>
+      <div class="typing-mode-container">
+        <div class="typing-prompt">
+          <div class="flash-cat">${displayCategory}</div>
+          <p class="typing-kanji">${displayKanji}</p>
+          <p class="typing-hint">Введите чтение на хирагане</p>
+        </div>
+        <input 
+          type="text" 
+          class="typing-input" 
+          id="typing-input"
+          autocomplete="off"
+          autofocus
+          placeholder="например: だいがく"
+        />
+        <button class="btn-primary typing-check" id="typing-check">Проверить</button>
+        <div id="typing-answer" class="typing-answer hidden"></div>
+      </div>
+      <div id="rate" class="hidden">
+        <div class="rate-row">
+          <button class="rate-btn rate-good" data-q="4" data-testid="rate-good">Хорошо</button>
+          <button class="rate-btn rate-easy" data-q="5" data-testid="rate-easy">Легко</button>
+        </div>
+      </div>
+    </div>`;
+
+  const input = $('#typing-input');
+  const checkBtn = $('#typing-check');
+  const rateDiv = $('#rate');
+  const answerDiv = $('#typing-answer');
+
+  const handleCheck = () => {
+    if (isChecked) return;
+
+    const userAnswer = input.value.trim();
+    const correctAnswer = displayWriting;
+
+    isCorrect = userAnswer === correctAnswer;
+    isChecked = true;
+
+    if (isCorrect) {
+      input.classList.add('correct');
+      input.classList.remove('incorrect');
+      answerDiv.innerHTML = `<p class="typing-correct">✅ Правильно!</p>`;
+      answerDiv.classList.remove('hidden');
+      rateDiv.classList.remove('hidden');
+      checkBtn.disabled = true;
+      input.disabled = true;
+    } else {
+      input.classList.add('incorrect');
+      input.classList.remove('correct');
+      answerDiv.innerHTML = `
+        <p class="typing-incorrect">❌ Неправильно</p>
+        <p class="typing-correct-answer">Правильный ответ: <strong>${correctAnswer}</strong></p>
+        <p class="typing-translation">${displayTranslation}</p>
+      `;
+      answerDiv.classList.remove('hidden');
+      input.disabled = true;
+      checkBtn.disabled = true;
+
+      // Автоматически логируем как "Again" (качество 0)
+      setTimeout(() => {
+        handleRating(0);
+      }, 2000);
+    }
+  };
+
+  const handleRating = (quality) => {
+    const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+
+    const srsCard = state.srs[card.id];
+    if (srsCard) {
+      if (srsCard.progress === undefined) srsCard.progress = 0;
+
+      if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
+      else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
+      else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
+      else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
+    }
+
+    if (window.QuestsManager && sessionManager) {
+      const cardState = sessionManager.getCardState(card.id);
+      const isFirstAttempt = cardState.sessionLapses === 0;
+
+      if (quality >= 4 && isFirstAttempt) {
+        window.QuestsManager.incrementStreakCorrect(state);
+      } else if (quality < 3) {
+        window.QuestsManager.resetStreakCorrect(state);
+      }
+    }
+
+    if (sessionManager) {
+      sessionManager.answerCard(card.id, quality, state.srs);
+    } else {
+      SRS.review(state.srs[card.id], quality);
+      flashIdx += 1;
+    }
+
+    appAddXP(XP_CARD);
+    save(true);
+    markActivity();
+    flashRevealed = false;
+    renderFlash(state, dependencies);
+    updateSrsBadge();
+  };
+
+  if (checkBtn) {
+    checkBtn.onclick = handleCheck;
+  }
+
+  if (input) {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleCheck();
+      }
+    });
+  }
+
+  const exitBtn = $('#flash-exit');
+  if (exitBtn) {
+    exitBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      if (sessionManager) {
+        const stats = sessionManager.getStats();
+        if (stats.reviewed > 0) {
+          showCompletionScreen({
+            title: 'おつかれさま!',
+            subtitle: 'Хорошая работа!',
+            desc: `Вы повторили часть карточек`,
+            theme: 'success',
+            rewards: [
+              { icon: '📚', label: `${stats.reviewed} карточек` },
+              { icon: '✨', label: `${stats.perfect} без ошибок` },
+              { icon: '🪙', label: `+${stats.reviewed} XP` },
+            ],
+            onContinue: () => {
+              sessionManager = null;
+              flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+            },
+          });
+          return;
+        }
+      }
+      sessionManager = null;
+      flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+    };
+  }
+
+  $$('#rate .rate-btn').forEach((b) => {
+    b.onclick = () => {
+      const quality = parseInt(b.dataset.q, 10);
+      handleRating(quality);
+    };
+  });
+}
+
 // Главная функция рендеринга карточки
 export function renderFlash(state, dependencies) {
   const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, renderSRSHome, LESSONS } =
@@ -465,10 +673,11 @@ export function renderFlash(state, dependencies) {
   const hideRomaji = state.settings?.hideRomaji || false;
   const displayRomaji = word.romaji || '';
 
-  const allKanji = getAllKanji(displayKanji);
-  const isDrawingMode = allKanji.length > 0 && Math.random() < DRAWING_MODE_PROBABILITY;
+  // Определяем режим карточки
+  const cardMode = !flashRevealed ? determineCardMode(word) : CARD_MODES.KANJI_TO_MEANING;
 
-  if (isDrawingMode && !flashRevealed && allKanji.length > 0) {
+  // Режим рисования
+  if (cardMode === CARD_MODES.DRAWING) {
     body.innerHTML = `
       <div class="flash-wrap">
         <div class="flash-top">
@@ -536,6 +745,15 @@ export function renderFlash(state, dependencies) {
     return;
   }
 
+  // Режим ввода с клавиатуры
+  if (cardMode === CARD_MODES.TYPING) {
+    renderTypingMode(word, state, dependencies);
+    return;
+  }
+
+  // Режимы с 3D-карточкой: Meaning → Kanji и Kanji → Meaning
+  const isMeaningToKanji = cardMode === CARD_MODES.MEANING_TO_KANJI;
+
   body.innerHTML = `
     <div class="flash-wrap">
       <div class="flash-top">
@@ -545,15 +763,26 @@ export function renderFlash(state, dependencies) {
       <div class="flash-card-3d" id="flash-card" data-testid="flash-card">
         <div class="flash-inner ${flashRevealed ? 'flipped' : ''}">
           <div class="flash-front">
-            <button class="flash-speak" id="flash-speak" aria-label="Озвучить">🔊</button>
+            ${!isMeaningToKanji ? `<button class="flash-speak" id="flash-speak" aria-label="Озвучить">🔊</button>` : ''}
             <div class="flash-cat">${displayCategory}</div>
-            <p class="flash-jp">${displayKanji}</p>
+            <p class="flash-jp">${isMeaningToKanji ? displayTranslation : displayKanji}</p>
             <p class="flash-tap-hint">Нажмите, чтобы показать ответ</p>
           </div>
           <div class="flash-back">
-            <p class="flash-tr">${displayTranslation}</p>
-            ${displayKanji !== displayWriting ? `<p class="flash-reading">${displayWriting}</p>` : ''}
-            ${hideRomaji ? '' : `<p class="flash-romaji">${displayRomaji}</p>`}
+            ${
+              isMeaningToKanji
+                ? `
+              <button class="flash-speak" id="flash-speak-back" aria-label="Озвучить">🔊</button>
+              <p class="flash-jp">${displayKanji}</p>
+              ${displayKanji !== displayWriting ? `<p class="flash-reading">${displayWriting}</p>` : ''}
+              ${hideRomaji ? '' : `<p class="flash-romaji">${displayRomaji}</p>`}
+            `
+                : `
+              <p class="flash-tr">${displayTranslation}</p>
+              ${displayKanji !== displayWriting ? `<p class="flash-reading">${displayWriting}</p>` : ''}
+              ${hideRomaji ? '' : `<p class="flash-romaji">${displayRomaji}</p>`}
+            `
+            }
           </div>
         </div>
       </div>
@@ -570,9 +799,10 @@ export function renderFlash(state, dependencies) {
   const cardEl = $('#flash-card');
   const rateDiv = $('#rate');
   const speakBtn = $('#flash-speak');
+  const speakBtnBack = $('#flash-speak-back');
 
   if (!flashRevealed) {
-    if (speakBtn)
+    if (speakBtn && !isMeaningToKanji)
       speakBtn.onclick = (e) => {
         e.stopPropagation();
         speakJapanese(displayWriting);
@@ -582,16 +812,27 @@ export function renderFlash(state, dependencies) {
         flashRevealed = true;
         cardEl.querySelector('.flash-inner').classList.add('flipped');
         rateDiv.classList.remove('hidden');
-        speakJapanese(displayWriting);
+        if (isMeaningToKanji || cardMode === CARD_MODES.KANJI_TO_MEANING) {
+          speakJapanese(displayWriting);
+        }
       };
     }
   } else {
-    speakJapanese(displayWriting);
-    if (speakBtn)
-      speakBtn.onclick = (e) => {
-        e.stopPropagation();
-        speakJapanese(displayWriting);
-      };
+    if (isMeaningToKanji) {
+      speakJapanese(displayWriting);
+      if (speakBtnBack)
+        speakBtnBack.onclick = (e) => {
+          e.stopPropagation();
+          speakJapanese(displayWriting);
+        };
+    } else {
+      speakJapanese(displayWriting);
+      if (speakBtn)
+        speakBtn.onclick = (e) => {
+          e.stopPropagation();
+          speakJapanese(displayWriting);
+        };
+    }
   }
 
   const exitBtn = $('#flash-exit');
