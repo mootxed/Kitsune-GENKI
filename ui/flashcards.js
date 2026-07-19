@@ -134,8 +134,7 @@ function initDrawingMode(
   state,
   dependencies
 ) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, renderSRSHome } =
-    dependencies;
+  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav } = dependencies;
 
   const target = document.getElementById('kanji-writer-target');
   if (!target || !kanji || typeof HanziWriter === 'undefined') {
@@ -309,8 +308,7 @@ function showCardAfterDrawing(
   state,
   dependencies
 ) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, renderSRSHome } =
-    dependencies;
+  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav } = dependencies;
 
   const body = $('#srs-body');
 
@@ -374,14 +372,14 @@ function showCardAfterDrawing(
             ],
             onContinue: () => {
               sessionManager = null;
-              flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+              flashCtx ? nav('chapter', flashCtx) : nav('srs');
             },
           });
           return;
         }
       }
       sessionManager = null;
-      flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+      flashCtx ? nav('chapter', flashCtx) : nav('srs');
     };
   }
 
@@ -430,8 +428,7 @@ function showCardAfterDrawing(
 
 // Функция рендеринга режима ввода с клавиатуры
 function renderTypingMode(word, state, dependencies) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, renderSRSHome } =
-    dependencies;
+  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav } = dependencies;
 
   const body = $('#srs-body');
   const displayKanji = word.kanji || word.writing;
@@ -586,14 +583,14 @@ function renderTypingMode(word, state, dependencies) {
             ],
             onContinue: () => {
               sessionManager = null;
-              flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+              flashCtx ? nav('chapter', flashCtx) : nav('srs');
             },
           });
           return;
         }
       }
       sessionManager = null;
-      flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+      flashCtx ? nav('chapter', flashCtx) : nav('srs');
     };
   }
 
@@ -607,7 +604,7 @@ function renderTypingMode(word, state, dependencies) {
 
 // Главная функция рендеринга карточки
 export function renderFlash(state, dependencies) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, renderSRSHome, LESSONS } =
+  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav, LESSONS } =
     dependencies;
 
   const body = $('#srs-body');
@@ -633,7 +630,7 @@ export function renderFlash(state, dependencies) {
         ],
         onContinue: () => {
           sessionManager = null;
-          flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+          flashCtx ? nav('chapter', flashCtx) : nav('srs');
         },
       });
       return;
@@ -651,7 +648,7 @@ export function renderFlash(state, dependencies) {
           { icon: '🪙', label: `+${count} XP` },
         ],
         onContinue: () => {
-          flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+          flashCtx ? nav('chapter', flashCtx) : nav('srs');
         },
       });
       return;
@@ -721,14 +718,14 @@ export function renderFlash(state, dependencies) {
               ],
               onContinue: () => {
                 sessionManager = null;
-                flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+                flashCtx ? nav('chapter', flashCtx) : nav('srs');
               },
             });
             return;
           }
         }
         sessionManager = null;
-        flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+        flashCtx ? nav('chapter', flashCtx) : nav('srs');
       };
     }
 
@@ -856,14 +853,14 @@ export function renderFlash(state, dependencies) {
             ],
             onContinue: () => {
               sessionManager = null;
-              flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+              flashCtx ? nav('chapter', flashCtx) : nav('srs');
             },
           });
           return;
         }
       }
       sessionManager = null;
-      flashCtx ? nav('chapter', flashCtx) : renderSRSHome();
+      flashCtx ? nav('chapter', flashCtx) : nav('srs');
     };
   }
 
@@ -1144,7 +1141,7 @@ const kanjiSimplifiedToTraditional = {
 
 // Функция открытия модального окна словаря
 function openDictionaryModal(word, state, dependencies) {
-  const { renderSRSHome } = dependencies;
+  const { nav } = dependencies;
 
   const body = $('#srs-body');
   if (!body) return;
@@ -1153,7 +1150,7 @@ function openDictionaryModal(word, state, dependencies) {
   const hasKanji = kanjiChars.length > 0;
 
   const returnToDict = () => {
-    renderSRSHome();
+    nav('srs');
   };
 
   let currentKanjiIdx = 0;
