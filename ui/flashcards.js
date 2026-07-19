@@ -282,13 +282,6 @@ function initDrawingMode(
       };
     }
 
-    const startBtn = document.getElementById('drawing-start');
-    if (startBtn) {
-      startBtn.onclick = () => {
-        startQuiz();
-      };
-    }
-
     startQuiz();
   } catch (error) {
     console.error('Ошибка инициализации HanziWriter:', error);
@@ -702,8 +695,7 @@ export function renderFlash(state, dependencies) {
             <div id="kanji-writer-target"></div>
           </div>
           <div class="drawing-controls">
-            <button class="btn-secondary" id="drawing-undo">↺ Заново</button>
-            <button class="btn-secondary" id="drawing-start">✍️ Начать</button>
+            <button class="btn-secondary" id="drawing-undo">↺ Сбросить</button>
           </div>
         </div>
       </div>`;
