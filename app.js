@@ -91,6 +91,9 @@ window.QuestsManager = null; // будет инициализирован поз
 window.speakJapanese = speakJapanese; // Озвучка японского текста
 window.stopSpeaking = stopSpeaking; // Остановка озвучки
 window.formatTimeUntilReset = formatTimeUntilReset; // Форматирование таймера квестов
+window.toast = null; // будет назначен после определения функции
+window.applyTheme = null; // будет назначен после определения функции
+window.showNotification = null; // будет назначен после определения функции
 
 // ===== КОНСТАНТЫ =====
 const LS_STATE = 'kitsune_state_v1';
@@ -122,6 +125,9 @@ function createDependencies() {
 
     // UI utilities
     toast,
+    applyTheme,
+    showNotification,
+    scheduleNotify,
     showCompletionScreen,
     refreshStreakDisplay,
     applyStreakSkin,
@@ -254,6 +260,36 @@ function applyTheme() {
   // Сохраняем выбор в localStorage
   localStorage.setItem(LS_THEME, mode);
 }
+
+// ===== УВЕДОМЛЕНИЯ =====
+function showNotification(title, body) {
+  if (!('Notification' in window)) {
+    console.warn('Браузер не поддерживает уведомления');
+    toast('⚠️ Уведомления не поддерживаются браузером');
+    return;
+  }
+
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '/icon.svg' });
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then((permission) => {
+      if (permission === 'granted') {
+        new Notification(title, { body, icon: '/icon.svg' });
+      }
+    });
+  }
+}
+
+function scheduleNotify() {
+  // Заглушка для планировщика уведомлений
+  // В будущем здесь можно реализовать логику напоминаний
+  console.log('Уведомления запланированы');
+}
+
+// Экспортируем в глобальную область для обратной совместимости
+window.toast = toast;
+window.applyTheme = applyTheme;
+window.showNotification = showNotification;
 
 // ===== ROUTER SETUP =====
 let router = null;
