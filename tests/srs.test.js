@@ -1,27 +1,34 @@
-/* srs.test.js — Тесты для алгоритма интервальных повторений SM-2 */
+/* srs.test.js — Тесты для алгоритма интервальных повторений FSRS */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SRS } from '../srs.js';
+import { Rating, State } from 'ts-fsrs';
 
-describe('SRS Algorithm - SM-2 Spaced Repetition', () => {
+describe('SRS Algorithm - FSRS Spaced Repetition', () => {
   let card;
   const testCardId = 'test-card-123';
 
   beforeEach(() => {
-    // Очищаем все моки и создаём свежую карточку перед каждым тестом
     vi.clearAllMocks();
     card = SRS.newCard(testCardId);
   });
 
   describe('newCard - Создание новой карточки', () => {
-    it('должна создать карточку с корректными начальными значениями', () => {
+    it('должна создать карточку с корректной схемой FSRS', () => {
       expect(card.id).toBe(testCardId);
-      expect(card.ef).toBe(2.5);
-      expect(card.interval).toBe(0);
+      expect(card.stability).toBe(0);
+      expect(card.difficulty).toBe(0);
       expect(card.reps).toBe(0);
+      expect(card.lapses).toBe(0);
+      expect(card.state).toBe(State.New);
       expect(card.lastReview).toBeNull();
       expect(card.due).toBeDefined();
       expect(typeof card.due).toBe('number');
+    });
+
+    it('не должна содержать legacy-поля SM-2', () => {
+      expect(card).not.toHaveProperty('ef');
+      expect(card).not.toHaveProperty('interval');
     });
 
     it('должна установить due в текущее время', () => {
@@ -34,57 +41,54 @@ describe('SRS Algorithm - SM-2 Spaced Repetition', () => {
 
   describe('review - Логика повторения с разными оценками', () => {
     describe('Again (quality=0) - Неправильный ответ', () => {
-      it('должна сбросить прогресс и показать карточку немедленно', () => {
-        // Сначала делаем несколько правильных ответов
-        card.reps = 3;
-        card.interval = 15;
-        card.ef = 2.3;
+      it('должна увеличить счётчик lapses и перевести карточку в переобучение', () => {
+        // Выводим карточку в состояние Review через миграцию legacy-записи
+        card = SRS.migrateSM2ToFSRS({
+          id: testCardId,
+          ef: 2.5,
+          interval: 10,
+          reps: 5,
+          due: Date.now(),
+          lastReview: Date.now() - 10 * SRS.DAY,
+        });
+        expect(card.state).toBe(State.Review);
+        const lapsesBefore = card.lapses;
 
         const now = Date.now();
         vi.setSystemTime(now);
 
         SRS.review(card, 0);
 
-        expect(card.reps).toBe(0);
-        expect(card.interval).toBe(0);
-        expect(card.due).toBe(now);
+        expect(card.lapses).toBe(lapsesBefore + 1);
+        expect(card.state).toBe(State.Relearning);
         expect(card.lastReview).toBe(now);
+        // Карточка показывается снова в ближайшее время (short-term шаг)
+        expect(card.due - now).toBeLessThanOrEqual(SRS.DAY);
       });
 
-      it('не должна изменять EF при неправильном ответе', () => {
-        const originalEF = card.ef;
+      it('должна сохранять числовую стабильность после ошибки', () => {
+        SRS.review(card, 4);
         SRS.review(card, 0);
-        expect(card.ef).toBe(originalEF);
+        expect(typeof card.stability).toBe('number');
+        expect(card.stability).toBeGreaterThan(0);
       });
     });
 
     describe('Hard (quality=3) - Сложный ответ', () => {
-      it('должна увеличить интервал на первом повторении', () => {
+      it('должна сохранить запись в валидной схеме FSRS', () => {
         SRS.review(card, 3);
-        expect(card.reps).toBe(1);
-        expect(card.interval).toBe(1);
+        expect(card.stability).toBeGreaterThan(0);
+        expect(card.difficulty).toBeGreaterThanOrEqual(1);
+        expect(card.difficulty).toBeLessThanOrEqual(10);
+        expect(card.due).toBeGreaterThan(Date.now() - 1000);
       });
 
-      it('должна установить интервал 6 дней на втором повторении', () => {
-        SRS.review(card, 3);
-        SRS.review(card, 3);
-        expect(card.reps).toBe(2);
-        expect(card.interval).toBe(6);
-      });
-
-      it('должна уменьшить EF при сложном ответе', () => {
-        const originalEF = card.ef;
-        SRS.review(card, 3);
-        expect(card.ef).toBeLessThan(originalEF);
-      });
-
-      it('должна установить корректную дату следующего повторения', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        SRS.review(card, 3);
-        const expectedDue = now + 1 * SRS.DAY;
-        expect(card.due).toBe(expectedDue);
+      it('сложность должна быть выше, чем при Easy', () => {
+        const hardCard = SRS.newCard('hard');
+        const easyCard = SRS.newCard('easy');
+        SRS.review(hardCard, 3);
+        SRS.review(easyCard, 5);
+        expect(hardCard.difficulty).toBeGreaterThan(easyCard.difficulty);
       });
     });
 
@@ -94,82 +98,96 @@ describe('SRS Algorithm - SM-2 Spaced Repetition', () => {
         expect(card.reps).toBe(1);
       });
 
-      it('должна установить интервал 1 день при первом повторении', () => {
+      it('должна назначить положительную стабильность и интервал', () => {
+        const now = Date.now();
+        vi.setSystemTime(now);
         SRS.review(card, 4);
-        expect(card.interval).toBe(1);
+        expect(card.stability).toBeGreaterThan(0);
+        expect(card.due).toBeGreaterThan(now);
       });
 
-      it('должна установить интервал 6 дней при втором повторении', () => {
-        SRS.review(card, 4);
-        SRS.review(card, 4);
-        expect(card.interval).toBe(6);
-      });
+      it('интервал должен расти при повторных успешных ответах', () => {
+        const now = Date.now();
+        // Карточка в состоянии Review — там интервалы дневные и растут
+        card = SRS.migrateSM2ToFSRS({
+          id: testCardId,
+          ef: 2.5,
+          interval: 5,
+          reps: 4,
+          due: now,
+          lastReview: now - 5 * SRS.DAY,
+        });
+        vi.setSystemTime(now);
 
-      it('должна умножать интервал на EF после второго повторения', () => {
-        SRS.review(card, 4); // reps=1, interval=1
-        SRS.review(card, 4); // reps=2, interval=6
-        const efBeforeThird = card.ef;
-        SRS.review(card, 4); // reps=3, interval=6*EF
-
-        const expectedInterval = Math.round(6 * efBeforeThird);
-        expect(card.interval).toBe(expectedInterval);
-      });
-
-      it('должна слегка увеличить EF при хорошем ответе', () => {
-        const originalEF = card.ef;
         SRS.review(card, 4);
-        expect(card.ef).toBeGreaterThanOrEqual(originalEF - 0.01);
+        const interval1 = card.scheduled_days;
+        expect(interval1).toBeGreaterThan(0);
+
+        vi.setSystemTime(card.due + 1000);
+        SRS.review(card, 4);
+        const interval2 = card.scheduled_days;
+
+        expect(interval2).toBeGreaterThan(interval1);
       });
     });
 
     describe('Easy (quality=5) - Лёгкий ответ', () => {
-      it('должна максимально увеличить EF', () => {
-        const originalEF = card.ef;
-        SRS.review(card, 5);
-        expect(card.ef).toBeGreaterThanOrEqual(originalEF);
+      it('должна давать больший интервал, чем Good', () => {
+        const now = Date.now();
+        vi.setSystemTime(now);
+
+        const goodCard = SRS.newCard('good');
+        const easyCard = SRS.newCard('easy');
+        SRS.review(goodCard, 4);
+        SRS.review(easyCard, 5);
+
+        expect(easyCard.due).toBeGreaterThan(goodCard.due);
       });
 
-      it('должна увеличить интервал при лёгком ответе', () => {
-        SRS.review(card, 5);
-        SRS.review(card, 5);
-        SRS.review(card, 5);
-        expect(card.interval).toBeGreaterThan(6);
+      it('должна снизить сложность относительно Good', () => {
+        const goodCard = SRS.newCard('good');
+        const easyCard = SRS.newCard('easy');
+        SRS.review(goodCard, 4);
+        SRS.review(easyCard, 5);
+        expect(easyCard.difficulty).toBeLessThan(goodCard.difficulty);
       });
 
       it('должна установить корректное время due', () => {
         const now = Date.now();
         vi.setSystemTime(now);
-
         SRS.review(card, 5);
         expect(card.due).toBeGreaterThan(now);
       });
     });
 
-    describe('Граничные проверки EF', () => {
-      it('должна ограничивать EF минимальным значением 1.3', () => {
-        // Делаем много сложных ответов, чтобы снизить EF
-        for (let i = 0; i < 20; i++) {
-          SRS.review(card, 3);
-        }
-        expect(card.ef).toBeGreaterThanOrEqual(1.3);
-      });
-
-      it('должна ограничивать EF максимальным значением 2.5', () => {
-        // Делаем много лёгких ответов, чтобы повысить EF
-        for (let i = 0; i < 20; i++) {
-          SRS.review(card, 5);
-        }
-        expect(card.ef).toBeLessThanOrEqual(2.5);
-      });
-
-      it('должна сохранять EF в пределах [1.3, 2.5] при любой оценке', () => {
+    describe('Граничные значения difficulty', () => {
+      it('difficulty остаётся в диапазоне [1, 10] при любой последовательности оценок', () => {
         const qualities = [0, 3, 4, 5];
         for (let i = 0; i < 50; i++) {
           const quality = qualities[Math.floor(Math.random() * qualities.length)];
           SRS.review(card, quality);
-          expect(card.ef).toBeGreaterThanOrEqual(1.3);
-          expect(card.ef).toBeLessThanOrEqual(2.5);
+          expect(card.difficulty).toBeGreaterThanOrEqual(1);
+          expect(card.difficulty).toBeLessThanOrEqual(10);
+          expect(card.stability).toBeGreaterThan(0);
         }
+      });
+    });
+
+    describe('Маппинг рейтингов', () => {
+      it('экспортирует Rating с корректными значениями', () => {
+        expect(SRS.Rating.Again).toBe(1);
+        expect(SRS.Rating.Hard).toBe(2);
+        expect(SRS.Rating.Good).toBe(3);
+        expect(SRS.Rating.Easy).toBe(4);
+      });
+
+      it('принимает прямые значения Rating FSRS (1..4)', () => {
+        expect(() => SRS.review(card, Rating.Good)).not.toThrow();
+        expect(card.reps).toBe(1);
+      });
+
+      it('выбрасывает ошибку на некорректной оценке', () => {
+        expect(() => SRS.review(card, 99)).toThrow();
       });
     });
 
@@ -190,16 +208,87 @@ describe('SRS Algorithm - SM-2 Spaced Repetition', () => {
     });
   });
 
+  describe('migrateSM2ToFSRS - Миграция legacy-карточек', () => {
+    it('должна конвертировать SM-2 запись в схему FSRS', () => {
+      const legacy = {
+        id: 'L1_w1',
+        ef: 2.5,
+        interval: 6,
+        reps: 2,
+        due: 1700000000000,
+        lastReview: 1699990000000,
+      };
+      const migrated = SRS.migrateSM2ToFSRS(legacy);
+
+      expect(typeof migrated.stability).toBe('number');
+      expect(migrated.stability).toBeGreaterThan(0);
+      expect(migrated.difficulty).toBeGreaterThanOrEqual(1);
+      expect(migrated.difficulty).toBeLessThanOrEqual(10);
+      expect(migrated.state).toBe(State.Review);
+      expect(migrated).not.toHaveProperty('ef');
+      expect(migrated).not.toHaveProperty('interval');
+    });
+
+    it('НЕ должна перезаписывать абсолютный timestamp due', () => {
+      const originalDue = 1700000000000;
+      const legacy = {
+        id: 'L1_w2',
+        ef: 2.0,
+        interval: 15,
+        reps: 5,
+        due: originalDue,
+        lastReview: 1699000000000,
+      };
+      const migrated = SRS.migrateSM2ToFSRS(legacy);
+      expect(migrated.due).toBe(originalDue);
+      expect(migrated.lastReview).toBe(1699000000000);
+    });
+
+    it('высокий EF (лёгкая карточка) → низкая difficulty', () => {
+      const easy = SRS.migrateSM2ToFSRS({ id: 'a', ef: 2.5, interval: 10, reps: 3, due: 1 });
+      const hard = SRS.migrateSM2ToFSRS({ id: 'b', ef: 1.3, interval: 10, reps: 3, due: 1 });
+      expect(easy.difficulty).toBeLessThan(hard.difficulty);
+    });
+
+    it('новая карточка (reps=0) получает state New и stability 0', () => {
+      const migrated = SRS.migrateSM2ToFSRS({ id: 'n', ef: 2.5, interval: 0, reps: 0, due: 1 });
+      expect(migrated.state).toBe(State.New);
+      expect(migrated.stability).toBe(0);
+    });
+
+    it('идемпотентна: FSRS-карточка возвращается без изменений', () => {
+      const fsrsCard = SRS.newCard('fsrs');
+      SRS.review(fsrsCard, 4);
+      const snapshot = { ...fsrsCard };
+      const result = SRS.migrateSM2ToFSRS(fsrsCard);
+      expect(result).toEqual(snapshot);
+    });
+
+    it('мигрированная карточка проходит полный цикл review без ошибок', () => {
+      const legacy = {
+        id: 'L2_w5',
+        ef: 2.2,
+        interval: 30,
+        reps: 6,
+        due: Date.now() - 1000,
+        lastReview: Date.now() - 30 * SRS.DAY,
+      };
+      const migrated = SRS.migrateSM2ToFSRS(legacy);
+      expect(() => SRS.review(migrated, 4)).not.toThrow();
+      expect(migrated.due).toBeGreaterThan(Date.now());
+    });
+  });
+
   describe('isDue - Проверка необходимости повторения', () => {
     it('должна вернуть true, если карточка готова к повторению', () => {
       const now = Date.now();
-      card.due = now - 1000; // Карточка просрочена на 1 секунду
+      card.due = now - 1000;
       expect(SRS.isDue(card, now)).toBe(true);
     });
 
     it('должна вернуть false, если карточка ещё не готова', () => {
       const now = Date.now();
-      card.due = now + 10000; // Карточка будет готова через 10 секунд
+      card.due = now + 10000;
       expect(SRS.isDue(card, now)).toBe(false);
     });
 
@@ -219,59 +308,60 @@ describe('SRS Algorithm - SM-2 Spaced Repetition', () => {
   describe('Интеграционные тесты - Полный цикл повторений', () => {
     it('должна корректно обработать последовательность: Good -> Good -> Good', () => {
       const now = Date.now();
+      // Стартуем из состояния Review — проверяем динамику стабильности
+      card = SRS.migrateSM2ToFSRS({
+        id: testCardId,
+        ef: 2.5,
+        interval: 5,
+        reps: 4,
+        due: now,
+        lastReview: now - 5 * SRS.DAY,
+      });
       vi.setSystemTime(now);
 
-      SRS.review(card, 4); // reps=1, interval=1
-      expect(card.reps).toBe(1);
-      expect(card.interval).toBe(1);
-      expect(card.due).toBe(now + 1 * SRS.DAY);
+      const repsBefore = card.reps;
+      SRS.review(card, 4);
+      expect(card.reps).toBe(repsBefore + 1);
+      expect(card.stability).toBeGreaterThan(0);
 
-      vi.setSystemTime(now + 1 * SRS.DAY);
-      SRS.review(card, 4); // reps=2, interval=6
-      expect(card.reps).toBe(2);
-      expect(card.interval).toBe(6);
+      vi.setSystemTime(card.due + 1000);
+      SRS.review(card, 4);
+      expect(card.reps).toBe(repsBefore + 2);
 
-      vi.setSystemTime(now + 7 * SRS.DAY);
-      const efBeforeThird = card.ef;
-      SRS.review(card, 4); // reps=3, interval=6*EF
-      expect(card.reps).toBe(3);
-      expect(card.interval).toBe(Math.round(6 * efBeforeThird));
+      vi.setSystemTime(card.due + 1000);
+      const stabilityBefore = card.stability;
+      SRS.review(card, 4);
+      expect(card.reps).toBe(repsBefore + 3);
+      expect(card.stability).toBeGreaterThan(stabilityBefore);
+      expect(card.state).toBe(State.Review);
     });
 
-    it('должна корректно обработать сброс после ошибки', () => {
-      const now = Date.now();
-      vi.setSystemTime(now);
+    it('должна корректно обработать ошибку после прогресса', () => {
+      card = SRS.migrateSM2ToFSRS({
+        id: testCardId,
+        ef: 2.5,
+        interval: 10,
+        reps: 5,
+        due: Date.now(),
+        lastReview: Date.now() - 10 * SRS.DAY,
+      });
+      const lapsesBefore = card.lapses;
 
-      // Делаем прогресс
-      SRS.review(card, 4);
-      SRS.review(card, 4);
-      expect(card.reps).toBe(2);
-
-      // Ошибка - сброс прогресса
       SRS.review(card, 0);
-      expect(card.reps).toBe(0);
-      expect(card.interval).toBe(0);
-      expect(card.due).toBe(now);
+      expect(card.lapses).toBe(lapsesBefore + 1);
 
-      // Начинаем заново
-      SRS.review(card, 4);
-      expect(card.reps).toBe(1);
-      expect(card.interval).toBe(1);
+      // Карточка остаётся рабочей после переобучения
+      expect(() => SRS.review(card, 4)).not.toThrow();
     });
 
     it('должна корректно обработать смешанные оценки', () => {
-      SRS.review(card, 4); // Good
-      expect(card.reps).toBe(1);
-
-      SRS.review(card, 3); // Hard
-      expect(card.reps).toBe(2);
-
-      SRS.review(card, 5); // Easy
+      SRS.review(card, 4);
+      SRS.review(card, 3);
+      SRS.review(card, 5);
       expect(card.reps).toBe(3);
-
-      // EF должен остаться в пределах нормы
-      expect(card.ef).toBeGreaterThanOrEqual(1.3);
-      expect(card.ef).toBeLessThanOrEqual(2.5);
+      expect(card.difficulty).toBeGreaterThanOrEqual(1);
+      expect(card.difficulty).toBeLessThanOrEqual(10);
+      expect(card.stability).toBeGreaterThan(0);
     });
   });
 
