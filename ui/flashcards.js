@@ -308,7 +308,8 @@ function showCardAfterDrawing(
   state,
   dependencies
 ) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav } = dependencies;
+  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav, markActivity } =
+    dependencies;
 
   const body = $('#srs-body');
 
@@ -428,7 +429,8 @@ function showCardAfterDrawing(
 
 // Функция рендеринга режима ввода с клавиатуры
 function renderTypingMode(word, state, dependencies) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav } = dependencies;
+  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav, markActivity } =
+    dependencies;
 
   const body = $('#srs-body');
   const displayKanji = word.kanji || word.writing;
@@ -604,8 +606,16 @@ function renderTypingMode(word, state, dependencies) {
 
 // Главная функция рендеринга карточки
 export function renderFlash(state, dependencies) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav, LESSONS } =
-    dependencies;
+  const {
+    save,
+    showCompletionScreen,
+    XP_CARD,
+    appAddXP,
+    updateSrsBadge,
+    nav,
+    LESSONS,
+    markActivity,
+  } = dependencies;
 
   const body = $('#srs-body');
   if (!body) return;
