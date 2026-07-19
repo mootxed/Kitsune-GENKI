@@ -5,7 +5,6 @@ import { $, todayStr, pluralDays } from '../src/utils.js';
 import { dueCards, allCards, cardChapter } from '../src/srs-helpers.js';
 import { SRS } from '../srs.js';
 import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
-import { toast } from '../app.js';
 
 // ---------- Constants ----------
 const LS_LESSONS = 'kitsune_lessons_v1';
@@ -28,10 +27,11 @@ export const CH_NAMES = {
 };
 
 export const CHECK_ITEMS = [
-  ['vocab', 'Vocabulary'],
-  ['grammar', 'Grammar'],
-  ['cultural', 'Cultural Notes'],
-  ['practice', 'Practice'],
+  ['vocab', 'Слова'],
+  ['grammar', 'Грамматика'],
+  ['dialog', 'Диалог'],
+  ['listening', 'Аудирование'],
+  ['reading', 'Чтение'],
 ];
 
 // Полные уроки, загруженные лениво (по мере обращения к главам)
@@ -156,7 +156,7 @@ function setLastActivityDay(t) {
   localStorage.setItem(LS_LAST_ACTIVITY_DAY, t);
 }
 
-export function markActivity() {
+export function markActivity(toastFn = null) {
   const t = todayStr();
   const s = state.streak;
 
@@ -182,7 +182,7 @@ export function markActivity() {
   if (window.Achievements) {
     const newAchievements = window.Achievements.checkAll(state);
     newAchievements.forEach((ach) => {
-      toast(`🏆 ${ach.title}! ${ach.desc}`);
+      if (toastFn) toastFn(`🏆 ${ach.title}! ${ach.desc}`);
     });
   }
 
@@ -191,7 +191,7 @@ export function markActivity() {
     state._dailyGoalClaimed = true;
     const reward = Math.min(10 + 2 * s.count, 50);
     state.coins += reward;
-    toast(`🎯 Дневная цель! +${reward} 🪙`);
+    if (toastFn) toastFn(`🎯 Дневная цель! +${reward} 🪙`);
     save();
   }
 
@@ -213,7 +213,7 @@ export function markActivity() {
       // Награда за продление стрика
       const reward = Math.min(10 + 2 * s.count, 50);
       state.coins += reward;
-      toast(`🔥 Стрик ${s.count} дней! +${reward} 🪙`);
+      if (toastFn) toastFn(`🔥 Стрик ${s.count} дней! +${reward} 🪙`);
     } else if (diff > 1) s.count = 1;
   }
   s.lastActive = t;
@@ -227,12 +227,12 @@ export function resetDailyGoalFlag() {
 }
 
 // ---------- Chapter Management ----------
-export function startChapter(id) {
+export function startChapter(id, toastFn = null) {
   const cs = chState(id);
   if (cs.started) return;
   const lesson = getLesson(id);
   if (!lesson) {
-    toast('Глава не найдена');
+    if (toastFn) toastFn('Глава не найдена');
     return;
   }
   cs.started = true;
@@ -240,8 +240,8 @@ export function startChapter(id) {
     if (!state.srs[w.id]) state.srs[w.id] = SRS.newCard(w.id);
   });
   save();
-  markActivity();
-  toast('Глава начата! Слова добавлены в SRS 🎴');
+  markActivity(toastFn);
+  if (toastFn) toastFn('Глава начата! Слова добавлены в SRS 🎴');
 }
 
 // ---------- Update Main Quests Timer ----------
@@ -296,7 +296,9 @@ export function renderHome() {
           <div class="ch-prog"><i style="width:0%"></i></div>
         </div>
         <div class="ch-arrow">›</div>`;
-      el.onclick = () => toast('Сначала завершите предыдущую главу');
+      el.onclick = () => {
+        if (window.toast) window.toast('Сначала завершите предыдущую главу');
+      };
     } else {
       el.innerHTML = `
         <div class="ch-badge">${ch.id}</div>

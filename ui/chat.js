@@ -19,11 +19,15 @@ export function renderSensei(state, dependencies) {
   const $$ = deps?.$$ || window.$$ || ((s) => Array.from(document.querySelectorAll(s)));
   const toast = deps?.toast || window.toast || (() => {});
   const nav = deps?.nav || window.nav || (() => {});
-  const markActivity = deps?.markActivity || window.markActivity || (() => {});
+  const markActivity = deps?.markActivity || window.markActivity || ((toastFn) => {});
 
-  $$('[data-senseitab]').forEach((t) =>
-    t.classList.toggle('active', t.dataset.senseitab === senseiTab)
-  );
+  $$('[data-senseitab]').forEach((t) => {
+    t.classList.toggle('active', t.dataset.senseitab === senseiTab);
+    t.onclick = () => {
+      senseiTab = t.dataset.senseitab;
+      renderSensei(state, deps);
+    };
+  });
 
   const body = $('#sensei-body');
 
@@ -79,12 +83,10 @@ function renderSenseiTools(state, dependencies) {
     inputBar.remove();
   }
 
-  const completedLessons = Object.keys(state.chapters).reduce((total, id) => {
-    const checklist = state.chapters[id].checklist || {};
-    const completed = Object.values(checklist).filter((v) => v === true).length;
-    return total + (completed === CHECK_ITEMS.length ? 1 : 0);
-  }, 0);
-  const crosswordUnlocked = completedLessons >= 3;
+  const startedLessons = Object.keys(state.chapters).filter((id) => {
+    return state.chapters[id].started === true;
+  }).length;
+  const crosswordUnlocked = startedLessons >= 3;
 
   body.innerHTML = `
   <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
@@ -103,20 +105,20 @@ function renderSenseiTools(state, dependencies) {
       <span class="tool-icon">🧩</span>
       <div class="tool-info">
         <h3>Кроссворд</h3>
-        <p>${crosswordUnlocked ? 'Закрепляйте изученные слова в игровой форме' : '🔒 Откроется после полного прохождения 3 глав'}</p>
+        <p>${crosswordUnlocked ? 'Закрепляйте изученные слова в игровой форме' : '🔒 Откроется после начала 3 глав'}</p>
       </div>
       <span class="${crosswordUnlocked ? 'tool-arrow' : 'tool-lock'}">${crosswordUnlocked ? '›' : '🔒'}</span>
     </div>
   </div>
   `;
 
-  $$('.tool-card', body).forEach((card) => {
+  body.querySelectorAll('.tool-card').forEach((card) => {
     card.onclick = () => {
       const targetNav = card.dataset.nav;
       const isLocked = card.dataset.locked === 'true';
 
       if (isLocked) {
-        toast('🔒 Кроссворды откроются после полного прохождения 3 глав!');
+        toast('🔒 Кроссворды откроются после начала 3 глав!');
         return;
       }
 
@@ -288,7 +290,7 @@ async function sendChat(state, dependencies) {
     chatHistory.push({ role: 'assistant', content: reply });
     t.remove();
     addBotMessage(reply, state, dependencies, true);
-    markActivity();
+    markActivity(deps?.toast || window.toast);
   } catch (e) {
     t.remove();
     addBotMessage('⚠️ ' + e.message, state, dependencies, false);

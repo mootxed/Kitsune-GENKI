@@ -134,8 +134,16 @@ function initDrawingMode(
   state,
   dependencies
 ) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav, markActivity } =
-    dependencies;
+  const {
+    save,
+    showCompletionScreen,
+    XP_CARD,
+    appAddXP,
+    updateSrsBadge,
+    nav,
+    markActivity,
+    toast,
+  } = dependencies;
 
   const target = document.getElementById('kanji-writer-target');
   if (!target || !kanji || typeof HanziWriter === 'undefined') {
@@ -234,7 +242,7 @@ function initDrawingMode(
 
         appAddXP(XP_CARD);
         save(true);
-        markActivity();
+        markActivity(toast);
         flashRevealed = false;
 
         kanjiSequence = [];
@@ -305,7 +313,7 @@ function initDrawingMode(
       onLoadCharDataError: (error) => {
         console.warn(`Не удалось загрузить данные для "${currentKanji}":`, error);
         toast(`⚠️ Данные для отрисовки "${currentKanji}" недоступны. Пропускаем режим рисования.`);
-        
+
         // Пропускаем режим рисования и переходим к следующей карточке
         flashRevealed = true;
         kanjiSequence = [];

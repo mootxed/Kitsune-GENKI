@@ -5,9 +5,10 @@ import { $, $$ } from '../src/utils.js';
 import { allCards, dueCards } from '../src/srs-helpers.js';
 import { XP_CHECK, XP_CHAPTER_FULL, addXP } from '../src/xp-system.js';
 import { CHECK_ITEMS, getLesson, ensureLesson, startChapter, markActivity } from './home.js';
+import { toast } from '../app.js';
 
 // ---------- Render: Chapter ----------
-export async function renderChapter(id) {
+export async function renderChapter(id, state, dependencies) {
   // Лениво подгружаем контент главы перед отображением
   try {
     await ensureLesson(id);
@@ -15,6 +16,7 @@ export async function renderChapter(id) {
     console.error('Не удалось загрузить главу:', e);
   }
   const l = getLesson(id);
+  const toast = dependencies?.toast || window.toast || (() => {});
   if (!l) {
     toast('Глава не найдена');
     window.nav('home');
@@ -73,14 +75,25 @@ export async function renderChapter(id) {
 
   if (cs.started) {
     $('#ch-study').onclick = () => {
-      if (window.startFlash) {
-        window.startFlash(id);
+      // Запускаем карточки для этой главы
+      const chapterDue = dueCards(state.srs, id);
+      if (chapterDue.length === 0) {
+        toast('Нет карточек к повторению');
+        return;
+      }
+
+      // Используем nav для перехода к экрану карточек с контекстом главы
+      if (dependencies?.startChapterFlashcards) {
+        dependencies.startChapterFlashcards(id, chapterDue);
+      } else if (window.nav) {
+        // Fallback: переходим на экран SRS
+        window.nav('srs');
       }
     };
   } else {
     $('#ch-start').onclick = () => {
-      startChapter(id);
-      renderChapter(id);
+      startChapter(id, toast);
+      renderChapter(id, state, dependencies);
       if (window.renderHome) window.renderHome();
     };
   }
@@ -92,7 +105,7 @@ export async function renderChapter(id) {
 
       // Автоматически начинаем главу при первой отметке чек-листа
       if (!cs.started) {
-        startChapter(id);
+        startChapter(id, toast);
       }
 
       const k = el.dataset.check;
@@ -104,7 +117,7 @@ export async function renderChapter(id) {
         state.xp = Math.max(0, state.xp - XP_CHECK);
         toast(`❌ Отметка снята, -${XP_CHECK} XP`);
         save(true);
-        markActivity();
+        markActivity(toast);
         el.classList.remove('done');
         const cb = el.querySelector('.checkbox');
         if (cb) cb.textContent = '';
@@ -123,17 +136,17 @@ export async function renderChapter(id) {
       cs.checklist[k] = true;
 
       // XP награды за чек-лист
-      appAddXP(XP_CHECK);
+      addXP(XP_CHECK, state, { save: save, markActivity: () => markActivity(toast) });
       toast(`+${XP_CHECK} XP за чек-лист!`);
 
       const doneCount = CHECK_ITEMS.filter((c) => cs.checklist[c[0]]).length;
       if (doneCount === CHECK_ITEMS.length) {
-        appAddXP(XP_CHAPTER_FULL);
+        addXP(XP_CHAPTER_FULL, state, { save: save, markActivity: () => markActivity(toast) });
         toast(`🎉 Глава пройдена! +${XP_CHAPTER_FULL} XP!`);
       }
 
       save(true);
-      markActivity();
+      markActivity(toast);
       el.classList.add('done');
       const cb = el.querySelector('.checkbox');
       if (cb) cb.textContent = '✓';
