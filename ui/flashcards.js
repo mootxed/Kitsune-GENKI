@@ -1384,6 +1384,11 @@ export function startExtraReview(state, dependencies) {
 
   // Чистый старт сессии доп. повторения (без несуществующего startFlash)
   document.getElementById('completion-overlay')?.classList.add('hidden');
+
+  // Скрываем табы SRS во время доп. повторения
+  const tabsContainer = document.getElementById('srs-tabs-container');
+  if (tabsContainer) tabsContainer.classList.add('hidden');
+
   sessionManager = null;
   flashCtx = null;
   flashRevealed = false;
