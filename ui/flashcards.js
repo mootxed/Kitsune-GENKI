@@ -134,7 +134,8 @@ function initDrawingMode(
   state,
   dependencies
 ) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav } = dependencies;
+  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav, markActivity } =
+    dependencies;
 
   const target = document.getElementById('kanji-writer-target');
   if (!target || !kanji || typeof HanziWriter === 'undefined') {
