@@ -276,21 +276,39 @@ export function renderHome() {
   CONTENT_INDEX.forEach((ch) => {
     const nm = CH_NAMES[ch.id] || [ch.title || 'Глава ' + ch.id, ''];
     const cs = chState(ch.id);
+
+    // Проверка разблокировки: Глава 1 всегда открыта, остальные открываются если предыдущая начата
+    const isUnlocked = ch.id === 1 || (ch.id > 1 && chState(ch.id - 1).started);
+
     const items = CHECK_ITEMS.length;
     const done = CHECK_ITEMS.filter((c) => cs.checklist[c[0]]).length;
     const pct = Math.round((done / items) * 100);
     const el = document.createElement('div');
-    el.className = 'chapter-card' + (cs.started ? ' started' : '');
+    el.className = 'chapter-card' + (cs.started ? ' started' : '') + (!isUnlocked ? ' locked' : '');
     el.dataset.testid = 'chapter-card-' + ch.id;
-    el.innerHTML = `
-      <div class="ch-badge">${ch.id}</div>
-      <div class="ch-main">
-        <p class="ch-name">${nm[0]}</p>
-        <p class="ch-sub">${nm[1] || ''}</p>
-        <div class="ch-prog"><i style="width:${pct}%"></i></div>
-      </div>
-      <div class="ch-arrow">›</div>`;
-    el.onclick = () => window.nav('chapter', ch.id);
+
+    if (!isUnlocked) {
+      el.innerHTML = `
+        <div class="ch-badge">🔒</div>
+        <div class="ch-main">
+          <p class="ch-name">${nm[0]}</p>
+          <p class="ch-sub">Завершите предыдущую главу</p>
+          <div class="ch-prog"><i style="width:0%"></i></div>
+        </div>
+        <div class="ch-arrow">›</div>`;
+      el.onclick = () => toast('Сначала завершите предыдущую главу');
+    } else {
+      el.innerHTML = `
+        <div class="ch-badge">${ch.id}</div>
+        <div class="ch-main">
+          <p class="ch-name">${nm[0]}</p>
+          <p class="ch-sub">${nm[1] || ''}</p>
+          <div class="ch-prog"><i style="width:${pct}%"></i></div>
+        </div>
+        <div class="ch-arrow">›</div>`;
+      el.onclick = () => window.nav('chapter', ch.id);
+    }
+
     list.appendChild(el);
   });
   syncAvatars();
