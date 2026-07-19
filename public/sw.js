@@ -1,7 +1,7 @@
 /* sw.js — Kitsune Genki Service Worker */
 
 // ===== ВЕРСИОНИРОВАННЫЕ КЕШИ =====
-const CACHE_VERSION = '10';
+const CACHE_VERSION = '12';
 const CACHE_STATIC = `kitsune-static-v${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `kitsune-dynamic-v${CACHE_VERSION}`;
 const CACHE_LESSON = `kitsune-lesson-v${CACHE_VERSION}`;
@@ -22,20 +22,6 @@ const STATIC_ASSETS = [
   'manifest.json',
   'icon.svg',
   'offline.html',
-  // Модульные CSS файлы
-  'src/styles/tokens.css',
-  'src/styles/base.css',
-  'src/styles/layout.css',
-  'src/styles/themes/light.css',
-  'src/styles/themes/dark.css',
-  'src/styles/themes/custom.css',
-  'src/styles/components/header.css',
-  'src/styles/components/tabbar.css',
-  'src/styles/components/buttons.css',
-  'src/styles/components/cards.css',
-  'src/styles/components/profile.css',
-  'src/styles/components/srs.css',
-  'src/styles/components/ui.css',
   // JavaScript модули
   'src/audio-helper.js',
   'src/backup-manager.js',
