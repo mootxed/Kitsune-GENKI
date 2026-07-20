@@ -27,6 +27,7 @@ class SessionManager {
     // Очередь карточек с метаданными для сессии
     this.queue = cards.map((card) => ({
       card, // оригинальная карточка из state.srs
+      forcedMode: card.forcedMode || null, // принудительный режим карточки (для 4-блочной структуры)
       sessionLapses: 0, // количество ошибок в текущей сессии
       isFirstAttempt: true, // флаг первой попытки
       completed: false, // завершена ли карточка в сессии
@@ -66,6 +67,7 @@ class SessionManager {
     const item = activeQueue[0];
     return {
       ...item.card,
+      forcedMode: item.forcedMode,
       sessionLapses: item.sessionLapses,
       isFirstAttempt: item.isFirstAttempt,
     };
