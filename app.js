@@ -85,6 +85,8 @@ import {
   setFlashRevealed,
   setFlashCtx,
   setSessionManager,
+  initSessionBatching,
+  resetSessionBatching,
 } from './ui/flashcards.js';
 import { renderShop, SHOP_ITEMS } from './ui/shop.js';
 import { renderStories, openWordBottomSheet, closeWordBottomSheet } from './ui/stories.js';
@@ -323,7 +325,10 @@ function setupRouter() {
     setFlashCtx(chapterId);
     setFlashRevealed(false);
     setFlashIdx(0);
-    setFlashQueue(chapterDue);
+
+    // Инициализируем батчинг (20 карточек на батч)
+    // initSessionBatching() автоматически вызывает setFlashQueue() с организованным батчем
+    initSessionBatching(chapterDue, 20);
 
     // Скрываем табы SRS во время сессии
     const tabsContainer = document.getElementById('srs-tabs-container');
@@ -347,7 +352,10 @@ function setupRouter() {
     setFlashCtx(null);
     setFlashRevealed(false);
     setFlashIdx(0);
-    setFlashQueue(due);
+
+    // Инициализируем батчинг (20 карточек на батч)
+    // initSessionBatching() автоматически вызывает setFlashQueue() с организованным батчем
+    initSessionBatching(due, 20);
 
     // Скрываем табы SRS во время сессии
     const tabsContainer = document.getElementById('srs-tabs-container');
