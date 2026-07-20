@@ -90,12 +90,12 @@ export class Router {
   initTabbarListeners() {
     // Делегирование событий для всех кнопок с data-nav
     const navButtons = document.querySelectorAll('[data-nav]');
-    
-    navButtons.forEach(btn => {
+
+    navButtons.forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         const targetScreen = btn.dataset.nav;
-        
+
         // Проверяем, что это валидный экран
         if (this.screens.includes(targetScreen) || this.renderHandlers[targetScreen]) {
           this.navigate(targetScreen);
