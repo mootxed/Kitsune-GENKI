@@ -320,6 +320,11 @@ function setupRouter() {
   const startChapterFlashcards = async (chapterId, chapterDue) => {
     await ensureLesson(chapterId);
 
+    if (!chapterDue || chapterDue.length === 0) {
+      toast('Нет карточек для повторения в этой главе');
+      return;
+    }
+
     // Чистый старт сессии повторения карточек главы
     setSessionManager(null);
     setFlashCtx(chapterId);
@@ -327,8 +332,12 @@ function setupRouter() {
     setFlashIdx(0);
 
     // Инициализируем батчинг (20 карточек на батч)
-    // initSessionBatching() автоматически вызывает setFlashQueue() с организованным батчем
-    initSessionBatching(chapterDue, 20);
+    const batchInfo = initSessionBatching(chapterDue, 20);
+
+    if (batchInfo && batchInfo.organizedCards) {
+      // Явно устанавливаем очередь с 4-блочным упорядоченным 20-карточным батчем
+      setFlashQueue(batchInfo.organizedCards);
+    }
 
     // Скрываем табы SRS во время сессии
     const tabsContainer = document.getElementById('srs-tabs-container');
@@ -347,6 +356,11 @@ function setupRouter() {
     await ensureLessonsForSrs();
     const due = dueCards(state.srs);
 
+    if (!due || due.length === 0) {
+      toast('Нет карточек для повторения');
+      return;
+    }
+
     // Чистый старт сессии повторения
     setSessionManager(null);
     setFlashCtx(null);
@@ -354,8 +368,12 @@ function setupRouter() {
     setFlashIdx(0);
 
     // Инициализируем батчинг (20 карточек на батч)
-    // initSessionBatching() автоматически вызывает setFlashQueue() с организованным батчем
-    initSessionBatching(due, 20);
+    const batchInfo = initSessionBatching(due, 20);
+
+    if (batchInfo && batchInfo.organizedCards) {
+      // Явно устанавливаем очередь с 4-блочным упорядоченным 20-карточным батчем
+      setFlashQueue(batchInfo.organizedCards);
+    }
 
     // Скрываем табы SRS во время сессии
     const tabsContainer = document.getElementById('srs-tabs-container');

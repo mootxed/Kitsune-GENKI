@@ -2034,6 +2034,8 @@ export function initSessionBatching(dueCardsQueue, batchSize = 20) {
   currentBatchIndex = 0;
 
   const firstBatch = sessionBatcher.getCurrentBatch();
+  if (!firstBatch) return null;
+
   const organizedCards = sessionBatcher.organizeBatchInto4Blocks(firstBatch.cards);
 
   flashQueue = organizedCards;
@@ -2042,6 +2044,7 @@ export function initSessionBatching(dueCardsQueue, batchSize = 20) {
   return {
     batcher: sessionBatcher,
     currentBatch: firstBatch,
+    organizedCards: organizedCards, // Explicitly expose 4-block ordered array
     totalBatches: sessionBatcher.getTotalBatches(),
   };
 }
