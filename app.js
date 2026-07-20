@@ -325,6 +325,22 @@ function setupRouter() {
       return;
     }
 
+    // Явно переключаемся на экран SRS
+    $$('.screen').forEach((s) => s.classList.add('hidden'));
+    const srsScreen = document.getElementById('screen-srs');
+    if (srsScreen) srsScreen.classList.remove('hidden');
+
+    // Скрываем tabbar во время сессии
+    const tabbar = document.querySelector('.tabbar');
+    if (tabbar) tabbar.style.display = 'none';
+
+    // Скрываем header и табы SRS во время сессии для полноэкранного интерфейса флэшкарточек
+    const srsHeader = document.querySelector('#screen-srs .app-header');
+    if (srsHeader) srsHeader.style.display = 'none';
+
+    const tabsContainer = document.getElementById('srs-tabs-container');
+    if (tabsContainer) tabsContainer.classList.add('hidden');
+
     // Чистый старт сессии повторения карточек главы
     setSessionManager(null);
     setFlashCtx(chapterId);
@@ -339,12 +355,7 @@ function setupRouter() {
       setFlashQueue(batchInfo.organizedCards);
     }
 
-    // Скрываем табы SRS во время сессии
-    const tabsContainer = document.getElementById('srs-tabs-container');
-    if (tabsContainer) tabsContainer.classList.add('hidden');
-
-    // Переходим на экран SRS и запускаем карточки
-    nav('srs');
+    // Запускаем карточки (nav('srs') больше не нужен, т.к. мы уже переключили экран)
     renderFlash(state, dependencies);
   };
 
@@ -353,33 +364,75 @@ function setupRouter() {
 
   // Функция запуска сессии повторения карточек
   const startSrsSession = async () => {
-    await ensureLessonsForSrs();
-    const due = dueCards(state.srs);
+    console.log('[SRS] startSrsSession triggered');
 
-    if (!due || due.length === 0) {
-      toast('Нет карточек для повторения');
-      return;
+    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Явно переключаемся на экран SRS
+    // Скрываем все экраны
+    $$('.screen').forEach((s) => s.classList.add('hidden'));
+
+    // Показываем экран SRS
+    const srsScreen = document.getElementById('screen-srs');
+    if (srsScreen) {
+      srsScreen.classList.remove('hidden');
+      console.log('[SRS] Screen visibility toggled: #screen-srs now visible');
     }
 
-    // Чистый старт сессии повторения
-    setSessionManager(null);
-    setFlashCtx(null);
-    setFlashRevealed(false);
-    setFlashIdx(0);
+    // Скрываем tabbar во время сессии
+    const tabbar = document.querySelector('.tabbar');
+    if (tabbar) {
+      tabbar.style.display = 'none';
+      console.log('[SRS] Tabbar hidden');
+    }
 
-    // Инициализируем батчинг (20 карточек на батч)
-    const batchInfo = initSessionBatching(due, 20);
+    try {
+      await ensureLessonsForSrs();
+      const due = dueCards(state.srs);
+      console.log('[SRS] Due cards:', due?.length);
 
-    if (batchInfo && batchInfo.organizedCards) {
+      if (!due || due.length === 0) {
+        toast('Нет карточек для повторения');
+        // Восстанавливаем tabbar
+        if (tabbar) tabbar.style.display = '';
+        return;
+      }
+
+      // Чистый старт сессии повторения
+      setSessionManager(null);
+      setFlashCtx(null);
+      setFlashRevealed(false);
+      setFlashIdx(0);
+
+      // Инициализируем батчинг (20 карточек на батч)
+      console.log('[SRS] Initializing session batching...');
+      const batchInfo = initSessionBatching(due, 20);
+      console.log('[SRS] Batch info:', batchInfo);
+
+      if (!batchInfo || !batchInfo.organizedCards) {
+        console.error('[SRS] Failed to generate organized cards batch!');
+        toast('Ошибка инициализации батча карточек');
+        // Восстанавливаем tabbar
+        if (tabbar) tabbar.style.display = '';
+        return;
+      }
+
       // Явно устанавливаем очередь с 4-блочным упорядоченным 20-карточным батчем
       setFlashQueue(batchInfo.organizedCards);
+      console.log('[SRS] Flash queue set, length:', batchInfo.organizedCards.length);
+
+      // Скрываем header и табы SRS во время сессии для полноэкранного интерфейса флэшкарточек
+      const srsHeader = document.querySelector('#screen-srs .app-header');
+      if (srsHeader) srsHeader.style.display = 'none';
+
+      const tabsContainerSession = document.getElementById('srs-tabs-container');
+      if (tabsContainerSession) tabsContainerSession.classList.add('hidden');
+
+      console.log('[SRS] Calling renderFlash...');
+      renderFlash(state, dependencies);
+      console.log('[SRS] renderFlash executed successfully');
+    } catch (err) {
+      console.error('[SRS] Error in startSrsSession:', err);
+      toast('Ошибка при запуске сессии: ' + err.message);
     }
-
-    // Скрываем табы SRS во время сессии
-    const tabsContainer = document.getElementById('srs-tabs-container');
-    if (tabsContainer) tabsContainer.classList.add('hidden');
-
-    renderFlash(state, dependencies);
   };
 
   // Рендер dashboard экрана SRS (меню с кнопками)
@@ -390,8 +443,8 @@ function setupRouter() {
     document.getElementById('completion-overlay')?.classList.add('hidden');
 
     // Показываем табы на dashboard
-    const tabsContainer = document.getElementById('srs-tabs-container');
-    if (tabsContainer) tabsContainer.classList.remove('hidden');
+    const tabsContainerDashboard = document.getElementById('srs-tabs-container');
+    if (tabsContainerDashboard) tabsContainerDashboard.classList.remove('hidden');
 
     // Привязка вкладок SRS (Повторение / Словарь)
     $$('#srs-tabs-container .lib-tab').forEach((tab) => {
