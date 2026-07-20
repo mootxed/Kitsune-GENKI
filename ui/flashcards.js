@@ -129,11 +129,15 @@ function shuffleArray(array) {
 }
 
 // Функция генерации виртуальной клавиатуры для SRS
-function generateSrsKeyboard(correctAnswer) {
+function generateSrsKeyboard(acceptedAnswers) {
   const allKana = Object.keys(HIRAGANA_TO_KATAKANA);
 
-  // Собираем уникальные символы из правильного ответа
-  const correctLetters = [...new Set(correctAnswer.split(''))];
+  // Собираем уникальные символы из ВСЕХ вариантов правильных ответов
+  const correctLetters = [
+    ...new Set(
+      acceptedAnswers.flatMap((answer) => answer.split('')).filter((char) => allKana.includes(char))
+    ),
+  ];
 
   // Ограничиваем до максимум 8 символов
   const limitedCorrect = correctLetters.slice(0, 8);
@@ -145,7 +149,7 @@ function generateSrsKeyboard(correctAnswer) {
 
   while (distractors.length < distractorCount) {
     const randomKana = allKana[Math.floor(Math.random() * allKana.length)];
-    if (!correctAnswer.includes(randomKana) && !distractors.includes(randomKana)) {
+    if (!correctLetters.includes(randomKana) && !distractors.includes(randomKana)) {
       distractors.push(randomKana);
     }
   }
@@ -260,9 +264,6 @@ function initDrawingMode(
     toast('⚠️ HanziWriter не загружен');
     return;
   }
-
-  // 🛑 ВАЖНО: Блокируем скролл страницы при рисовании пальцем на мобилке
-  target.style.touchAction = 'none';
 
   // Инициализация последовательности, если это первый кандзи
   if (kanjiSequence.length === 0) {
@@ -581,6 +582,15 @@ function showCardAfterDrawing(
   });
 }
 
+// Функция парсинга допустимых вариантов чтения (для слов с несколькими чтениями)
+function parseAcceptedAnswers(writingStr) {
+  if (!writingStr) return [''];
+  return writingStr
+    .split(/[/,、]/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
 // Функция рендеринга режима ввода с клавиатуры
 function renderTypingMode(word, state, dependencies) {
   const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav, markActivity } =
@@ -595,12 +605,15 @@ function renderTypingMode(word, state, dependencies) {
   let isChecked = false;
   let typingMistakes = 0;
 
+  // Парсим допустимые варианты чтения
+  const acceptedAnswers = parseAcceptedAnswers(displayWriting);
+
   // Скрываем tabbar во время SRS-сессии
   const tabbar = document.querySelector('.tabbar');
   if (tabbar) tabbar.style.display = 'none';
 
-  // Генерируем виртуальную клавиатуру
-  const keyboardLetters = generateSrsKeyboard(displayWriting);
+  // Генерируем виртуальную клавиатуру из ВСЕХ вариантов
+  const keyboardLetters = generateSrsKeyboard(acceptedAnswers);
 
   body.innerHTML = `
     <div class="flash-wrap">
@@ -668,9 +681,11 @@ function renderTypingMode(word, state, dependencies) {
     if (isChecked) return;
 
     const userAnswer = input.value.trim();
-    const correctAnswer = displayWriting;
 
-    if (userAnswer === correctAnswer) {
+    // Проверяем, соответствует ли ввод ЛЮБОМУ из допустимых вариантов
+    const isCorrect = acceptedAnswers.some((answer) => answer === userAnswer);
+
+    if (isCorrect) {
       input.classList.add('correct');
       input.classList.remove('incorrect', 'shake-error');
 
@@ -690,7 +705,8 @@ function renderTypingMode(word, state, dependencies) {
           input.classList.remove('shake-error');
         }, 500);
 
-        hintMessage.textContent = `Подсказка: начинается на "${correctAnswer[0]}"`;
+        // Подсказка: первый символ первого варианта
+        hintMessage.textContent = `Подсказка: начинается на "${acceptedAnswers[0][0]}"`;
         hintMessage.classList.remove('hidden');
 
         isChecked = false;
@@ -700,7 +716,9 @@ function renderTypingMode(word, state, dependencies) {
         input.disabled = true;
         checkBtn.disabled = true;
 
-        hintMessage.innerHTML = `<p style="color: var(--danger); margin: 8px 0;">❌ Неправильно</p><p style="margin: 4px 0;">Правильный ответ: <strong style="color: var(--primary);">${correctAnswer}</strong></p>`;
+        // Показываем ВСЕ допустимые варианты через " или "
+        const allAnswers = acceptedAnswers.join(' или ');
+        hintMessage.innerHTML = `<p style="color: var(--danger); margin: 8px 0;">❌ Неправильно</p><p style="margin: 4px 0;">Правильный ответ: <strong style="color: var(--primary);">${allAnswers}</strong></p>`;
         hintMessage.classList.remove('hidden');
 
         setTimeout(() => {
@@ -709,7 +727,7 @@ function renderTypingMode(word, state, dependencies) {
       }
     }
 
-    isChecked = typingMistakes >= 2 || userAnswer === correctAnswer;
+    isChecked = typingMistakes >= 2 || isCorrect;
   };
 
   const handleRating = (quality) => {
