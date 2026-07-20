@@ -4,6 +4,7 @@ import { $ } from '../src/utils.js';
 import { allCards, wordById } from '../src/srs-helpers.js';
 import { LESSONS } from './home.js';
 import { speakJapanese } from '../src/audio-helper.js';
+import { showCompletionScreen } from './shared.js';
 
 // Конвертер Хирагана → Катакана
 const HIRAGANA_TO_KATAKANA = {
@@ -273,12 +274,15 @@ function initCrosswordHandlers(crosswordData, userAnswers, state, dependencies) 
   // Глобальный обработчик для закрытия панели при клике вне
   const handleOutsideClick = (e) => {
     const bottomPanel = $('.crossword-bottom-panel');
-    const gridEl = $('#crossword-grid');
 
     if (!bottomPanel || !bottomPanel.classList.contains('active')) return;
 
-    // Проверяем, был ли клик вне панели и вне сетки
-    if (!bottomPanel.contains(e.target) && (!gridEl || !gridEl.contains(e.target))) {
+    // Проверяем, был ли клик по играбельной ячейке или по панели
+    const isClickOnPlayableCell = e.target.closest('.grid-cell.active');
+    const isClickOnPanel = bottomPanel.contains(e.target);
+
+    // Закрываем панель только если клик НЕ на играбельной ячейке И НЕ на панели
+    if (!isClickOnPlayableCell && !isClickOnPanel) {
       bottomPanel.classList.remove('active');
 
       const cluePanel = $('#clue-panel');
@@ -306,6 +310,15 @@ function initCrosswordHandlers(crosswordData, userAnswers, state, dependencies) 
 function selectWord(wordData, crosswordData, userAnswers) {
   const { grid, placedWords } = crosswordData;
 
+  // GUARD: Абсолютная блокировка при повторном клике на уже активное слово
+  if (window.currentCrosswordWord && window.currentCrosswordWord.word.id === wordData.word.id) {
+    return; // Полная заморозка клавиатуры — никаких изменений
+  }
+
+  // Очищаем сохраненный layout при смене слова
+  delete wordData.keyboardLayout;
+  delete wordData.keyboardLetterFrequency;
+
   // Сохраняем текущее слово
   window.currentCrosswordWord = wordData;
 
@@ -321,6 +334,16 @@ function selectWord(wordData, crosswordData, userAnswers) {
   // Показываем панель
   const bottomPanel = $('.crossword-bottom-panel');
   if (bottomPanel) bottomPanel.classList.add('active');
+
+  // Центруем viewport на первую ячейку активного слова
+  const firstCell = $(`.grid-cell[data-row="${wordData.row}"][data-col="${wordData.col}"]`);
+  if (firstCell) {
+    firstCell.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'center'
+    });
+  }
 }
 
 function updateCluePanel(word, userAnswers, grid, placedWords) {
@@ -353,6 +376,11 @@ function updateCluePanel(word, userAnswers, grid, placedWords) {
 
         // Очищаем все буквы с учетом пересечений и защиты
         for (let i = 0; i < wordData.word.length; i++) {
+          // НОВАЯ ПРОВЕРКА: Не очищаем зафиксированные буквы
+          if (wordAnswer.lockedIndices && wordAnswer.lockedIndices.has(i)) {
+            continue;
+          }
+
           const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
           const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
 
@@ -445,6 +473,12 @@ function updateCluePanel(word, userAnswers, grid, placedWords) {
         // Записываем букву
         wordAnswer.filled[randomIndex] = correctLetter;
 
+        // НОВАЯ ЛОГИКА: Помечаем hint-букву как зафиксированную и защищённую
+        if (!wordAnswer.lockedIndices) {
+          wordAnswer.lockedIndices = new Set();
+        }
+        wordAnswer.lockedIndices.add(randomIndex);
+
         // Вычисляем координаты
         const r = wordData.direction === 'across' ? wordData.row : wordData.row + randomIndex;
         const c = wordData.direction === 'across' ? wordData.col + randomIndex : wordData.col;
@@ -464,7 +498,7 @@ function updateCluePanel(word, userAnswers, grid, placedWords) {
           });
         }
 
-        // Обновляем ячейку в DOM
+        // Обновляем ячейку в DOM с классом hint
         const cell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
         if (cell) {
           const hiraSpan = cell.querySelector('.kana-hira');
@@ -478,9 +512,14 @@ function updateCluePanel(word, userAnswers, grid, placedWords) {
               kataSpan.textContent = hiraganaToKatakana(correctLetter);
             }
           }
+
+          // Применяем жёлтую подсветку для hint-буквы
+          cell.classList.add('grid-cell-letter-hint');
         }
 
-        // Перегенерируем клавиатуру
+        // ИСПРАВЛЕНО: Перегенерируем клавиатуру вместо глобального отключения кнопок.
+        // Это позволяет корректно учесть использование подсказки и оставить возможность
+        // ввода оставшихся дубликатов той же буквы, если они есть в слове
         generateKeyboard(wordData, userAnswers, grid, placedWords);
 
         // Проверяем заполненность слова
@@ -499,56 +538,66 @@ function generateKeyboard(wordData, userAnswers, grid, placedWords) {
 
   const wordAnswer = userAnswers[wordData.word.id];
 
-  // Учитываем предзаполненные пересечения и подсчитываем частоту нужных букв
-  const neededLetters = [];
-  for (let i = 0; i < wordData.word.length; i++) {
-    const letter = wordData.word.kana[i];
-    const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
-    const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
+  // Проверяем, нужно ли генерировать новый layout
+  const needsNewLayout = !wordData.keyboardLayout || !wordData.keyboardLetterFrequency;
 
-    // Проверяем, заполнена ли ячейка
-    const cellDom = $(`.grid-cell[data-row="${r}"][data-col="${c}"] .kana-hira`);
-    const isActuallyEmpty = !cellDom || !cellDom.dataset.answer;
+  if (needsNewLayout) {
+    // Учитываем предзаполненные пересечения и подсчитываем частоту нужных букв
+    const neededLetters = [];
+    for (let i = 0; i < wordData.word.length; i++) {
+      const letter = wordData.word.kana[i];
+      const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
+      const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
 
-    if (isActuallyEmpty) {
-      neededLetters.push(letter);
+      // Проверяем, заполнена ли ячейка
+      const cellDom = $(`.grid-cell[data-row="${r}"][data-col="${c}"] .kana-hira`);
+      const isActuallyEmpty = !cellDom || !cellDom.dataset.answer;
+
+      if (isActuallyEmpty) {
+        neededLetters.push(letter);
+      }
     }
+
+    // Подсчитываем частоту каждой буквы (для поддержки повторяющихся символов)
+    const letterFrequency = {};
+    neededLetters.forEach((letter) => {
+      letterFrequency[letter] = (letterFrequency[letter] || 0) + 1;
+    });
+
+    // Создаем массив с повторяющимися буквами согласно их частоте
+    const neededWithDuplicates = [];
+    Object.entries(letterFrequency).forEach(([letter, count]) => {
+      for (let i = 0; i < count; i++) {
+        neededWithDuplicates.push(letter);
+      }
+    });
+
+    // Ограничиваем до максимум 8 символов
+    const limitedNeeded = neededWithDuplicates.slice(0, 8);
+
+    // Добавляем distractors до ровно 8 символов
+    const allKana = Object.keys(HIRAGANA_TO_KATAKANA);
+    const distractors = [];
+    const targetTotal = 8;
+    const distractorCount = targetTotal - limitedNeeded.length;
+
+    while (distractors.length < distractorCount) {
+      const randomKana = allKana[Math.floor(Math.random() * allKana.length)];
+      if (!wordData.word.kana.includes(randomKana) && !distractors.includes(randomKana)) {
+        distractors.push(randomKana);
+      }
+    }
+
+    // Перемешиваем и гарантируем ровно 8 символов
+    const keyboardLetters = shuffleArray([...limitedNeeded, ...distractors]).slice(0, 8);
+
+    // Сохраняем layout и частоту для последующих использований
+    wordData.keyboardLayout = keyboardLetters;
+    wordData.keyboardLetterFrequency = letterFrequency;
   }
 
-  // Подсчитываем частоту каждой буквы (для поддержки повторяющихся символов)
-  const letterFrequency = {};
-  neededLetters.forEach((letter) => {
-    letterFrequency[letter] = (letterFrequency[letter] || 0) + 1;
-  });
-
-  // Создаем массив с повторяющимися буквами согласно их частоте
-  const neededWithDuplicates = [];
-  Object.entries(letterFrequency).forEach(([letter, count]) => {
-    for (let i = 0; i < count; i++) {
-      neededWithDuplicates.push(letter);
-    }
-  });
-
-  // Ограничиваем до максимум 8 символов
-  const limitedNeeded = neededWithDuplicates.slice(0, 8);
-
-  // Добавляем distractors до ровно 8 символов
-  const allKana = Object.keys(HIRAGANA_TO_KATAKANA);
-  const distractors = [];
-  const targetTotal = 8;
-  const distractorCount = targetTotal - limitedNeeded.length;
-
-  while (distractors.length < distractorCount) {
-    const randomKana = allKana[Math.floor(Math.random() * allKana.length)];
-    if (!wordData.word.kana.includes(randomKana) && !distractors.includes(randomKana)) {
-      distractors.push(randomKana);
-    }
-  }
-
-  // Перемешиваем и гарантируем ровно 8 символов
-  const keyboardLetters = shuffleArray([...limitedNeeded, ...distractors]).slice(0, 8);
-
-  keyboard.innerHTML = keyboardLetters
+  // Рендерим UI с существующим или новым layout
+  keyboard.innerHTML = wordData.keyboardLayout
     .map(
       (letter) => `
     <button class="kana-key" data-letter="${letter}">
@@ -564,12 +613,18 @@ function generateKeyboard(wordData, userAnswers, grid, placedWords) {
     const letter = btn.dataset.letter;
 
     // Проверяем, сколько раз эта буква нужна в слове
-    const neededCount = letterFrequency[letter] || 0;
+    const neededCount = wordData.keyboardLetterFrequency[letter] || 0;
 
-    // Подсчитываем, сколько раз уже использована
+    // Подсчитываем, сколько раз уже использована корректно и зафиксирована
     let usedCount = 0;
     for (let i = 0; i < wordData.word.length; i++) {
-      if (wordData.word.kana[i] === letter && wordAnswer.filled[i] === letter) {
+      // Считаем только правильно размещённые И зафиксированные буквы
+      if (
+        wordData.word.kana[i] === letter &&
+        wordAnswer.filled[i] === letter &&
+        wordAnswer.lockedIndices &&
+        wordAnswer.lockedIndices.has(i)
+      ) {
         usedCount++;
       }
     }
@@ -580,13 +635,15 @@ function generateKeyboard(wordData, userAnswers, grid, placedWords) {
       btn.disabled = true;
     }
 
-    btn.onclick = () => {
-      insertLetterIntoWord(letter, btn, wordData, userAnswers, grid, placedWords);
+    btn.onclick = (e) => {
+      const clickedButton = e.currentTarget;
+      const letterToInsert = clickedButton.dataset.letter;
+      insertLetterIntoWord(letterToInsert, wordData, userAnswers, grid, placedWords, clickedButton);
     };
   });
 }
 
-function insertLetterIntoWord(letter, buttonElement, wordData, userAnswers, grid, placedWords) {
+function insertLetterIntoWord(letter, wordData, userAnswers, grid, placedWords, clickedButton) {
   const wordAnswer = userAnswers[wordData.word.id];
 
   // Блокируем ввод в полностью правильные слова
@@ -638,6 +695,23 @@ function insertLetterIntoWord(letter, buttonElement, wordData, userAnswers, grid
     }
   }
 
+  // НОВАЯ ЛОГИКА: Немедленная валидация вставленной буквы
+  const correctLetter = wordData.word.kana[emptyIndex];
+  const isCorrect = (letter === correctLetter);
+
+  if (isCorrect) {
+    // Добавляем класс для зеленой подсветки (ручной ввод)
+    if (cell) {
+      cell.classList.add('grid-cell-letter-manual');
+    }
+
+    // Помечаем букву как зафиксированную в userAnswers
+    if (!wordAnswer.lockedIndices) {
+      wordAnswer.lockedIndices = new Set();
+    }
+    wordAnswer.lockedIndices.add(emptyIndex);
+  }
+
   // Глобальная синхронизация на пересечениях
   const cellData = grid[r][c];
   if (cellData && cellData.wordIds) {
@@ -652,12 +726,24 @@ function insertLetterIntoWord(letter, buttonElement, wordData, userAnswers, grid
     });
   }
 
-  // Скрываем кнопку
-  buttonElement.style.opacity = '0.3';
-  buttonElement.disabled = true;
+  // Отключаем только конкретную нажатую кнопку
+  if (clickedButton) {
+    clickedButton.style.opacity = '0.3';
+    clickedButton.disabled = true;
+  }
 
   // Проверяем заполненность
   checkWordCompletion(wordData, userAnswers, grid, placedWords);
+
+  // Центрируем только что заполненную ячейку для плавного следования камеры
+  const filledCell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+  if (filledCell) {
+    filledCell.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'center'
+    });
+  }
 }
 
 function checkWordCompletion(wordData, userAnswers, grid, placedWords) {
@@ -704,11 +790,10 @@ function checkWordCompletion(wordData, userAnswers, grid, placedWords) {
       if (pw.word.id === wordData.word.id) {
         if (markActivity) markActivity(toast);
         if (addXP) addXP(5);
-        toast('✅ Правильно!');
 
         // Переходим к следующему
         setTimeout(() => {
-          const nextWord = findNextIncompleteWord(placedWords, userAnswers);
+          const nextWord = findNextIncompleteWord(placedWords, userAnswers, wordData.word.id);
           if (nextWord) {
             selectWord(nextWord, { grid, placedWords, gridSize: grid.length }, userAnswers);
           } else {
@@ -731,18 +816,30 @@ function checkWordCompletion(wordData, userAnswers, grid, placedWords) {
   }
 }
 
-function findNextIncompleteWord(placedWords, userAnswers) {
-  for (const pw of placedWords) {
-    if (!userAnswers[pw.word.id].correct) {
-      return pw;
-    }
+function findNextIncompleteWord(placedWords, userAnswers, currentWordId) {
+  // 1. Отфильтровать все нерешённые слова
+  const unsolvedWords = placedWords.filter(
+    (pw) => userAnswers[pw.word.id] && !userAnswers[pw.word.id].correct
+  );
+  
+  // 2. Исключить текущее слово из пула
+  const availableWords = unsolvedWords.filter(
+    (pw) => pw.word.id !== currentWordId
+  );
+  
+  // 3. Если есть доступные слова, выбрать случайное
+  if (availableWords.length > 0) {
+    const randomIndex = Math.floor(Math.random() * availableWords.length);
+    return availableWords[randomIndex];
   }
+  
+  // 4. Если остались только решённые слова, вернуть null
   return null;
 }
 
 function completeCrossword(totalWords, userAnswers) {
   const { state, dependencies } = window.cwState;
-  const { save, toast, addXP } = dependencies;
+  const { save, addXP } = dependencies;
 
   // Подсчитываем слова
   const wordsWithHint = Object.values(userAnswers).filter((a) => a.correct && a.usedHint).length;
@@ -758,12 +855,21 @@ function completeCrossword(totalWords, userAnswers) {
   state.coins = (state.coins || 0) + coinsReward;
   save();
 
-  toast(`🎉 Кроссворд завершён! +${xpReward} XP, +${coinsReward} монет`);
-
-  // Возвращаемся назад
-  setTimeout(() => {
-    if (window.nav) window.nav('sensei');
-  }, 2000);
+  // Показываем полноэкранный модал успеха
+  showCompletionScreen({
+    title: 'おめでとう！',
+    subtitle: 'Congratulations!',
+    desc: 'Вы успешно завершили кроссворд и получили награды!',
+    theme: 'success',
+    rewards: [
+      { icon: '📖', label: `${wordsWithoutHint} отгадано, ${wordsWithHint} с подсказкой` },
+      { icon: '⭐', label: `+${xpReward} XP` },
+      { icon: '🪙', label: `+${coinsReward} монет` }
+    ],
+    onContinue: () => {
+      if (window.nav) window.nav('sensei');
+    }
+  });
 }
 
 function refreshGridCellClasses(placedWords, userAnswers, currentWordId) {
@@ -833,10 +939,15 @@ function handleBackspaceDelete(userAnswers, grid, placedWords) {
   // Блокируем удаление из полностью правильных слов
   if (wordAnswer.correct) return;
 
-  // Находим последнюю заполненную ячейку в текущем слове, пропуская защищённые
+  // Находим последнюю заполненную ячейку в текущем слове, пропуская защищённые и зафиксированные
   let targetIndex = -1;
   for (let i = wordData.word.length - 1; i >= 0; i--) {
     if (wordAnswer.filled[i] !== '') {
+      // НОВАЯ ПРОВЕРКА: Блокируем удаление зафиксированных правильных букв
+      if (wordAnswer.lockedIndices && wordAnswer.lockedIndices.has(i)) {
+        continue; // Пропускаем зафиксированную букву
+      }
+
       // Вычисляем координаты ячейки
       const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
       const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
@@ -898,10 +1009,10 @@ function handleBackspaceDelete(userAnswers, grid, placedWords) {
     kataDom.textContent = '';
   }
 
-  // Убираем классы correct/correct-hint с ячейки
+  // Убираем все классы подсветки с ячейки
   const cell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
   if (cell) {
-    cell.classList.remove('correct', 'correct-hint');
+    cell.classList.remove('correct', 'correct-hint', 'grid-cell-letter-manual', 'grid-cell-letter-hint');
   }
 
   // Ревалидация всех затронутых слов
@@ -919,6 +1030,16 @@ function handleBackspaceDelete(userAnswers, grid, placedWords) {
 
   // Перегенерируем клавиатуру
   generateKeyboard(wordData, userAnswers, grid, placedWords);
+
+  // Центрируем только что очищенную ячейку (новая позиция курсора)
+  const clearedCell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+  if (clearedCell) {
+    clearedCell.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'center'
+    });
+  }
 }
 
 function revalidateWord(wordData, userAnswers, grid) {
