@@ -1,7 +1,7 @@
 // ui/flashcards.js - Модуль для работы с карточками SRS и словарём
 
 import { $, $$ } from '../src/utils.js';
-import { wordById, cardChapter, isWordUnlocked } from '../src/srs-helpers.js';
+import { wordById, cardChapter, isWordUnlocked, getUnlockedParticles } from '../src/srs-helpers.js';
 import { allCards } from '../src/srs-helpers.js';
 import { SRS } from '../srs.js';
 import { speakJapanese } from '../src/audio-helper.js';
@@ -36,6 +36,82 @@ const CARD_MODES = {
   DRAWING: 'drawing',
   TYPING: 'typing',
   MULTIPLE_CHOICE: 'multiple-choice',
+  PARTICLE_QUIZ: 'particle-quiz',
+};
+
+// Шаблоны для генерации particle quiz
+const PARTICLE_TEMPLATES = {
+  の: {
+    slots: ['noun', 'noun'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (чей?: ${w1.translation})`,
+  },
+  を: {
+    slots: ['noun', 'verb'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (что?: ${w1.translation})`,
+  },
+  で: {
+    slots: ['noun', 'verb'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (где?: ${w1.translation})`,
+  },
+  に: {
+    slots: ['noun', 'verb'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (когда/куда?: ${w1.translation})`,
+  },
+  へ: {
+    slots: ['noun', 'verb'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (куда?: ${w1.translation})`,
+  },
+  と: {
+    slots: ['noun', 'verb'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (вместе с: ${w1.translation})`,
+  },
+  が: {
+    slots: ['noun', 'verb'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (кто/что?: ${w1.translation})`,
+  },
+  は: {
+    slots: ['noun', 'verb'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (тема: ${w1.translation})`,
+  },
+  も: {
+    slots: ['noun', 'verb'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (тоже: ${w1.translation})`,
+  },
+  から: {
+    slots: ['noun', 'verb'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (откуда?: ${w1.translation})`,
+  },
+  まで: {
+    slots: ['noun', 'verb'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (до куда?: ${w1.translation})`,
+  },
+  より: {
+    slots: ['noun', 'adjective'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (чем: ${w1.translation})`,
+  },
+  か: {
+    slots: ['noun', 'verb'],
+    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} (вопрос о: ${w1.translation})`,
+  },
+  // Fallback для неизвестных частиц
+  default: {
+    slots: ['noun', 'verb'],
+    template: (particle, w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
+    hint: (w1, w2) => `${w2.translation} / ${w1.translation}`,
+  },
 };
 
 // Конвертер Хирагана → Катакана (переиспользование из кроссвордов)
@@ -126,6 +202,91 @@ function shuffleArray(array) {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+// Функция генерации particle quiz
+function generateParticleQuiz(particle, lessonData, state, LESSONS) {
+  // Получаем шаблон для данной частицы
+  const templateDef = PARTICLE_TEMPLATES[particle] || PARTICLE_TEMPLATES.default;
+  if (!templateDef) {
+    console.warn(`Нет шаблона для частицы: ${particle}`);
+    return null;
+  }
+
+  const { slots, template, hint } = templateDef;
+
+  // Собираем все разблокированные слова из всех уроков
+  const allWords = LESSONS.flatMap((l) => l.words || []).filter((w) =>
+    isWordUnlocked(w.id, state.chapters)
+  );
+
+  // Маппинг категорий слов на слоты
+  const categoryMap = {
+    noun: ['nouns', 'people', 'countries', 'occupation', 'time', 'places', 'food', 'objects'],
+    verb: ['u-verbs', 'ru-verbs', 'irregular-verbs', 'verbs'],
+    adjective: ['i-adjectives', 'na-adjectives', 'adjectives'],
+    time: ['time', 'nouns'],
+  };
+
+  // Функция подбора слова для слота
+  const findWordForSlot = (slotType) => {
+    const categories = categoryMap[slotType] || ['nouns'];
+    const candidates = allWords.filter((w) => categories.includes(w.category));
+
+    if (candidates.length === 0) {
+      // Fallback на любое слово с переводом
+      return allWords.find((w) => w.translation);
+    }
+
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  };
+
+  // Подбираем слова для каждого слота
+  const selectedWords = slots.map((slot) => findWordForSlot(slot));
+
+  // Проверяем, что все слова найдены
+  if (selectedWords.some((w) => !w)) {
+    console.warn(`Не удалось подобрать слова для частицы: ${particle}`);
+    return null;
+  }
+
+  // Генерируем предложение (шаблоны теперь принимают объекты слов)
+  let sentence;
+  if (PARTICLE_TEMPLATES[particle]) {
+    sentence = template(...selectedWords);
+  } else {
+    // Fallback шаблон с частицей в качестве первого аргумента
+    sentence = template(particle, ...selectedWords);
+  }
+
+  // Генерируем русскую подсказку
+  const russianHint = hint(...selectedWords);
+
+  // Получаем разблокированные частицы из уроков (импорт уже есть в начале файла)
+  let unlockedParticles = getUnlockedParticles(state.chapters, LESSONS);
+
+  // Убираем текущую частицу из пула
+  unlockedParticles = unlockedParticles.filter((p) => p !== particle);
+
+  // Если разблокированных частиц мало, используем базовый набор
+  if (unlockedParticles.length < 3) {
+    const basicParticles = ['は', 'の', 'に', 'で', 'を', 'が', 'と'];
+    unlockedParticles = basicParticles.filter((p) => p !== particle);
+  }
+
+  // Генерируем 3 дистрактора
+  const distractors = shuffleArray(unlockedParticles).slice(0, 3);
+
+  // Формируем 4 варианта ответа
+  const options = shuffleArray([particle, ...distractors]);
+
+  return {
+    sentence,
+    correctParticle: particle,
+    options,
+    russianHint,
+    words: selectedWords,
+  };
 }
 
 // Функция генерации виртуальной клавиатуры для SRS
@@ -1017,6 +1178,197 @@ function renderMultipleChoiceMode(word, state, dependencies) {
   }
 }
 
+// Функция рендеринга режима particle quiz
+function renderParticleQuizMode(particleCard, state, dependencies) {
+  const {
+    save,
+    showCompletionScreen,
+    XP_CARD,
+    appAddXP,
+    updateSrsBadge,
+    nav,
+    markActivity,
+    LESSONS,
+  } = dependencies;
+
+  const body = $('#srs-body');
+  let mistakeCount = 0;
+
+  // Скрываем tabbar во время SRS-сессии
+  const tabbar = document.querySelector('.tabbar');
+  if (tabbar) tabbar.style.display = 'none';
+
+  // Генерируем quiz данные
+  const lessonData = LESSONS.find((l) => l.id === particleCard.lessonId);
+  if (!lessonData || !lessonData.particles || lessonData.particles.length === 0) {
+    console.warn(`Нет частиц для урока ${particleCard.lessonId}`);
+    flashIdx += 1;
+    renderFlash(state, dependencies);
+    return;
+  }
+
+  const particle = lessonData.particles[Math.floor(Math.random() * lessonData.particles.length)];
+  const quizData = generateParticleQuiz(particle, lessonData, state, LESSONS);
+
+  if (!quizData) {
+    console.warn('Не удалось сгенерировать particle quiz');
+    flashIdx += 1;
+    renderFlash(state, dependencies);
+    return;
+  }
+
+  const { sentence, correctParticle, options, russianHint } = quizData;
+
+  body.innerHTML = `
+    <div class="flash-wrap">
+      <div class="flash-top">
+        <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
+        <button class="btn-ghost" id="flash-exit">Выйти</button>
+      </div>
+      <div class="particle-quiz-container">
+        <div class="particle-quiz-prompt">
+          <div class="flash-cat">Частица</div>
+          <p class="particle-quiz-sentence">${sentence}</p>
+          <p class="particle-quiz-hint">${russianHint}</p>
+        </div>
+        <div class="particle-quiz-options">
+          ${options
+            .map(
+              (opt) => `
+            <button class="quiz-option-btn" data-particle="${opt}">
+              ${opt}
+            </button>
+          `
+            )
+            .join('')}
+        </div>
+      </div>
+    </div>`;
+
+  const handleRating = (quality) => {
+    const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+
+    const srsCard = state.srs[card.id];
+    if (srsCard) {
+      if (srsCard.progress === undefined) srsCard.progress = 0;
+
+      if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
+      else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
+      else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
+      else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
+    }
+
+    if (window.QuestsManager && sessionManager) {
+      const cardState = sessionManager.getCardState(card.id);
+      const isFirstAttempt = cardState.sessionLapses === 0;
+
+      if (quality >= 4 && isFirstAttempt) {
+        window.QuestsManager.incrementStreakCorrect(state);
+      } else if (quality < 3) {
+        window.QuestsManager.resetStreakCorrect(state);
+      }
+    }
+
+    if (sessionManager) {
+      sessionManager.answerCard(card.id, quality, state.srs);
+    } else {
+      SRS.review(state.srs[card.id], quality);
+      flashIdx += 1;
+    }
+
+    appAddXP(XP_CARD);
+    save(true);
+    markActivity();
+    flashRevealed = false;
+    renderFlash(state, dependencies);
+    updateSrsBadge();
+  };
+
+  $$('.quiz-option-btn').forEach((btn) => {
+    btn.onclick = () => {
+      if (btn.disabled) return;
+
+      const selectedParticle = btn.dataset.particle;
+      const isCorrect = selectedParticle === correctParticle;
+
+      if (isCorrect) {
+        btn.classList.add('correct');
+        btn.disabled = true;
+
+        // Вычисляем качество на основе ошибок
+        let quality;
+        if (mistakeCount === 0) {
+          quality = 5; // Easy
+        } else if (mistakeCount === 1) {
+          quality = 3; // Hard
+        } else {
+          quality = 0; // Again
+        }
+
+        setTimeout(() => {
+          handleRating(quality);
+        }, 600);
+      } else {
+        btn.classList.add('incorrect');
+        btn.disabled = true;
+        mistakeCount++;
+
+        // Если 2+ ошибки, автоматически завершаем с quality=0
+        if (mistakeCount >= 2) {
+          $$('.quiz-option-btn').forEach((b) => (b.disabled = true));
+
+          // Подсвечиваем правильный ответ зелёным
+          $$('.quiz-option-btn').forEach((b) => {
+            if (b.dataset.particle === correctParticle) {
+              b.classList.add('correct');
+            }
+          });
+
+          setTimeout(() => {
+            handleRating(0);
+          }, 1000);
+        }
+      }
+    };
+  });
+
+  const exitBtn = $('#flash-exit');
+  if (exitBtn) {
+    exitBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      // Восстанавливаем tabbar
+      const tabbar = document.querySelector('.tabbar');
+      if (tabbar) tabbar.style.display = '';
+
+      if (sessionManager) {
+        const stats = sessionManager.getStats();
+        if (stats.reviewed > 0) {
+          showCompletionScreen({
+            title: 'おつかれさま!',
+            subtitle: 'Хорошая работа!',
+            desc: `Вы повторили часть карточек`,
+            theme: 'success',
+            rewards: [
+              { icon: '📚', label: `${stats.reviewed} карточек` },
+              { icon: '✨', label: `${stats.perfect} без ошибок` },
+              { icon: '🪙', label: `+${stats.reviewed} XP` },
+            ],
+            onContinue: () => {
+              sessionManager = null;
+              flashCtx ? nav('chapter', flashCtx) : nav('srs');
+            },
+          });
+          return;
+        }
+      }
+      sessionManager = null;
+      flashCtx ? nav('chapter', flashCtx) : nav('srs');
+    };
+  }
+}
+
 // Главная функция рендеринга карточки
 export function renderFlash(state, dependencies) {
   const {
@@ -1077,6 +1429,12 @@ export function renderFlash(state, dependencies) {
       return;
     }
     card = flashQueue[flashIdx];
+  }
+
+  // Проверяем, является ли карточка particle quiz
+  if (card.id && card.id.startsWith('PARTICLE_')) {
+    renderParticleQuizMode(card, state, dependencies);
+    return;
   }
 
   const word = wordById(card.id, LESSONS);
