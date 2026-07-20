@@ -7259,16 +7259,18 @@ rt {
 .typing-input {
   width: 100%;
   max-width: 320px;
-  padding: 14px 18px;
+  padding: 16px 20px;
   font-size: 18px;
   font-weight: 600;
   border: 2px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   background: var(--bg-card);
   color: var(--text);
   text-align: center;
   transition: all 0.3s ease;
   outline: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
 }
 
 .typing-input::placeholder {
@@ -7311,10 +7313,12 @@ rt {
 .typing-answer {
   text-align: center;
   padding: 16px;
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   width: 100%;
   max-width: 320px;
   transition: var(--transition-theme);
+  margin-bottom: 28px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .typing-answer.hidden {
@@ -7359,37 +7363,42 @@ rt {
 .srs-keyboard-container {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  gap: 10px;
   width: 100%;
   max-width: 320px;
-  margin: 16px auto 0;
+  margin: 20px auto 24px;
 }
 
 .srs-kana-key {
   position: relative;
-  padding: 16px 8px;
-  min-height: 60px;
+  padding: 16px 10px;
+  min-height: 64px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
   border: 2px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   background: var(--bg-card);
   color: var(--text);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.2s ease,
+    box-shadow 0.15s ease;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .srs-kana-key:active {
-  transform: scale(0.95);
+  transform: scale(0.92);
   background: var(--primary);
   color: white;
   border-color: var(--primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
 .srs-kana-key:disabled {
@@ -7418,27 +7427,33 @@ rt {
   gap: 12px;
   width: 100%;
   max-width: 320px;
-  margin-top: 8px;
+  margin-top: 16px;
+  margin-bottom: 24px;
 }
 
 .srs-keyboard-backspace {
   flex: 1;
-  padding: 12px 16px;
+  padding: 16px;
   font-size: 16px;
   font-weight: 600;
-  background: var(--danger);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text);
+  border: 2px solid var(--border);
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.2s ease,
+    box-shadow 0.15s ease;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .srs-keyboard-backspace:active {
-  transform: scale(0.98);
-  background: var(--orange-dark);
+  transform: scale(0.96);
+  background: var(--border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
 .typing-check {

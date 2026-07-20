@@ -67,6 +67,11 @@ export function showCompletionScreen(options) {
   btn.onclick = () => {
     console.log('Клик по кнопке CONTINUE');
     overlay.classList.add('hidden');
+
+    // Восстанавливаем tabbar при закрытии completion screen
+    const tabbar = document.querySelector('.tabbar');
+    if (tabbar) tabbar.style.display = '';
+
     if (onContinue) onContinue();
   };
 }
