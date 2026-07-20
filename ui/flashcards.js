@@ -5,6 +5,7 @@ import { wordById, cardChapter, isWordUnlocked, getUnlockedParticles } from '../
 import { allCards } from '../src/srs-helpers.js';
 import { SRS } from '../srs.js';
 import { speakJapanese } from '../src/audio-helper.js';
+import { SessionBatcher } from '../src/session-batcher.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -15,6 +16,10 @@ let flashIdx = 0;
 let flashRevealed = false;
 let flashCtx = null;
 let sessionManager = null;
+
+// Глобальные переменные для батчинга сессий
+let sessionBatcher = null;
+let currentBatchIndex = 0;
 
 // Глобальная переменная для HanziWriter
 let currentWriter = null;
@@ -2021,6 +2026,66 @@ export function startExtraReview(state, dependencies) {
   flashIdx = 0;
   flashQueue = selected;
   renderFlash(state, dependencies);
+}
+
+// Функция инициализации батчинга сессий
+export function initSessionBatching(dueCardsQueue, batchSize = 20) {
+  sessionBatcher = new SessionBatcher(dueCardsQueue, batchSize);
+  currentBatchIndex = 0;
+
+  const firstBatch = sessionBatcher.getCurrentBatch();
+  const organizedCards = sessionBatcher.organizeBatchInto4Blocks(firstBatch.cards);
+
+  flashQueue = organizedCards;
+  flashIdx = 0;
+
+  return {
+    batcher: sessionBatcher,
+    currentBatch: firstBatch,
+    totalBatches: sessionBatcher.getTotalBatches(),
+  };
+}
+
+// Функция завершения батча и перехода к следующему
+export function completeBatchAndMoveNext(state, dependencies) {
+  if (!sessionBatcher || !sessionBatcher.hasNextBatch()) {
+    // Это был последний батч
+    return null;
+  }
+
+  const nextBatch = sessionBatcher.moveToNextBatch();
+  currentBatchIndex = sessionBatcher.getCurrentBatchIndex();
+
+  const organizedCards = sessionBatcher.organizeBatchInto4Blocks(nextBatch.cards);
+
+  flashQueue = organizedCards;
+  flashIdx = 0;
+  flashRevealed = false;
+
+  return {
+    batch: nextBatch,
+    totalBatches: sessionBatcher.getTotalBatches(),
+    currentIndex: currentBatchIndex,
+  };
+}
+
+// Функция получения информации о текущем батче
+export function getCurrentBatchInfo() {
+  if (!sessionBatcher) return null;
+
+  const currentBatch = sessionBatcher.getCurrentBatch();
+  return {
+    index: currentBatch.index,
+    total: currentBatch.total,
+    isMiniSprint: currentBatch.isMiniSprint,
+    cardsCount: currentBatch.cards.length,
+  };
+}
+
+// Функция сброса батчинга
+export function resetSessionBatching() {
+  sessionBatcher = null;
+  currentBatchIndex = 0;
 }
 
 // Экспорт функций для установки глобальных переменных из app.js
