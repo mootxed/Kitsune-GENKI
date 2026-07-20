@@ -32,7 +32,7 @@ const MULTIPLE_CHOICE_PROBABILITY = 0.5;
 // Оставшиеся 50% — режим множественного выбора
 
 // Типы режимов карточек
-const CARD_MODES = {
+export const CARD_MODES = {
   DRAWING: 'drawing',
   TYPING: 'typing',
   MULTIPLE_CHOICE: 'multiple-choice',
@@ -1451,8 +1451,8 @@ export function renderFlash(state, dependencies) {
   const hideRomaji = state.settings?.hideRomaji || false;
   const displayRomaji = word.romaji || '';
 
-  // Определяем режим карточки
-  const cardMode = determineCardMode(word);
+  // Определяем режим карточки: используем forcedMode если есть, иначе случайный выбор
+  const cardMode = card.forcedMode || determineCardMode(word);
 
   // Скрываем tabbar во время SRS-сессии
   const tabbar = document.querySelector('.tabbar');
