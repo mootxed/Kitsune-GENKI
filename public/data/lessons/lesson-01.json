@@ -5,589 +5,527 @@
     "title": "Урок 1",
     "language": "japanese",
     "created_at": "2026-06-28",
-    "importance_weight": 1.5,
+    "importance_weight": 2.0,
+    "particles": ["は", "の", "か"],
     "vocabulary": [
       {
         "id": "L1_V001",
-        "category": "school",
-        "kanji": "大学",
-        "writing": "だいがく",
-        "romaji": "daigaku",
-        "translation": "университет, колледж"
+        "category": "greetings",
+        "kanji": "おはよう",
+        "writing": "おはよう",
+        "romaji": "ohayoo",
+        "translation": "Доброе утро! (неформально)"
       },
       {
         "id": "L1_V002",
-        "category": "school",
-        "kanji": "高校",
-        "writing": "こうこう",
-        "romaji": "kookoo",
-        "translation": "старшая школа"
+        "category": "greetings",
+        "kanji": "おはようございます",
+        "writing": "おはようございます",
+        "romaji": "ohayoo gozaimasu",
+        "translation": "Доброе утро! (вежливо)"
       },
       {
         "id": "L1_V003",
-        "category": "school",
-        "kanji": "学生",
-        "writing": "がくせい",
-        "romaji": "gakusee",
-        "translation": "студент, ученик"
+        "category": "greetings",
+        "kanji": "こんにちは",
+        "writing": "こんにちは",
+        "romaji": "konnichiwa",
+        "translation": "Добрый день!"
       },
       {
         "id": "L1_V004",
-        "category": "school",
-        "kanji": "大学生",
-        "writing": "だいがくせい",
-        "romaji": "daigakusee",
-        "translation": "студент университета"
+        "category": "greetings",
+        "kanji": "こんばんは",
+        "writing": "こんばんは",
+        "romaji": "konbanwa",
+        "translation": "Добрый вечер!"
       },
       {
         "id": "L1_V005",
-        "category": "school",
-        "kanji": "留学生",
-        "writing": "りゅうがくせい",
-        "romaji": "ryuugakusee",
-        "translation": "иностранный студент"
+        "category": "greetings",
+        "kanji": "さようなら",
+        "writing": "さようなら",
+        "romaji": "sayoonara",
+        "translation": "До свидания!"
       },
       {
         "id": "L1_V006",
-        "category": "school",
-        "kanji": "先生",
-        "writing": "せんせい",
-        "romaji": "sensee",
-        "translation": "преподаватель, учитель, профессор"
+        "category": "greetings",
+        "kanji": "おやすみなさい",
+        "writing": "おやすみなさい",
+        "romaji": "oyasuminasai",
+        "translation": "Спокойной ночи!"
       },
       {
         "id": "L1_V007",
-        "category": "school",
-        "kanji": "～年生",
-        "writing": "～ねんせい",
-        "romaji": "... nensee",
-        "translation": "студент ... курса / класса"
+        "category": "greetings",
+        "kanji": "ありがとうございます",
+        "writing": "ありがとうございます",
+        "romaji": "arigatoo gozaimasu",
+        "translation": "Спасибо вам (вежливо)"
       },
       {
         "id": "L1_V008",
-        "category": "school",
-        "kanji": "一年生",
-        "writing": "いちねんせい",
-        "romaji": "ichinensee",
-        "translation": "первокурсник"
+        "category": "greetings",
+        "kanji": "すみません",
+        "writing": "すみません",
+        "romaji": "sumimasen",
+        "translation": "Извините, прошу прощения"
       },
       {
         "id": "L1_V009",
-        "category": "school",
-        "kanji": "専攻",
-        "writing": "せんこう",
-        "romaji": "senkoo",
-        "translation": "основная специальность (major)"
+        "category": "greetings",
+        "kanji": "いいえ",
+        "writing": "いいえ",
+        "romaji": "iie",
+        "translation": "Нет (вежливый отказ или отрицание)"
       },
       {
         "id": "L1_V010",
-        "category": "person",
-        "kanji": "私",
-        "writing": "わたし",
-        "romaji": "watashi",
-        "translation": "я"
+        "category": "greetings",
+        "kanji": "はじめまして",
+        "writing": "はじめまして",
+        "romaji": "hajimemashite",
+        "translation": "Приятно познакомиться"
       },
       {
         "id": "L1_V011",
-        "category": "person",
+        "category": "greetings",
+        "kanji": "いってきます",
+        "writing": "いってきます",
+        "romaji": "ittekimasu",
+        "translation": "Пошёл! / Ухожу (говорит тот, кто выходит из дома)"
+      },
+      {
+        "id": "L1_V012",
+        "category": "greetings",
+        "kanji": "いってらっしゃい",
+        "writing": "いってらっしゃい",
+        "romaji": "itterasshai",
+        "translation": "Иди и возвращайся (провожающий отвечает остающемуся)"
+      },
+      {
+        "id": "L1_V013",
+        "category": "greetings",
+        "kanji": "ただいま",
+        "writing": "ただいま",
+        "romaji": "tadaima",
+        "translation": "Я дома! (вернулся домой)"
+      },
+      {
+        "id": "L1_V014",
+        "category": "greetings",
+        "kanji": "おかえりなさい",
+        "writing": "おかえりなさい",
+        "romaji": "okaerinasai",
+        "translation": "С возвращением! (приветствие вернувшегося домой)"
+      },
+      {
+        "id": "L1_V015",
+        "category": "greetings",
+        "kanji": "いただきます",
+        "writing": "いただきます",
+        "romaji": "itadakimasu",
+        "translation": "Приятного аппетита! (буквально: благодарно принимаю эту еду)"
+      },
+      {
+        "id": "L1_V016",
+        "category": "greetings",
+        "kanji": "ごちそうさまでした",
+        "writing": "ごちそうさまでした",
+        "romaji": "gochisoosamadeshita",
+        "translation": "Спасибо за еду! (говорят после завершения приёма пищи)"
+      },
+      {
+        "id": "L1_V017",
+        "category": "people",
+        "kanji": "私",
+        "writing": "わたし",
+        "romaji": "watashi",
+        "translation": "я (нейтральная форма)"
+      },
+      {
+        "id": "L1_V018",
+        "category": "people",
+        "kanji": "あなた",
+        "writing": "あなた",
+        "romaji": "anata",
+        "translation": "ты, вы (используется редко; часто заменяется именем собеседника)"
+      },
+      {
+        "id": "L1_V019",
+        "category": "people",
         "kanji": "友達",
         "writing": "ともだち",
         "romaji": "tomodachi",
         "translation": "друг"
       },
       {
-        "id": "L1_V012",
-        "category": "person",
+        "id": "L1_V020",
+        "category": "people",
         "kanji": "～さん",
         "writing": "～さん",
         "romaji": "... san",
-        "translation": "г-н / г-жа ... (вежливый суффикс)"
+        "translation": "господин(жа)... (вежливый суффикс обращения)"
       },
       {
-        "id": "L1_V013",
-        "category": "person",
-        "kanji": "～人",
-        "writing": "～じん",
-        "romaji": "... jin",
-        "translation": "человек ... (национальность)"
+        "id": "L1_V021",
+        "category": "people",
+        "kanji": "～ちゃん",
+        "writing": "～ちゃん",
+        "romaji": "... chan",
+        "translation": "... (ласковый суффикс, используется для детей и близких друзей)"
       },
       {
-        "id": "L1_V014",
-        "category": "person",
-        "kanji": "日本人",
-        "writing": "にほんじん",
-        "romaji": "nihonjin",
-        "translation": "японец / японка"
+        "id": "L1_V022",
+        "category": "people",
+        "kanji": "～先生",
+        "writing": "～せんせい",
+        "romaji": "... sensee",
+        "translation": "учитель/преподаватель... (суффикс для профессионалов)"
       },
       {
-        "id": "L1_V015",
-        "category": "time",
-        "kanji": "今",
-        "writing": "いま",
-        "romaji": "ima",
-        "translation": "сейчас"
+        "id": "L1_V023",
+        "category": "people",
+        "kanji": "学生",
+        "writing": "がくせい",
+        "romaji": "gakusee",
+        "translation": "студент"
       },
       {
-        "id": "L1_V016",
+        "id": "L1_V024",
+        "category": "people",
+        "kanji": "高校生",
+        "writing": "こうこうせい",
+        "romaji": "kookoosee",
+        "translation": "старшеклассник (школьник из высшей школы)"
+      },
+      {
+        "id": "L1_V025",
+        "category": "people",
+        "kanji": "留学生",
+        "writing": "りゅうがくせい",
+        "romaji": "ryuugakusee",
+        "translation": "студент по обмену, иностранный студент"
+      },
+      {
+        "id": "L1_V026",
+        "category": "people",
+        "kanji": "先生",
+        "writing": "せんせい",
+        "romaji": "sensee",
+        "translation": "учитель, преподаватель"
+      },
+      {
+        "id": "L1_V027",
+        "category": "people",
+        "kanji": "～歳",
+        "writing": "～さい",
+        "romaji": "... sai",
+        "translation": "... лет (возраст)"
+      },
+      {
+        "id": "L1_V028",
+        "category": "people",
+        "kanji": "おいくつ",
+        "writing": "おいくつ",
+        "romaji": "oikutsu",
+        "translation": "Сколько Вам лет? (вежливая форма)"
+      },
+      {
+        "id": "L1_V029",
+        "category": "numbers",
+        "kanji": "一",
+        "writing": "いち",
+        "romaji": "ichi",
+        "translation": "один (1)"
+      },
+      {
+        "id": "L1_V030",
+        "category": "numbers",
+        "kanji": "二",
+        "writing": "に",
+        "romaji": "ni",
+        "translation": "два (2)"
+      },
+      {
+        "id": "L1_V031",
+        "category": "numbers",
+        "kanji": "三",
+        "writing": "さん",
+        "romaji": "san",
+        "translation": "три (3)"
+      },
+      {
+        "id": "L1_V032",
+        "category": "numbers",
+        "kanji": "四",
+        "writing": "よん / し",
+        "romaji": "yon / shi",
+        "translation": "четыре (4)"
+      },
+      {
+        "id": "L1_V033",
+        "category": "numbers",
+        "kanji": "五",
+        "writing": "ご",
+        "romaji": "go",
+        "translation": "пять (5)"
+      },
+      {
+        "id": "L1_V034",
+        "category": "numbers",
+        "kanji": "六",
+        "writing": "ろく",
+        "romaji": "roku",
+        "translation": "шесть (6)"
+      },
+      {
+        "id": "L1_V035",
+        "category": "numbers",
+        "kanji": "七",
+        "writing": "なな / しち",
+        "romaji": "nana / shichi",
+        "translation": "семь (7)"
+      },
+      {
+        "id": "L1_V036",
+        "category": "numbers",
+        "kanji": "八",
+        "writing": "はち",
+        "romaji": "hachi",
+        "translation": "восемь (8)"
+      },
+      {
+        "id": "L1_V037",
+        "category": "numbers",
+        "kanji": "九",
+        "writing": "きゅう / く",
+        "romaji": "kyuu / ku",
+        "translation": "девять (9)"
+      },
+      {
+        "id": "L1_V038",
+        "category": "numbers",
+        "kanji": "十",
+        "writing": "じゅう",
+        "romaji": "juu",
+        "translation": "десять (10)"
+      },
+      {
+        "id": "L1_V039",
+        "category": "numbers",
+        "kanji": "百",
+        "writing": "ひゃく",
+        "romaji": "hyaku",
+        "translation": "сто (100)"
+      },
+      {
+        "id": "L1_V040",
+        "category": "numbers",
+        "kanji": "千",
+        "writing": "せん",
+        "romaji": "sen",
+        "translation": "тысяча (1000)"
+      },
+      {
+        "id": "L1_V041",
+        "category": "numbers",
+        "kanji": "万",
+        "writing": "まん",
+        "romaji": "man",
+        "translation": "десять тысяч (10000)"
+      },
+      {
+        "id": "L1_V042",
         "category": "time",
         "kanji": "午前",
         "writing": "ごぜん",
         "romaji": "gozen",
-        "translation": "до полудня (A.M.)"
+        "translation": "до полудня, утро"
       },
       {
-        "id": "L1_V017",
+        "id": "L1_V043",
         "category": "time",
         "kanji": "午後",
         "writing": "ごご",
         "romaji": "gogo",
-        "translation": "после полудня (P.M.)"
+        "translation": "после полудня, день/вечер"
       },
       {
-        "id": "L1_V018",
+        "id": "L1_V044",
         "category": "time",
         "kanji": "～時",
         "writing": "～じ",
         "romaji": "... ji",
-        "translation": "часов (о времени)"
+        "translation": "... часов (время на часах)"
       },
       {
-        "id": "L1_V019",
+        "id": "L1_V045",
         "category": "time",
-        "kanji": "一時",
-        "writing": "いちじ",
-        "romaji": "ichiji",
-        "translation": "один час (1:00)"
+        "kanji": "～分",
+        "writing": "～ふん",
+        "romaji": "... fun",
+        "translation": "... минут"
       },
       {
-        "id": "L1_V020",
+        "id": "L1_V046",
         "category": "time",
         "kanji": "半",
         "writing": "はん",
         "romaji": "han",
-        "translation": "половина"
+        "translation": "половина (полчаса)"
       },
       {
-        "id": "L1_V021",
-        "category": "time",
-        "kanji": "二時半",
-        "writing": "にじはん",
-        "romaji": "nijihan",
-        "translation": "половина третьего (2:30)"
-      },
-      {
-        "id": "L1_V022",
-        "category": "others",
+        "id": "L1_V047",
+        "category": "countries",
         "kanji": "日本",
         "writing": "にほん",
         "romaji": "Nihon",
         "translation": "Япония"
       },
       {
-        "id": "L1_V023",
-        "category": "others",
+        "id": "L1_V048",
+        "category": "countries",
         "kanji": "アメリカ",
         "writing": "アメリカ",
         "romaji": "Amerika",
-        "translation": "США"
+        "translation": "Америка"
       },
       {
-        "id": "L1_V024",
-        "category": "others",
-        "kanji": "～語",
-        "writing": "～ご",
-        "romaji": "... go",
-        "translation": "язык ..."
+        "id": "L1_V049",
+        "category": "countries",
+        "kanji": "ロシア",
+        "writing": "ロシア",
+        "romaji": "Roshia",
+        "translation": "Россия"
       },
       {
-        "id": "L1_V025",
-        "category": "others",
-        "kanji": "日本語",
-        "writing": "にほんご",
-        "romaji": "nihongo",
-        "translation": "японский язык"
+        "id": "L1_V050",
+        "category": "occupation",
+        "kanji": "会社員",
+        "writing": "かいしゃいん",
+        "romaji": "kaishain",
+        "translation": "служащий, офисный работник"
       },
       {
-        "id": "L1_V026",
-        "category": "others",
-        "kanji": "～歳",
-        "writing": "～さい",
-        "romaji": "... sai",
-        "translation": "лет (о возрасте)"
+        "id": "L1_V051",
+        "category": "occupation",
+        "kanji": "大学",
+        "writing": "だいがく",
+        "romaji": "daigaku",
+        "translation": "университет"
       },
       {
-        "id": "L1_V027",
-        "category": "others",
+        "id": "L1_V052",
+        "category": "occupation",
+        "kanji": "専門",
+        "writing": "せんもん",
+        "romaji": "senmon",
+        "translation": "специальность, специализация"
+      },
+      {
+        "id": "L1_V053",
+        "category": "numbers",
+        "kanji": "何",
+        "writing": "なん / なに",
+        "romaji": "nan / nani",
+        "translation": "что? (вопросительное слово)"
+      },
+      {
+        "id": "L1_V054",
+        "category": "phone",
         "kanji": "電話",
         "writing": "でんわ",
         "romaji": "denwa",
-        "translation": "телефон"
+        "translation": "телефон, звонок"
       },
       {
-        "id": "L1_V028",
-        "category": "others",
-        "kanji": "～番",
-        "writing": "～ばん",
-        "romaji": "... ban",
-        "translation": "номер ..."
+        "id": "L1_V055",
+        "category": "phone",
+        "kanji": "電話番号",
+        "writing": "でんわばんごう",
+        "romaji": "denwabangoo",
+        "translation": "телефонный номер"
       },
       {
-        "id": "L1_V029",
-        "category": "others",
-        "kanji": "番号",
-        "writing": "ばんごう",
-        "romaji": "bangoo",
-        "translation": "номер (телефона)"
-      },
-      {
-        "id": "L1_V030",
-        "category": "others",
-        "kanji": "名前",
-        "writing": "なまえ",
-        "romaji": "namae",
-        "translation": "имя"
-      },
-      {
-        "id": "L1_V031",
-        "category": "others",
-        "kanji": "何",
-        "writing": "なん／なに",
-        "romaji": "nan/nani",
-        "translation": "что"
-      },
-      {
-        "id": "L1_V032",
-        "category": "expressions",
-        "kanji": "あのう",
-        "writing": "あのう",
-        "romaji": "anoo",
-        "translation": "эмм..."
-      },
-      {
-        "id": "L1_V033",
+        "id": "L1_V056",
         "category": "expressions",
         "kanji": "はい",
         "writing": "はい",
         "romaji": "hai",
-        "translation": "да"
+        "translation": "да (утверждение или ответ на вопрос)"
       },
       {
-        "id": "L1_V034",
+        "id": "L1_V057",
         "category": "expressions",
         "kanji": "そうです",
         "writing": "そうです",
         "romaji": "soo desu",
-        "translation": "верно, всё так"
+        "translation": "Это так, верно"
       },
       {
-        "id": "L1_V035",
+        "id": "L1_V058",
         "category": "expressions",
         "kanji": "そうですか",
         "writing": "そうですか",
         "romaji": "soo desu ka",
-        "translation": "вот как?, понятно, неужели?"
-      },
-      {
-        "id": "L1_V036",
-        "category": "countries",
-        "kanji": "イギリス",
-        "writing": "イギリス",
-        "romaji": "Igirisu",
-        "translation": "Великобритания"
-      },
-      {
-        "id": "L1_V037",
-        "category": "countries",
-        "kanji": "オーストラリア",
-        "writing": "オーストラリア",
-        "romaji": "Oosutoraria",
-        "translation": "Австралия"
-      },
-      {
-        "id": "L1_V038",
-        "category": "countries",
-        "kanji": "韓国",
-        "writing": "かんこく",
-        "romaji": "Kankoku",
-        "translation": "Корея"
-      },
-      {
-        "id": "L1_V039",
-        "category": "countries",
-        "kanji": "カナダ",
-        "writing": "カナダ",
-        "romaji": "Kanada",
-        "translation": "Канада"
-      },
-      {
-        "id": "L1_V040",
-        "category": "countries",
-        "kanji": "中国",
-        "writing": "ちゅうごく",
-        "romaji": "Chuugoku",
-        "translation": "Китай"
-      },
-      {
-        "id": "L1_V041",
-        "category": "countries",
-        "kanji": "インド",
-        "writing": "インド",
-        "romaji": "Indo",
-        "translation": "Индия"
-      },
-      {
-        "id": "L1_V042",
-        "category": "countries",
-        "kanji": "エジプト",
-        "writing": "エジプト",
-        "romaji": "Ejiputo",
-        "translation": "Египет"
-      },
-      {
-        "id": "L1_V043",
-        "category": "countries",
-        "kanji": "フィリピン",
-        "writing": "フィリピン",
-        "romaji": "Firipin",
-        "translation": "Филиппины"
-      },
-      {
-        "id": "L1_V044",
-        "category": "majors",
-        "kanji": "アジアけんきゅう",
-        "writing": "アジアけんきゅう",
-        "romaji": "ajia kenkyuu",
-        "translation": "востоковедение (изучение Азии)"
-      },
-      {
-        "id": "L1_V045",
-        "category": "majors",
-        "kanji": "経済",
-        "writing": "けいざい",
-        "romaji": "keezai",
-        "translation": "экономика"
-      },
-      {
-        "id": "L1_V046",
-        "category": "majors",
-        "kanji": "工学",
-        "writing": "こうがく",
-        "romaji": "koogaku",
-        "translation": "инженерия, технические науки"
-      },
-      {
-        "id": "L1_V047",
-        "category": "majors",
-        "kanji": "国際関係",
-        "writing": "こくさいかんけい",
-        "romaji": "kokusaikankee",
-        "translation": "международные отношения"
-      },
-      {
-        "id": "L1_V048",
-        "category": "majors",
-        "kanji": "コンピューター",
-        "writing": "コンピューター",
-        "romaji": "konpyuutaa",
-        "translation": "компьютер, IT"
-      },
-      {
-        "id": "L1_V049",
-        "category": "majors",
-        "kanji": "政治",
-        "writing": "せいじ",
-        "romaji": "seeji",
-        "translation": "политика"
-      },
-      {
-        "id": "L1_V050",
-        "category": "majors",
-        "kanji": "生物学",
-        "writing": "せいぶつがく",
-        "romaji": "seebutsugaku",
-        "translation": "биология"
-      },
-      {
-        "id": "L1_V051",
-        "category": "majors",
-        "kanji": "ビジネス",
-        "writing": "ビジネス",
-        "romaji": "bijinesu",
-        "translation": "бизнес"
-      },
-      {
-        "id": "L1_V052",
-        "category": "majors",
-        "kanji": "文学",
-        "writing": "ぶんがく",
-        "romaji": "bungaku",
-        "translation": "литература"
-      },
-      {
-        "id": "L1_V053",
-        "category": "majors",
-        "kanji": "歴史",
-        "writing": "れきし",
-        "romaji": "rekishi",
-        "translation": "история"
-      },
-      {
-        "id": "L1_V054",
-        "category": "occupations",
-        "kanji": "医者",
-        "writing": "いしゃ",
-        "romaji": "isha",
-        "translation": "врач, доктор"
-      },
-      {
-        "id": "L1_V055",
-        "category": "occupations",
-        "kanji": "会社員",
-        "writing": "かいしゃいん",
-        "romaji": "kaishain",
-        "translation": "офисный служащий"
-      },
-      {
-        "id": "L1_V056",
-        "category": "occupations",
-        "kanji": "看護師",
-        "writing": "かんごし",
-        "romaji": "kangoshi",
-        "translation": "медсестра / медбрат"
-      },
-      {
-        "id": "L1_V057",
-        "category": "school",
-        "kanji": "高校生",
-        "writing": "こうこうせい",
-        "romaji": "kookoosee",
-        "translation": "ученик старшей школы"
-      },
-      {
-        "id": "L1_V058",
-        "category": "occupations",
-        "kanji": "主婦",
-        "writing": "しゅふ",
-        "romaji": "shufu",
-        "translation": "домохозяйка"
+        "translation": "А, вот оно что! (понимание нового факта)"
       },
       {
         "id": "L1_V059",
-        "category": "school",
-        "kanji": "大学院生",
-        "writing": "だいがくいんせい",
-        "romaji": "daigakuinsee",
-        "translation": "аспирант"
+        "category": "expressions",
+        "kanji": "あのう",
+        "writing": "あのう",
+        "romaji": "anoo",
+        "translation": "Э-э-э... (междометие раздумья, колебания)"
       },
       {
         "id": "L1_V060",
-        "category": "occupations",
-        "kanji": "弁護士",
-        "writing": "べんごし",
-        "romaji": "bengoshi",
-        "translation": "юрист, адвокат"
-      },
-      {
-        "id": "L1_V061",
-        "category": "family",
-        "kanji": "お母さん",
-        "writing": "おかあさん",
-        "romaji": "okaasan",
-        "translation": "мать (чья-то)"
-      },
-      {
-        "id": "L1_V062",
-        "category": "family",
-        "kanji": "お父さん",
-        "writing": "おとうさん",
-        "romaji": "otoosan",
-        "translation": "отец (чей-то)"
-      },
-      {
-        "id": "L1_V063",
-        "category": "family",
-        "kanji": "お姉さん",
-        "writing": "おねえさん",
-        "romaji": "oneesan",
-        "translation": "старшая сестра (чья-то)"
-      },
-      {
-        "id": "L1_V064",
-        "category": "family",
-        "kanji": "お兄さん",
-        "writing": "おにいさん",
-        "romaji": "oniisan",
-        "translation": "старший брат (чей-то)"
-      },
-      {
-        "id": "L1_V065",
-        "category": "family",
-        "kanji": "妹",
-        "writing": "いもうと",
-        "romaji": "imooto",
-        "translation": "младшая сестра"
-      },
-      {
-        "id": "L1_V066",
-        "category": "family",
-        "kanji": "弟",
-        "writing": "おとうと",
-        "romaji": "otooto",
-        "translation": "младший брат"
+        "category": "expressions",
+        "kanji": "失礼します",
+        "writing": "しつれいします",
+        "romaji": "shitsureeshimasu",
+        "translation": "Извините за беспокойство (перед уходом или прерыванием)"
       }
     ],
     "notes": [
       {
         "note_id": 1,
-        "title": "Грамматика 1: Конструкция X は Y です (X wa Y desu)",
-        "content": "Базовая структура для выражения эквивалентности («X является Y»). Например: わたしはがくせいです (Я студент), せんこうはにほんごです (Моя специальность — японский язык). Глагол-связка です (desu) ставится в самом конце. Обратите внимание, что подлежащее часто опускается, когда оно очевидно из ситуации (например, просто がくせいです — «  $$Я / Он / Мы$$   студент»). Тематическая частица は пишется знаком хираганы 'ha', но читается как 'wa'."
+        "title": "Грамматика 1: XはYです (X wa Y desu)",
+        "content": "Основная конструкция японского предложения: 'X は Y です'. Где X — тема предложения (то, о чём идёт речь), は — маркер темы (читается 'wa'), Y — предикат (описание X), です — вежливая связка 'быть, являться'. Например: わたしはがくせいです (Watashi wa gakusee desu) = 'Я (являюсь) студентом'. Порядок слов в японском языке строгий: тема + маркер は + описание + です."
       },
       {
         "note_id": 2,
-        "title": "Грамматика 2: Вопросительные предложения (Частица か)",
-        "content": "Для создания вопроса достаточно добавить частицу か (ka) в самый конец предложения. На письме знак вопроса в традиционных текстах обычно не ставится. Пример: りゅうがくせいです (Иностранный студент) → りゅうがくせいですか (Вы иностранный студент?)."
+        "title": "Грамматика 2: Вопросительные предложения с частицей か (ka)",
+        "content": "Чтобы превратить утвердительное предложение в вопрос, достаточно добавить в конец частицу 'か' (ka). При этом интонация может подниматься, но это не обязательно. Например: たけしさんはにほんじんですか (Takeshi-san wa nihonjin desu ka?) = 'Такеши японец?'. В разговорной речи 'か' часто опускается, и вопрос выражается только интонацией подъёма."
       },
       {
         "note_id": 3,
-        "title": "Грамматика 3: Вопросительные слова",
-        "content": "Для вопросов используются вопросительные слова. Основное из них — なん / なに (nan/nani — «что»). Вариант なん используется непосредственно перед です или счетными суффиксами (например: なんじ — «который час», なんさい — «сколько лет», なんねんせい — «на каком курсе/классе», なんばん — «какой номер»). Примеры: せんこうはなんですか (Какая у вас специальность?), いまなんじですか (Который сейчас час?)."
+        "title": "Грамматика 3: Притяжательная частица の (no)",
+        "content": "Частица 'の' (no) используется для связи двух существительных в притяжательной или описательной конструкции. Порядок: Владелец/Описание の Объект. Примеры: たけしさんのでんわばんごう (Takeshi-san no denwabangoo) = 'телефонный номер Такеши'; だいがくのせんせい (daigaku no sensee) = 'университетский преподаватель'. Частица 'の' также может использоваться для указания принадлежности к группе или категории."
       },
       {
         "note_id": 4,
-        "title": "Грамматика 4: Частица の (no) — Связь существительных",
-        "content": "Частица の связывает два существительных (Существительное_1 の Существительное_2), где первое слово конкретизирует или ограничивает значение второго (основного) слова. Может выражать принадлежность: たけしさんののでんわばんごう (номер телефона Такеши), происхождение/локацию: にほんのだいがく (университет в Японии), или сферу обучения: にほんごのがくせい (студент, изучающий японский язык). Вся фраза грамматически работает как единое существительное."
+        "title": "Грамматика 4: Числа и возраст (количественные числительные 0-10)",
+        "content": "Базовые числа от 0 до 10: 零/〇 (ree/zero), 一 (ichi), 二 (ni), 三 (san), 四 (yon/shi), 五 (go), 六 (roku), 七 (nana/shichi), 八 (hachi), 九 (kyuu/ku), 十 (juu). Для образования чисел от 11 до 19 добавляется соответствующая единица к десятке (例: 11 = 十一 juu-ichi). Возраст выражается счётным суффиксом 歳 (sai). Например: 二十歳 (nijuu-sai) = '20 лет'. Вежливый вопрос о возрасте: おいくつですか (Oikutsu desu ka?)"
       },
       {
         "note_id": 5,
-        "title": "Особенности выражений: Суффикс обращения ～さん (san)",
-        "content": "Суффикс さん добавляется к имени или фамилии собеседника для вежливости (аналог «господин/госпожа»). К детям и близким друзьям-девочкам часто применяют ちゃん (chan), к мальчикам — くん (kun). Для учителей, врачей, политиков используется уважительный суффикс せんせい (sensee). Важно: никогда не употребляйте эти суффиксы по отношению к себе!"
-      },
-      {
-        "note_id": 6,
-        "title": "Особенности выражений: Избегайте использования 'anata'",
-        "content": "Местоимение あなた (anata — «ты / вы») звучит в японском языке слишком прямолинейно и порой грубо. Вместо него японцы предпочитают обращаться к собеседнику по фамилии/имени с суффиксом さん (например: ハートさんはカナダじんですか — «Г-жа Харт, вы канадка?» вместо использования слова «вы»)."
-      },
-      {
-        "note_id": 7,
-        "title": "Особенности выражений: Междометия あのう (anoo) и そうですか (soo desu ka)",
-        "content": "Междометие あのう выражает нерешительность, вежливую паузу или используется, чтобы мягко прервать собеседника/задать личный вопрос (аналог «эмм...», «извините»). Выражение そうですか показывает, что вы приняли информацию к сведению. С восходящим тоном означает «Правда? / Неужели?», с нисходящим — «Ясно / Вот оно как»."
-      },
-      {
-        "note_id": 8,
-        "title": "Особенности выражений: Числа 0–10 и вариативность чтения",
-        "content": "Японские цифры имеют несколько вариантов прочтения: 0 читается как ゼロ (zero) или れい (rei); 4 читается чаще как よн (yon), но в часах — よじ (yoji), в курсе обучения — よねんせい (yonensee); 7 — なна (nana), но в часах — しちじ (shichiji); 9 — きゅう (kyuu), но в часах — くじ (kuji). Счётные суффиксы (минуты, возраст) также вызывают фонетические изменения согласных (например, 1 минута — いっぷн ippun, 8 минут — はっぷн happun)."
-      },
-      {
-        "note_id": 9,
-        "title": "Особенности выражений: せんせい (sensee) против きょうし (kyooshi)",
-        "content": "Слово せんせい («учитель / мастер») используется только при обращении К ДРУГИМ людям. Называть себя せんせい нескромно. Когда вы говорите о своей работе учителя, вы должны использовать нейтральное слово きょうし (kyooshi): わたしはきょうしです (Я преподаватель)."
+        "title": "Грамматика 5: Время (часы и минуты)",
+        "content": "Время на японском выражается суффиксами: 時 (ji) для часов и 分 (fun/pun) для минут. Примеры: 三時 (san-ji) = '3 часа'; 十五分 (juu-go-fun) = '15 минут'; 三時半 (san-ji-han) = '3:30' (половина четвёртого). Для указания AM/PM используются 午前 (gozen — до полудня) и 午後 (gogo — после полудня). Например: 午前九時 (gozen ku-ji) = '9:00 утра'."
       }
     ],
     "cultural_notes": [
       {
         "note_id": 1,
-        "title": "Японские имена и фамилии (にほんじんの なまえ)",
-        "content": "В японской культуре при знакомстве и обращении сначала всегда называют фамилию, а затем личное имя (средние имена или отчества отсутствуют). Часто при первом знакомстве называют исключительно фамилию. Большинство имён пишутся иероглифами (кандзи). Фамилии обычно отражают природный ландшафт (например, 田中 Tanaka — «среди рисового поля», 山口 Yamaguchi — «устье горы»). Из-за обилия одинаково звучащих слов (омофонов) имена с одинаковым произношением могут записываться совершенно разными иероглифами."
+        "title": "Культурное замечание: Важность суффиксов обращения",
+        "content": "В японском языке крайне важно использовать правильные суффиксы обращения. ～さん (san) — универсальный вежливый суффикс, используется почти всегда (кроме обращения к себе). ～ちゃん (chan) — ласковый, для маленьких детей и близких друзей. ～先生 (sensee) — для учителей, врачей, адвокатов и других профессионалов. Обращение без суффикса допустимо только к очень близким друзьям или младшим родственникам."
+      },
+      {
+        "note_id": 2,
+        "title": "Культурное замечание: Японские приветствия и ритуальные фразы",
+        "content": "Многие японские приветствия глубоко укоренены в культуре и не имеют прямых аналогов. Например, いただきます (Itadakimasu) перед едой выражает благодарность за пищу и труд тех, кто её приготовил. ごちそうさまでした (Gochisoosamadeshita) после еды благодарит за угощение. いってきます/いってらっしゃい (Itte kimasu/Itte rasshai) и ただいま/おかえりなさい (Tadaima/Okaeri nasai) обмениваются при выходе из дома и возвращении, подчёркивая важность семейного очага."
       }
     ]
   }

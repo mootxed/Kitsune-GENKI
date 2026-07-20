@@ -39,3 +39,25 @@ export function dueCards(srsRecords, chapterId, now = Date.now()) {
 export function allCards(srsRecords, chapterId) {
   return Object.values(srsRecords).filter((c) => !chapterId || cardChapter(c.id) === chapterId);
 }
+
+export function getUnlockedParticles(chapters, lessons) {
+  const particles = new Set();
+
+  lessons.forEach((lesson, idx) => {
+    const chapterId = idx + 1;
+    const chapter = chapters[chapterId];
+
+    // Проверяем, что урок разблокирован (>=3 выполненных заданий)
+    if (chapter) {
+      const completedLessons = Object.values(chapter.checklist || {}).filter(
+        (val) => val === true
+      ).length;
+
+      if (completedLessons >= 3 && lesson.particles) {
+        lesson.particles.forEach((p) => particles.add(p));
+      }
+    }
+  });
+
+  return Array.from(particles);
+}
