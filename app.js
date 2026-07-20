@@ -426,6 +426,13 @@ function setupRouter() {
       const tabsContainerSession = document.getElementById('srs-tabs-container');
       if (tabsContainerSession) tabsContainerSession.classList.add('hidden');
 
+      // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Полностью очищаем #srs-body от dashboard HTML
+      const srsBody = document.getElementById('srs-body');
+      if (srsBody) {
+        srsBody.innerHTML = '';
+        console.log('[SRS] Dashboard cleared from #srs-body');
+      }
+
       console.log('[SRS] Calling renderFlash...');
       renderFlash(state, dependencies);
       console.log('[SRS] renderFlash executed successfully');

@@ -1410,7 +1410,13 @@ export function renderFlash(state, dependencies) {
   if (tabbar) tabbar.style.display = 'none';
 
   const body = $('#srs-body');
-  if (!body) return;
+  if (!body) {
+    console.error('[renderFlash] #srs-body not found!');
+    return;
+  }
+
+  // Убедимся, что контейнер видим
+  body.style.display = 'block';
 
   let card;
 
