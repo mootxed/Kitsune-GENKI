@@ -593,7 +593,7 @@ function renderTypingMode(word, state, dependencies) {
   const displayCategory = word.category || 'Слово';
 
   let isChecked = false;
-  let isCorrect = false;
+  let typingMistakes = 0;
 
   // Скрываем tabbar во время SRS-сессии
   const tabbar = document.querySelector('.tabbar');
@@ -638,20 +638,13 @@ function renderTypingMode(word, state, dependencies) {
           <button class="srs-keyboard-backspace" id="srs-backspace">⌫ Стереть</button>
           <button class="btn-primary typing-check" id="typing-check">Проверить</button>
         </div>
-        <div id="typing-answer" class="typing-answer hidden"></div>
-      </div>
-      <div id="rate" class="hidden">
-        <div class="rate-row">
-          <button class="rate-btn rate-good" data-q="4" data-testid="rate-good">Хорошо</button>
-          <button class="rate-btn rate-easy" data-q="5" data-testid="rate-easy">Легко</button>
-        </div>
+        <div id="typing-hint-message" class="typing-hint hidden" style="color: var(--orange); font-weight: 700; margin-top: 8px;"></div>
       </div>
     </div>`;
 
   const input = $('#typing-input');
   const checkBtn = $('#typing-check');
-  const rateDiv = $('#rate');
-  const answerDiv = $('#typing-answer');
+  const hintMessage = $('#typing-hint-message');
   const backspaceBtn = $('#srs-backspace');
 
   // Обработчики виртуальной клавиатуры
@@ -677,34 +670,46 @@ function renderTypingMode(word, state, dependencies) {
     const userAnswer = input.value.trim();
     const correctAnswer = displayWriting;
 
-    isCorrect = userAnswer === correctAnswer;
-    isChecked = true;
-
-    if (isCorrect) {
+    if (userAnswer === correctAnswer) {
       input.classList.add('correct');
-      input.classList.remove('incorrect');
-      answerDiv.innerHTML = `<p class="typing-correct">✅ Правильно!</p>`;
-      answerDiv.classList.remove('hidden');
-      rateDiv.classList.remove('hidden');
-      checkBtn.disabled = true;
-      input.disabled = true;
-    } else {
-      input.classList.add('incorrect');
-      input.classList.remove('correct');
-      answerDiv.innerHTML = `
-        <p class="typing-incorrect">❌ Неправильно</p>
-        <p class="typing-correct-answer">Правильный ответ: <strong>${correctAnswer}</strong></p>
-        <p class="typing-translation">${displayTranslation}</p>
-      `;
-      answerDiv.classList.remove('hidden');
-      input.disabled = true;
-      checkBtn.disabled = true;
+      input.classList.remove('incorrect', 'shake-error');
 
-      // Автоматически логируем как "Again" (качество 0)
+      const quality = typingMistakes === 0 ? 5 : 3;
+
       setTimeout(() => {
-        handleRating(0);
-      }, 2000);
+        handleRating(quality);
+      }, 500);
+    } else {
+      typingMistakes++;
+
+      if (typingMistakes === 1) {
+        input.classList.add('shake-error', 'incorrect');
+        input.classList.remove('correct');
+
+        setTimeout(() => {
+          input.classList.remove('shake-error');
+        }, 500);
+
+        hintMessage.textContent = `Подсказка: начинается на "${correctAnswer[0]}"`;
+        hintMessage.classList.remove('hidden');
+
+        isChecked = false;
+      } else {
+        input.classList.add('incorrect');
+        input.classList.remove('correct', 'shake-error');
+        input.disabled = true;
+        checkBtn.disabled = true;
+
+        hintMessage.innerHTML = `<p style="color: var(--danger); margin: 8px 0;">❌ Неправильно</p><p style="margin: 4px 0;">Правильный ответ: <strong style="color: var(--primary);">${correctAnswer}</strong></p>`;
+        hintMessage.classList.remove('hidden');
+
+        setTimeout(() => {
+          handleRating(0);
+        }, 1000);
+      }
     }
+
+    isChecked = typingMistakes >= 2 || userAnswer === correctAnswer;
   };
 
   const handleRating = (quality) => {
@@ -793,13 +798,6 @@ function renderTypingMode(word, state, dependencies) {
       flashCtx ? nav('chapter', flashCtx) : nav('srs');
     };
   }
-
-  $$('#rate .rate-btn').forEach((b) => {
-    b.onclick = () => {
-      const quality = parseInt(b.dataset.q, 10);
-      handleRating(quality);
-    };
-  });
 }
 
 // Функция рендеринга режима множественного выбора (4 варианта)

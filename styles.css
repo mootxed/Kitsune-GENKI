@@ -7509,7 +7509,7 @@ rt {
   font-weight: 600;
   line-height: 1.4;
   border: 2px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   background: var(--bg-card);
   color: var(--text);
   cursor: pointer;
