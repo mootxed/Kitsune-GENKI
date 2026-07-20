@@ -26,19 +26,16 @@ let kanjiSequence = [];
 let currentKanjiIndex = 0;
 
 // Константы вероятности режимов карточек
-const DRAWING_MODE_PROBABILITY = 0.15;
-const TYPING_MODE_PROBABILITY = 0.15;
-const MULTIPLE_CHOICE_PROBABILITY = 0.3;
-const MEANING_TO_KANJI_PROBABILITY = 0.2;
-// Оставшиеся 20% — стандартный режим kanji-to-meaning
+const DRAWING_MODE_PROBABILITY = 0.25;
+const TYPING_MODE_PROBABILITY = 0.25;
+const MULTIPLE_CHOICE_PROBABILITY = 0.5;
+// Оставшиеся 50% — режим множественного выбора
 
 // Типы режимов карточек
 const CARD_MODES = {
   DRAWING: 'drawing',
   TYPING: 'typing',
   MULTIPLE_CHOICE: 'multiple-choice',
-  MEANING_TO_KANJI: 'meaning-to-kanji',
-  KANJI_TO_MEANING: 'kanji-to-meaning',
 };
 
 // Конвертер Хирагана → Катакана (переиспользование из кроссвордов)
@@ -167,21 +164,8 @@ function determineCardMode(word) {
     return CARD_MODES.DRAWING;
   } else if (hasKanji && rand < DRAWING_MODE_PROBABILITY + TYPING_MODE_PROBABILITY) {
     return CARD_MODES.TYPING;
-  } else if (
-    rand <
-    DRAWING_MODE_PROBABILITY + TYPING_MODE_PROBABILITY + MULTIPLE_CHOICE_PROBABILITY
-  ) {
-    return CARD_MODES.MULTIPLE_CHOICE;
-  } else if (
-    rand <
-    DRAWING_MODE_PROBABILITY +
-      TYPING_MODE_PROBABILITY +
-      MULTIPLE_CHOICE_PROBABILITY +
-      MEANING_TO_KANJI_PROBABILITY
-  ) {
-    return CARD_MODES.MEANING_TO_KANJI;
   } else {
-    return CARD_MODES.KANJI_TO_MEANING;
+    return CARD_MODES.MULTIPLE_CHOICE;
   }
 }
 
@@ -611,6 +595,10 @@ function renderTypingMode(word, state, dependencies) {
   let isChecked = false;
   let isCorrect = false;
 
+  // Скрываем tabbar во время SRS-сессии
+  const tabbar = document.querySelector('.tabbar');
+  if (tabbar) tabbar.style.display = 'none';
+
   // Генерируем виртуальную клавиатуру
   const keyboardLetters = generateSrsKeyboard(displayWriting);
 
@@ -776,6 +764,10 @@ function renderTypingMode(word, state, dependencies) {
       e.preventDefault();
       e.stopImmediatePropagation();
 
+      // Восстанавливаем tabbar
+      const tabbar = document.querySelector('.tabbar');
+      if (tabbar) tabbar.style.display = '';
+
       if (sessionManager) {
         const stats = sessionManager.getStats();
         if (stats.reviewed > 0) {
@@ -830,6 +822,10 @@ function renderMultipleChoiceMode(word, state, dependencies) {
 
   let mistakeCount = 0;
 
+  // Скрываем tabbar во время SRS-сессии
+  const tabbar = document.querySelector('.tabbar');
+  if (tabbar) tabbar.style.display = 'none';
+
   // Генерируем 3 отвлекающих варианта
   const distractors = [];
   const allWords = LESSONS.flatMap((l) => l.words || []);
@@ -864,15 +860,15 @@ function renderMultipleChoiceMode(word, state, dependencies) {
       <div class="quiz-mode-container">
         <div class="quiz-prompt">
           <div class="flash-cat">${displayCategory}</div>
-          <p class="quiz-question">${displayKanji}</p>
-          <p class="quiz-hint">Выберите правильный перевод</p>
+          <p class="quiz-question">${displayTranslation}</p>
+          <p class="quiz-hint">Выберите правильное слово</p>
         </div>
         <div class="quiz-options-grid">
           ${options
             .map(
               (opt) => `
             <button class="quiz-option-btn" data-word-id="${opt.id}">
-              ${opt.translation}
+              ${opt.kanji || opt.writing}
             </button>
           `
             )
@@ -973,6 +969,10 @@ function renderMultipleChoiceMode(word, state, dependencies) {
     exitBtn.onclick = (e) => {
       e.preventDefault();
       e.stopImmediatePropagation();
+
+      // Восстанавливаем tabbar
+      const tabbar = document.querySelector('.tabbar');
+      if (tabbar) tabbar.style.display = '';
 
       if (sessionManager) {
         const stats = sessionManager.getStats();
@@ -1078,7 +1078,11 @@ export function renderFlash(state, dependencies) {
   const displayRomaji = word.romaji || '';
 
   // Определяем режим карточки
-  const cardMode = !flashRevealed ? determineCardMode(word) : CARD_MODES.KANJI_TO_MEANING;
+  const cardMode = determineCardMode(word);
+
+  // Скрываем tabbar во время SRS-сессии
+  const tabbar = document.querySelector('.tabbar');
+  if (tabbar) tabbar.style.display = 'none';
 
   // Режим рисования
   if (cardMode === CARD_MODES.DRAWING) {
@@ -1108,6 +1112,10 @@ export function renderFlash(state, dependencies) {
       exitBtn.onclick = (e) => {
         e.preventDefault();
         e.stopImmediatePropagation();
+
+        // Восстанавливаем tabbar
+        const tabbar = document.querySelector('.tabbar');
+        if (tabbar) tabbar.style.display = '';
 
         if (sessionManager) {
           const stats = sessionManager.getStats();
@@ -1159,164 +1167,6 @@ export function renderFlash(state, dependencies) {
     renderMultipleChoiceMode(word, state, dependencies);
     return;
   }
-
-  // Режимы с 3D-карточкой: Meaning → Kanji и Kanji → Meaning
-  const isMeaningToKanji = cardMode === CARD_MODES.MEANING_TO_KANJI;
-
-  body.innerHTML = `
-    <div class="flash-wrap">
-      <div class="flash-top">
-        <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
-        <button class="btn-ghost" id="flash-exit">Выйти</button>
-      </div>
-      <div class="flash-card-3d" id="flash-card" data-testid="flash-card">
-        <div class="flash-inner ${flashRevealed ? 'flipped' : ''}">
-          <div class="flash-front">
-            ${!isMeaningToKanji ? `<button class="flash-speak" id="flash-speak" aria-label="Озвучить">🔊</button>` : ''}
-            <div class="flash-cat">${displayCategory}</div>
-            <p class="flash-jp">${isMeaningToKanji ? displayTranslation : displayKanji}</p>
-            <p class="flash-tap-hint">Нажмите, чтобы показать ответ</p>
-          </div>
-          <div class="flash-back">
-            ${
-              isMeaningToKanji
-                ? `
-              <button class="flash-speak" id="flash-speak-back" aria-label="Озвучить">🔊</button>
-              <p class="flash-jp">${displayKanji}</p>
-              ${displayKanji !== displayWriting ? `<p class="flash-reading">${displayWriting}</p>` : ''}
-              ${hideRomaji ? '' : `<p class="flash-romaji">${displayRomaji}</p>`}
-            `
-                : `
-              <p class="flash-tr">${displayTranslation}</p>
-              ${displayKanji !== displayWriting ? `<p class="flash-reading">${displayWriting}</p>` : ''}
-              ${hideRomaji ? '' : `<p class="flash-romaji">${displayRomaji}</p>`}
-            `
-            }
-          </div>
-        </div>
-      </div>
-      <div id="rate" class="${flashRevealed ? '' : 'hidden'}">
-        <div class="rate-row">
-          <button class="rate-btn rate-again" data-q="0" data-testid="rate-again">Снова</button>
-          <button class="rate-btn rate-hard" data-q="3" data-testid="rate-hard">Трудно</button>
-          <button class="rate-btn rate-good" data-q="4" data-testid="rate-good">Хорошо</button>
-          <button class="rate-btn rate-easy" data-q="5" data-testid="rate-easy">Легко</button>
-        </div>
-      </div>
-    </div>`;
-
-  const cardEl = $('#flash-card');
-  const rateDiv = $('#rate');
-  const speakBtn = $('#flash-speak');
-  const speakBtnBack = $('#flash-speak-back');
-
-  if (!flashRevealed) {
-    if (speakBtn && !isMeaningToKanji)
-      speakBtn.onclick = (e) => {
-        e.stopPropagation();
-        speakJapanese(displayWriting);
-      };
-    if (cardEl) {
-      cardEl.onclick = () => {
-        flashRevealed = true;
-        cardEl.querySelector('.flash-inner').classList.add('flipped');
-        rateDiv.classList.remove('hidden');
-        if (isMeaningToKanji || cardMode === CARD_MODES.KANJI_TO_MEANING) {
-          speakJapanese(displayWriting);
-        }
-      };
-    }
-  } else {
-    if (isMeaningToKanji) {
-      speakJapanese(displayWriting);
-      if (speakBtnBack)
-        speakBtnBack.onclick = (e) => {
-          e.stopPropagation();
-          speakJapanese(displayWriting);
-        };
-    } else {
-      speakJapanese(displayWriting);
-      if (speakBtn)
-        speakBtn.onclick = (e) => {
-          e.stopPropagation();
-          speakJapanese(displayWriting);
-        };
-    }
-  }
-
-  const exitBtn = $('#flash-exit');
-  if (exitBtn) {
-    exitBtn.onclick = (e) => {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-
-      if (sessionManager) {
-        const stats = sessionManager.getStats();
-        if (stats.reviewed > 0) {
-          showCompletionScreen({
-            title: 'おつかれさま!',
-            subtitle: 'Хорошая работа!',
-            desc: `Вы повторили часть карточек`,
-            theme: 'success',
-            rewards: [
-              { icon: '📚', label: `${stats.reviewed} карточек` },
-              { icon: '✨', label: `${stats.perfect} без ошибок` },
-              { icon: '🪙', label: `+${stats.reviewed} XP` },
-            ],
-            onContinue: () => {
-              sessionManager = null;
-              flashCtx ? nav('chapter', flashCtx) : nav('srs');
-            },
-          });
-          return;
-        }
-      }
-      sessionManager = null;
-      flashCtx ? nav('chapter', flashCtx) : nav('srs');
-    };
-  }
-
-  $$('#rate .rate-btn').forEach((b) => {
-    b.onclick = () => {
-      const quality = parseInt(b.dataset.q, 10);
-      const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
-
-      const srsCard = state.srs[card.id];
-      if (srsCard) {
-        if (srsCard.progress === undefined) srsCard.progress = 0;
-
-        if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
-        else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
-        else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
-        else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
-      }
-
-      if (window.QuestsManager && sessionManager) {
-        const cardState = sessionManager.getCardState(card.id);
-        const isFirstAttempt = cardState.sessionLapses === 0;
-
-        if (quality >= 4 && isFirstAttempt) {
-          window.QuestsManager.incrementStreakCorrect(state);
-        } else if (quality < 3) {
-          window.QuestsManager.resetStreakCorrect(state);
-        }
-      }
-
-      if (sessionManager) {
-        sessionManager.answerCard(card.id, quality, state.srs);
-      } else {
-        SRS.review(state.srs[card.id], quality);
-        flashIdx += 1;
-      }
-
-      appAddXP(XP_CARD);
-      save(true);
-      markActivity();
-      flashRevealed = false;
-      renderFlash(state, dependencies);
-      updateSrsBadge();
-    };
-  });
 }
 
 // Функция рендеринга словаря
