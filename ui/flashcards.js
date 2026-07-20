@@ -1387,6 +1387,10 @@ export function renderFlash(state, dependencies) {
     markActivity,
   } = dependencies;
 
+  // Скрываем .tabbar при входе в режим SRS-карточек
+  const tabbar = document.querySelector('.tabbar');
+  if (tabbar) tabbar.style.display = 'none';
+
   const body = $('#srs-body');
   if (!body) return;
 
@@ -1458,10 +1462,6 @@ export function renderFlash(state, dependencies) {
 
   // Определяем режим карточки: используем forcedMode если есть, иначе случайный выбор
   const cardMode = card.forcedMode || determineCardMode(word);
-
-  // Скрываем tabbar во время SRS-сессии
-  const tabbar = document.querySelector('.tabbar');
-  if (tabbar) tabbar.style.display = 'none';
 
   // Режим рисования
   if (cardMode === CARD_MODES.DRAWING) {
