@@ -6712,7 +6712,6 @@ rt {
   border-radius: 8px;
   padding: 8px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .grid-cell {
@@ -6754,6 +6753,38 @@ rt {
   background: rgba(76, 175, 80, 0.2);
   border-color: #4caf50;
   animation: correctPulse 0.5s ease;
+}
+
+/* Зелёная подсветка для правильной буквы, введённой вручную */
+.grid-cell-letter-manual {
+  background: rgba(76, 175, 80, 0.25) !important;
+  border-color: #4caf50 !important;
+  animation: correctLetterPulse 0.3s ease;
+}
+
+.grid-cell-letter-manual .kana-hira,
+.grid-cell-letter-manual .kana-kata {
+  color: #2e7d32 !important;
+  font-weight: 600;
+}
+
+/* Жёлтая подсветка для буквы, открытой через подсказку */
+.grid-cell-letter-hint {
+  background: rgba(255, 235, 59, 0.35) !important;
+  border-color: #FBC02D !important;
+  animation: correctLetterPulse 0.3s ease;
+}
+
+.grid-cell-letter-hint .kana-hira,
+.grid-cell-letter-hint .kana-kata {
+  color: #F57F17 !important;
+  font-weight: 600;
+}
+
+@keyframes correctLetterPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 .grid-cell.correct-hint {
@@ -6832,6 +6863,7 @@ rt {
   width: 100%;
   height: 100%;
   justify-content: center;
+  background: var(--bg-card);
 }
 
 .kana-hira {
@@ -6998,8 +7030,57 @@ rt {
 /* ===== ЗАДАЧА 2 + 3: НОВАЯ СТРУКТУРА КРОССВОРДА С ЗУМОМ ===== */
 
 #crossword-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: 100dvh;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  box-shadow: none !important;
+}
+
+/* Viewport для "бесконечного холста" */
+.crossword-viewport {
+  flex: 1;
+  width: 100%;
+  height: calc(100dvh - var(--header-height, 70px));
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  box-shadow: none !important;
+}
+
+.crossword-viewport::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.crossword-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.crossword-viewport::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.crossword-viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Canvas с искусственным padding для панорамирования */
+.crossword-canvas {
+  padding: 80vh 80vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: max-content;
+  min-height: max-content;
+  box-shadow: none !important;
 }
 
 .crossword-bottom-panel {
@@ -7009,14 +7090,14 @@ rt {
   right: 0;
   width: 100%;
   background: var(--bg);
-  padding: 16px;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   border-top: 1px solid var(--border);
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
   z-index: 100;
   transform: translateY(100%);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  max-height: 40vh;
+  max-height: 30vh;
   overflow-y: auto;
 }
 
@@ -7025,11 +7106,18 @@ rt {
 }
 
 .crossword-grid {
-  --cw-cell-size: 40px;
+  --cw-cell-size: 48px;
   display: inline-grid;
-  margin: 0 auto;
   gap: 2px;
-  max-width: max-content;
+  transform-origin: center center;
+  will-change: transform;
+  transition: transform 0.15s ease-out;
+  background: transparent !important;
+}
+
+/* Скрываем пустые ячейки кроссворда */
+.grid-cell-empty {
+  display: none !important;
 }
 
 .crossword-grid .grid-cell {
@@ -7040,7 +7128,7 @@ rt {
 
 .cw-zoom-controls {
   position: fixed;
-  top: 20px;
+  top: calc(var(--header-height, 70px) + 16px);
   right: 20px;
   display: flex;
   flex-direction: column;
@@ -7081,7 +7169,7 @@ rt {
   }
 
   .cw-zoom-controls {
-    top: 10px;
+    top: calc(var(--header-height, 70px) + 8px);
     right: 10px;
   }
 
@@ -7265,4 +7353,256 @@ rt {
   font-style: italic;
   margin-top: 8px;
   transition: var(--transition-theme);
+}
+
+/* ===== SRS Virtual Keyboard Styles ===== */
+.srs-keyboard-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+  margin: 16px auto 0;
+}
+
+.srs-kana-key {
+  position: relative;
+  padding: 16px 8px;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.srs-kana-key:active {
+  transform: scale(0.95);
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.srs-kana-key:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.key-hira {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.key-kata {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1;
+  transition: var(--transition-theme);
+}
+
+.srs-kana-key:active .key-kata {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.srs-keyboard-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 8px;
+}
+
+.srs-keyboard-backspace {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.srs-keyboard-backspace:active {
+  transform: scale(0.98);
+  background: var(--orange-dark);
+}
+
+.typing-check {
+  flex: 1.5;
+}
+
+/* ===== Multiple Choice Quiz Styles ===== */
+.quiz-mode-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 32px 20px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.quiz-prompt {
+  text-align: center;
+  width: 100%;
+}
+
+.quiz-question {
+  font-size: clamp(40px, 10vw, 56px);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+  line-height: 1.2;
+  transition: var(--transition-theme);
+}
+
+.quiz-hint {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 8px;
+  transition: var(--transition-theme);
+}
+
+.quiz-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.quiz-option-btn {
+  padding: 20px 16px;
+  min-height: 80px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.quiz-option-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+  border-color: var(--primary);
+}
+
+.quiz-option-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.quiz-option-btn.correct {
+  background: var(--ok);
+  color: white;
+  border-color: var(--ok);
+  animation: correctPulse 0.5s ease;
+}
+
+.quiz-option-btn.incorrect {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
+  animation: incorrectShake 0.5s ease;
+  opacity: 0.6;
+}
+
+.quiz-option-btn:disabled {
+  cursor: not-allowed;
+}
+
+@keyframes correctPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes incorrectShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  75% {
+    transform: translateX(8px);
+  }
+}
+
+/* Адаптация для маленьких экранов */
+@media (max-width: 400px) {
+  .srs-keyboard-container {
+    gap: 6px;
+    max-width: 280px;
+  }
+
+  .srs-kana-key {
+    padding: 12px 6px;
+    min-height: 50px;
+  }
+
+  .key-hira {
+    font-size: 18px;
+  }
+
+  .key-kata {
+    font-size: 11px;
+  }
+
+  .quiz-options-grid {
+    gap: 10px;
+    max-width: 340px;
+  }
+
+  .quiz-option-btn {
+    padding: 16px 12px;
+    min-height: 70px;
+    font-size: 15px;
+  }
+}
+
+/* Темная тема для клавиатуры */
+[data-theme='dark'] .srs-kana-key:active {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+[data-theme='dark'] .typing-input.correct {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+[data-theme='dark'] .typing-input.incorrect {
+  background: rgba(255, 59, 48, 0.2);
+  border-color: var(--danger);
+  color: var(--danger);
 }

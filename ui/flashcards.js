@@ -26,18 +26,136 @@ let kanjiSequence = [];
 let currentKanjiIndex = 0;
 
 // Константы вероятности режимов карточек
-const DRAWING_MODE_PROBABILITY = 0.2;
-const MEANING_TO_KANJI_PROBABILITY = 0.3;
-const TYPING_MODE_PROBABILITY = 0.2;
-// Оставшиеся 30% — стандартный режим kanji-to-meaning
+const DRAWING_MODE_PROBABILITY = 0.15;
+const TYPING_MODE_PROBABILITY = 0.15;
+const MULTIPLE_CHOICE_PROBABILITY = 0.3;
+const MEANING_TO_KANJI_PROBABILITY = 0.2;
+// Оставшиеся 20% — стандартный режим kanji-to-meaning
 
 // Типы режимов карточек
 const CARD_MODES = {
   DRAWING: 'drawing',
-  MEANING_TO_KANJI: 'meaning-to-kanji',
   TYPING: 'typing',
+  MULTIPLE_CHOICE: 'multiple-choice',
+  MEANING_TO_KANJI: 'meaning-to-kanji',
   KANJI_TO_MEANING: 'kanji-to-meaning',
 };
+
+// Конвертер Хирагана → Катакана (переиспользование из кроссвордов)
+const HIRAGANA_TO_KATAKANA = {
+  あ: 'ア',
+  い: 'イ',
+  う: 'ウ',
+  え: 'エ',
+  お: 'オ',
+  か: 'カ',
+  き: 'キ',
+  く: 'ク',
+  け: 'ケ',
+  こ: 'コ',
+  さ: 'サ',
+  し: 'シ',
+  す: 'ス',
+  せ: 'セ',
+  そ: 'ソ',
+  た: 'タ',
+  ち: 'チ',
+  つ: 'ツ',
+  て: 'テ',
+  と: 'ト',
+  な: 'ナ',
+  に: 'ニ',
+  ぬ: 'ヌ',
+  ね: 'ネ',
+  の: 'ノ',
+  は: 'ハ',
+  ひ: 'ヒ',
+  ふ: 'フ',
+  へ: 'ヘ',
+  ほ: 'ホ',
+  ま: 'マ',
+  み: 'ミ',
+  む: 'ム',
+  め: 'メ',
+  も: 'モ',
+  や: 'ヤ',
+  ゆ: 'ユ',
+  よ: 'ヨ',
+  ら: 'ラ',
+  り: 'リ',
+  る: 'ル',
+  れ: 'レ',
+  ろ: 'ロ',
+  わ: 'ワ',
+  を: 'ヲ',
+  ん: 'ン',
+  が: 'ガ',
+  ぎ: 'ギ',
+  ぐ: 'グ',
+  げ: 'ゲ',
+  ご: 'ゴ',
+  ざ: 'ザ',
+  じ: 'ジ',
+  ず: 'ズ',
+  ぜ: 'ゼ',
+  ぞ: 'ゾ',
+  だ: 'ダ',
+  ぢ: 'ヂ',
+  づ: 'ヅ',
+  で: 'デ',
+  ど: 'ド',
+  ば: 'バ',
+  び: 'ビ',
+  ぶ: 'ブ',
+  べ: 'ベ',
+  ぼ: 'ボ',
+  ぱ: 'パ',
+  ぴ: 'ピ',
+  ぷ: 'プ',
+  ぺ: 'ペ',
+  ぽ: 'ポ',
+  ゃ: 'ャ',
+  ゅ: 'ュ',
+  ょ: 'ョ',
+  っ: 'ッ',
+  ー: 'ー',
+};
+
+// Вспомогательная функция перемешивания массива
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Функция генерации виртуальной клавиатуры для SRS
+function generateSrsKeyboard(correctAnswer) {
+  const allKana = Object.keys(HIRAGANA_TO_KATAKANA);
+
+  // Собираем уникальные символы из правильного ответа
+  const correctLetters = [...new Set(correctAnswer.split(''))];
+
+  // Ограничиваем до максимум 8 символов
+  const limitedCorrect = correctLetters.slice(0, 8);
+
+  // Добавляем отвлекающие символы до ровно 8
+  const distractors = [];
+  const targetTotal = 8;
+  const distractorCount = targetTotal - limitedCorrect.length;
+
+  while (distractors.length < distractorCount) {
+    const randomKana = allKana[Math.floor(Math.random() * allKana.length)];
+    if (!correctAnswer.includes(randomKana) && !distractors.includes(randomKana)) {
+      distractors.push(randomKana);
+    }
+  }
+
+  // Перемешиваем и гарантируем ровно 8 символов
+  return shuffleArray([...limitedCorrect, ...distractors]).slice(0, 8);
+}
 
 // Функция определения режима карточки
 function determineCardMode(word) {
@@ -51,7 +169,15 @@ function determineCardMode(word) {
     return CARD_MODES.TYPING;
   } else if (
     rand <
-    DRAWING_MODE_PROBABILITY + TYPING_MODE_PROBABILITY + MEANING_TO_KANJI_PROBABILITY
+    DRAWING_MODE_PROBABILITY + TYPING_MODE_PROBABILITY + MULTIPLE_CHOICE_PROBABILITY
+  ) {
+    return CARD_MODES.MULTIPLE_CHOICE;
+  } else if (
+    rand <
+    DRAWING_MODE_PROBABILITY +
+      TYPING_MODE_PROBABILITY +
+      MULTIPLE_CHOICE_PROBABILITY +
+      MEANING_TO_KANJI_PROBABILITY
   ) {
     return CARD_MODES.MEANING_TO_KANJI;
   } else {
@@ -485,6 +611,9 @@ function renderTypingMode(word, state, dependencies) {
   let isChecked = false;
   let isCorrect = false;
 
+  // Генерируем виртуальную клавиатуру
+  const keyboardLetters = generateSrsKeyboard(displayWriting);
+
   body.innerHTML = `
     <div class="flash-wrap">
       <div class="flash-top">
@@ -502,10 +631,25 @@ function renderTypingMode(word, state, dependencies) {
           class="typing-input" 
           id="typing-input"
           autocomplete="off"
-          autofocus
           placeholder="например: だいがく"
+          readonly
         />
-        <button class="btn-primary typing-check" id="typing-check">Проверить</button>
+        <div class="srs-keyboard-container" id="srs-keyboard">
+          ${keyboardLetters
+            .map(
+              (letter) => `
+            <button class="srs-kana-key" data-letter="${letter}">
+              <span class="key-hira">${letter}</span>
+              <span class="key-kata">${HIRAGANA_TO_KATAKANA[letter] || letter}</span>
+            </button>
+          `
+            )
+            .join('')}
+        </div>
+        <div class="srs-keyboard-actions">
+          <button class="srs-keyboard-backspace" id="srs-backspace">⌫ Стереть</button>
+          <button class="btn-primary typing-check" id="typing-check">Проверить</button>
+        </div>
         <div id="typing-answer" class="typing-answer hidden"></div>
       </div>
       <div id="rate" class="hidden">
@@ -520,6 +664,24 @@ function renderTypingMode(word, state, dependencies) {
   const checkBtn = $('#typing-check');
   const rateDiv = $('#rate');
   const answerDiv = $('#typing-answer');
+  const backspaceBtn = $('#srs-backspace');
+
+  // Обработчики виртуальной клавиатуры
+  $$('.srs-kana-key').forEach((btn) => {
+    btn.onclick = () => {
+      if (isChecked) return;
+      const letter = btn.dataset.letter;
+      input.value += letter;
+    };
+  });
+
+  // Обработчик backspace
+  if (backspaceBtn) {
+    backspaceBtn.onclick = () => {
+      if (isChecked) return;
+      input.value = input.value.slice(0, -1);
+    };
+  }
 
   const handleCheck = () => {
     if (isChecked) return;
@@ -646,6 +808,197 @@ function renderTypingMode(word, state, dependencies) {
       handleRating(quality);
     };
   });
+}
+
+// Функция рендеринга режима множественного выбора (4 варианта)
+function renderMultipleChoiceMode(word, state, dependencies) {
+  const {
+    save,
+    showCompletionScreen,
+    XP_CARD,
+    appAddXP,
+    updateSrsBadge,
+    nav,
+    markActivity,
+    LESSONS,
+  } = dependencies;
+
+  const body = $('#srs-body');
+  const displayKanji = word.kanji || word.writing;
+  const displayTranslation = word.translation;
+  const displayCategory = word.category || 'Слово';
+
+  let mistakeCount = 0;
+
+  // Генерируем 3 отвлекающих варианта
+  const distractors = [];
+  const allWords = LESSONS.flatMap((l) => l.words || []);
+
+  const candidates = allWords
+    .filter((w) => w.id !== word.id)
+    .filter((w) => w.category === word.category)
+    .filter((w) => isWordUnlocked(w.id, state.chapters));
+
+  const shuffled = shuffleArray(candidates);
+  for (let i = 0; i < Math.min(3, shuffled.length); i++) {
+    distractors.push(shuffled[i]);
+  }
+
+  // Если не хватает отвлекающих вариантов, берём случайные слова
+  while (distractors.length < 3 && allWords.length >= 4) {
+    const randomWord = allWords[Math.floor(Math.random() * allWords.length)];
+    if (randomWord.id !== word.id && !distractors.find((d) => d.id === randomWord.id)) {
+      distractors.push(randomWord);
+    }
+  }
+
+  // Составляем массив из 4 вариантов и перемешиваем
+  const options = shuffleArray([word, ...distractors.slice(0, 3)]);
+
+  body.innerHTML = `
+    <div class="flash-wrap">
+      <div class="flash-top">
+        <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
+        <button class="btn-ghost" id="flash-exit">Выйти</button>
+      </div>
+      <div class="quiz-mode-container">
+        <div class="quiz-prompt">
+          <div class="flash-cat">${displayCategory}</div>
+          <p class="quiz-question">${displayKanji}</p>
+          <p class="quiz-hint">Выберите правильный перевод</p>
+        </div>
+        <div class="quiz-options-grid">
+          ${options
+            .map(
+              (opt) => `
+            <button class="quiz-option-btn" data-word-id="${opt.id}">
+              ${opt.translation}
+            </button>
+          `
+            )
+            .join('')}
+        </div>
+      </div>
+    </div>`;
+
+  const handleRating = (quality) => {
+    const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+
+    const srsCard = state.srs[card.id];
+    if (srsCard) {
+      if (srsCard.progress === undefined) srsCard.progress = 0;
+
+      if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
+      else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
+      else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
+      else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
+    }
+
+    if (window.QuestsManager && sessionManager) {
+      const cardState = sessionManager.getCardState(card.id);
+      const isFirstAttempt = cardState.sessionLapses === 0;
+
+      if (quality >= 4 && isFirstAttempt) {
+        window.QuestsManager.incrementStreakCorrect(state);
+      } else if (quality < 3) {
+        window.QuestsManager.resetStreakCorrect(state);
+      }
+    }
+
+    if (sessionManager) {
+      sessionManager.answerCard(card.id, quality, state.srs);
+    } else {
+      SRS.review(state.srs[card.id], quality);
+      flashIdx += 1;
+    }
+
+    appAddXP(XP_CARD);
+    save(true);
+    markActivity();
+    flashRevealed = false;
+    renderFlash(state, dependencies);
+    updateSrsBadge();
+  };
+
+  $$('.quiz-option-btn').forEach((btn) => {
+    btn.onclick = () => {
+      if (btn.disabled) return;
+
+      const selectedWordId = btn.dataset.wordId;
+      const isCorrect = selectedWordId === word.id;
+
+      if (isCorrect) {
+        btn.classList.add('correct');
+        btn.disabled = true;
+
+        // Вычисляем качество на основе ошибок
+        let quality;
+        if (mistakeCount === 0) {
+          quality = 5; // Easy
+        } else if (mistakeCount === 1) {
+          quality = 3; // Hard
+        } else {
+          quality = 0; // Again
+        }
+
+        setTimeout(() => {
+          handleRating(quality);
+        }, 600);
+      } else {
+        btn.classList.add('incorrect');
+        btn.disabled = true;
+        mistakeCount++;
+
+        // Если 2+ ошибки, автоматически завершаем с quality=0
+        if (mistakeCount >= 2) {
+          $$('.quiz-option-btn').forEach((b) => (b.disabled = true));
+
+          // Подсвечиваем правильный ответ зелёным
+          $$('.quiz-option-btn').forEach((b) => {
+            if (b.dataset.wordId === word.id) {
+              b.classList.add('correct');
+            }
+          });
+
+          setTimeout(() => {
+            handleRating(0);
+          }, 1000);
+        }
+      }
+    };
+  });
+
+  const exitBtn = $('#flash-exit');
+  if (exitBtn) {
+    exitBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      if (sessionManager) {
+        const stats = sessionManager.getStats();
+        if (stats.reviewed > 0) {
+          showCompletionScreen({
+            title: 'おつかれさま!',
+            subtitle: 'Хорошая работа!',
+            desc: `Вы повторили часть карточек`,
+            theme: 'success',
+            rewards: [
+              { icon: '📚', label: `${stats.reviewed} карточек` },
+              { icon: '✨', label: `${stats.perfect} без ошибок` },
+              { icon: '🪙', label: `+${stats.reviewed} XP` },
+            ],
+            onContinue: () => {
+              sessionManager = null;
+              flashCtx ? nav('chapter', flashCtx) : nav('srs');
+            },
+          });
+          return;
+        }
+      }
+      sessionManager = null;
+      flashCtx ? nav('chapter', flashCtx) : nav('srs');
+    };
+  }
 }
 
 // Главная функция рендеринга карточки
@@ -798,6 +1151,12 @@ export function renderFlash(state, dependencies) {
   // Режим ввода с клавиатуры
   if (cardMode === CARD_MODES.TYPING) {
     renderTypingMode(word, state, dependencies);
+    return;
+  }
+
+  // Режим множественного выбора (4 варианта)
+  if (cardMode === CARD_MODES.MULTIPLE_CHOICE) {
+    renderMultipleChoiceMode(word, state, dependencies);
     return;
   }
 
