@@ -953,9 +953,15 @@ function renderTypingMode(word, state, dependencies) {
       e.preventDefault();
       e.stopImmediatePropagation();
 
-      // Восстанавливаем tabbar
+      // Восстанавливаем tabbar, header и tabs SRS
       const tabbar = document.querySelector('.tabbar');
       if (tabbar) tabbar.style.display = '';
+
+      const srsHeader = document.querySelector('#screen-srs .app-header');
+      if (srsHeader) srsHeader.style.display = '';
+
+      const tabsContainer = document.getElementById('srs-tabs-container');
+      if (tabsContainer) tabsContainer.classList.remove('hidden');
 
       if (sessionManager) {
         const stats = sessionManager.getStats();
@@ -1152,9 +1158,15 @@ function renderMultipleChoiceMode(word, state, dependencies) {
       e.preventDefault();
       e.stopImmediatePropagation();
 
-      // Восстанавливаем tabbar
+      // Восстанавливаем tabbar, header и tabs SRS
       const tabbar = document.querySelector('.tabbar');
       if (tabbar) tabbar.style.display = '';
+
+      const srsHeader = document.querySelector('#screen-srs .app-header');
+      if (srsHeader) srsHeader.style.display = '';
+
+      const tabsContainer = document.getElementById('srs-tabs-container');
+      if (tabsContainer) tabsContainer.classList.remove('hidden');
 
       if (sessionManager) {
         const stats = sessionManager.getStats();
@@ -1343,9 +1355,15 @@ function renderParticleQuizMode(particleCard, state, dependencies) {
       e.preventDefault();
       e.stopImmediatePropagation();
 
-      // Восстанавливаем tabbar
+      // Восстанавливаем tabbar, header и tabs SRS
       const tabbar = document.querySelector('.tabbar');
       if (tabbar) tabbar.style.display = '';
+
+      const srsHeader = document.querySelector('#screen-srs .app-header');
+      if (srsHeader) srsHeader.style.display = '';
+
+      const tabsContainer = document.getElementById('srs-tabs-container');
+      if (tabsContainer) tabsContainer.classList.remove('hidden');
 
       if (sessionManager) {
         const stats = sessionManager.getStats();
@@ -1492,9 +1510,15 @@ export function renderFlash(state, dependencies) {
         e.preventDefault();
         e.stopImmediatePropagation();
 
-        // Восстанавливаем tabbar
+        // Восстанавливаем tabbar, header и tabs SRS
         const tabbar = document.querySelector('.tabbar');
         if (tabbar) tabbar.style.display = '';
+
+        const srsHeader = document.querySelector('#screen-srs .app-header');
+        if (srsHeader) srsHeader.style.display = '';
+
+        const tabsContainer = document.getElementById('srs-tabs-container');
+        if (tabsContainer) tabsContainer.classList.remove('hidden');
 
         if (sessionManager) {
           const stats = sessionManager.getStats();
