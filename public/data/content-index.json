@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "particles_dictionary": "data/particles-dictionary.json",
   "chapters": [
     {
       "id": 1,

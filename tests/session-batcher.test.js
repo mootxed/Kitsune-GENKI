@@ -135,6 +135,46 @@ describe('SessionBatcher', () => {
       });
     });
 
+    it('НЕ должен терять карточки, когда кандзи-карточек меньше targetPerBlock', () => {
+      // 20 карточек, кандзи только у 2 — раньше 3 карточки молча выбрасывались
+      const fewKanjiCards = Array.from({ length: 20 }, (_, i) => ({
+        id: `few-kanji-${i}`,
+        word: {
+          id: `word-${i}`,
+          kanji: i < 2 ? `漢${i}` : '',
+          writing: `かな${i}`,
+          translation: `Translation ${i}`,
+        },
+      }));
+
+      const batcher = new SessionBatcher(fewKanjiCards, 20);
+      const organized = batcher.organizeBatchInto4Blocks(fewKanjiCards);
+
+      expect(organized.length).toBe(20);
+      expect(organized.filter((c) => c.forcedMode === CARD_MODES.DRAWING).length).toBe(2);
+      // Каждая исходная карточка должна присутствовать ровно один раз
+      const ids = organized.map((c) => c.id);
+      expect(new Set(ids).size).toBe(20);
+    });
+
+    it('НЕ должен терять карточки при полном отсутствии кандзи в батче', () => {
+      const noKanjiCards = Array.from({ length: 20 }, (_, i) => ({
+        id: `no-kanji-${i}`,
+        word: {
+          id: `word-${i}`,
+          kanji: '',
+          writing: `かな${i}`,
+          translation: `Translation ${i}`,
+        },
+      }));
+
+      const batcher = new SessionBatcher(noKanjiCards, 20);
+      const organized = batcher.organizeBatchInto4Blocks(noKanjiCards);
+
+      expect(organized.length).toBe(20);
+      expect(new Set(organized.map((c) => c.id)).size).toBe(20);
+    });
+
     it('должен корректно работать с мини-спринтом (6 карточек)', () => {
       const batcher = new SessionBatcher(mockCards, 20);
       const miniSprintBatch = batcher.batches[3].cards; // 6 карточек

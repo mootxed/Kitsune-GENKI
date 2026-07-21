@@ -5,7 +5,7 @@
  * Реализует логику краткосрочного повторения при ошибках.
  *
  * Основной принцип: "первая попытка" — только при первом показе карточки
- * в сессии применяется полный SM-2 алгоритм. Последующие попытки
+ * в сессии применяется полный FSRS алгоритм. Последующие попытки
  * (если была ошибка) — только внутрисессионное переучивание.
  */
 class SessionManager {
@@ -37,6 +37,7 @@ class SessionManager {
     this.stats = {
       total: cards.length,
       reviewed: 0,
+      attempted: 0, // уникальных карточек, по которым была попытка (первая попытка)
       perfect: 0, // без ошибок
       relearned: 0, // с ошибками, но выучены
       remaining: cards.length,
@@ -111,13 +112,15 @@ class SessionManager {
 
     // ===== ЛОГИКА ПЕРВОЙ ПОПЫТКИ =====
     if (item.isFirstAttempt) {
-      // Применяем полный SM-2 алгоритм
+      // Применяем полный FSRS алгоритм
       const cardInSrs = srsCollection[cardId];
       if (cardInSrs && this.srs) {
         this.srs.review(cardInSrs, quality);
       }
 
       item.isFirstAttempt = false;
+      // Засчитываем факт прохождения карточки независимо от правильности ответа
+      this.stats.attempted++;
 
       if (isError) {
         // Ошибка при первой попытке → переходим в цикл доучивания
@@ -128,8 +131,8 @@ class SessionManager {
         this._moveCardBack(queueIndex, quality);
 
         // ❌ Сброс стрика "5 подряд" при ошибке
-        if (this.questsManager) {
-          this.questsManager.trackStreak(false);
+        if (this.questsManager && this.state) {
+          this.questsManager.resetStreakCorrect(this.state);
         }
       } else {
         // Правильный ответ при первой попытке → карточка завершена
@@ -139,10 +142,8 @@ class SessionManager {
         this.stats.remaining--;
 
         // ✅ Трекинг квестов при успешном выполнении карточки
-        if (this.questsManager) {
-          this.questsManager.trackCardCompleted();
-          // Трекинг стрика "5 подряд" (только при первой попытке и quality >= 4)
-          this.questsManager.trackStreak(true);
+        if (this.questsManager && this.state) {
+          this.questsManager.incrementStreakCorrect(this.state);
         }
       }
 
@@ -156,8 +157,8 @@ class SessionManager {
       this._moveCardBack(queueIndex, quality);
 
       // ❌ Сброс стрика "5 подряд" при ошибке
-      if (this.questsManager) {
-        this.questsManager.trackStreak(false);
+      if (this.questsManager && this.state) {
+        this.questsManager.resetStreakCorrect(this.state);
       }
     } else {
       // Правильный ответ → завершаем карточку
@@ -167,10 +168,7 @@ class SessionManager {
       this.stats.remaining--;
 
       // ✅ Трекинг квестов (но НЕ стрика, т.к. это не первая попытка)
-      if (this.questsManager) {
-        this.questsManager.trackCardCompleted();
-        // Стрик НЕ трекаем, т.к. это повторная попытка после ошибки
-      }
+      // Стрик НЕ трекаем, т.к. это повторная попытка после ошибки
     }
   }
 
@@ -237,7 +235,9 @@ class SessionManager {
    * @returns {Object}
    */
   getStats() {
-    return { ...this.stats };
+    const firstAttempts = this.stats.perfect + this.stats.relearned;
+    const accuracy = firstAttempts > 0 ? (this.stats.perfect / firstAttempts) * 100 : 100;
+    return { ...this.stats, accuracy };
   }
 
   /**

@@ -6,6 +6,13 @@ import { allCards } from '../src/srs-helpers.js';
 import { SRS } from '../srs.js';
 import { speakJapanese } from '../src/audio-helper.js';
 import { SessionBatcher } from '../src/session-batcher.js';
+import { SessionManager } from '../session-manager.js';
+import {
+  CURATED_PARTICLE_SENTENCES,
+  SMART_PARTICLE_TEMPLATES,
+  SLOT_CATEGORIES,
+  FORBIDDEN_CATEGORIES,
+} from '../src/particle-templates.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -42,82 +49,14 @@ export const CARD_MODES = {
   TYPING: 'typing',
   MULTIPLE_CHOICE: 'multiple-choice',
   PARTICLE_QUIZ: 'particle-quiz',
+  SENTENCE_BUILDING: 'sentence-building',
 };
 
-// Шаблоны для генерации particle quiz
-const PARTICLE_TEMPLATES = {
-  の: {
-    slots: ['noun', 'noun'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (чей?: ${w1.translation})`,
-  },
-  を: {
-    slots: ['noun', 'verb'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (что?: ${w1.translation})`,
-  },
-  で: {
-    slots: ['noun', 'verb'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (где?: ${w1.translation})`,
-  },
-  に: {
-    slots: ['noun', 'verb'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (когда/куда?: ${w1.translation})`,
-  },
-  へ: {
-    slots: ['noun', 'verb'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (куда?: ${w1.translation})`,
-  },
-  と: {
-    slots: ['noun', 'verb'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (вместе с: ${w1.translation})`,
-  },
-  が: {
-    slots: ['noun', 'verb'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (кто/что?: ${w1.translation})`,
-  },
-  は: {
-    slots: ['noun', 'verb'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (тема: ${w1.translation})`,
-  },
-  も: {
-    slots: ['noun', 'verb'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (тоже: ${w1.translation})`,
-  },
-  から: {
-    slots: ['noun', 'verb'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (откуда?: ${w1.translation})`,
-  },
-  まで: {
-    slots: ['noun', 'verb'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (до куда?: ${w1.translation})`,
-  },
-  より: {
-    slots: ['noun', 'adjective'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (чем: ${w1.translation})`,
-  },
-  か: {
-    slots: ['noun', 'verb'],
-    template: (w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} (вопрос о: ${w1.translation})`,
-  },
-  // Fallback для неизвестных частиц
-  default: {
-    slots: ['noun', 'verb'],
-    template: (particle, w1, w2) => `${w1.writing} [ _ ] ${w2.writing}`,
-    hint: (w1, w2) => `${w2.translation} / ${w1.translation}`,
-  },
-};
+// Короткая форма перевода: первая часть до пояснения в скобках/после ';'
+function shortT(word) {
+  const t = (word && word.translation) || '';
+  return t.split(/[(;]/)[0].trim();
+}
 
 // Конвертер Хирагана → Катакана (переиспользование из кроссвордов)
 const HIRAGANA_TO_KATAKANA = {
@@ -209,81 +148,145 @@ function shuffleArray(array) {
   return arr;
 }
 
-// Функция генерации particle quiz
+// Вспомогательная функция для получения текста прогресса
+function getProgressText() {
+  if (sessionManager) {
+    const stats = sessionManager.getStats();
+    // Показываем: (пройдено попыток + 1) / всего
+    // attempted считает карточки, по которым была первая попытка — и правильная, и ошибочная.
+    // +1 потому что текущая карточка ещё не засчитана
+    const attempted = stats.attempted !== undefined ? stats.attempted : stats.reviewed;
+    const current = Math.min(attempted + 1, stats.total);
+    return `${current} / ${stats.total}`;
+  }
+  return `${flashIdx + 1} / ${flashQueue.length}`;
+}
+
+// Функция генерации particle quiz с использованием новой системы шаблонов
 function generateParticleQuiz(particle, lessonData, state, LESSONS) {
-  // Получаем шаблон для данной частицы
-  const templateDef = PARTICLE_TEMPLATES[particle] || PARTICLE_TEMPLATES.default;
+  // ШАГ 1: Попытка использовать готовые предложения (CURATED_PARTICLE_SENTENCES)
+  const curatedSentences = CURATED_PARTICLE_SENTENCES[particle];
+  if (curatedSentences && curatedSentences.length > 0) {
+    const example = curatedSentences[Math.floor(Math.random() * curatedSentences.length)];
+
+    // Генерируем дистракторы
+    let unlockedParticles = getUnlockedParticles(state.chapters, LESSONS);
+    unlockedParticles = unlockedParticles.filter((p) => p !== particle);
+
+    if (unlockedParticles.length < 3) {
+      const basicParticles = ['は', 'の', 'に', 'で', 'を', 'が', 'と', 'も', 'か'];
+      unlockedParticles = basicParticles.filter((p) => p !== particle);
+    }
+
+    const distractors = shuffleArray(unlockedParticles).slice(0, 3);
+    const options = shuffleArray([example.correct, ...distractors]);
+
+    console.log(`[particle-quiz] Использую готовое предложение для частицы ${particle}`);
+
+    return {
+      sentence: example.sentence,
+      correctParticle: example.correct,
+      options,
+      russianHint: example.hint,
+      words: [],
+    };
+  }
+
+  // ШАГ 2: Использование умных шаблонов (SMART_PARTICLE_TEMPLATES)
+  const templateDef = SMART_PARTICLE_TEMPLATES[particle];
   if (!templateDef) {
-    console.warn(`Нет шаблона для частицы: ${particle}`);
+    console.warn(`[particle-quiz] Нет шаблона для частицы: ${particle}`);
     return null;
   }
 
-  const { slots, template, hint } = templateDef;
+  const { slots, template, hint, prohibitedCombinations } = templateDef;
 
   // Собираем все разблокированные слова из всех уроков
-  const allWords = LESSONS.flatMap((l) => l.words || []).filter((w) =>
+  const allWords = LESSONS.flatMap((l) => l.words || l.vocabulary || []).filter((w) =>
     isWordUnlocked(w.id, state.chapters)
   );
 
-  // Маппинг категорий слов на слоты
-  const categoryMap = {
-    noun: ['nouns', 'people', 'countries', 'occupation', 'time', 'places', 'food', 'objects'],
-    verb: ['u-verbs', 'ru-verbs', 'irregular-verbs', 'verbs'],
-    adjective: ['i-adjectives', 'na-adjectives', 'adjectives'],
-    time: ['time', 'nouns'],
-  };
+  // Подбор слова для слота с учетом запрещенных комбинаций
+  const findWordForSlot = (slotDef, excludeIds = [], previousWords = []) => {
+    const roles = Array.isArray(slotDef) ? slotDef : [slotDef];
+    for (const role of roles) {
+      const categories = SLOT_CATEGORIES[role] || SLOT_CATEGORIES.noun;
+      const candidates = allWords.filter(
+        (w) =>
+          categories.includes(w.category) &&
+          !excludeIds.includes(w.id) &&
+          !FORBIDDEN_CATEGORIES.includes(w.category)
+      );
 
-  // Функция подбора слова для слота
-  const findWordForSlot = (slotType) => {
-    const categories = categoryMap[slotType] || ['nouns'];
-    const candidates = allWords.filter((w) => categories.includes(w.category));
+      // Фильтруем запрещенные комбинации
+      const validCandidates = candidates.filter((candidate) => {
+        if (previousWords.length === 0) return true;
+        // Проверяем с каждым предыдущим словом
+        return previousWords.every(
+          (prevWord) => !prohibitedCombinations || !prohibitedCombinations(prevWord, candidate)
+        );
+      });
 
-    if (candidates.length === 0) {
-      // Fallback на любое слово с переводом
-      return allWords.find((w) => w.translation);
+      if (validCandidates.length > 0) {
+        return validCandidates[Math.floor(Math.random() * validCandidates.length)];
+      }
     }
-
-    return candidates[Math.floor(Math.random() * candidates.length)];
+    return null;
   };
 
-  // Подбираем слова для каждого слота
-  const selectedWords = slots.map((slot) => findWordForSlot(slot));
-
-  // Проверяем, что все слова найдены
-  if (selectedWords.some((w) => !w)) {
-    console.warn(`Не удалось подобрать слова для частицы: ${particle}`);
-    return null;
+  // Подбираем разные слова для каждого слота
+  const selectedWords = [];
+  for (const slot of slots) {
+    const word = findWordForSlot(
+      slot,
+      selectedWords.map((w) => w.id),
+      selectedWords
+    );
+    if (!word) {
+      console.log(
+        `[particle-quiz] Не удалось подобрать слова для частицы ${particle}, откат к готовым предложениям`
+      );
+      // Откат к готовым предложениям если они есть
+      if (curatedSentences && curatedSentences.length > 0) {
+        const example = curatedSentences[Math.floor(Math.random() * curatedSentences.length)];
+        let unlockedParticles = getUnlockedParticles(state.chapters, LESSONS);
+        unlockedParticles = unlockedParticles.filter((p) => p !== particle);
+        if (unlockedParticles.length < 3) {
+          const basicParticles = ['は', 'の', 'に', 'で', 'を', 'が', 'と', 'も', 'か'];
+          unlockedParticles = basicParticles.filter((p) => p !== particle);
+        }
+        const distractors = shuffleArray(unlockedParticles).slice(0, 3);
+        const options = shuffleArray([example.correct, ...distractors]);
+        return {
+          sentence: example.sentence,
+          correctParticle: example.correct,
+          options,
+          russianHint: example.hint,
+          words: [],
+        };
+      }
+      return null;
+    }
+    selectedWords.push(word);
   }
 
-  // Генерируем предложение (шаблоны теперь принимают объекты слов)
-  let sentence;
-  if (PARTICLE_TEMPLATES[particle]) {
-    sentence = template(...selectedWords);
-  } else {
-    // Fallback шаблон с частицей в качестве первого аргумента
-    sentence = template(particle, ...selectedWords);
-  }
-
-  // Генерируем русскую подсказку
+  // Генерируем предложение и подсказку через умные шаблоны
+  const sentence = template(...selectedWords);
   const russianHint = hint(...selectedWords);
 
-  // Получаем разблокированные частицы из уроков (импорт уже есть в начале файла)
+  // Генерируем дистракторы
   let unlockedParticles = getUnlockedParticles(state.chapters, LESSONS);
-
-  // Убираем текущую частицу из пула
   unlockedParticles = unlockedParticles.filter((p) => p !== particle);
 
-  // Если разблокированных частиц мало, используем базовый набор
   if (unlockedParticles.length < 3) {
-    const basicParticles = ['は', 'の', 'に', 'で', 'を', 'が', 'と'];
+    const basicParticles = ['は', 'の', 'に', 'で', 'を', 'が', 'と', 'も', 'か'];
     unlockedParticles = basicParticles.filter((p) => p !== particle);
   }
 
-  // Генерируем 3 дистрактора
   const distractors = shuffleArray(unlockedParticles).slice(0, 3);
-
-  // Формируем 4 варианта ответа
   const options = shuffleArray([particle, ...distractors]);
+
+  console.log(`[particle-quiz] Использую умный шаблон для частицы ${particle}`);
 
   return {
     sentence,
@@ -292,6 +295,36 @@ function generateParticleQuiz(particle, lessonData, state, LESSONS) {
     russianHint,
     words: selectedWords,
   };
+}
+
+// Проверяет, содержит ли строка хотя бы один настоящий кандзи (CJK иероглиф)
+export function hasKanjiChars(text) {
+  return getAllKanji(text).length > 0;
+}
+
+// Очищает строку ответа от служебных символов (~, ～, пробелы, пунктуация, скобки),
+// оставляя только символы, доступные на виртуальной клавиатуре (кана)
+export function cleanKanaString(text) {
+  if (!text) return '';
+  const kana = new Set(Object.keys(HIRAGANA_TO_KATAKANA));
+  return text
+    .split('')
+    .filter((ch) => kana.has(ch))
+    .join('');
+}
+
+// Максимальное количество уникальных символов каны для режима ввода с клавиатуры
+export const MAX_TYPING_UNIQUE_CHARS = 8;
+
+// Проверяет, допустимо ли слово для режима ввода с клавиатуры:
+// - после очистки должен остаться хотя бы один символ каны
+// - уникальных символов каны должно быть не больше MAX_TYPING_UNIQUE_CHARS
+export function isWordTypingEligible(word) {
+  if (!word || !word.writing) return false;
+  const answers = parseAcceptedAnswers(word.writing).map(cleanKanaString).filter(Boolean);
+  if (answers.length === 0) return false;
+  const uniqueChars = new Set(answers.join('').split(''));
+  return uniqueChars.size <= MAX_TYPING_UNIQUE_CHARS;
 }
 
 // Функция генерации виртуальной клавиатуры для SRS
@@ -329,10 +362,14 @@ function determineCardMode(word) {
   const rand = Math.random();
   const hasKanji = getAllKanji(word.kanji || word.writing).length > 0;
 
-  // Режимы рисования и ввода доступны только для слов с кандзи
+  // Режим ввода доступен только для слов, помещающихся на клавиатуру (≤8 уникальных символов)
   if (hasKanji && rand < DRAWING_MODE_PROBABILITY) {
     return CARD_MODES.DRAWING;
-  } else if (hasKanji && rand < DRAWING_MODE_PROBABILITY + TYPING_MODE_PROBABILITY) {
+  } else if (
+    hasKanji &&
+    rand < DRAWING_MODE_PROBABILITY + TYPING_MODE_PROBABILITY &&
+    isWordTypingEligible(word)
+  ) {
     return CARD_MODES.TYPING;
   } else {
     return CARD_MODES.MULTIPLE_CHOICE;
@@ -367,7 +404,7 @@ function getFirstKanji(text) {
 }
 
 // Функция извлечения всех кандзи из строки
-function getAllKanji(text) {
+export function getAllKanji(text) {
   if (!text) return [];
   const kanji = [];
   for (let i = 0; i < text.length; i++) {
@@ -449,6 +486,35 @@ function initDrawingMode(
   renderKanjiProgressCells();
   drawingMistakes = 0;
 
+  // Если в слове нет кандзи - переключаемся на режим множественного выбора
+  if (!kanjiSequence || kanjiSequence.length === 0) {
+    console.warn('[initDrawingMode] No kanji found, switching to multiple choice mode');
+    // Получаем текущую карточку и слово
+    const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+    const word = wordById(card.id, dependencies.LESSONS);
+
+    if (word) {
+      // Рендерим режим множественного выбора
+      renderMultipleChoiceMode(word, state, dependencies);
+    } else {
+      // Если слово не найдено - пропускаем карточку
+      toast('⚠️ Слово не найдено');
+      if (sessionManager) {
+        sessionManager.answerCard(card.id, 5, state.srs);
+      } else {
+        flashIdx += 1;
+      }
+      renderFlash(state, dependencies);
+    }
+    return;
+  }
+
+  if (!kanjiSequence[currentKanjiIndex]) {
+    console.error('[initDrawingMode] kanjiSequence[currentKanjiIndex] is undefined');
+    toast('⚠️ Ошибка: нет кандзи для рисования');
+    return;
+  }
+
   const currentKanji = kanjiSequence[currentKanjiIndex].kanji;
 
   function startQuiz() {
@@ -499,17 +565,6 @@ function initDrawingMode(
           quality === 5 ? '✅ Отлично! Нарисовано без подсказок' : '📝 Нарисовано с подсказками';
         toast(resultText);
 
-        if (window.QuestsManager && sessionManager) {
-          const cardState = sessionManager.getCardState(card.id);
-          const isFirstAttempt = cardState.sessionLapses === 0;
-
-          if (quality >= 4 && isFirstAttempt) {
-            window.QuestsManager.incrementStreakCorrect(state);
-          } else if (quality < 3) {
-            window.QuestsManager.resetStreakCorrect(state);
-          }
-        }
-
         if (sessionManager) {
           sessionManager.answerCard(card.id, quality, state.srs);
         } else {
@@ -533,34 +588,55 @@ function initDrawingMode(
     });
   }
 
-  // Функция загрузки данных кандзи с fallback на традиционную форму
+  // Функция загрузки данных кандзи с приоритетом на японские датасеты
   const loadKanjiData = async (char) => {
+    // Очищаем символ от тильд и спецсимволов
+    const cleanChar = cleanKanjiChar(char);
+    if (!cleanChar) {
+      console.error('Пустой символ после очистки');
+      return null;
+    }
+
+    // Приоритет 1: @k1low/hanzi-writer-data-jp (основной японский датасет)
     try {
       const response = await fetch(
-        `https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${char}.json`
+        `https://cdn.jsdelivr.net/npm/@k1low/hanzi-writer-data-jp@latest/${encodeURIComponent(cleanChar)}.json`
       );
-
       if (response.ok) {
         return await response.json();
       }
-
-      // Fallback на традиционную форму для японских упрощённых иероглифов
-      if (response.status === 404 && kanjiSimplifiedToTraditional[char]) {
-        const traditionalChar = kanjiSimplifiedToTraditional[char];
-        const fallbackResponse = await fetch(
-          `https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${traditionalChar}.json`
-        );
-
-        if (fallbackResponse.ok) {
-          console.log(`✅ Используется традиционная форма ${traditionalChar} для ${char}`);
-          return await fallbackResponse.json();
-        }
-      }
-
-      throw new Error(`Данные для символа "${char}" недоступны`);
-    } catch (error) {
-      throw error;
+    } catch (e) {
+      // Тихо продолжаем к следующему датасету
     }
+
+    // Приоритет 2: hanzi-writer-data-jp (альтернативный японский датасет)
+    try {
+      const response = await fetch(
+        `https://cdn.jsdelivr.net/npm/hanzi-writer-data-jp@latest/${encodeURIComponent(cleanChar)}.json`
+      );
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      // Тихо продолжаем к следующему датасету
+    }
+
+    // Приоритет 3: Китайский датасет (крайний fallback)
+    try {
+      const response = await fetch(
+        `https://cdn.jsdelivr.net/npm/hanzi-writer-data@latest/${encodeURIComponent(cleanChar)}.json`
+      );
+      if (response.ok) {
+        console.warn(`⚠️ Используется китайский датасет для "${cleanChar}"`);
+        return await response.json();
+      }
+    } catch (e) {
+      // Игнорируем
+    }
+
+    // Если все датасеты недоступны, возвращаем null вместо ошибки
+    console.error(`❌ Символ "${cleanChar}" не найден ни в одном датасете`);
+    return null;
   };
 
   try {
@@ -588,14 +664,29 @@ function initDrawingMode(
 
       charDataLoader: loadKanjiData,
       onLoadCharDataError: (error) => {
-        console.warn(`Не удалось загрузить данные для "${currentKanji}":`, error);
-        toast(`⚠️ Данные для отрисовки "${currentKanji}" недоступны. Пропускаем режим рисования.`);
+        const cleanChar = cleanKanjiChar(currentKanji);
+        console.warn(`Не удалось загрузить данные для "${cleanChar}":`, error);
 
-        // Пропускаем режим рисования и переходим к следующей карточке
-        flashRevealed = true;
-        kanjiSequence = [];
-        currentKanjiIndex = 0;
-        renderFlash(state, dependencies);
+        // Переключаемся на режим множественного выбора
+        const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+        const word = wordById(card.id, dependencies.LESSONS);
+
+        if (word) {
+          toast(`⚠️ Режим рисования недоступен для "${cleanChar}". Переключаем на выбор варианта.`);
+          kanjiSequence = [];
+          currentKanjiIndex = 0;
+          renderMultipleChoiceMode(word, state, dependencies);
+        } else {
+          toast('⚠️ Слово не найдено, пропускаем карточку');
+          if (sessionManager) {
+            sessionManager.answerCard(card.id, 5, state.srs);
+          } else {
+            flashIdx += 1;
+          }
+          kanjiSequence = [];
+          currentKanjiIndex = 0;
+          renderFlash(state, dependencies);
+        }
       },
     });
 
@@ -608,6 +699,38 @@ function initDrawingMode(
         }
       };
     }
+
+    // === DEBUG: SKIP BUTTON HANDLER - REMOVE BEFORE PRODUCTION ===
+    const skipBtn = document.getElementById('debug-skip-btn');
+    if (skipBtn) {
+      skipBtn.onclick = () => {
+        console.log('[DEBUG] Skip button clicked - auto-completing kanji');
+        kanjiSequence = [];
+        currentKanjiIndex = 0;
+        totalDrawingMistakes = 0;
+
+        const quality = 5; // Simulate perfect completion
+        const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+
+        if (sessionManager) {
+          sessionManager.answerCard(card.id, quality, state.srs);
+        } else {
+          SRS.review(state.srs[card.id], quality);
+          flashIdx += 1;
+        }
+
+        appAddXP(XP_CARD);
+        save(true);
+        markActivity(toast);
+        flashRevealed = false;
+
+        setTimeout(() => {
+          renderFlash(state, dependencies);
+          updateSrsBadge();
+        }, 100);
+      };
+    }
+    // === END DEBUG SKIP BUTTON HANDLER ===
 
     startQuiz();
   } catch (error) {
@@ -637,7 +760,7 @@ function showCardAfterDrawing(
   body.innerHTML = `
     <div class="flash-wrap">
       <div class="flash-top">
-        <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
+        <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
         <button class="btn-ghost" id="flash-exit">Выйти</button>
       </div>
       <div class="flash-card-3d" id="flash-card" data-testid="flash-card">
@@ -720,17 +843,6 @@ function showCardAfterDrawing(
         else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
       }
 
-      if (window.QuestsManager && sessionManager) {
-        const cardState = sessionManager.getCardState(card.id);
-        const isFirstAttempt = cardState.sessionLapses === 0;
-
-        if (quality >= 4 && isFirstAttempt) {
-          window.QuestsManager.incrementStreakCorrect(state);
-        } else if (quality < 3) {
-          window.QuestsManager.resetStreakCorrect(state);
-        }
-      }
-
       if (sessionManager) {
         sessionManager.answerCard(card.id, quality, state.srs);
       } else {
@@ -763,7 +875,6 @@ function renderTypingMode(word, state, dependencies) {
     dependencies;
 
   const body = $('#srs-body');
-  const displayKanji = word.kanji || word.writing;
   const displayWriting = word.writing;
   const displayTranslation = word.translation;
   const displayCategory = word.category || 'Слово';
@@ -771,8 +882,11 @@ function renderTypingMode(word, state, dependencies) {
   let isChecked = false;
   let typingMistakes = 0;
 
-  // Парсим допустимые варианты чтения
-  const acceptedAnswers = parseAcceptedAnswers(displayWriting);
+  // Парсим допустимые варианты чтения и очищаем их от служебных символов
+  // (~, ～, пробелы, пунктуация, скобки) — на клавиатуре есть только кана
+  const acceptedAnswers = [
+    ...new Set(parseAcceptedAnswers(displayWriting).map(cleanKanaString).filter(Boolean)),
+  ];
 
   // Скрываем tabbar во время SRS-сессии
   const tabbar = document.querySelector('.tabbar');
@@ -784,14 +898,14 @@ function renderTypingMode(word, state, dependencies) {
   body.innerHTML = `
     <div class="flash-wrap">
       <div class="flash-top">
-        <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
+        <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
         <button class="btn-ghost" id="flash-exit">Выйти</button>
       </div>
       <div class="typing-mode-container">
         <div class="typing-prompt">
           <div class="flash-cat">${displayCategory}</div>
-          <p class="typing-kanji">${displayKanji}</p>
-          <p class="typing-hint">Введите чтение на хирагане</p>
+          <p class="typing-kanji">${displayTranslation}</p>
+          <p class="typing-hint">Введите слово на японском</p>
         </div>
         <input 
           type="text" 
@@ -907,17 +1021,6 @@ function renderTypingMode(word, state, dependencies) {
       else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
       else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
       else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
-    }
-
-    if (window.QuestsManager && sessionManager) {
-      const cardState = sessionManager.getCardState(card.id);
-      const isFirstAttempt = cardState.sessionLapses === 0;
-
-      if (quality >= 4 && isFirstAttempt) {
-        window.QuestsManager.incrementStreakCorrect(state);
-      } else if (quality < 3) {
-        window.QuestsManager.resetStreakCorrect(state);
-      }
     }
 
     if (sessionManager) {
@@ -1042,7 +1145,7 @@ function renderMultipleChoiceMode(word, state, dependencies) {
   body.innerHTML = `
     <div class="flash-wrap">
       <div class="flash-top">
-        <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
+        <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
         <button class="btn-ghost" id="flash-exit">Выйти</button>
       </div>
       <div class="quiz-mode-container">
@@ -1076,17 +1179,6 @@ function renderMultipleChoiceMode(word, state, dependencies) {
       else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
       else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
       else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
-    }
-
-    if (window.QuestsManager && sessionManager) {
-      const cardState = sessionManager.getCardState(card.id);
-      const isFirstAttempt = cardState.sessionLapses === 0;
-
-      if (quality >= 4 && isFirstAttempt) {
-        window.QuestsManager.incrementStreakCorrect(state);
-      } else if (quality < 3) {
-        window.QuestsManager.resetStreakCorrect(state);
-      }
     }
 
     if (sessionManager) {
@@ -1195,6 +1287,279 @@ function renderMultipleChoiceMode(word, state, dependencies) {
   }
 }
 
+// Функция рендеринга режима составления предложений (Sentence Building)
+function renderSentenceBuilding(particleCard, state, dependencies) {
+  const {
+    save,
+    showCompletionScreen,
+    XP_CARD,
+    appAddXP,
+    updateSrsBadge,
+    nav,
+    markActivity,
+    LESSONS,
+  } = dependencies;
+
+  const body = $('#srs-body');
+  let mistakeCount = 0;
+  let userSentence = []; // Массив выбранных слов пользователем
+
+  // Скрываем tabbar во время SRS-сессии
+  const tabbar = document.querySelector('.tabbar');
+  if (tabbar) tabbar.style.display = 'none';
+
+  // Откат на множественный выбор при невозможности построить sentence
+  const fallbackToMultipleChoice = (reason) => {
+    console.warn(`[sentence-building] ${reason}, fallback на multiple choice`);
+    const word = wordById(particleCard.id, LESSONS);
+    if (word) {
+      renderMultipleChoiceMode(word, state, dependencies);
+    } else {
+      if (sessionManager) {
+        sessionManager.answerCard(particleCard.id, 4, state.srs);
+      } else {
+        flashIdx += 1;
+      }
+      renderFlash(state, dependencies);
+    }
+  };
+
+  // Генерируем предложение для частицы
+  const lessonData = LESSONS.find((l) => l.id === particleCard.lessonId);
+  if (!lessonData || !lessonData.particles || lessonData.particles.length === 0) {
+    fallbackToMultipleChoice(`Нет частиц для урока ${particleCard.lessonId}`);
+    return;
+  }
+
+  const particle = lessonData.particles[Math.floor(Math.random() * lessonData.particles.length)];
+  const quizData = generateParticleQuiz(particle, lessonData, state, LESSONS);
+
+  if (!quizData) {
+    fallbackToMultipleChoice('Не удалось сгенерировать предложение');
+    return;
+  }
+
+  const { sentence, correctParticle, russianHint } = quizData;
+
+  // Разбиваем предложение на слова (удаляем [ _ ] и пробелы)
+  const correctWords = sentence
+    .replace(/\s*\[\s*_\s*\]\s*/g, ` ${correctParticle} `)
+    .split(/\s+/)
+    .filter(Boolean);
+
+  // Перемешиваем слова для пула
+  const shuffledWords = shuffleArray([...correctWords]);
+
+  // Функция обновления UI
+  const updateUI = () => {
+    const userArea = $('#sentence-user-area');
+    const poolArea = $('#sentence-word-pool');
+
+    if (userArea) {
+      userArea.innerHTML =
+        userSentence.length === 0
+          ? '<span class="sentence-placeholder">Нажмите на слова ниже</span>'
+          : userSentence
+              .map(
+                (word, idx) =>
+                  `<button class="word-chip selected" data-index="${idx}">${word}</button>`
+              )
+              .join('');
+    }
+
+    if (poolArea) {
+      const remainingWords = shuffledWords.filter((w) => !userSentence.includes(w));
+      poolArea.innerHTML =
+        remainingWords.length === 0
+          ? '<span class="sentence-placeholder">Все слова использованы</span>'
+          : remainingWords
+              .map((word) => `<button class="word-chip available">${word}</button>`)
+              .join('');
+    }
+
+    // Обработчики для плашек в пуле (добавление в предложение)
+    $$('#sentence-word-pool .word-chip.available').forEach((chip) => {
+      chip.onclick = () => {
+        const word = chip.textContent;
+        userSentence.push(word);
+        updateUI();
+      };
+    });
+
+    // Обработчики для плашек в предложении (удаление обратно в пул)
+    $$('#sentence-user-area .word-chip.selected').forEach((chip) => {
+      chip.onclick = () => {
+        const index = parseInt(chip.dataset.index);
+        userSentence.splice(index, 1);
+        updateUI();
+      };
+    });
+  };
+
+  body.innerHTML = `
+    <div class="flash-wrap">
+      <div class="flash-top">
+        <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
+        <button class="btn-ghost" id="flash-exit">Выйти</button>
+      </div>
+      <div class="sentence-building-container">
+        <div class="sentence-building-prompt">
+          <div class="flash-cat">Составление предложения</div>
+          <p class="sentence-building-hint">${russianHint}</p>
+          <p class="sentence-building-instruction">Составьте предложение из слов ниже</p>
+        </div>
+        
+        <div class="sentence-user-area" id="sentence-user-area">
+          <span class="sentence-placeholder">Нажмите на слова ниже</span>
+        </div>
+        
+        <div class="sentence-word-pool" id="sentence-word-pool"></div>
+        
+        <div class="sentence-building-actions">
+          <button class="btn-secondary" id="sentence-clear-btn">Очистить</button>
+          <button class="btn-primary" id="sentence-check-btn">Проверить</button>
+        </div>
+        
+        <div id="sentence-feedback" class="sentence-feedback hidden"></div>
+      </div>
+    </div>`;
+
+  updateUI();
+
+  const clearBtn = $('#sentence-clear-btn');
+  const checkBtn = $('#sentence-check-btn');
+  const feedback = $('#sentence-feedback');
+
+  if (clearBtn) {
+    clearBtn.onclick = () => {
+      userSentence = [];
+      updateUI();
+      if (feedback) {
+        feedback.classList.add('hidden');
+        feedback.textContent = '';
+      }
+    };
+  }
+
+  const handleRating = (quality) => {
+    const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+
+    const srsCard = state.srs[card.id];
+    if (srsCard) {
+      if (srsCard.progress === undefined) srsCard.progress = 0;
+
+      if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
+      else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
+      else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
+      else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
+    }
+
+    if (sessionManager) {
+      sessionManager.answerCard(card.id, quality, state.srs);
+    } else {
+      SRS.review(state.srs[card.id], quality);
+      flashIdx += 1;
+    }
+
+    appAddXP(XP_CARD);
+    save(true);
+    markActivity();
+    flashRevealed = false;
+    renderFlash(state, dependencies);
+    updateSrsBadge();
+  };
+
+  if (checkBtn) {
+    checkBtn.onclick = () => {
+      if (userSentence.length === 0) {
+        if (feedback) {
+          feedback.textContent = '⚠️ Составьте предложение из слов';
+          feedback.className = 'sentence-feedback warning';
+          feedback.classList.remove('hidden');
+        }
+        return;
+      }
+
+      const userAnswer = userSentence.join(' ');
+      const correctAnswer = correctWords.join(' ');
+      const isCorrect = userAnswer === correctAnswer;
+
+      if (isCorrect) {
+        if (feedback) {
+          feedback.innerHTML = '✅ Правильно!';
+          feedback.className = 'sentence-feedback correct';
+          feedback.classList.remove('hidden');
+        }
+
+        const quality = mistakeCount === 0 ? 5 : 3;
+        setTimeout(() => handleRating(quality), 800);
+      } else {
+        mistakeCount++;
+
+        if (mistakeCount === 1) {
+          if (feedback) {
+            feedback.innerHTML = `❌ Неправильно. Попробуйте ещё раз.<br><small>Подсказка: "${correctWords[0]}" — первое слово</small>`;
+            feedback.className = 'sentence-feedback incorrect';
+            feedback.classList.remove('hidden');
+          }
+        } else {
+          if (feedback) {
+            feedback.innerHTML = `❌ Неправильно.<br>Правильный порядок: <strong>${correctAnswer}</strong>`;
+            feedback.className = 'sentence-feedback incorrect';
+            feedback.classList.remove('hidden');
+          }
+
+          if (checkBtn) checkBtn.disabled = true;
+          if (clearBtn) clearBtn.disabled = true;
+
+          setTimeout(() => handleRating(0), 2000);
+        }
+      }
+    };
+  }
+
+  const exitBtn = $('#flash-exit');
+  if (exitBtn) {
+    exitBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      const tabbar = document.querySelector('.tabbar');
+      if (tabbar) tabbar.style.display = '';
+
+      const srsHeader = document.querySelector('#screen-srs .app-header');
+      if (srsHeader) srsHeader.style.display = '';
+
+      const tabsContainer = document.getElementById('srs-tabs-container');
+      if (tabsContainer) tabsContainer.classList.remove('hidden');
+
+      if (sessionManager) {
+        const stats = sessionManager.getStats();
+        if (stats.reviewed > 0) {
+          showCompletionScreen({
+            title: 'おつかれさま!',
+            subtitle: 'Хорошая работа!',
+            desc: `Вы повторили часть карточек`,
+            theme: 'success',
+            rewards: [
+              { icon: '📚', label: `${stats.reviewed} карточек` },
+              { icon: '✨', label: `${stats.perfect} без ошибок` },
+              { icon: '🪙', label: `+${stats.reviewed} XP` },
+            ],
+            onContinue: () => {
+              sessionManager = null;
+              flashCtx ? nav('chapter', flashCtx) : nav('srs');
+            },
+          });
+          return;
+        }
+      }
+      sessionManager = null;
+      flashCtx ? nav('chapter', flashCtx) : nav('srs');
+    };
+  }
+}
+
 // Функция рендеринга режима particle quiz
 function renderParticleQuizMode(particleCard, state, dependencies) {
   const {
@@ -1215,12 +1580,28 @@ function renderParticleQuizMode(particleCard, state, dependencies) {
   const tabbar = document.querySelector('.tabbar');
   if (tabbar) tabbar.style.display = 'none';
 
+  // Если particle quiz невозможно построить — откатываемся на множественный выбор,
+  // чтобы карточка не зависала и не пропадала из сессии
+  const fallbackToMultipleChoice = (reason) => {
+    console.warn(`[particle-quiz] ${reason}, fallback на multiple choice`);
+    const word = wordById(particleCard.id, LESSONS);
+    if (word) {
+      renderMultipleChoiceMode(word, state, dependencies);
+    } else {
+      // Слова нет — завершаем карточку без штрафа
+      if (sessionManager) {
+        sessionManager.answerCard(particleCard.id, 4, state.srs);
+      } else {
+        flashIdx += 1;
+      }
+      renderFlash(state, dependencies);
+    }
+  };
+
   // Генерируем quiz данные
   const lessonData = LESSONS.find((l) => l.id === particleCard.lessonId);
   if (!lessonData || !lessonData.particles || lessonData.particles.length === 0) {
-    console.warn(`Нет частиц для урока ${particleCard.lessonId}`);
-    flashIdx += 1;
-    renderFlash(state, dependencies);
+    fallbackToMultipleChoice(`Нет частиц для урока ${particleCard.lessonId}`);
     return;
   }
 
@@ -1228,9 +1609,7 @@ function renderParticleQuizMode(particleCard, state, dependencies) {
   const quizData = generateParticleQuiz(particle, lessonData, state, LESSONS);
 
   if (!quizData) {
-    console.warn('Не удалось сгенерировать particle quiz');
-    flashIdx += 1;
-    renderFlash(state, dependencies);
+    fallbackToMultipleChoice('Не удалось сгенерировать particle quiz');
     return;
   }
 
@@ -1239,7 +1618,7 @@ function renderParticleQuizMode(particleCard, state, dependencies) {
   body.innerHTML = `
     <div class="flash-wrap">
       <div class="flash-top">
-        <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
+        <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
         <button class="btn-ghost" id="flash-exit">Выйти</button>
       </div>
       <div class="particle-quiz-container">
@@ -1273,17 +1652,6 @@ function renderParticleQuizMode(particleCard, state, dependencies) {
       else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
       else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
       else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
-    }
-
-    if (window.QuestsManager && sessionManager) {
-      const cardState = sessionManager.getCardState(card.id);
-      const isFirstAttempt = cardState.sessionLapses === 0;
-
-      if (quality >= 4 && isFirstAttempt) {
-        window.QuestsManager.incrementStreakCorrect(state);
-      } else if (quality < 3) {
-        window.QuestsManager.resetStreakCorrect(state);
-      }
     }
 
     if (sessionManager) {
@@ -1405,6 +1773,11 @@ export function renderFlash(state, dependencies) {
     markActivity,
   } = dependencies;
 
+  console.log('[renderFlash] Called');
+  console.log('[renderFlash] sessionManager:', sessionManager);
+  console.log('[renderFlash] flashQueue:', flashQueue);
+  console.log('[renderFlash] flashIdx:', flashIdx);
+
   // Скрываем .tabbar при входе в режим SRS-карточек
   const tabbar = document.querySelector('.tabbar');
   if (tabbar) tabbar.style.display = 'none';
@@ -1421,9 +1794,17 @@ export function renderFlash(state, dependencies) {
   let card;
 
   if (sessionManager) {
+    console.log('[renderFlash] Using sessionManager');
     card = sessionManager.getNextCard();
+    console.log('[renderFlash] Card from sessionManager:', card);
 
     if (!card) {
+      // Батч завершён: если есть следующий — запускаем его и продолжаем сессию
+      if (startNextBatchIfAny(state, dependencies)) {
+        renderFlash(state, dependencies);
+        return;
+      }
+
       const stats = sessionManager.getStats();
       showCompletionScreen({
         title: 'おめでとう！',
@@ -1470,9 +1851,23 @@ export function renderFlash(state, dependencies) {
     return;
   }
 
+  console.log(
+    '[renderFlash] Looking for word with id:',
+    card.id,
+    'LESSONS length:',
+    LESSONS?.length
+  );
   const word = wordById(card.id, LESSONS);
+  console.log('[renderFlash] wordById result:', word);
+
   if (!word) {
-    flashIdx += 1;
+    console.warn('[renderFlash] Word not found, skipping card:', card.id);
+    // При использовании sessionManager помечаем карточку как завершённую
+    if (sessionManager) {
+      sessionManager.answerCard(card.id, 5, state.srs);
+    } else {
+      flashIdx += 1;
+    }
     renderFlash(state, dependencies);
     return;
   }
@@ -1487,15 +1882,27 @@ export function renderFlash(state, dependencies) {
   // Определяем режим карточки: используем forcedMode если есть, иначе случайный выбор
   const cardMode = card.forcedMode || determineCardMode(word);
 
+  // Режим квиза по частицам (блок 2 сессии)
+  if (cardMode === CARD_MODES.PARTICLE_QUIZ) {
+    renderParticleQuizMode({ ...card, lessonId: cardChapter(card.id) }, state, dependencies);
+    return;
+  }
+
+  // Режим составления предложений (блок 2 сессии, 30% вероятность)
+  if (cardMode === CARD_MODES.SENTENCE_BUILDING) {
+    renderSentenceBuilding({ ...card, lessonId: cardChapter(card.id) }, state, dependencies);
+    return;
+  }
+
   // Режим рисования
   if (cardMode === CARD_MODES.DRAWING) {
     body.innerHTML = `
       <div class="flash-wrap">
         <div class="flash-top">
-          <span class="flash-count" data-testid="flash-progress">${flashIdx + 1} / ${flashQueue.length}</span>
-          <button class="btn-ghost" id="flash-exit">Выйти</button>
-        </div>
-        <div class="drawing-mode-container">
+        <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
+        <button class="btn-ghost" id="flash-exit">Выйти</button>
+      </div>
+      <div class="drawing-mode-container">
           <div class="drawing-hint">
             <p class="drawing-translation">${displayTranslation}</p>
             <p class="drawing-category">${displayCategory}</p>
@@ -1506,6 +1913,9 @@ export function renderFlash(state, dependencies) {
           </div>
           <div class="drawing-controls">
             <button class="btn-secondary" id="drawing-undo">↺ Сбросить</button>
+            <!-- === DEBUG: SKIP BUTTON FOR TESTING - REMOVE BEFORE PRODUCTION === -->
+            <button class="btn-secondary" id="debug-skip-btn" style="background: var(--danger); color: white; margin-left: 8px;">⏭️ Skip (TEST)</button>
+            <!-- === END DEBUG SKIP BUTTON === -->
           </div>
         </div>
       </div>`;
@@ -1747,68 +2157,12 @@ function filterDictionaryWords(searchQuery, state, dependencies) {
   renderDictionaryLessons(state, dependencies, searchQuery);
 }
 
-// Маппинг упрощенных японских кандзи на традиционные китайские
-const kanjiSimplifiedToTraditional = {
-  専: '專',
-  学: '學',
-  図: '圖',
-  実: '實',
-  医: '醫',
-  体: '體',
-  国: '國',
-  会: '會',
-  帰: '歸',
-  万: '萬',
-  円: '圓',
-  亜: '亞',
-  仏: '佛',
-  単: '單',
-  号: '號',
-  売: '賣',
-  変: '變',
-  声: '聲',
-  寝: '寢',
-  広: '廣',
-  従: '從',
-  恵: '惠',
-  応: '應',
-  斎: '齋',
-  旧: '舊',
-  権: '權',
-  楽: '樂',
-  気: '氣',
-  温: '溫',
-  湾: '灣',
-  点: '點',
-  為: '爲',
-  画: '畫',
-  祈: '祈',
-  禅: '禪',
-  糸: '絲',
-  経: '經',
-  絵: '繪',
-  続: '續',
-  聴: '聽',
-  脳: '腦',
-  臓: '臟',
-  薬: '藥',
-  虫: '蟲',
-  覚: '覺',
-  観: '觀',
-  訳: '譯',
-  証: '證',
-  読: '讀',
-  辞: '辭',
-  鉄: '鐵',
-  関: '關',
-  雑: '雜',
-  霊: '靈',
-  顔: '顏',
-  駅: '驛',
-  黄: '黃',
-  黒: '黑',
-  歯: '齒',
-};
+// Функция очистки символа от служебных знаков (тильды, пробелы и т.д.)
+function cleanKanjiChar(char) {
+  if (!char) return '';
+  // Удаляем тильды (обычную и полноширинную), пробелы, служебные символы
+  return char.replace(/[~～\s]/g, '').trim();
+}
 
 // Функция открытия модального окна словаря
 function openDictionaryModal(word, state, dependencies) {
@@ -1922,30 +2276,53 @@ async function initDictionaryKanjiWriter(kanji) {
   target.style.touchAction = 'none';
 
   const loadKanjiData = async (char) => {
+    // Очищаем символ от тильд и спецсимволов
+    const cleanChar = cleanKanjiChar(char);
+    if (!cleanChar) {
+      console.error('Пустой символ после очистки');
+      return null;
+    }
+
+    // Приоритет 1: @k1low/hanzi-writer-data-jp (основной японский датасет)
     try {
       const response = await fetch(
-        `https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${char}.json`
+        `https://cdn.jsdelivr.net/npm/@k1low/hanzi-writer-data-jp@latest/${encodeURIComponent(cleanChar)}.json`
       );
-
       if (response.ok) {
         return await response.json();
       }
-
-      if (response.status === 404 && kanjiSimplifiedToTraditional[char]) {
-        const traditionalChar = kanjiSimplifiedToTraditional[char];
-        const fallbackResponse = await fetch(
-          `https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${traditionalChar}.json`
-        );
-
-        if (fallbackResponse.ok) {
-          return await fallbackResponse.json();
-        }
-      }
-
-      throw new Error(`Данные для символа "${char}" недоступны`);
-    } catch (error) {
-      throw error;
+    } catch (e) {
+      // Тихо продолжаем к следующему датасету
     }
+
+    // Приоритет 2: hanzi-writer-data-jp (альтернативный японский датасет)
+    try {
+      const response = await fetch(
+        `https://cdn.jsdelivr.net/npm/hanzi-writer-data-jp@latest/${encodeURIComponent(cleanChar)}.json`
+      );
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      // Тихо продолжаем к следующему датасету
+    }
+
+    // Приоритет 3: Китайский датасет (крайний fallback)
+    try {
+      const response = await fetch(
+        `https://cdn.jsdelivr.net/npm/hanzi-writer-data@latest/${encodeURIComponent(cleanChar)}.json`
+      );
+      if (response.ok) {
+        console.warn(`⚠️ Используется китайский датасет для "${cleanChar}"`);
+        return await response.json();
+      }
+    } catch (e) {
+      // Игнорируем
+    }
+
+    // Если все датасеты недоступны, возвращаем null вместо ошибки
+    console.error(`❌ Символ "${cleanChar}" не найден ни в одном датасете`);
+    return null;
   };
 
   try {
@@ -2059,14 +2436,21 @@ export function startExtraReview(state, dependencies) {
 }
 
 // Функция инициализации батчинга сессий
-export function initSessionBatching(dueCardsQueue, batchSize = 20) {
+export function initSessionBatching(dueCardsQueue, lessonsData, batchSize = 20) {
+  const lessons = lessonsData || [];
   sessionBatcher = new SessionBatcher(dueCardsQueue, batchSize);
   currentBatchIndex = 0;
 
   const firstBatch = sessionBatcher.getCurrentBatch();
   if (!firstBatch) return null;
 
-  const organizedCards = sessionBatcher.organizeBatchInto4Blocks(firstBatch.cards);
+  // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: обогащаем карточки данными слов перед организацией
+  const enrichedCards = firstBatch.cards.map((card) => {
+    const word = wordById(card.id, lessons);
+    return { ...card, word };
+  });
+
+  const organizedCards = sessionBatcher.organizeBatchInto4Blocks(enrichedCards);
 
   flashQueue = organizedCards;
   flashIdx = 0;
@@ -2089,7 +2473,15 @@ export function completeBatchAndMoveNext(state, dependencies) {
   const nextBatch = sessionBatcher.moveToNextBatch();
   currentBatchIndex = sessionBatcher.getCurrentBatchIndex();
 
-  const organizedCards = sessionBatcher.organizeBatchInto4Blocks(nextBatch.cards);
+  // Обогащаем карточки данными слов (как в initSessionBatching),
+  // иначе определение кандзи для блока 1 не сработает
+  const lessons = dependencies?.LESSONS || [];
+  const enrichedCards = nextBatch.cards.map((card) => {
+    const word = wordById(card.id, lessons);
+    return { ...card, word };
+  });
+
+  const organizedCards = sessionBatcher.organizeBatchInto4Blocks(enrichedCards);
 
   flashQueue = organizedCards;
   flashIdx = 0;
@@ -2097,9 +2489,26 @@ export function completeBatchAndMoveNext(state, dependencies) {
 
   return {
     batch: nextBatch,
+    organizedCards,
     totalBatches: sessionBatcher.getTotalBatches(),
     currentIndex: currentBatchIndex,
   };
+}
+
+// Запуск следующего батча, если он есть. Возвращает true, если батч стартовал.
+function startNextBatchIfAny(state, dependencies) {
+  if (!sessionBatcher || !sessionBatcher.hasNextBatch()) return false;
+
+  const result = completeBatchAndMoveNext(state, dependencies);
+  if (!result || !result.organizedCards) return false;
+
+  sessionManager = new SessionManager(result.organizedCards, {
+    srs: SRS,
+    questsManager: dependencies.QuestsManager || window.QuestsManager || null,
+    state,
+    onSave: dependencies.save,
+  });
+  return true;
 }
 
 // Функция получения информации о текущем батче
