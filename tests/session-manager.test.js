@@ -6,6 +6,7 @@ describe('SessionManager', () => {
   let mockSrsCollection;
   let mockSRS;
   let mockQuestsManager;
+  let mockState;
 
   beforeEach(() => {
     // Мокаем карточки для тестирования
@@ -57,9 +58,11 @@ describe('SessionManager', () => {
     };
 
     mockQuestsManager = {
-      trackCardCompleted: vi.fn(),
-      trackStreak: vi.fn(),
+      incrementStreakCorrect: vi.fn(),
+      resetStreakCorrect: vi.fn(),
     };
+
+    mockState = {};
   });
 
   describe('Инициализация сессии', () => {
@@ -87,6 +90,7 @@ describe('SessionManager', () => {
       expect(session.stats).toEqual({
         total: 3,
         reviewed: 0,
+        attempted: 0,
         perfect: 0,
         relearned: 0,
         remaining: 3,
@@ -205,12 +209,12 @@ describe('SessionManager', () => {
       const session = new SessionManager(mockCards, {
         srs: mockSRS,
         questsManager: mockQuestsManager,
+        state: mockState,
       });
 
       session.answerCard('card1', 5, mockSrsCollection);
 
-      expect(mockQuestsManager.trackCardCompleted).toHaveBeenCalled();
-      expect(mockQuestsManager.trackStreak).toHaveBeenCalledWith(true);
+      expect(mockQuestsManager.incrementStreakCorrect).toHaveBeenCalledWith(mockState);
     });
 
     it('должен откинуть карточку назад при ошибке (quality < 4)', () => {
@@ -232,11 +236,12 @@ describe('SessionManager', () => {
       const session = new SessionManager(mockCards, {
         srs: mockSRS,
         questsManager: mockQuestsManager,
+        state: mockState,
       });
 
       session.answerCard('card1', 0, mockSrsCollection);
 
-      expect(mockQuestsManager.trackStreak).toHaveBeenCalledWith(false);
+      expect(mockQuestsManager.resetStreakCorrect).toHaveBeenCalledWith(mockState);
     });
   });
 
@@ -302,21 +307,22 @@ describe('SessionManager', () => {
       const session = new SessionManager(mockCards, {
         srs: mockSRS,
         questsManager: mockQuestsManager,
+        state: mockState,
       });
 
       // Первая попытка - ошибка
       session.answerCard('card1', 0, mockSrsCollection);
 
-      // Сбрасываем мок
-      mockQuestsManager.trackStreak.mockClear();
+      // Сбрасываем моки
+      mockQuestsManager.incrementStreakCorrect.mockClear();
+      mockQuestsManager.resetStreakCorrect.mockClear();
 
       // Вторая попытка - правильный ответ
       session.answerCard('card1', 4, mockSrsCollection);
 
       // Стрик НЕ должен трекаться (это не первая попытка)
-      expect(mockQuestsManager.trackStreak).not.toHaveBeenCalled();
-      // Но завершение карточки должно трекаться
-      expect(mockQuestsManager.trackCardCompleted).toHaveBeenCalled();
+      expect(mockQuestsManager.incrementStreakCorrect).not.toHaveBeenCalled();
+      expect(mockQuestsManager.resetStreakCorrect).not.toHaveBeenCalled();
     });
   });
 
@@ -455,9 +461,11 @@ describe('SessionManager', () => {
       expect(stats).toEqual({
         total: 3,
         reviewed: 0,
+        attempted: 0,
         perfect: 0,
         relearned: 0,
         remaining: 3,
+        accuracy: 100,
       });
     });
 
@@ -475,6 +483,7 @@ describe('SessionManager', () => {
       expect(stats.perfect).toBe(1);
       expect(stats.relearned).toBe(1);
       expect(stats.remaining).toBe(2);
+      expect(stats.accuracy).toBe(50); // 1 успех из 2 первых попыток
     });
 
     it('должен правильно вычислять прогресс в процентах', () => {

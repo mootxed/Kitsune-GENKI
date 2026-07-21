@@ -348,7 +348,7 @@ function setupRouter() {
     setFlashIdx(0);
 
     // Инициализируем батчинг (20 карточек на батч)
-    const batchInfo = initSessionBatching(chapterDue, 20);
+    const batchInfo = initSessionBatching(chapterDue, LESSONS, 20);
 
     if (batchInfo && batchInfo.organizedCards) {
       // Явно устанавливаем очередь с 4-блочным упорядоченным 20-карточным батчем
@@ -404,7 +404,7 @@ function setupRouter() {
 
       // Инициализируем батчинг (20 карточек на батч)
       console.log('[SRS] Initializing session batching...');
-      const batchInfo = initSessionBatching(due, 20);
+      const batchInfo = initSessionBatching(due, LESSONS, 20);
       console.log('[SRS] Batch info:', batchInfo);
 
       if (!batchInfo || !batchInfo.organizedCards) {
@@ -418,6 +418,16 @@ function setupRouter() {
       // Явно устанавливаем очередь с 4-блочным упорядоченным 20-карточным батчем
       setFlashQueue(batchInfo.organizedCards);
       console.log('[SRS] Flash queue set, length:', batchInfo.organizedCards.length);
+
+      // Создаём SessionManager с батчем карточек
+      const manager = new SessionManager(batchInfo.organizedCards, {
+        srs: SRS,
+        questsManager: QuestsManager,
+        state: state,
+        onSave: save,
+      });
+      setSessionManager(manager);
+      console.log('[SRS] SessionManager initialized');
 
       // Скрываем header и табы SRS во время сессии для полноэкранного интерфейса флэшкарточек
       const srsHeader = document.querySelector('#screen-srs .app-header');

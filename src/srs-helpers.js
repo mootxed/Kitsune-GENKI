@@ -7,10 +7,19 @@ export function cardChapter(cardId) {
 }
 
 export function wordById(wordId, lessons) {
+  if (!lessons || lessons.length === 0) {
+    console.warn(`[wordById] lessons array is empty or null for wordId: ${wordId}`);
+    return null;
+  }
+
   for (const l of lessons) {
-    const w = l.words.find((x) => x.id === wordId);
+    // Поддерживаем оба формата: words и vocabulary
+    const wordList = l.words || l.vocabulary || [];
+    const w = wordList.find((x) => x.id === wordId);
     if (w) return w;
   }
+
+  console.warn(`[wordById] Word not found: ${wordId}. Lessons count: ${lessons.length}`);
   return null;
 }
 
@@ -20,10 +29,8 @@ export function isWordUnlocked(wordId, chapters) {
   const chapter = chapters[chapterId];
   if (!chapter) return false;
 
-  const completedLessons = Object.values(chapter.checklist || {}).filter(
-    (val) => val === true
-  ).length;
-  return completedLessons >= 3;
+  // Слова разблокированы, если глава начата
+  return chapter.started === true;
 }
 
 export function dueCards(srsRecords, chapterId, now = Date.now()) {
@@ -47,14 +54,12 @@ export function getUnlockedParticles(chapters, lessons) {
     const chapterId = idx + 1;
     const chapter = chapters[chapterId];
 
-    // Проверяем, что урок разблокирован (>=3 выполненных заданий)
-    if (chapter) {
-      const completedLessons = Object.values(chapter.checklist || {}).filter(
-        (val) => val === true
-      ).length;
-
-      if (completedLessons >= 3 && lesson.particles) {
-        lesson.particles.forEach((p) => particles.add(p));
+    // Частицы разблокированы, если глава начата
+    if (chapter && chapter.started) {
+      // Поддерживаем оба формата: particles в корне урока или в lesson
+      const particleList = lesson.particles || (lesson.lesson && lesson.lesson.particles) || [];
+      if (particleList.length > 0) {
+        particleList.forEach((p) => particles.add(p));
       }
     }
   });

@@ -1,6 +1,6 @@
 /* src/session-batcher.js — Батчинг SRS-сессий и организация в 4 блока упражнений */
 
-import { CARD_MODES } from '../ui/flashcards.js';
+import { CARD_MODES, hasKanjiChars, isWordTypingEligible } from '../ui/flashcards.js';
 
 /**
  * SessionBatcher управляет разбиением большой очереди карточек на батчи по 20 карточек
@@ -53,14 +53,16 @@ export class SessionBatcher {
     const batchSize = cardBatch.length;
 
     // Разделяем карточки на "с кандзи" и "без кандзи"
+    // ВАЖНО: проверяем наличие настоящих иероглифов (CJK), а не просто непустую строку —
+    // поле kanji может содержать чистую кану (напр. "おはよう") или служебные символы ("～ちゃん")
     const cardsWithKanji = cardBatch.filter((card) => {
       const word = card.word || card;
-      return word.kanji && word.kanji.trim() !== '';
+      return hasKanjiChars(word.kanji || word.writing);
     });
 
     const cardsWithoutKanji = cardBatch.filter((card) => {
       const word = card.word || card;
-      return !word.kanji || word.kanji.trim() === '';
+      return !hasKanjiChars(word.kanji || word.writing);
     });
 
     // Инициализируем блоки
@@ -74,7 +76,7 @@ export class SessionBatcher {
     // Целевое количество карточек на блок (равномерное распределение)
     const targetPerBlock = Math.ceil(batchSize / 4);
 
-    // === БЛОК 1: DRAWING (только карточки с кандзи) ===
+    // === БЛОК 1: DRAWING (только карточки с кандзи, не больше targetPerBlock) ===
     const drawingCards = cardsWithKanji.slice(0, targetPerBlock);
     drawingCards.forEach((card) => {
       blocks[CARD_MODES.DRAWING].push({ ...card, forcedMode: CARD_MODES.DRAWING });
@@ -83,16 +85,40 @@ export class SessionBatcher {
     // Оставшиеся карточки с кандзи + все карточки без кандзи
     const remainingCards = [...cardsWithKanji.slice(targetPerBlock), ...cardsWithoutKanji];
 
-    // === БЛОКИ 2, 3, 4: распределяем оставшиеся карточки ===
-    const otherModes = [CARD_MODES.PARTICLE_QUIZ, CARD_MODES.TYPING, CARD_MODES.MULTIPLE_CHOICE];
+    // === БЛОКИ 2, 3, 4: распределяем ВСЕ оставшиеся карточки равномерно ===
+    // КРИТИЧНО: карточки не должны теряться, когда кандзи-карточек меньше
+    // targetPerBlock — остаток делим между блоками 2-4 (избыток уходит в начало).
+    const basePerBlock = Math.floor(remainingCards.length / 3);
+    const extraCards = remainingCards.length % 3;
 
-    let cardIndex = 0;
-    otherModes.forEach((mode) => {
-      const cardsForThisBlock = remainingCards.slice(cardIndex, cardIndex + targetPerBlock);
-      cardsForThisBlock.forEach((card) => {
-        blocks[mode].push({ ...card, forcedMode: mode });
-      });
-      cardIndex += targetPerBlock;
+    // Размеры блоков: particle quiz → typing → multiple choice
+    const particleBlockSize = basePerBlock + (extraCards > 0 ? 1 : 0);
+    const typingBlockSize = basePerBlock + (extraCards > 1 ? 1 : 0);
+
+    // === БЛОК 2: PARTICLE QUIZ (70%) + SENTENCE BUILDING (30%) ===
+    const particleCards = remainingCards.slice(0, particleBlockSize);
+    particleCards.forEach((card) => {
+      // Вероятностное распределение: 70% PARTICLE_QUIZ, 30% SENTENCE_BUILDING
+      const mode = Math.random() < 0.7 ? CARD_MODES.PARTICLE_QUIZ : CARD_MODES.SENTENCE_BUILDING;
+      blocks[CARD_MODES.PARTICLE_QUIZ].push({ ...card, forcedMode: mode });
+    });
+
+    // === БЛОК 3: TYPING — только слова, помещающиеся на клавиатуру ===
+    // (≤ MAX_TYPING_UNIQUE_CHARS уникальных символов каны после очистки от спецсимволов).
+    // Неподходящие слова переправляются в блок множественного выбора.
+    const restCards = remainingCards.slice(particleBlockSize);
+    const typingEligible = restCards.filter((card) => isWordTypingEligible(card.word || card));
+    const typingIneligible = restCards.filter((card) => !isWordTypingEligible(card.word || card));
+
+    const typingCards = typingEligible.slice(0, typingBlockSize);
+    typingCards.forEach((card) => {
+      blocks[CARD_MODES.TYPING].push({ ...card, forcedMode: CARD_MODES.TYPING });
+    });
+
+    // === БЛОК 4: MULTIPLE CHOICE — всё, что не вошло в блоки 2 и 3 ===
+    const multipleChoiceCards = [...typingEligible.slice(typingBlockSize), ...typingIneligible];
+    multipleChoiceCards.forEach((card) => {
+      blocks[CARD_MODES.MULTIPLE_CHOICE].push({ ...card, forcedMode: CARD_MODES.MULTIPLE_CHOICE });
     });
 
     // Собираем в единую последовательную очередь: Block 1 → Block 2 → Block 3 → Block 4

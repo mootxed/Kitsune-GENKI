@@ -93,6 +93,7 @@ function normalizeLesson(l) {
     id,
     title: nm[0],
     jp: nm[1],
+    particles: arr(l.particles),
     words: arr(l.vocabulary).map((v) => ({
       id: v.id,
       kanji: v.kanji || v.writing,
@@ -266,6 +267,7 @@ export function renderHome() {
   $('#study-due-label').textContent =
     due > 0 ? `Повторить ${due} карточек` : 'Нет карточек к повторению';
   btn.disabled = due === 0;
+  btn.onclick = () => window.nav('srs');
   if (extraBtn) {
     extraBtn.classList.toggle('hidden', due > 0);
   }
