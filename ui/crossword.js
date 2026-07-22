@@ -341,7 +341,7 @@ function selectWord(wordData, crosswordData, userAnswers) {
     firstCell.scrollIntoView({
       behavior: 'smooth',
       block: 'center',
-      inline: 'center'
+      inline: 'center',
     });
   }
 }
@@ -350,7 +350,7 @@ function updateCluePanel(word, userAnswers, grid, placedWords) {
   const panel = $('#clue-panel');
   const translationEl = $('#clue-translation');
   const speakBtn = $('#clue-speak');
-  const { state, dependencies } = window.cwState;
+  const { dependencies } = window.cwState;
   const { save, toast } = dependencies;
 
   if (panel && translationEl) {
@@ -459,11 +459,8 @@ function updateCluePanel(word, userAnswers, grid, placedWords) {
 
         if (emptyIndices.length === 0) return;
 
-        const srsCard = state.srs[wordData.word.id];
-        if (srsCard) {
-          if (srsCard.progress === undefined) srsCard.progress = 0;
-          srsCard.progress = Math.max(0, srsCard.progress - 5);
-        }
+        // Подсказка влияет только на локальную попытку кроссворда. Legacy progress
+        // и FSRS-расписание здесь намеренно не изменяются.
         save();
 
         // Выбираем случайный пустой индекс
@@ -697,7 +694,7 @@ function insertLetterIntoWord(letter, wordData, userAnswers, grid, placedWords, 
 
   // НОВАЯ ЛОГИКА: Немедленная валидация вставленной буквы
   const correctLetter = wordData.word.kana[emptyIndex];
-  const isCorrect = (letter === correctLetter);
+  const isCorrect = letter === correctLetter;
 
   if (isCorrect) {
     // Добавляем класс для зеленой подсветки (ручной ввод)
@@ -741,14 +738,14 @@ function insertLetterIntoWord(letter, wordData, userAnswers, grid, placedWords, 
     filledCell.scrollIntoView({
       behavior: 'smooth',
       block: 'center',
-      inline: 'center'
+      inline: 'center',
     });
   }
 }
 
 function checkWordCompletion(wordData, userAnswers, grid, placedWords) {
-  const { state, dependencies } = window.cwState;
-  const { save, markActivity, toast, addXP } = dependencies;
+  const { dependencies } = window.cwState;
+  const { markActivity, toast, addXP } = dependencies;
 
   // Проверяем ВСЕ слова
   placedWords.forEach((pw) => {
@@ -763,14 +760,6 @@ function checkWordCompletion(wordData, userAnswers, grid, placedWords) {
 
     if (userWord === correctWord && !wordAnswer.correct) {
       wordAnswer.correct = true;
-
-      const srsCard = state.srs[pw.word.id];
-      if (srsCard) {
-        if (srsCard.progress === undefined) srsCard.progress = 0;
-        if (!wordAnswer.usedHint) {
-          srsCard.progress = Math.min(100, srsCard.progress + 8);
-        }
-      }
 
       // Подсвечиваем зеленым
       for (let i = 0; i < pw.word.length; i++) {
@@ -821,18 +810,16 @@ function findNextIncompleteWord(placedWords, userAnswers, currentWordId) {
   const unsolvedWords = placedWords.filter(
     (pw) => userAnswers[pw.word.id] && !userAnswers[pw.word.id].correct
   );
-  
+
   // 2. Исключить текущее слово из пула
-  const availableWords = unsolvedWords.filter(
-    (pw) => pw.word.id !== currentWordId
-  );
-  
+  const availableWords = unsolvedWords.filter((pw) => pw.word.id !== currentWordId);
+
   // 3. Если есть доступные слова, выбрать случайное
   if (availableWords.length > 0) {
     const randomIndex = Math.floor(Math.random() * availableWords.length);
     return availableWords[randomIndex];
   }
-  
+
   // 4. Если остались только решённые слова, вернуть null
   return null;
 }
@@ -864,11 +851,11 @@ function completeCrossword(totalWords, userAnswers) {
     rewards: [
       { icon: '📖', label: `${wordsWithoutHint} отгадано, ${wordsWithHint} с подсказкой` },
       { icon: '⭐', label: `+${xpReward} XP` },
-      { icon: '🪙', label: `+${coinsReward} монет` }
+      { icon: '🪙', label: `+${coinsReward} монет` },
     ],
     onContinue: () => {
       if (window.nav) window.nav('sensei');
-    }
+    },
   });
 }
 
@@ -1012,7 +999,12 @@ function handleBackspaceDelete(userAnswers, grid, placedWords) {
   // Убираем все классы подсветки с ячейки
   const cell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
   if (cell) {
-    cell.classList.remove('correct', 'correct-hint', 'grid-cell-letter-manual', 'grid-cell-letter-hint');
+    cell.classList.remove(
+      'correct',
+      'correct-hint',
+      'grid-cell-letter-manual',
+      'grid-cell-letter-hint'
+    );
   }
 
   // Ревалидация всех затронутых слов
@@ -1037,7 +1029,7 @@ function handleBackspaceDelete(userAnswers, grid, placedWords) {
     clearedCell.scrollIntoView({
       behavior: 'smooth',
       block: 'center',
-      inline: 'center'
+      inline: 'center',
     });
   }
 }

@@ -1,5 +1,6 @@
 /* ui/shared.js — Shared UI utilities */
 import { state, save } from '../state/store.js';
+import { countAvailableCardsForSession } from '../src/srs-limits.js';
 import { XP_PER_LEVEL, COINS_PER_LEVEL } from '../src/xp-system.js';
 import { $, todayStr, pluralDays } from '../src/utils.js';
 
@@ -166,7 +167,7 @@ export function applyCustomTheme() {
 // ---------- Update SRS Badge ----------
 export function updateSrsBadge() {
   if (!window.dueCards || !state.srs) return;
-  const due = window.dueCards(state.srs).length;
+  const due = countAvailableCardsForSession(window.dueCards(state.srs), state.srs);
   const badge = document.querySelector('.tab-badge[data-tab="srs"]');
   if (badge) {
     if (due > 0) {

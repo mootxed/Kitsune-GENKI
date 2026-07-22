@@ -6,6 +6,7 @@ import {
   handleLeech,
   isLeech,
   restoreCardState,
+  undoReviewEvent,
 } from '../src/card-behavior.js';
 
 describe('card behavior', () => {
@@ -31,9 +32,9 @@ describe('card behavior', () => {
 
   describe('response time quality', () => {
     it.each([
-      [4, 3_000, 'multiple-choice', 5],
-      [4, 5_000, 'typing', 5],
-      [4, 10_000, 'drawing', 5],
+      [4, 3_000, 'multiple-choice', 4],
+      [4, 5_000, 'typing', 4],
+      [4, 10_000, 'drawing', 4],
       [5, 10_000, 'multiple-choice', 4],
       [5, 15_000, 'typing', 4],
       [5, 30_000, 'drawing', 4],
@@ -45,6 +46,10 @@ describe('card behavior', () => {
       expect(adjustQualityByTime(0, 100, 'typing')).toBe(0);
       expect(adjustQualityByTime(4, 100, 'unknown')).toBe(4);
       expect(adjustQualityByTime(4, null, 'typing')).toBe(4);
+    });
+
+    it('не повышает быстрый multiple choice с Good до Easy', () => {
+      expect(adjustQualityByTime(4, 500, 'multiple-choice')).toBe(4);
     });
   });
 
@@ -65,6 +70,19 @@ describe('card behavior', () => {
         nested: { progress: 10 },
       });
       expect(stack.undo(restore)).toBe(false);
+    });
+
+    it('атомарно восстанавливает карточку и помечает связанное событие', () => {
+      const previousCard = { id: 'card-1', stability: 1, learning_steps: 0 };
+      const appState = {
+        srs: { 'card-1': { id: 'card-1', stability: 5, learning_steps: 1 } },
+        reviewEvents: [{ eventId: 'event-1', cardId: 'card-1', previousCard, undoneAt: null }],
+      };
+
+      expect(undoReviewEvent(appState, 'event-1', 123)).toBe(true);
+      expect(appState.srs['card-1']).toEqual(previousCard);
+      expect(appState.reviewEvents[0].undoneAt).toBe(123);
+      expect(undoReviewEvent(appState, 'event-1', 456)).toBe(false);
     });
 
     it('ограничивает историю и восстанавливает объект без остаточных полей', () => {

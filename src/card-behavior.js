@@ -30,7 +30,8 @@ export function adjustQualityByTime(quality, responseTimeMs, mode) {
   const thresholds = RESPONSE_TIME_THRESHOLDS[mode];
   if (!thresholds) return quality;
 
-  if (responseTimeMs <= thresholds.fast && quality === 4) return 5;
+  // Скорость не доказывает отсутствие угадывания, поэтому Good никогда не
+  // повышается автоматически до Easy (особенно в multiple choice).
   if (responseTimeMs >= thresholds.slow && quality === 5) return 4;
   return quality;
 }
@@ -48,6 +49,15 @@ export function restoreCardState(card, previousState) {
   return true;
 }
 
+export function undoReviewEvent(appState, eventId, undoneAt = Date.now()) {
+  const event = (appState?.reviewEvents || []).find((entry) => entry.eventId === eventId);
+  if (!event || event.undoneAt || !event.previousCard) return false;
+  const card = appState.srs?.[event.cardId];
+  if (!card || !restoreCardState(card, event.previousCard)) return false;
+  event.undoneAt = undoneAt;
+  return true;
+}
+
 export class UndoStack {
   constructor(maxSize = 10) {
     if (!Number.isInteger(maxSize) || maxSize < 1) {
@@ -57,11 +67,12 @@ export class UndoStack {
     this.maxSize = maxSize;
   }
 
-  push(cardId, previousState) {
+  push(cardId, previousState, metadata = {}) {
     this.stack.push({
       cardId,
       state: deepClone(previousState),
       timestamp: Date.now(),
+      ...deepClone(metadata),
     });
     if (this.stack.length > this.maxSize) this.stack.shift();
   }
@@ -75,6 +86,11 @@ export class UndoStack {
     if (!last) return false;
     restore(last.cardId, deepClone(last.state));
     return true;
+  }
+
+  pop() {
+    const last = this.stack.pop();
+    return last ? deepClone(last) : null;
   }
 
   clear() {

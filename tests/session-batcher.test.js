@@ -3,14 +3,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SessionBatcher } from '../src/session-batcher.js';
 import { CARD_MODES } from '../ui/flashcards.js';
+import { SKILLS } from '../src/knowledge-model.js';
 
 describe('SessionBatcher', () => {
   let mockCards;
 
   beforeEach(() => {
+    const skills = Object.values(SKILLS);
     // Создаём 66 моковых карточек (3x20 + 1x6)
     mockCards = Array.from({ length: 66 }, (_, i) => ({
       id: `card-${i}`,
+      itemId: `word-${i}`,
+      skill: skills[i % skills.length],
       word: {
         id: `word-${i}`,
         kanji: i % 3 === 0 ? `漢${i}` : '', // каждая третья карточка с кандзи
@@ -61,7 +65,7 @@ describe('SessionBatcher', () => {
   });
 
   describe('organizeBatchInto4Blocks', () => {
-    it('должен распределить 20 карточек по 4 блокам (~5 на блок)', () => {
+    it('назначает режим по стабильному skill карточки', () => {
       const batcher = new SessionBatcher(mockCards, 20);
       const firstBatch = batcher.batches[0].cards;
       const organized = batcher.organizeBatchInto4Blocks(firstBatch);
@@ -73,38 +77,36 @@ describe('SessionBatcher', () => {
         expect(card.forcedMode).toBeDefined();
         expect([
           CARD_MODES.DRAWING,
-          CARD_MODES.PARTICLE_QUIZ,
-          CARD_MODES.SENTENCE_BUILDING,
+          CARD_MODES.REVERSE_MULTIPLE_CHOICE,
+          CARD_MODES.CONTEXT_SENTENCE,
           CARD_MODES.TYPING,
           CARD_MODES.MULTIPLE_CHOICE,
         ]).toContain(card.forcedMode);
       });
     });
 
-    it('должен расположить карточки последовательно: Block1 → Block2 → Block3 → Block4', () => {
+    it('не назначает vocabulary-карточкам particle/grammar режимы', () => {
       const batcher = new SessionBatcher(mockCards, 20);
       const firstBatch = batcher.batches[0].cards;
       const organized = batcher.organizeBatchInto4Blocks(firstBatch);
 
-      // Проверяем последовательность блоков
       const modes = organized.map((c) => c.forcedMode);
-
-      // Найдём индексы первого появления каждого режима
-      const drawingStart = modes.indexOf(CARD_MODES.DRAWING);
-      const particleStart = modes.indexOf(CARD_MODES.PARTICLE_QUIZ);
-      const typingStart = modes.indexOf(CARD_MODES.TYPING);
-      const multipleStart = modes.indexOf(CARD_MODES.MULTIPLE_CHOICE);
-
-      // Блоки должны идти последовательно
-      expect(drawingStart).toBeLessThan(particleStart);
-      expect(particleStart).toBeLessThan(typingStart);
-      expect(typingStart).toBeLessThan(multipleStart);
+      expect(modes).not.toContain(CARD_MODES.PARTICLE_QUIZ);
+      expect(modes).not.toContain(CARD_MODES.SENTENCE_BUILDING);
+      expect(organized.find((card) => card.skill === SKILLS.RECOGNITION).forcedMode).toBe(
+        CARD_MODES.REVERSE_MULTIPLE_CHOICE
+      );
+      expect(organized.find((card) => card.skill === SKILLS.RECALL).forcedMode).toBe(
+        CARD_MODES.TYPING
+      );
     });
 
     it('НЕ должен назначать режим DRAWING карточкам без кандзи', () => {
       // Создаём батч только из карточек без кандзи
       const noKanjiCards = Array.from({ length: 20 }, (_, i) => ({
         id: `no-kanji-${i}`,
+        itemId: `word-${i}`,
+        skill: SKILLS.READING_WRITING,
         word: {
           id: `word-${i}`,
           kanji: '', // НЕТ КАНДЗИ
@@ -140,6 +142,8 @@ describe('SessionBatcher', () => {
       // 20 карточек, кандзи только у 2 — раньше 3 карточки молча выбрасывались
       const fewKanjiCards = Array.from({ length: 20 }, (_, i) => ({
         id: `few-kanji-${i}`,
+        itemId: `word-${i}`,
+        skill: SKILLS.READING_WRITING,
         word: {
           id: `word-${i}`,
           kanji: i < 2 ? `漢${i}` : '',
@@ -161,6 +165,8 @@ describe('SessionBatcher', () => {
     it('НЕ должен терять карточки при полном отсутствии кандзи в батче', () => {
       const noKanjiCards = Array.from({ length: 20 }, (_, i) => ({
         id: `no-kanji-${i}`,
+        itemId: `word-${i}`,
+        skill: SKILLS.READING_WRITING,
         word: {
           id: `word-${i}`,
           kanji: '',

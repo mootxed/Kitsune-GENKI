@@ -2,9 +2,10 @@
 
 import { State } from 'ts-fsrs';
 import { SRS_LOAD_CONFIG } from './srs-config.js';
+import { localDateKey } from './local-date.js';
 
 export function studyDay(now = Date.now()) {
-  return new Date(now).toISOString().slice(0, 10);
+  return localDateKey(now);
 }
 
 export function countNewCardsIntroducedOn(cards, day) {
@@ -55,4 +56,13 @@ export function limitNewCardsForSession(dueCards, srsRecords, options = {}) {
   }
 
   return [...reviews, ...selectedNew];
+}
+
+/** Возвращает ровно то число карточек, которое запустится, не отмечая новые выданными. */
+export function countAvailableCardsForSession(dueCards, srsRecords, options = {}) {
+  const clonedRecords = Object.fromEntries(
+    Object.entries(srsRecords || {}).map(([key, card]) => [key, { ...card }])
+  );
+  const clonedDue = (dueCards || []).map((card) => clonedRecords[card.id] || { ...card });
+  return limitNewCardsForSession(clonedDue, clonedRecords, options).length;
 }

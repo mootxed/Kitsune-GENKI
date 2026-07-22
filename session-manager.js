@@ -146,22 +146,25 @@ class SessionManager {
 
     if (queueIndex === -1) {
       console.warn('Карточка не найдена в очереди:', cardId);
-      return;
+      return null;
     }
 
     const item = this.queue[queueIndex];
     // Новое условие успеха: только Good (4) и Easy (5) завершают карточку
     const isError = quality < 4;
+    let reviewResult = null;
 
     // ===== ЛОГИКА ПЕРВОЙ ПОПЫТКИ =====
     if (item.isFirstAttempt) {
       // Применяем полный FSRS алгоритм
       const cardInSrs = srsCollection[cardId];
       if (cardInSrs && this.srs) {
-        if (reviewContext) {
-          this.srs.review(cardInSrs, quality, reviewContext);
+        if (this.srs.applyReview) {
+          reviewResult = this.srs.applyReview(cardInSrs, quality, reviewContext || {});
+        } else if (reviewContext) {
+          reviewResult = this.srs.review(cardInSrs, quality, reviewContext);
         } else {
-          this.srs.review(cardInSrs, quality);
+          reviewResult = this.srs.review(cardInSrs, quality);
         }
       }
 
@@ -194,7 +197,7 @@ class SessionManager {
         }
       }
 
-      return;
+      return reviewResult;
     }
 
     // ===== ЛОГИКА ПОСЛЕДУЮЩИХ ПОПЫТОК (в цикле доучивания) =====
@@ -217,6 +220,18 @@ class SessionManager {
       // ✅ Трекинг квестов (но НЕ стрика, т.к. это не первая попытка)
       // Стрик НЕ трекаем, т.к. это повторная попытка после ошибки
     }
+
+    return reviewResult;
+  }
+
+  /** Завершает технически непригодную/preview-карточку без FSRS и статистики успеха. */
+  skipCard(cardId) {
+    const item = this.queue.find((entry) => entry.card.id === cardId && !entry.completed);
+    if (!item) return false;
+    item.completed = true;
+    item.isFirstAttempt = false;
+    this.stats.remaining = Math.max(0, this.stats.remaining - 1);
+    return true;
   }
 
   /**

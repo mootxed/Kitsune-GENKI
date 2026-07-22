@@ -11,6 +11,48 @@ function validateReviewLogEntry(entry) {
   if (typeof entry.cardId !== 'string' || entry.cardId.length === 0) {
     throw new Error('[ReviewLog] cardId обязателен');
   }
+  if (entry.eventId) {
+    if (typeof entry.eventId !== 'string' || entry.eventId.length === 0) {
+      throw new Error('[ReviewLog] eventId обязателен');
+    }
+    if (typeof entry.itemId !== 'string' || entry.itemId.length === 0) {
+      throw new Error('[ReviewLog] itemId обязателен');
+    }
+    if (typeof entry.skill !== 'string' || entry.skill.length === 0) {
+      throw new Error('[ReviewLog] skill обязателен');
+    }
+    if (typeof entry.mode !== 'string' || entry.mode.length === 0) {
+      throw new Error('[ReviewLog] mode обязателен');
+    }
+    if (typeof entry.firstAttemptCorrect !== 'boolean') {
+      throw new Error('[ReviewLog] firstAttemptCorrect обязателен');
+    }
+    if (!Number.isInteger(entry.mistakes) || entry.mistakes < 0) {
+      throw new Error('[ReviewLog] Некорректное количество ошибок');
+    }
+    if (typeof entry.hintUsed !== 'boolean') {
+      throw new Error('[ReviewLog] hintUsed обязателен');
+    }
+    if (
+      entry.responseTimeMs !== null &&
+      (!Number.isInteger(entry.responseTimeMs) || entry.responseTimeMs < 0)
+    ) {
+      throw new Error('[ReviewLog] Некорректное время ответа');
+    }
+    if (![0, 3, 4, 5].includes(entry.rawRating) || ![0, 3, 4, 5].includes(entry.effectiveRating)) {
+      throw new Error('[ReviewLog] Некорректный rating');
+    }
+    if (!Number.isInteger(entry.reviewedAt) || entry.reviewedAt < 0) {
+      throw new Error('[ReviewLog] Некорректный reviewedAt');
+    }
+    if (!entry.previousCard || !entry.nextCard) {
+      throw new Error('[ReviewLog] previousCard и nextCard обязательны');
+    }
+    if (entry.undoneAt !== null && (!Number.isInteger(entry.undoneAt) || entry.undoneAt < 0)) {
+      throw new Error('[ReviewLog] Некорректный undoneAt');
+    }
+    return;
+  }
   if (![0, 3, 4, 5].includes(entry.quality)) {
     throw new Error(`[ReviewLog] Некорректный quality: ${entry.quality}`);
   }
@@ -61,7 +103,9 @@ export async function getReviewLogs() {
   await writeQueue.catch(() => undefined);
   const database = db || (await initializeDB());
   const entries = await database.getAll(STORES.REVIEW_LOG);
-  return entries.sort((a, b) => a.timestamp - b.timestamp || a.id - b.id);
+  return entries.sort(
+    (a, b) => (a.reviewedAt ?? a.timestamp) - (b.reviewedAt ?? b.timestamp) || a.id - b.id
+  );
 }
 
 export async function getReviewLogsForCard(cardId) {

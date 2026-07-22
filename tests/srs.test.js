@@ -22,6 +22,7 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
       expect(card.reps).toBe(0);
       expect(card.lapses).toBe(0);
       expect(card.state).toBe(State.New);
+      expect(card.learning_steps).toBe(0);
       expect(card.lastReview).toBeNull();
       expect(card.due).toBeDefined();
       expect(typeof card.due).toBe('number');
@@ -307,16 +308,23 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
         });
 
         expect(logger).toHaveBeenCalledTimes(1);
-        expect(logger).toHaveBeenCalledWith({
-          cardId: testCardId,
-          quality: SRS.Quality.Good,
-          mode: 'typing',
-          responseTimeMs: 1234,
-          timestamp: now,
-          previousStability: previous.stability,
-          previousDifficulty: previous.difficulty,
-          previousState: previous.state,
-        });
+        expect(logger).toHaveBeenCalledWith(
+          expect.objectContaining({
+            eventId: expect.any(String),
+            eventType: 'review',
+            itemId: testCardId,
+            cardId: testCardId,
+            skill: 'recognition',
+            mode: 'typing',
+            rawRating: SRS.Quality.Good,
+            effectiveRating: SRS.Quality.Good,
+            responseTimeMs: 1234,
+            reviewedAt: now,
+            previousCard: expect.objectContaining(previous),
+            nextCard: expect.objectContaining({ learning_steps: 1 }),
+            undoneAt: null,
+          })
+        );
         expect(card.stability).not.toBe(previous.stability);
         expect(card.difficulty).not.toBe(previous.difficulty);
         expect(card.state).not.toBe(previous.state);
@@ -365,6 +373,7 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
       expect(migrated.difficulty).toBeGreaterThanOrEqual(1);
       expect(migrated.difficulty).toBeLessThanOrEqual(10);
       expect(migrated.state).toBe(State.Review);
+      expect(migrated.learning_steps).toBe(0);
       expect(migrated).not.toHaveProperty('ef');
       expect(migrated).not.toHaveProperty('interval');
     });
@@ -402,6 +411,12 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
       const snapshot = { ...fsrsCard };
       const result = SRS.migrateSM2ToFSRS(fsrsCard);
       expect(result).toEqual(snapshot);
+    });
+
+    it('детерминированно добавляет learning_steps старой FSRS-карточке', () => {
+      const oldFsrsCard = SRS.newCard('old');
+      delete oldFsrsCard.learning_steps;
+      expect(SRS.migrateSM2ToFSRS(oldFsrsCard).learning_steps).toBe(0);
     });
 
     it('мигрированная карточка проходит полный цикл review без ошибок', () => {
@@ -446,6 +461,39 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
   });
 
   describe('Интеграционные тесты - Полный цикл повторений', () => {
+    it('сохраняет полный цикл New → Good → Learning → Good → Review после перезапуска', () => {
+      let now = 1_750_000_000_000;
+      vi.setSystemTime(now);
+      let persisted = SRS.newCard('reload-cycle');
+
+      SRS.review(persisted, SRS.Quality.Good);
+      expect(persisted.state).toBe(State.Learning);
+      expect(persisted.learning_steps).toBe(1);
+
+      persisted = JSON.parse(JSON.stringify(persisted));
+      now = persisted.due + 1;
+      vi.setSystemTime(now);
+      SRS.review(persisted, SRS.Quality.Good);
+
+      expect(persisted.state).toBe(State.Review);
+      expect(persisted.learning_steps).toBe(0);
+      expect(persisted.reps).toBe(2);
+    });
+
+    it.each([
+      ['Again', SRS.Quality.Again],
+      ['Hard', SRS.Quality.Hard],
+      ['Easy', SRS.Quality.Easy],
+    ])('сохраняет learning_steps и все поля после %s и JSON reload', (_label, quality) => {
+      const reviewed = SRS.newCard(`reload-${quality}`);
+      SRS.review(reviewed, quality);
+      const restored = SRS.serializeCard(JSON.parse(JSON.stringify(reviewed)));
+
+      expect(restored).toEqual(reviewed);
+      expect(restored).toHaveProperty('learning_steps');
+      expect(() => SRS.hydrate(restored)).not.toThrow();
+    });
+
     it('должна корректно обработать последовательность: Good -> Good -> Good', () => {
       const now = Date.now();
       // Стартуем из состояния Review — проверяем динамику стабильности

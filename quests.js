@@ -1,5 +1,7 @@
 /* quests.js — Daily Quests & Weekly Challenges System */
 
+import { localDateKey } from './src/local-date.js';
+
 // ========== HELPERS ==========
 
 /**
@@ -12,14 +14,14 @@ function getWeekStart() {
   const monday = new Date(now);
   monday.setDate(now.getDate() + diff);
   monday.setHours(0, 0, 0, 0);
-  return monday.toISOString().slice(0, 10); // "YYYY-MM-DD"
+  return localDateKey(monday);
 }
 
 /**
  * Получить текущую дату в формате YYYY-MM-DD
  */
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return localDateKey();
 }
 
 /**

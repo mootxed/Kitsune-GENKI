@@ -1,12 +1,15 @@
 /* src/srs-helpers.js — pure queries over SRS records */
 import { SRS } from '../srs.js';
+import { parseCardIdentity } from './knowledge-model.js';
 
 export function cardChapter(cardId) {
-  const m = /^L(\d+)_/.exec(cardId);
+  const { itemId } = parseCardIdentity(cardId);
+  const m = /^L(\d+)_/.exec(itemId);
   return m ? parseInt(m[1], 10) : null;
 }
 
 export function wordById(wordId, lessons) {
+  const itemId = parseCardIdentity(wordId).itemId;
   if (!lessons || lessons.length === 0) {
     console.warn(`[wordById] lessons array is empty or null for wordId: ${wordId}`);
     return null;
@@ -15,7 +18,7 @@ export function wordById(wordId, lessons) {
   for (const l of lessons) {
     // Поддерживаем оба формата: words и vocabulary
     const wordList = l.words || l.vocabulary || [];
-    const w = wordList.find((x) => x.id === wordId);
+    const w = wordList.find((x) => x.id === itemId);
     if (w) return w;
   }
 

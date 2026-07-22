@@ -6,6 +6,7 @@ import { allCards, dueCards } from '../src/srs-helpers.js';
 import { XP_CHECK, XP_CHAPTER_FULL, addXP } from '../src/xp-system.js';
 import { CHECK_ITEMS, getLesson, ensureLesson, startChapter, markActivity } from './home.js';
 import { toast } from '../app.js';
+import { countAvailableCardsForSession } from '../src/srs-limits.js';
 
 // ---------- Render: Chapter ----------
 export async function renderChapter(id, state, dependencies) {
@@ -31,7 +32,7 @@ export async function renderChapter(id, state, dependencies) {
   const items = CHECK_ITEMS.length;
   const done = CHECK_ITEMS.filter((c) => cs.checklist[c[0]]).length;
   const total = allCards(state.srs, id).length;
-  const due = dueCards(state.srs, id).length;
+  const due = countAvailableCardsForSession(dueCards(state.srs, id), state.srs);
 
   const startBlock = cs.started
     ? `<div class="card srs-mini">
