@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { State } from 'ts-fsrs';
-import { countNewCardsIntroducedOn, limitNewCardsForSession, studyDay } from '../src/srs-limits.js';
+import {
+  countAvailableCardsForSession,
+  countNewCardsIntroducedOn,
+  limitNewCardsForSession,
+  studyDay,
+} from '../src/srs-limits.js';
 
 const DAY = '2026-07-22';
 
@@ -63,5 +68,29 @@ describe('SRS new-card limits', () => {
     const records = { a: card('a', State.Review, DAY) };
     expect(countNewCardsIntroducedOn(records, DAY)).toBe(1);
     expect(studyDay(Date.UTC(2026, 6, 22))).toBe(DAY);
+  });
+
+  it('переключает дневной лимит по локальной полуночи', () => {
+    const beforeMidnight = new Date(2026, 6, 22, 23, 59, 59).getTime();
+    const afterMidnight = new Date(2026, 6, 23, 0, 0, 1).getTime();
+    expect(studyDay(beforeMidnight)).toBe('2026-07-22');
+    expect(studyDay(afterMidnight)).toBe('2026-07-23');
+  });
+
+  it('счётчик совпадает с выдачей и не мутирует introducedOn', () => {
+    const records = {
+      review: card('review', State.Review),
+      n1: card('n1'),
+      n2: card('n2'),
+    };
+    const due = Object.values(records);
+    const options = {
+      day: DAY,
+      config: { dailyNewCardsLimit: 1, sessionNewCardsLimit: 10 },
+    };
+
+    expect(countAvailableCardsForSession(due, records, options)).toBe(2);
+    expect(records.n1.introducedOn).toBeUndefined();
+    expect(limitNewCardsForSession(due, records, options)).toHaveLength(2);
   });
 });

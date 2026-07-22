@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { state, defaultState, loadState, save, subscribe } from '../state/store.js';
+import { state, defaultState, loadState, runMigrations, save, subscribe } from '../state/store.js';
 
 describe('Store - Версионирование и миграции', () => {
   const LS_STATE = 'kitsune_state_v1';
@@ -14,9 +14,9 @@ describe('Store - Версионирование и миграции', () => {
   });
 
   describe('defaultState', () => {
-    it('должен содержать поле version со значением 3', () => {
+    it('должен содержать поле version со значением 4', () => {
       const state = defaultState();
-      expect(state.version).toBe(3);
+      expect(state.version).toBe(4);
     });
 
     it('должен содержать все необходимые поля', () => {
@@ -35,12 +35,12 @@ describe('Store - Версионирование и миграции', () => {
   });
 
   describe('Миграции', () => {
-    it('должен создать новое состояние с версией 3 при первой загрузке', () => {
+    it('должен создать новое состояние с версией 4 при первой загрузке', () => {
       loadState();
-      expect(state.version).toBe(3);
+      expect(state.version).toBe(4);
     });
 
-    it('должен мигрировать старое состояние без версии → версия 3', () => {
+    it('должен мигрировать старое состояние без версии → версия 4', () => {
       const oldState = {
         initialized: true,
         xp: 500,
@@ -53,7 +53,7 @@ describe('Store - Версионирование и миграции', () => {
       loadState();
 
       // Проверяем что версия проставлена
-      expect(state.version).toBe(3);
+      expect(state.version).toBe(4);
 
       // Проверяем что старые данные сохранились
       expect(state.xp).toBe(500);
@@ -78,7 +78,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       loadState();
 
-      expect(state.version).toBe(3);
+      expect(state.version).toBe(4);
       expect(state.unlockedAchievements).toEqual(['first_steps', 'quick_learner']);
       expect(state.claimedAchievements).toEqual(['first_steps']);
     });
@@ -94,7 +94,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       loadState();
 
-      expect(state.version).toBe(3);
+      expect(state.version).toBe(4);
       expect(state.settings.openrouterKey).toBe('test_key');
       expect(state.settings.darkMode).toBe('dark');
       // Проверяем что дефолтные настройки добавлены
@@ -102,7 +102,7 @@ describe('Store - Версионирование и миграции', () => {
       expect(state.settings.notifyEnabled).toBe(false);
     });
 
-    it('не должен перезаписывать данные если версия уже 3', () => {
+    it('сохраняет данные версии 3 при добавлении полной FSRS-схемы', () => {
       const currentState = {
         version: 3,
         xp: 1000,
@@ -113,7 +113,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(currentState));
       loadState();
 
-      expect(state.version).toBe(3);
+      expect(state.version).toBe(4);
       expect(state.xp).toBe(1000);
       expect(state.level).toBe(10);
       expect(state.unlockedAchievements).toEqual(['achievement1', 'achievement2']);
@@ -146,7 +146,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       loadState();
 
-      expect(state.version).toBe(3);
+      expect(state.version).toBe(4);
 
       const card = state.srs.L1_w1;
       // FSRS-схема
@@ -156,6 +156,7 @@ describe('Store - Версионирование и миграции', () => {
       expect(card.difficulty).toBeLessThanOrEqual(10);
       expect(card).not.toHaveProperty('ef');
       expect(card).not.toHaveProperty('interval');
+      expect(card.learning_steps).toBe(0);
       // КРИТИЧНО: абсолютные метки времени не перезаписаны
       expect(card.due).toBe(legacyDue);
       expect(card.lastReview).toBe(1699990000000);
@@ -164,6 +165,37 @@ describe('Store - Версионирование и миграции', () => {
       // Более низкий EF → более высокая сложность
       expect(hardCard.difficulty).toBeGreaterThan(card.difficulty);
       expect(hardCard.due).toBe(legacyDue + 1000);
+    });
+
+    it('мигрирует v3 карточку без learning_steps и сохраняет legacy progress только как данные', () => {
+      const migrated = runMigrations({
+        version: 3,
+        srs: {
+          L1_w9: {
+            id: 'L1_w9',
+            stability: 12,
+            difficulty: 5,
+            elapsed_days: 2,
+            scheduled_days: 10,
+            reps: 4,
+            lapses: 1,
+            state: 2,
+            due: 1_750_000_000_000,
+            lastReview: 1_749_000_000_000,
+            progress: 88,
+          },
+        },
+      });
+
+      expect(migrated.version).toBe(4);
+      expect(migrated.reviewEvents).toEqual([]);
+      expect(migrated.srs.L1_w9).toMatchObject({
+        learning_steps: 0,
+        progress: 88,
+        legacyMasteryEstimated: true,
+        itemId: 'L1_w9',
+        skill: 'recognition',
+      });
     });
   });
 
@@ -283,7 +315,7 @@ describe('Store - Версионирование и миграции', () => {
       loadState();
 
       // Должен вернуться к defaultState
-      expect(state.version).toBe(3);
+      expect(state.version).toBe(4);
       expect(state.xp).toBe(0);
       expect(state.level).toBe(1);
     });
@@ -303,7 +335,7 @@ describe('Store - Версионирование и миграции', () => {
         // Эмулируем перезагрузку страницы
         loadState();
 
-        expect(state.version).toBe(3);
+        expect(state.version).toBe(4);
         expect(state.xp).toBe(999);
         expect(state.level).toBe(15);
         expect(state.coins).toBe(500);

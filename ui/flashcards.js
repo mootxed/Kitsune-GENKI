@@ -7,7 +7,9 @@ import { SRS } from '../srs.js';
 import { speakJapanese } from '../src/audio-helper.js';
 import { SessionBatcher } from '../src/session-batcher.js';
 import { SessionManager } from '../session-manager.js';
-import { UndoStack, adjustQualityByTime, isLeech, restoreCardState } from '../src/card-behavior.js';
+import { UndoStack, adjustQualityByTime, isLeech, undoReviewEvent } from '../src/card-behavior.js';
+import { cardsForItem, modeCanSchedule, parseCardIdentity } from '../src/knowledge-model.js';
+import { calculateMastery } from '../src/mastery.js';
 import {
   CURATED_PARTICLE_SENTENCES,
   SMART_PARTICLE_TEMPLATES,
@@ -27,6 +29,7 @@ let sessionManager = null;
 let activeReviewTiming = null;
 let activeReviewState = null;
 let activeReviewDependencies = null;
+let activePracticeMode = null;
 const reviewUndoStack = new UndoStack(10);
 
 // Глобальные переменные для батчинга сессий
@@ -52,6 +55,10 @@ export const CARD_MODES = {
   PARTICLE_QUIZ: 'particle-quiz',
   SENTENCE_BUILDING: 'sentence-building',
 };
+
+export function isDebugSkipEnabled(env = import.meta.env) {
+  return env?.DEV === true;
+}
 
 function monotonicNow() {
   return typeof globalThis.performance !== 'undefined' &&
@@ -90,34 +97,68 @@ function consumeReviewContext(cardId, fallbackMode = 'unknown') {
   return context;
 }
 
-function submitReview(card, quality, state, context = null) {
-  const reviewContext = context || consumeReviewContext(card.id);
-  if (context && activeReviewTiming?.cardId === card.id) activeReviewTiming = null;
+export function submitReview(card, quality, state, context = null) {
+  const timedContext = consumeReviewContext(card.id, context?.mode || 'unknown');
+  const reviewContext = {
+    ...timedContext,
+    ...(context || {}),
+    mode: context?.mode || timedContext.mode,
+    responseTimeMs:
+      context && Object.hasOwn(context, 'responseTimeMs')
+        ? context.responseTimeMs
+        : timedContext.responseTimeMs,
+  };
 
   const srsCard = state.srs[card.id];
-  const isUserAction = Number.isFinite(reviewContext.responseTimeMs);
-  if (isUserAction && srsCard) {
-    reviewUndoStack.push(card.id, {
-      card: srsCard,
-      session: sessionManager?.createSnapshot() || null,
-      flashIdx,
-      flashRevealed,
-    });
+  const mode = activePracticeMode === 'preview' ? 'preview' : reviewContext.mode;
+  if (!srsCard || !modeCanSchedule(srsCard, mode)) {
+    sessionManager?.skipCard(card.id);
+    return quality;
   }
 
-  const adjustedQuality = adjustQualityByTime(
-    quality,
-    reviewContext.responseTimeMs,
-    reviewContext.mode
-  );
+  const mistakes = Number.isInteger(reviewContext.mistakes) ? reviewContext.mistakes : 0;
+  const hintUsed = reviewContext.hintUsed === true;
+  let adjustedQuality = adjustQualityByTime(quality, reviewContext.responseTimeMs, mode);
+  // A hint or retry cannot be evidence for Easy.
+  if ((hintUsed || mistakes > 0) && adjustedQuality === SRS.Quality.Easy) {
+    adjustedQuality = SRS.Quality.Good;
+  }
   const wasLeech = isLeech(srsCard);
+  const sessionSnapshot = sessionManager?.createSnapshot() || null;
+  const previousCard = SRS.serializeCard(srsCard);
+  const isFirstAttempt = sessionManager?.getCardState(card.id)?.isFirstAttempt ?? true;
+  const identity = parseCardIdentity(srsCard);
+  const fullContext = {
+    ...reviewContext,
+    mode,
+    skill: identity.skill,
+    mistakes,
+    hintUsed,
+    rawRating: quality,
+    firstAttemptCorrect:
+      isFirstAttempt && adjustedQuality >= SRS.Quality.Good && mistakes === 0 && !hintUsed,
+  };
 
-  if (isUserAction && srsCard) updateCardProgress(srsCard, adjustedQuality);
-
+  let result;
   if (sessionManager) {
-    sessionManager.answerCard(card.id, adjustedQuality, state.srs, reviewContext);
-  } else if (srsCard) {
-    SRS.review(srsCard, adjustedQuality, reviewContext);
+    result = sessionManager.answerCard(card.id, adjustedQuality, state.srs, fullContext);
+  } else {
+    result = SRS.applyReview(srsCard, adjustedQuality, fullContext);
+  }
+
+  if (result?.event) {
+    if (!Array.isArray(state.reviewEvents)) state.reviewEvents = [];
+    state.reviewEvents.push(result.event);
+    reviewUndoStack.push(
+      card.id,
+      {
+        card: previousCard,
+        session: sessionSnapshot,
+        flashIdx,
+        flashRevealed,
+      },
+      { eventId: result.event.eventId }
+    );
   }
 
   if (!wasLeech && isLeech(srsCard)) {
@@ -129,35 +170,34 @@ function submitReview(card, quality, state, context = null) {
   return adjustedQuality;
 }
 
-function updateCardProgress(card, quality) {
-  if (card.progress === undefined) card.progress = 0;
-
-  if (quality === SRS.Quality.Again) card.progress = Math.max(0, card.progress - 5);
-  else if (quality === SRS.Quality.Hard) card.progress = Math.max(0, card.progress - 3);
-  else if (quality === SRS.Quality.Good) card.progress = Math.min(100, card.progress + 5);
-  else if (quality === SRS.Quality.Easy) card.progress = Math.min(100, card.progress + 10);
+function latestUndoableEvent(state) {
+  return [...(state.reviewEvents || [])].reverse().find((event) => !event.undoneAt) || null;
 }
 
-function undoLastReview(state, dependencies) {
-  let restored = false;
-  const undone = reviewUndoStack.undo((cardId, previous) => {
-    const card = state.srs[cardId];
-    if (previous.session && !sessionManager?.restoreSnapshot(previous.session)) return;
-    if (!restoreCardState(card, previous.card)) return;
+async function undoLastReview(state, dependencies) {
+  const stackEntry = reviewUndoStack.pop();
+  const persistedEvent = stackEntry
+    ? (state.reviewEvents || []).find((event) => event.eventId === stackEntry.eventId)
+    : latestUndoableEvent(state);
+  if (!persistedEvent) return false;
 
-    flashIdx = previous.flashIdx;
-    flashRevealed = previous.flashRevealed;
-    activeReviewTiming = null;
-    kanjiSequence = [];
-    currentKanjiIndex = 0;
-    totalDrawingMistakes = 0;
-    restored = true;
-  });
+  const cardId = persistedEvent.cardId;
+  const previous = stackEntry?.state;
+  const card = state.srs[cardId];
+  if (!card) return false;
+  if (previous?.session && !sessionManager?.restoreSnapshot(previous.session)) return false;
+  if (previous?.card) persistedEvent.previousCard = previous.card;
+  if (!undoReviewEvent(state, persistedEvent.eventId)) return false;
 
-  if (!undone || !restored) return false;
+  flashIdx = previous?.flashIdx ?? flashIdx;
+  flashRevealed = previous?.flashRevealed ?? false;
+  activeReviewTiming = null;
+  kanjiSequence = [];
+  currentKanjiIndex = 0;
+  totalDrawingMistakes = 0;
 
   document.getElementById('completion-overlay')?.classList.add('hidden');
-  dependencies.save(true);
+  await dependencies.save(true);
   dependencies.updateSrsBadge?.();
   dependencies.toast?.('↩️ Последний ответ отменён');
   renderFlash(state, dependencies);
@@ -170,7 +210,7 @@ function createUndoButton(state, dependencies) {
   button.className = 'btn-ghost review-undo-btn';
   button.dataset.testid = 'review-undo';
   button.textContent = '↩️ Отменить ответ';
-  button.onclick = () => undoLastReview(state, dependencies);
+  button.onclick = async () => undoLastReview(state, dependencies);
   return button;
 }
 
@@ -182,7 +222,10 @@ function renderCardBehaviorControls(cardId) {
   const top = document.querySelector('#srs-body .flash-top');
   if (!top) return;
 
-  if (reviewUndoStack.canUndo && !top.querySelector('.review-undo-btn')) {
+  if (
+    (reviewUndoStack.canUndo || latestUndoableEvent(state)) &&
+    !top.querySelector('.review-undo-btn')
+  ) {
     top.insertBefore(createUndoButton(state, dependencies), top.lastElementChild);
   }
 
@@ -209,7 +252,7 @@ function renderCompletionUndo(state, dependencies) {
   const rewards = document.getElementById('completion-rewards');
   if (!rewards) return;
   rewards.parentElement?.querySelector('.review-undo-btn')?.remove();
-  if (!reviewUndoStack.canUndo) return;
+  if (!reviewUndoStack.canUndo && !latestUndoableEvent(state)) return;
   rewards.insertAdjacentElement('afterend', createUndoButton(state, dependencies));
 }
 
@@ -808,7 +851,10 @@ function initDrawingMode(
                 : '📝 Нарисовано с подсказками';
         toast(resultText);
 
-        submitReview(card, quality, state);
+        submitReview(card, quality, state, {
+          mistakes: totalDrawingMistakes,
+          hintUsed: totalDrawingMistakes >= 3,
+        });
         if (!sessionManager) flashIdx += 1;
 
         appAddXP(XP_CARD);
@@ -942,8 +988,7 @@ function initDrawingMode(
       };
     }
 
-    // === DEBUG: SKIP BUTTON HANDLER - REMOVE BEFORE PRODUCTION ===
-    const skipBtn = document.getElementById('debug-skip-btn');
+    const skipBtn = import.meta.env.DEV ? document.getElementById('debug-skip-btn') : null;
     if (skipBtn) {
       skipBtn.onclick = () => {
         console.log('[DEBUG] Skip button clicked - auto-completing kanji');
@@ -1162,7 +1207,8 @@ function renderTypingMode(word, state, dependencies) {
       </div>
     </div>`;
 
-  startReviewTiming(word.id, CARD_MODES.TYPING);
+  const reviewCardId = (sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx])?.id;
+  startReviewTiming(reviewCardId || word.id, CARD_MODES.TYPING);
 
   const input = $('#typing-input');
   const checkBtn = $('#typing-check');
@@ -1199,7 +1245,7 @@ function renderTypingMode(word, state, dependencies) {
       input.classList.remove('incorrect', 'shake-error');
 
       const quality = SRS.qualityFromMistakes(typingMistakes);
-      markReviewAnswered(word.id);
+      markReviewAnswered(reviewCardId || word.id);
 
       setTimeout(() => {
         handleRating(quality);
@@ -1230,7 +1276,7 @@ function renderTypingMode(word, state, dependencies) {
         const allAnswers = acceptedAnswers.join(' или ');
         hintMessage.innerHTML = `<p style="color: var(--danger); margin: 8px 0;">❌ Неправильно</p><p style="margin: 4px 0;">Правильный ответ: <strong style="color: var(--primary);">${allAnswers}</strong></p>`;
         hintMessage.classList.remove('hidden');
-        markReviewAnswered(word.id);
+        markReviewAnswered(reviewCardId || word.id);
 
         setTimeout(() => {
           handleRating(SRS.Quality.Again);
@@ -1244,7 +1290,10 @@ function renderTypingMode(word, state, dependencies) {
   const handleRating = (quality) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-    submitReview(card, quality, state);
+    submitReview(card, quality, state, {
+      mistakes: typingMistakes,
+      hintUsed: typingMistakes > 0,
+    });
     if (!sessionManager) flashIdx += 1;
 
     appAddXP(XP_CARD);
@@ -1405,12 +1454,16 @@ function renderMultipleChoiceMode(word, state, dependencies, modeConfig = {}) {
       </div>
     </div>`;
 
-  startReviewTiming(word.id, modeConfig.mode || CARD_MODES.MULTIPLE_CHOICE);
+  const reviewCardId = (sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx])?.id;
+  startReviewTiming(reviewCardId || word.id, modeConfig.mode || CARD_MODES.MULTIPLE_CHOICE);
 
   const handleRating = (quality) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-    submitReview(card, quality, state);
+    submitReview(card, quality, state, {
+      mistakes: mistakeCount,
+      hintUsed: false,
+    });
     if (!sessionManager) flashIdx += 1;
 
     appAddXP(XP_CARD);
@@ -1434,7 +1487,7 @@ function renderMultipleChoiceMode(word, state, dependencies, modeConfig = {}) {
 
         // Вычисляем качество на основе ошибок
         const quality = SRS.qualityFromMistakes(mistakeCount);
-        markReviewAnswered(word.id);
+        markReviewAnswered(reviewCardId || word.id);
 
         setTimeout(() => {
           handleRating(quality);
@@ -1454,7 +1507,7 @@ function renderMultipleChoiceMode(word, state, dependencies, modeConfig = {}) {
               b.classList.add('correct');
             }
           });
-          markReviewAnswered(word.id);
+          markReviewAnswered(reviewCardId || word.id);
 
           setTimeout(() => {
             handleRating(SRS.Quality.Again);
@@ -1669,7 +1722,10 @@ function renderSentenceBuilding(particleCard, state, dependencies) {
   const handleRating = (quality) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-    submitReview(card, quality, state);
+    submitReview(card, quality, state, {
+      mistakes: mistakeCount,
+      hintUsed: mistakeCount > 0,
+    });
     if (!sessionManager) flashIdx += 1;
 
     appAddXP(XP_CARD);
@@ -1862,7 +1918,10 @@ function renderParticleQuizMode(particleCard, state, dependencies) {
   const handleRating = (quality) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-    submitReview(card, quality, state);
+    submitReview(card, quality, state, {
+      mistakes: mistakeCount,
+      hintUsed: mistakeCount > 0,
+    });
     if (!sessionManager) flashIdx += 1;
 
     appAddXP(XP_CARD);
@@ -2086,11 +2145,8 @@ export function renderFlash(state, dependencies) {
   const hideRomaji = state.settings?.hideRomaji || false;
   const displayRomaji = word.romaji || '';
 
-  // Специальные упражнения батча сохраняем, а базовые режимы выбираем по зрелости карточки.
-  const isSpecialBatchMode = [CARD_MODES.PARTICLE_QUIZ, CARD_MODES.SENTENCE_BUILDING].includes(
-    card.forcedMode
-  );
-  const cardMode = isSpecialBatchMode ? card.forcedMode : determineCardMode(card, word);
+  // В SRS-батче forcedMode закреплён за skill карточки; вне батча остаётся адаптивный режим.
+  const cardMode = card.forcedMode || determineCardMode(card, word);
 
   // Режим квиза по частицам (блок 2 сессии)
   if (cardMode === CARD_MODES.PARTICLE_QUIZ) {
@@ -2140,9 +2196,11 @@ export function renderFlash(state, dependencies) {
           </div>
           <div class="drawing-controls">
             <button class="btn-secondary" id="drawing-undo">↺ Сбросить</button>
-            <!-- === DEBUG: SKIP BUTTON FOR TESTING - REMOVE BEFORE PRODUCTION === -->
-            <button class="btn-secondary" id="debug-skip-btn" style="background: var(--danger); color: white; margin-left: 8px;">⏭️ Skip (TEST)</button>
-            <!-- === END DEBUG SKIP BUTTON === -->
+            ${
+              import.meta.env.DEV
+                ? '<button class="btn-secondary" id="debug-skip-btn" style="background: var(--danger); color: white; margin-left: 8px;">⏭️ Skip (TEST)</button>'
+                : ''
+            }
           </div>
         </div>
       </div>`;
@@ -2291,16 +2349,16 @@ function renderDictionaryLessons(state, dependencies, searchQuery = '') {
         const isUnlocked = isWordUnlocked(word.id, state.chapters);
         const chapterId = cardChapter(word.id);
 
-        const srsRecord = state.srs[word.id];
-        let progress = 0;
-        let progressClass = 'progress-none';
-
-        if (srsRecord) {
-          progress = srsRecord.progress || 0;
-          if (progress >= 75) progressClass = 'progress-high';
-          else if (progress >= 25) progressClass = 'progress-medium';
-          else progressClass = 'progress-low';
-        }
+        const itemCards = cardsForItem(state.srs, word.id);
+        const mastery = calculateMastery({
+          itemId: word.id,
+          cards: itemCards,
+          events: state.reviewEvents || [],
+          getRetrievability: (card, now) => SRS.getRetrievability(card, now),
+        });
+        const progress = mastery.score;
+        const progressClass =
+          progress >= 75 ? 'progress-high' : progress >= 25 ? 'progress-medium' : 'progress-low';
 
         if (!isUnlocked) {
           return `
@@ -2336,7 +2394,7 @@ function renderDictionaryLessons(state, dependencies, searchQuery = '') {
             <div class="dict-progress-bar">
               <div class="dict-progress-fill ${progressClass}" style="width: ${progress}%"></div>
             </div>
-            <span class="dict-progress-text">${progress}%</span>
+            <span class="dict-progress-text" title="Mastery score ${progress}/100">${mastery.label}</span>
           </div>
         </div>
       `;
@@ -2626,11 +2684,11 @@ async function initDictionaryKanjiWriter(kanji) {
 
 // Функция запуска дополнительного повторения
 export function startExtraReview(state, dependencies) {
-  const { save, updateSrsBadge, toast } = dependencies;
+  const { toast } = dependencies;
 
-  const all = allCards(state.srs);
+  const all = allCards(state.srs).filter((card) => card.reps > 0 || card.state !== SRS.State.New);
   if (all.length === 0) {
-    toast('Нет изученных карточек. Сначала начните главу.');
+    toast('Нет изученных карточек для дополнительной практики.');
     return;
   }
 
@@ -2640,14 +2698,12 @@ export function startExtraReview(state, dependencies) {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
-  const selected = shuffled.slice(0, Math.min(10, shuffled.length));
-  selected.forEach((card) => {
-    card.due = Date.now();
-  });
+  const selected = shuffled.slice(0, Math.min(10, shuffled.length)).map((card) => ({
+    ...card,
+    preview: true,
+  }));
 
-  save();
-  toast(`🍀 ${selected.length} старых карточек добавлены к повторению!`);
-  updateSrsBadge();
+  toast(`🍀 Дополнительная практика: ${selected.length} карточек (без изменения расписания)`);
 
   // Чистый старт сессии доп. повторения (без несуществующего startFlash)
   document.getElementById('completion-overlay')?.classList.add('hidden');
@@ -2657,6 +2713,7 @@ export function startExtraReview(state, dependencies) {
   if (tabsContainer) tabsContainer.classList.add('hidden');
 
   sessionManager = null;
+  activePracticeMode = 'preview';
   reviewUndoStack.clear();
   flashCtx = null;
   flashRevealed = false;
@@ -2667,6 +2724,7 @@ export function startExtraReview(state, dependencies) {
 
 // Функция инициализации батчинга сессий
 export function initSessionBatching(dueCardsQueue, lessonsData, batchSize = 20) {
+  activePracticeMode = null;
   const lessons = lessonsData || [];
   sessionBatcher = new SessionBatcher(dueCardsQueue, batchSize);
   currentBatchIndex = 0;
@@ -2783,6 +2841,7 @@ export function setFlashCtx(ctx) {
 export function setSessionManager(manager) {
   if (sessionManager !== manager) reviewUndoStack.clear();
   sessionManager = manager;
+  if (manager) activePracticeMode = null;
 }
 
 export function getFlashQueue() {

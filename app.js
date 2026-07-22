@@ -36,7 +36,7 @@ import {
   getUserRankData,
 } from './src/xp-system.js';
 import { cardChapter, wordById, isWordUnlocked, dueCards, allCards } from './src/srs-helpers.js';
-import { limitNewCardsForSession } from './src/srs-limits.js';
+import { countAvailableCardsForSession, limitNewCardsForSession } from './src/srs-limits.js';
 import {
   exportFullProgress,
   validateImportData,
@@ -127,7 +127,7 @@ async function loadState() {
 }
 
 function save(immediate = false) {
-  saveToStore(immediate);
+  return saveToStore(immediate);
 }
 
 // ===== DEPENDENCIES ОБЪЕКТ =====
@@ -514,22 +514,23 @@ function setupRouter() {
     await ensureLessonsForSrs();
 
     const due = dueCards(state.srs);
+    const availableCount = countAvailableCardsForSession(due, state.srs);
 
     // ВСЕГДА показываем dashboard с кнопкой, даже если есть карточки к повтору
     body.innerHTML = `
       <div class="stat-row">
-        <div class="stat-box"><div class="stat-num accent">${due.length}</div><div class="stat-cap">К повтору</div></div>
+        <div class="stat-box"><div class="stat-num accent">${availableCount}</div><div class="stat-cap">К повтору</div></div>
         <div class="stat-box"><div class="stat-num">${allCards(state.srs).length}</div><div class="stat-cap">Всего карточек</div></div>
       </div>
-      <button class="btn-primary" id="srs-start-session" ${due.length === 0 ? 'disabled' : ''}>
-        ${due.length === 0 ? 'Всё повторено на сегодня!' : '▶️ Начать повторение'}
+      <button class="btn-primary" id="srs-start-session" ${availableCount === 0 ? 'disabled' : ''}>
+        ${availableCount === 0 ? 'Всё повторено на сегодня!' : `▶️ Начать повторение (${availableCount})`}
       </button>
-      <button class="btn-extra-review" id="srs-extra-review">➕ Доп. повторение (10 карточек)</button>
+      <button class="btn-extra-review" id="srs-extra-review">➕ Практика без изменения расписания</button>
     `;
 
     // Привязываем обработчики к кнопкам
     const startBtn = $('#srs-start-session');
-    if (startBtn && due.length > 0) {
+    if (startBtn && availableCount > 0) {
       startBtn.onclick = () => startSrsSession();
     }
 

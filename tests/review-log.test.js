@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SRS } from '../srs.js';
+import { undoReviewEvent } from '../src/card-behavior.js';
 
 const defer = (callback) => Promise.resolve().then(callback);
 
@@ -222,5 +224,28 @@ describe('IndexedDB review_log', () => {
     expect(() => validateReviewLogEntry(makeEntry({ quality: 2 }))).toThrow();
     expect(() => validateReviewLogEntry(makeEntry({ responseTimeMs: -1 }))).toThrow();
     expect(() => validateReviewLogEntry(makeEntry({ previousStability: undefined }))).toThrow();
+  });
+
+  it('Undo после асинхронной записи восстанавливает карточку и связанное событие', async () => {
+    const dbModule = await import('../src/db.js');
+    await dbModule.initializeDB();
+    const card = SRS.newCard('L4_w1');
+    const previous = JSON.parse(JSON.stringify(card));
+    const { event } = SRS.applyReview(card, SRS.Quality.Good, {
+      mode: 'reverse-multiple-choice',
+      reviewedAt: 1_750_000_000_000,
+    });
+    const appState = { version: 4, srs: { [card.id]: card }, reviewEvents: [event] };
+
+    await dbModule.db.set(dbModule.STORES.APP_STATE, 'state', appState);
+    expect(undoReviewEvent(appState, event.eventId, 1_750_000_001_000)).toBe(true);
+    await dbModule.db.set(dbModule.STORES.APP_STATE, 'state', appState);
+
+    const reloaded = await dbModule.db.get(dbModule.STORES.APP_STATE, 'state');
+    expect(reloaded.srs[card.id]).toEqual(previous);
+    expect(reloaded.reviewEvents[0]).toMatchObject({
+      eventId: event.eventId,
+      undoneAt: 1_750_000_001_000,
+    });
   });
 });

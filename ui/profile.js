@@ -2,6 +2,7 @@
 
 import { $, $$, monthLabel } from '../src/utils.js';
 import { getUserRankData } from '../src/xp-system.js';
+import { localDateKey } from '../src/local-date.js';
 
 // Глобальные переменные профиля
 let heatmapMonth = null;
@@ -705,7 +706,7 @@ function renderActivityChart(state) {
   for (let i = 6; i >= 0; i--) {
     const date = new Date(endDate);
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = localDateKey(date);
     dates.push(dateStr);
     counts.push(state.history[dateStr] || 0);
   }

@@ -1,8 +1,13 @@
 /* crossword.test.js — Тесты для логики кроссворда */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
 
 describe('Crossword System', () => {
+  it('не читает и не изменяет legacy progress карточек', () => {
+    const source = readFileSync('ui/crossword.js', 'utf8');
+    expect(source).not.toMatch(/srsCard\.progress|\.progress\s*[+\-=]/u);
+  });
   describe('Word length validation', () => {
     it('should correctly calculate word length from kana string', () => {
       const testWords = [

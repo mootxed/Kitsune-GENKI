@@ -6,7 +6,7 @@ import { db, STORES } from '../src/db.js';
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-const CURRENT_VERSION = 3;
+export const CURRENT_VERSION = 4;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -63,6 +63,19 @@ const MIGRATIONS = {
 
     return migratedState;
   },
+  4: (oldState) => {
+    // ts-fsrs 5.4.1 adds learning_steps to Card. Existing progress is retained
+    // only as legacy data and is never promoted into evidence-backed mastery.
+    const migratedState = { ...oldState, srs: { ...(oldState.srs || {}) } };
+    for (const [cardId, card] of Object.entries(migratedState.srs)) {
+      const normalized = SRS.migrateSM2ToFSRS({ ...card, id: card.id || cardId });
+      if (Object.hasOwn(card, 'progress')) normalized.legacyMasteryEstimated = true;
+      migratedState.srs[cardId] = normalized;
+    }
+    migratedState.reviewEvents = Array.isArray(oldState.reviewEvents) ? oldState.reviewEvents : [];
+    migratedState.version = 4;
+    return migratedState;
+  },
 };
 
 // ---------- Default State ----------
@@ -72,6 +85,7 @@ export function defaultState() {
     initialized: false,
     chapters: {}, // id -> {started, checklist:{}}
     srs: {}, // cardId -> SRS record
+    reviewEvents: [], // атомарный журнал новых review; legacy REVIEW_LOG хранится отдельно
     streak: { count: 0, lastActive: null },
     savedNotes: [], // {id,title,content,date}
     settings: {
@@ -105,7 +119,7 @@ export function defaultState() {
 }
 
 // ---------- Migrations Runner ----------
-function runMigrations(loadedState) {
+export function runMigrations(loadedState) {
   let currentVersion = loadedState.version || 1; // Старые сохранения без версии считаются версией 1
   let migratedState = loadedState;
 
@@ -203,6 +217,7 @@ export async function loadState() {
 
 // ---------- Save State ----------
 let saveTimeout = null;
+let saveQueue = Promise.resolve();
 
 export function save(immediate = false) {
   if (immediate) {
@@ -210,22 +225,34 @@ export function save(immediate = false) {
       clearTimeout(saveTimeout);
       saveTimeout = null;
     }
-    performSave();
+    return performSave();
   } else {
     if (saveTimeout) clearTimeout(saveTimeout);
     saveTimeout = setTimeout(performSave, 500);
+    return Promise.resolve();
   }
 }
 
-async function performSave() {
+function performSave() {
+  // Снимок делается до первого await, а записи выполняются строго по порядку.
+  // Поэтому поздний review/Undo не может быть перезаписан более старым save.
+  const snapshot =
+    typeof globalThis.structuredClone === 'function'
+      ? globalThis.structuredClone(state)
+      : JSON.parse(JSON.stringify(state));
+  saveQueue = saveQueue.catch(() => undefined).then(() => persistSnapshot(snapshot));
+  return saveQueue;
+}
+
+async function persistSnapshot(snapshot) {
   try {
     console.log(
       '[Store] Сохранение состояния. XP:',
-      state.xp,
+      snapshot.xp,
       'Chapters:',
-      Object.keys(state.chapters).length
+      Object.keys(snapshot.chapters).length
     );
-    await db.set(STORES.APP_STATE, 'state', state);
+    await db.set(STORES.APP_STATE, 'state', snapshot);
     console.log('[Store] ✅ Состояние сохранено в IndexedDB');
     notify(); // Уведомляем подписчиков об изменениях
   } catch (e) {
@@ -234,7 +261,7 @@ async function performSave() {
     // Обработка переполнения квоты
     if (e.name === 'QuotaExceededError') {
       console.warn('[Store] Квота переполнена. Попытка сохранить только критичные данные...');
-      const minimal = { ...state, savedNotes: state.savedNotes.slice(0, 20) };
+      const minimal = { ...snapshot, savedNotes: snapshot.savedNotes.slice(0, 20) };
 
       try {
         await db.set(STORES.APP_STATE, 'state', minimal);
@@ -242,7 +269,7 @@ async function performSave() {
       } catch (err2) {
         // Последний фоллбек: emergency state в localStorage
         console.error('[Store] Критическая ошибка сохранения, используем localStorage:', err2);
-        const emergency = { ...state, savedNotes: [] };
+        const emergency = { ...snapshot, savedNotes: [] };
         try {
           localStorage.setItem(LS_STATE, JSON.stringify(emergency));
           if (window.toast) window.toast('⚠️ Заметки удалены — не хватило места в хранилище');
@@ -253,7 +280,7 @@ async function performSave() {
     } else {
       // Для других ошибок — фоллбек в localStorage
       try {
-        localStorage.setItem(LS_STATE, JSON.stringify(state));
+        localStorage.setItem(LS_STATE, JSON.stringify(snapshot));
         console.warn('[Store] Использован localStorage после ошибки IndexedDB');
       } catch {
         console.error('[Store] Полный отказ сохранения');

@@ -10,6 +10,7 @@ import {
 } from '../src/backup-manager.js';
 import { db, STORES } from '../src/db.js';
 import { clearReviewLogs } from '../src/review-log.js';
+import { localDateKey } from '../src/local-date.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -203,7 +204,7 @@ async function handleFullExport(state, toastFn) {
   try {
     // exportFullProgress теперь async
     const data = await exportFullProgress();
-    const filename = `kitsune_genki_full_${new Date().toISOString().split('T')[0]}.json`;
+    const filename = `kitsune_genki_full_${localDateKey()}.json`;
 
     const shared = await shareJSON(data, filename);
 

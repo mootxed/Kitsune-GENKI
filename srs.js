@@ -3,6 +3,7 @@
 import { fsrs, generatorParameters, Rating, State } from 'ts-fsrs';
 import { MAX_INTERVAL, SRS_SCHEDULER_CONFIG } from './src/srs-config.js';
 import { handleLeech, isLeech, LEECH_THRESHOLD } from './src/card-behavior.js';
+import { KNOWLEDGE_TYPES, SKILLS, parseCardIdentity } from './src/knowledge-model.js';
 
 const DAY = 86400000;
 
@@ -51,14 +52,15 @@ function setReviewLogger(logger) {
 }
 
 function emitReviewLog(entry) {
-  if (!reviewLogger) return;
+  if (!reviewLogger) return Promise.resolve();
 
   try {
-    Promise.resolve(reviewLogger(entry)).catch((error) => {
+    return Promise.resolve(reviewLogger(entry)).catch((error) => {
       console.warn('[SRS] Не удалось сохранить review log:', error);
     });
   } catch (error) {
     console.warn('[SRS] Не удалось сохранить review log:', error);
+    return Promise.resolve();
   }
 }
 
@@ -94,16 +96,64 @@ function qualityFromDrawingMistakes(mistakeCount) {
   return Quality.Again;
 }
 
-// Создание новой карточки в формате FSRS
-function newCard(id) {
+function finiteNumber(value, fallback = 0) {
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function timestamp(value, fallback) {
+  if (value instanceof Date) return value.getTime();
+  const parsed = typeof value === 'string' ? Date.parse(value) : value;
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+/**
+ * Единый JSON-safe сериализатор Card из ts-fsrs 5.4.1.
+ * Неизвестные прикладные метаданные сохраняются для обратной совместимости.
+ */
+function serializeCard(card, identityOverrides = {}) {
+  if (!card || typeof card !== 'object') throw new Error('[SRS] Карточка должна быть объектом');
+  const identity = { ...parseCardIdentity(card), ...identityOverrides };
   const now = Date.now();
+  const serialized = {
+    ...card,
+    id: identity.cardId || String(card.id),
+    itemId: identity.itemId,
+    skill: identity.skill,
+    knowledgeType: identity.knowledgeType || KNOWLEDGE_TYPES.VOCABULARY,
+    due: timestamp(card.due, now),
+    stability: finiteNumber(card.stability),
+    difficulty: finiteNumber(card.difficulty),
+    elapsed_days: finiteNumber(card.elapsed_days),
+    scheduled_days: finiteNumber(card.scheduled_days),
+    learning_steps:
+      Number.isInteger(card.learning_steps) && card.learning_steps >= 0 ? card.learning_steps : 0,
+    reps: Number.isInteger(card.reps) && card.reps >= 0 ? card.reps : 0,
+    lapses: Number.isInteger(card.lapses) && card.lapses >= 0 ? card.lapses : 0,
+    state: Number.isInteger(card.state) ? card.state : State.New,
+    lastReview:
+      card.lastReview == null && card.last_review == null
+        ? null
+        : timestamp(card.lastReview ?? card.last_review, null),
+  };
+  delete serialized.last_review;
+  return serialized;
+}
+
+// Создание новой карточки в полном формате Card из ts-fsrs 5.4.1.
+function newCard(id, metadata = {}) {
+  const now = Date.now();
+  const identity = parseCardIdentity({ id, ...metadata });
   return {
-    id,
+    id: String(id),
+    itemId: identity.itemId,
+    skill: identity.skill || SKILLS.RECOGNITION,
+    knowledgeType: identity.knowledgeType || KNOWLEDGE_TYPES.VOCABULARY,
     // --- поля FSRS ---
     stability: 0,
     difficulty: 0,
     elapsed_days: 0,
     scheduled_days: 0,
+    learning_steps: 0,
     reps: 0,
     lapses: 0,
     state: State.New,
@@ -117,17 +167,84 @@ function newCard(id) {
  * Гидратация плоской записи из localStorage в объект Card для ts-fsrs.
  */
 function hydrate(card) {
+  const normalized = serializeCard(card);
   return {
-    due: new Date(card.due),
-    stability: card.stability || 0,
-    difficulty: card.difficulty || 0,
-    elapsed_days: card.elapsed_days || 0,
-    scheduled_days: card.scheduled_days || 0,
-    reps: card.reps || 0,
-    lapses: card.lapses || 0,
-    state: card.state ?? State.New,
-    last_review: card.lastReview ? new Date(card.lastReview) : undefined,
+    due: new Date(normalized.due),
+    stability: normalized.stability,
+    difficulty: normalized.difficulty,
+    elapsed_days: normalized.elapsed_days,
+    scheduled_days: normalized.scheduled_days,
+    learning_steps: normalized.learning_steps,
+    reps: normalized.reps,
+    lapses: normalized.lapses,
+    state: normalized.state,
+    last_review: normalized.lastReview == null ? undefined : new Date(normalized.lastReview),
   };
+}
+
+function createEventId(now = Date.now()) {
+  if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID();
+  return `review-${now}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function replaceCard(target, source) {
+  for (const key of Object.keys(target)) delete target[key];
+  Object.assign(target, source);
+  return target;
+}
+
+/** Рассчитывает и применяет review, возвращая полное событие для атомарного журнала state. */
+function applyReview(card, quality, context = {}) {
+  const now = Number.isFinite(context.reviewedAt) ? context.reviewedAt : Date.now();
+  const rating = mapQualityToFSRS(quality);
+  const previousCard = serializeCard(card);
+  const identity = parseCardIdentity(previousCard);
+  const result = scheduler.repeat(hydrate(previousCard), new Date(now))[rating];
+  const nextCard = serializeCard(
+    {
+      ...previousCard,
+      ...result.card,
+      due: result.card.due,
+      lastReview: result.card.last_review ?? now,
+    },
+    identity
+  );
+  if (nextCard.scheduled_days > MAX_INTERVAL) {
+    nextCard.scheduled_days = MAX_INTERVAL;
+    nextCard.due = Math.min(nextCard.due, now + MAX_INTERVAL * DAY);
+  }
+
+  replaceCard(card, nextCard);
+  handleLeech(card);
+
+  const mistakes =
+    Number.isInteger(context.mistakes) && context.mistakes >= 0 ? context.mistakes : 0;
+  const hintUsed = context.hintUsed === true;
+  const rawRating = context.rawRating ?? quality;
+  const event = {
+    eventId: context.eventId || createEventId(now),
+    eventType: 'review',
+    itemId: identity.itemId,
+    cardId: identity.cardId,
+    skill: identity.skill,
+    mode: typeof context.mode === 'string' && context.mode ? context.mode : 'unknown',
+    firstAttemptCorrect:
+      context.firstAttemptCorrect ?? (quality >= Quality.Good && mistakes === 0 && !hintUsed),
+    mistakes,
+    hintUsed,
+    responseTimeMs:
+      Number.isFinite(context.responseTimeMs) && context.responseTimeMs >= 0
+        ? Math.round(context.responseTimeMs)
+        : null,
+    rawRating,
+    effectiveRating: quality,
+    reviewedAt: now,
+    previousCard,
+    nextCard: serializeCard(card),
+    undoneAt: null,
+  };
+
+  return { card, event, fsrsLog: result.log };
 }
 
 /*
@@ -136,44 +253,16 @@ function hydrate(card) {
  * Мутирует и возвращает ту же запись карточки.
  */
 function review(card, quality, context = {}) {
-  const now = Date.now();
-  const rating = mapQualityToFSRS(quality);
-
-  // Снимок создаётся до scheduler.repeat() и до мутации исходной карточки.
-  const reviewLogEntry = {
-    cardId: String(card.id),
-    quality,
-    mode: typeof context.mode === 'string' && context.mode ? context.mode : 'unknown',
-    responseTimeMs:
-      Number.isFinite(context.responseTimeMs) && context.responseTimeMs >= 0
-        ? Math.round(context.responseTimeMs)
-        : null,
-    timestamp: now,
-    previousStability: card.stability ?? 0,
-    previousDifficulty: card.difficulty ?? 0,
-    previousState: card.state ?? State.New,
-  };
-
-  const log = scheduler.repeat(hydrate(card), new Date(now));
-  const next = log[rating].card;
-
-  card.stability = next.stability;
-  card.difficulty = next.difficulty;
-  card.elapsed_days = next.elapsed_days;
-  card.scheduled_days = next.scheduled_days;
-  card.reps = next.reps;
-  card.lapses = next.lapses;
-  card.state = next.state;
-  card.due = next.due.getTime();
-  card.lastReview = now;
-
-  // Leech — метаданные приложения поверх FSRS. Планировщик и интервалы не меняем.
-  handleLeech(card);
-
-  // Пишем только успешно применённые review; снимок остаётся pre-review.
-  emitReviewLog(reviewLogEntry);
-
+  const { event } = applyReview(card, quality, context);
+  emitReviewLog(event);
   return card;
+}
+
+function getRetrievability(card, now = Date.now()) {
+  const normalized = serializeCard(card);
+  if (normalized.state === State.New || normalized.reps === 0 || normalized.stability <= 0)
+    return 0;
+  return scheduler.get_retrievability(hydrate(normalized), new Date(now), false);
 }
 
 function isDue(card, ref) {
@@ -189,7 +278,7 @@ function isDue(card, ref) {
 function migrateSM2ToFSRS(card) {
   if (!card || typeof card !== 'object') return card;
   if (typeof card.stability === 'number' && typeof card.difficulty === 'number') {
-    return card; // уже FSRS-схема
+    return replaceCard(card, serializeCard(card));
   }
 
   const ef = typeof card.ef === 'number' ? card.ef : 2.5;
@@ -207,6 +296,7 @@ function migrateSM2ToFSRS(card) {
   card.difficulty = difficulty;
   card.elapsed_days = 0;
   card.scheduled_days = interval;
+  card.learning_steps = 0;
   card.reps = reps;
   card.lapses = 0;
   card.state = reps === 0 ? State.New : State.Review;
@@ -219,12 +309,16 @@ function migrateSM2ToFSRS(card) {
   delete card.ef;
   delete card.interval;
 
-  return card;
+  return replaceCard(card, serializeCard(card));
 }
 
 export const SRS = {
   newCard,
+  serializeCard,
+  hydrate,
+  applyReview,
   review,
+  getRetrievability,
   isDue,
   migrateSM2ToFSRS,
   mapQualityToFSRS,

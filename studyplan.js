@@ -1,5 +1,7 @@
 /* studyplan.js — Study plan generator for Kitsune Genki */
 
+import { localDateKey } from './src/local-date.js';
+
 const WEIGHT_VOCAB = 1;
 const WEIGHT_GRAMMAR = 0.5;
 const MIN_DAYS_PER_CHAPTER = 1;
@@ -74,7 +76,7 @@ function getStudyDaysInRange(startDate, endDate, daysOfWeek) {
   while (current <= end) {
     const dayOfWeek = current.getDay();
     if (daysOfWeek.includes(dayOfWeek)) {
-      days.push(current.toISOString().slice(0, 10));
+      days.push(localDateKey(current));
     }
     current.setDate(current.getDate() + 1);
   }
@@ -212,7 +214,7 @@ function generatePlan(params, lessons, completedChapters = []) {
         daysAdded++;
       }
     }
-    deadline = end.toISOString().slice(0, 10);
+    deadline = localDateKey(end);
   }
 
   // Фильтруем главы: исключаем изученные
@@ -282,7 +284,7 @@ function generatePlan(params, lessons, completedChapters = []) {
  * @returns {Object} Recalculated plan
  */
 function recalcPlan(currentPlan, lessons, completedChapters) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateKey();
 
   // Сохраняем оригинальный deadline без изменений (для обратной совместимости с тестами)
   const newParams = {

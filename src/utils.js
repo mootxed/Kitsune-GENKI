@@ -1,9 +1,11 @@
 /* src/utils.js — small, stateless helpers */
 
+import { localDateKey } from './local-date.js';
+
 export const $ = (s, r) => (r || document).querySelector(s);
 export const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 
-export const todayStr = () => new Date().toISOString().slice(0, 10);
+export const todayStr = () => localDateKey();
 
 export function formatTimeUntilReset() {
   const now = new Date();

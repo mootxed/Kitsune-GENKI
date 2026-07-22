@@ -4,8 +4,10 @@ import { refreshStreakDisplay, syncAvatars, updateSrsBadge } from './shared.js';
 import { $, todayStr, pluralDays } from '../src/utils.js';
 import { dueCards, allCards, cardChapter } from '../src/srs-helpers.js';
 import { SRS } from '../srs.js';
+import { KNOWLEDGE_TYPES, makeCardId, vocabularySkills } from '../src/knowledge-model.js';
 import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
 import { db, STORES } from '../src/db.js';
+import { countAvailableCardsForSession } from '../src/srs-limits.js';
 
 // ---------- Constants ----------
 const LS_LESSONS = 'kitsune_lessons_v1';
@@ -143,6 +145,30 @@ export async function ensureLessonsForSrs() {
       .filter(Boolean)
   );
   await Promise.all([...ids].map((id) => ensureLesson(id).catch(() => null)));
+  let added = false;
+  for (const lesson of LESSONS) {
+    if (!state.chapters[lesson.id]?.started) continue;
+    lesson.words.forEach((word) => {
+      added = ensureVocabularySkillCards(word) || added;
+    });
+  }
+  if (added) await save(true);
+}
+
+function ensureVocabularySkillCards(word) {
+  let added = false;
+  vocabularySkills(word).forEach((skill) => {
+    const cardId = makeCardId(word.id, skill);
+    if (!state.srs[cardId]) {
+      state.srs[cardId] = SRS.newCard(cardId, {
+        itemId: word.id,
+        skill,
+        knowledgeType: KNOWLEDGE_TYPES.VOCABULARY,
+      });
+      added = true;
+    }
+  });
+  return added;
 }
 
 export function getLesson(id) {
@@ -239,7 +265,7 @@ export function startChapter(id, toastFn = null) {
   }
   cs.started = true;
   lesson.words.forEach((w) => {
-    if (!state.srs[w.id]) state.srs[w.id] = SRS.newCard(w.id);
+    ensureVocabularySkillCards(w);
   });
   save();
   markActivity(toastFn);
@@ -258,7 +284,7 @@ export function updateMainQuestsTimer() {
 export function renderHome() {
   refreshStreakDisplay();
   updateMainQuestsTimer();
-  const due = dueCards(state.srs).length;
+  const due = countAvailableCardsForSession(dueCards(state.srs), state.srs);
   const total = allCards(state.srs).length;
   $('#stat-due').textContent = due;
   $('#stat-cards').textContent = total;
