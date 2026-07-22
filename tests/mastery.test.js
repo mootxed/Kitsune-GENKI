@@ -165,7 +165,7 @@ describe('derived mastery depth', () => {
     expect(after.score).toBeGreaterThanOrEqual(before.score);
   });
 
-  it('использует зрелый recall как production fallback для неприменимой оси', () => {
+  it('не использует recall как production fallback', () => {
     const itemId = 'L1_V007';
     const cards = [card(itemId, SKILLS.RECOGNITION, 95), card(itemId, SKILLS.RECALL, 95)];
     const events = [
@@ -177,8 +177,36 @@ describe('derived mastery depth', () => {
     const result = mastery(itemId, cards, events, {
       applicableSkills: [SKILLS.RECOGNITION, SKILLS.RECALL],
     });
-    expect(result.productionSkill).toBe(SKILLS.RECALL);
-    expect(result.level).toBe(MASTERY_LEVELS.MASTERED);
+    expect(result.productionSkill).toBeNull();
+    expect(result.productionStatus).toBe('Production пока не проверен');
+    expect(result.level).toBe(MASTERY_LEVELS.CONFIDENT);
+    expect(result.score).toBe(70);
+  });
+
+  it('недавний lapse временно снимает Освоено', () => {
+    const itemId = 'L1_V010';
+    const cards = [
+      card(itemId, SKILLS.RECOGNITION, 95),
+      card(itemId, SKILLS.RECALL, 95),
+      card(itemId, SKILLS.CONTEXT_PRODUCTION, 95),
+    ];
+    const events = [
+      event(itemId, SKILLS.RECOGNITION, NOW - 7 * DAY),
+      event(itemId, SKILLS.RECALL, NOW - 6 * DAY),
+      event(itemId, SKILLS.RECALL, NOW - 5 * DAY),
+      event(itemId, SKILLS.CONTEXT_PRODUCTION, NOW - 4 * DAY),
+      event(itemId, SKILLS.CONTEXT_PRODUCTION, NOW - 3 * DAY),
+      event(itemId, SKILLS.RECOGNITION, NOW - DAY, {
+        firstAttemptCorrect: false,
+        rawRating: 0,
+        effectiveRating: 0,
+      }),
+    ];
+
+    const result = mastery(itemId, cards, events);
+    expect(result.level).toBe(MASTERY_LEVELS.CONFIDENT);
+    expect(result.hasRecentLapse).toBe(true);
+    expect(result.readiness).toBe(READINESS.REFRESH);
   });
 
   it('показывает legacy knowledge как оценочное, а не Новое 0', () => {
@@ -255,5 +283,13 @@ describe('review policy integration', () => {
       nextCard: { learning_steps: 1 },
       undoneAt: null,
     });
+    expect(state.pendingReviewLogs).toEqual([
+      expect.objectContaining({
+        eventId: state.reviewEvents[0].eventId,
+        cardId: 'L2_V002',
+        fsrs: expect.any(Object),
+      }),
+    ]);
+    expect(state.pendingReviewLogs[0].previousCard).toBeUndefined();
   });
 });

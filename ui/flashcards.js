@@ -15,11 +15,12 @@ import {
   vocabularySkills,
 } from '../src/knowledge-model.js';
 import { calculateMastery } from '../src/mastery.js';
-import { compactReviewJournal } from '../src/review-journal.js';
+import { compactReviewJournal, enqueueReviewLog } from '../src/review-journal.js';
 import { productionContext } from '../src/production-context.js';
 import {
   MAX_TYPING_UNIQUE_CHARS,
   hiraganaToKatakana,
+  katakanaToHiragana,
   normalizeKanaAnswer,
   typingCapability,
 } from '../src/typing-capability.js';
@@ -162,6 +163,7 @@ export function submitReview(card, quality, state, context = null) {
   if (result?.event) {
     if (!Array.isArray(state.reviewEvents)) state.reviewEvents = [];
     state.reviewEvents.push(result.event);
+    enqueueReviewLog(state, result.logEntry);
     compactReviewJournal(state);
     reviewUndoStack.push(
       card.id,
@@ -207,7 +209,7 @@ async function undoLastReview(state, dependencies) {
   if (previous?.card) persistedEvent.previousCard = previous.card;
   if (!undoReviewEvent(state, persistedEvent.eventId)) return false;
   const undoneAt = persistedEvent.undoneAt;
-  SRS.logReviewEvent({
+  enqueueReviewLog(state, {
     eventId: `undo-${persistedEvent.eventId}-${undoneAt}`,
     eventType: 'undo',
     targetEventId: persistedEvent.eventId,
@@ -397,9 +399,12 @@ export function normalizeChoiceLabel(value) {
 }
 
 export function canonicalLexeme(word) {
+  const japanese = katakanaToHiragana(word?.writing || word?.kanji || '')
+    .replace(/[\s\p{P}\p{S}]+/gu, '')
+    .trim();
+  if (japanese) return `surface:${japanese}`;
   if (word?.lexemeId) return `id:${word.lexemeId}`;
-  const japanese = normalizeKanaAnswer(word?.writing || word?.kanji || '');
-  return `${japanese}|${normalizeChoiceLabel(shortT(word))}`;
+  return `label:${normalizeChoiceLabel(shortT(word))}`;
 }
 
 export function buildMultipleChoiceOptions(
@@ -2431,7 +2436,7 @@ function renderDictionaryLessons(state, dependencies, searchQuery = '') {
             <div class="dict-progress-bar">
               <div class="dict-progress-fill ${progressClass}" style="width: ${progress}%"></div>
             </div>
-              <span class="dict-progress-text" title="Mastery score ${progress}/100">${mastery.label} · ${mastery.readinessLabel}</span>
+              <span class="dict-progress-text" title="Mastery score ${progress}/100">${mastery.label} · ${mastery.productionStatus} · ${mastery.readinessLabel}</span>
           </div>
         </div>
       `;

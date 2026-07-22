@@ -107,7 +107,9 @@ export function appendReviewLog(entry) {
     .catch(() => undefined)
     .then(async () => {
       const database = db || (await initializeDB());
-      return database.add(STORES.REVIEW_LOG, immutableEntry);
+      return immutableEntry.eventId
+        ? database.addUnique(STORES.REVIEW_LOG, 'eventId', immutableEntry.eventId, immutableEntry)
+        : database.add(STORES.REVIEW_LOG, immutableEntry);
     });
 
   return writeQueue;
@@ -154,7 +156,11 @@ export function replaceReviewLogs(entries) {
       const database = db || (await initializeDB());
       await database.clear(STORES.REVIEW_LOG);
       for (const entry of normalizedEntries) {
-        await database.add(STORES.REVIEW_LOG, entry);
+        if (entry.eventId) {
+          await database.addUnique(STORES.REVIEW_LOG, 'eventId', entry.eventId, entry);
+        } else {
+          await database.add(STORES.REVIEW_LOG, entry);
+        }
       }
     });
 

@@ -6,6 +6,25 @@ import { localDateKey } from './local-date.js';
 export const REVIEW_EVENTS_PER_ITEM = 20;
 export const UNDO_SNAPSHOT_LIMIT = 10;
 
+export function enqueueReviewLog(appState, entry) {
+  if (!appState || !entry || typeof entry.eventId !== 'string' || !entry.eventId) return false;
+  if (!Array.isArray(appState.pendingReviewLogs)) appState.pendingReviewLogs = [];
+  if (appState.pendingReviewLogs.some((pending) => pending?.eventId === entry.eventId)) {
+    return false;
+  }
+  appState.pendingReviewLogs.push(entry);
+  return true;
+}
+
+export function acknowledgeReviewLogs(appState, eventIds) {
+  if (!appState || !Array.isArray(appState.pendingReviewLogs)) return appState;
+  const acknowledged = new Set(eventIds || []);
+  appState.pendingReviewLogs = appState.pendingReviewLogs.filter(
+    (entry) => !acknowledged.has(entry?.eventId)
+  );
+  return appState;
+}
+
 function emptyArchiveEntry() {
   return {
     evidenceCount: 0,

@@ -14,9 +14,9 @@ describe('Store - Версионирование и миграции', () => {
   });
 
   describe('defaultState', () => {
-    it('должен содержать поле version со значением 5', () => {
+    it('должен содержать поле version со значением 6', () => {
       const state = defaultState();
-      expect(state.version).toBe(5);
+      expect(state.version).toBe(6);
     });
 
     it('должен содержать все необходимые поля', () => {
@@ -28,6 +28,7 @@ describe('Store - Версионирование и миграции', () => {
       expect(state).toHaveProperty('srs');
       expect(state).toHaveProperty('reviewEvents');
       expect(state).toHaveProperty('masteryArchive');
+      expect(state).toHaveProperty('pendingReviewLogs');
       expect(state).toHaveProperty('settings');
       expect(state).toHaveProperty('unlockedAchievements');
       expect(state).toHaveProperty('claimedAchievements');
@@ -37,12 +38,12 @@ describe('Store - Версионирование и миграции', () => {
   });
 
   describe('Миграции', () => {
-    it('должен создать новое состояние с версией 5 при первой загрузке', async () => {
+    it('должен создать новое состояние с версией 6 при первой загрузке', async () => {
       await loadState();
-      expect(state.version).toBe(5);
+      expect(state.version).toBe(6);
     });
 
-    it('должен мигрировать старое состояние без версии → версия 5', async () => {
+    it('должен мигрировать старое состояние без версии → версия 6', async () => {
       const oldState = {
         initialized: true,
         xp: 500,
@@ -55,7 +56,7 @@ describe('Store - Версионирование и миграции', () => {
       await loadState();
 
       // Проверяем что версия проставлена
-      expect(state.version).toBe(5);
+      expect(state.version).toBe(6);
 
       // Проверяем что старые данные сохранились
       expect(state.xp).toBe(500);
@@ -80,7 +81,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       await loadState();
 
-      expect(state.version).toBe(5);
+      expect(state.version).toBe(6);
       expect(state.unlockedAchievements).toEqual(['first_steps', 'quick_learner']);
       expect(state.claimedAchievements).toEqual(['first_steps']);
     });
@@ -96,7 +97,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       await loadState();
 
-      expect(state.version).toBe(5);
+      expect(state.version).toBe(6);
       expect(state.settings.openrouterKey).toBe('test_key');
       expect(state.settings.darkMode).toBe('dark');
       // Проверяем что дефолтные настройки добавлены
@@ -115,7 +116,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(currentState));
       await loadState();
 
-      expect(state.version).toBe(5);
+      expect(state.version).toBe(6);
       expect(state.xp).toBe(1000);
       expect(state.level).toBe(10);
       expect(state.unlockedAchievements).toEqual(['achievement1', 'achievement2']);
@@ -148,7 +149,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       await loadState();
 
-      expect(state.version).toBe(5);
+      expect(state.version).toBe(6);
 
       const card = state.srs.L1_w1;
       // FSRS-схема
@@ -190,7 +191,7 @@ describe('Store - Версионирование и миграции', () => {
         },
       });
 
-      expect(migrated.version).toBe(5);
+      expect(migrated.version).toBe(6);
       expect(migrated.reviewEvents).toEqual([]);
       expect(migrated.srs.L1_w9).toMatchObject({
         learning_steps: 0,
@@ -217,7 +218,8 @@ describe('Store - Версионирование и миграции', () => {
 
       const migrated = runMigrations({ version: 4, srs: {}, reviewEvents });
 
-      expect(migrated.version).toBe(5);
+      expect(migrated.version).toBe(6);
+      expect(migrated.pendingReviewLogs).toEqual([]);
       expect(migrated.reviewEvents).toHaveLength(20);
       expect(migrated.masteryArchive.L1_V001).toMatchObject({
         evidenceCount: 1,
@@ -326,7 +328,7 @@ describe('Store - Версионирование и миграции', () => {
       await loadState();
 
       // Должен вернуться к defaultState
-      expect(state.version).toBe(5);
+      expect(state.version).toBe(6);
       expect(state.xp).toBe(0);
       expect(state.level).toBe(1);
     });
@@ -343,7 +345,7 @@ describe('Store - Версионирование и миграции', () => {
       await save(true);
 
       await loadState();
-      expect(state.version).toBe(5);
+      expect(state.version).toBe(6);
       expect(state.xp).toBe(999);
       expect(state.level).toBe(15);
       expect(state.coins).toBe(500);

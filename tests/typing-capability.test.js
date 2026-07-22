@@ -133,17 +133,12 @@ describe('typing capability across the lesson catalogue', () => {
     ).toEqual([SKILLS.RECOGNITION, SKILLS.RECALL, SKILLS.CONTEXT_PRODUCTION]);
   });
 
-  it('Освоено достижимо для каждого слова каталога', () => {
+  it('текущий каталог ограничен уровнем Уверенно без production', () => {
     const now = new Date(2026, 6, 22, 12).getTime();
     const day = 86_400_000;
 
     for (const word of catalogueWords()) {
       const applicableSkills = vocabularySkills(word);
-      const productionSkill = applicableSkills.includes(SKILLS.CONTEXT_PRODUCTION)
-        ? SKILLS.CONTEXT_PRODUCTION
-        : applicableSkills.includes(SKILLS.READING_WRITING)
-          ? SKILLS.READING_WRITING
-          : SKILLS.RECALL;
       const cards = applicableSkills.map((skill) => ({
         ...SRS.newCard(makeCardId(word.id, skill), { itemId: word.id, skill }),
         stability: 95,
@@ -174,8 +169,6 @@ describe('typing capability across the lesson catalogue', () => {
         reviewEvent(SKILLS.RECOGNITION, now - 5 * day),
         reviewEvent(SKILLS.RECALL, now - 4 * day),
         reviewEvent(SKILLS.RECALL, now - 3 * day),
-        reviewEvent(productionSkill, now - 2 * day),
-        reviewEvent(productionSkill, now - day),
       ];
       const result = calculateMastery({
         itemId: word.id,
@@ -186,7 +179,8 @@ describe('typing capability across the lesson catalogue', () => {
         getRetrievability: () => 0.95,
       });
 
-      expect(result.level, word.id).toBe(MASTERY_LEVELS.MASTERED);
+      expect(result.level, word.id).toBe(MASTERY_LEVELS.CONFIDENT);
+      expect(result.productionSkill, word.id).toBeNull();
     }
   });
 });

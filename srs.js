@@ -271,8 +271,9 @@ function applyReview(card, quality, context = {}) {
   };
 
   const fsrsLog = result.log;
-  emitReviewLog(compactFsrsReviewLog(event, fsrsLog));
-  return { card, event, fsrsLog };
+  const logEntry = compactFsrsReviewLog(event, fsrsLog);
+  emitReviewLog(logEntry);
+  return { card, event, fsrsLog, logEntry };
 }
 
 /*

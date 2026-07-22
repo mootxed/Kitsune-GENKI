@@ -2,12 +2,13 @@
 
 import { SRS } from '../srs.js';
 import { db, STORES } from '../src/db.js';
-import { compactReviewJournal } from '../src/review-journal.js';
+import { appendReviewLog } from '../src/review-log.js';
+import { acknowledgeReviewLogs, compactReviewJournal } from '../src/review-journal.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-export const CURRENT_VERSION = 5;
+export const CURRENT_VERSION = 6;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -107,6 +108,11 @@ const MIGRATIONS = {
     };
     return compactReviewJournal(migratedState);
   },
+  6: (oldState) => ({
+    ...oldState,
+    pendingReviewLogs: Array.isArray(oldState.pendingReviewLogs) ? oldState.pendingReviewLogs : [],
+    version: 6,
+  }),
 };
 
 // ---------- Default State ----------
@@ -118,6 +124,7 @@ export function defaultState() {
     srs: {}, // cardId -> SRS record
     reviewEvents: [], // ограниченное окно событий; полные snapshot остаются только для Undo
     masteryArchive: {}, // агрегированные доказательства из свёрнутых review events
+    pendingReviewLogs: [], // transactional outbox для append-only review_log
     streak: { count: 0, lastActive: null },
     savedNotes: [], // {id,title,content,date}
     settings: {
@@ -245,6 +252,10 @@ export async function loadState() {
     window.QuestsManager.initializeQuests(state);
     window.QuestsManager.checkQuestReset(state);
   }
+
+  if (state.pendingReviewLogs?.length) {
+    await performSave();
+  }
 }
 
 // ---------- Save State ----------
@@ -278,6 +289,7 @@ function performSave() {
 }
 
 async function persistSnapshot(snapshot) {
+  let primaryStatePersisted = false;
   try {
     console.log(
       '[Store] Сохранение состояния. XP:',
@@ -286,8 +298,26 @@ async function persistSnapshot(snapshot) {
       Object.keys(snapshot.chapters).length
     );
     await db.set(STORES.APP_STATE, 'state', snapshot);
+    primaryStatePersisted = true;
     console.log('[Store] ✅ Состояние сохранено в IndexedDB');
+
+    const pendingLogs = Array.isArray(snapshot.pendingReviewLogs) ? snapshot.pendingReviewLogs : [];
+    const acknowledgedIds = [];
+    for (const entry of pendingLogs) {
+      await appendReviewLog(entry);
+      acknowledgedIds.push(entry.eventId);
+    }
+
+    if (acknowledgedIds.length) {
+      const acknowledgedSnapshot = acknowledgeReviewLogs(snapshot, acknowledgedIds);
+      await db.set(STORES.APP_STATE, 'state', acknowledgedSnapshot);
+      acknowledgeReviewLogs(state, acknowledgedIds);
+    }
   } catch (e) {
+    if (primaryStatePersisted) {
+      console.warn('[Store] Review log остаётся в transactional outbox для повтора:', e);
+      return;
+    }
     console.warn('[Store] Ошибка сохранения в IndexedDB:', e);
 
     // Обработка переполнения квоты
