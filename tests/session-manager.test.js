@@ -390,7 +390,7 @@ describe('SessionManager', () => {
       expect(newIndex).toBeLessThanOrEqual(11);
     });
 
-    it('должен откинуть карточку на 15 позиций при quality=3', () => {
+    it('должен завершить карточку при Hard без цикла доучивания', () => {
       const session = new SessionManager(
         [...Array(20)].map((_, i) => ({
           id: `card${i}`,
@@ -405,9 +405,8 @@ describe('SessionManager', () => {
 
       session.answerCard('card0', 3, {});
 
-      const newIndex = session.queue.findIndex((i) => i.card.id === 'card0');
-      expect(newIndex).toBeGreaterThanOrEqual(14);
-      expect(newIndex).toBeLessThanOrEqual(16);
+      expect(session.getCardState('card0')).toBeNull();
+      expect(session.getStats()).toMatchObject({ reviewed: 1, relearned: 0, remaining: 19 });
     });
 
     it('должен сокращать шаг при повторных ошибках', () => {

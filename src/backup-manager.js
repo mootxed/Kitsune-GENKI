@@ -11,8 +11,8 @@ const LS_LAST_ACTIVITY_DAY = 'kitsune_last_activity_day';
 const LS_THEME = 'kitsune_theme';
 
 // Версия схемы для совместимости при будущих изменениях
-const SCHEMA_VERSION = '4.0'; // Версия формата бэкапа (не версия схемы IndexedDB)
-const LEGACY_SCHEMA_VERSIONS = new Set(['2.0', '3.0']);
+const SCHEMA_VERSION = '5.0'; // Версия формата бэкапа (не версия схемы IndexedDB)
+const LEGACY_SCHEMA_VERSIONS = new Set(['2.0', '3.0', '4.0']);
 
 /**
  * Экспортирует все данные из IndexedDB (с фоллбэком на localStorage)
@@ -106,7 +106,7 @@ export function validateImportData(data) {
   if (!isCurrentVersion && !isLegacyVersion) {
     return {
       valid: false,
-      error: `Несовместимая версия схемы данных (поддерживаются ${SCHEMA_VERSION}, 3.0 и 2.0)`,
+      error: `Несовместимая версия схемы данных (поддерживаются ${SCHEMA_VERSION}, 4.0, 3.0 и 2.0)`,
     };
   }
 

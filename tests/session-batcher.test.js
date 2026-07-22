@@ -78,7 +78,7 @@ describe('SessionBatcher', () => {
         expect([
           CARD_MODES.DRAWING,
           CARD_MODES.REVERSE_MULTIPLE_CHOICE,
-          CARD_MODES.CONTEXT_SENTENCE,
+          CARD_MODES.CONTEXT_PRODUCTION,
           CARD_MODES.TYPING,
           CARD_MODES.MULTIPLE_CHOICE,
         ]).toContain(card.forcedMode);

@@ -1,5 +1,7 @@
 /* Stable knowledge-item and skill identifiers shared by SRS, UI and mastery. */
 
+import { typingCapability } from './typing-capability.js';
+
 export const KNOWLEDGE_TYPES = Object.freeze({
   VOCABULARY: 'vocabulary',
   GRAMMAR: 'grammar',
@@ -44,40 +46,16 @@ export function parseCardIdentity(cardOrId) {
   return { cardId, itemId, skill, knowledgeType: KNOWLEDGE_TYPES.VOCABULARY };
 }
 
-const CONTEXT_CATEGORIES = new Set([
-  'food',
-  'people',
-  'person',
-  'occupation',
-  'family',
-  'places',
-  'location_words',
-  'countries',
-  'things',
-  'nouns',
-  'time',
-  'activities',
-  'entertainment',
-  'i-adjectives',
-  'na-adjectives',
-  'adjectives',
-]);
-
 export function vocabularySkills(word) {
   const text = word?.kanji || word?.writing || '';
-  const writing = (word?.writing || '').replace(/[~～\s・]/g, '');
   const hasKanji = /[\u3400-\u4dbf\u4e00-\u9fff]/u.test(text);
-  const canType = writing.length > 0 && new Set([...writing]).size <= 8;
+  const { canType } = typingCapability(word);
   const skills = [SKILLS.RECOGNITION];
   if (canType) skills.push(SKILLS.RECALL);
   if (hasKanji) skills.push(SKILLS.READING_WRITING);
-  if (
-    word &&
-    CONTEXT_CATEGORIES.has(word.category) &&
-    !(word.kanji || word.writing || '').includes('～')
-  ) {
-    skills.push(SKILLS.CONTEXT_PRODUCTION);
-  }
+  // This card is rendered as active typing. A curated sentence is used when
+  // available; otherwise the translation remains the production prompt.
+  if (canType) skills.push(SKILLS.CONTEXT_PRODUCTION);
   return skills;
 }
 
@@ -88,12 +66,16 @@ export function cardsForItem(srsRecords, itemId) {
 }
 
 export function modeSkill(mode) {
-  if (mode === 'reverse-multiple-choice' || mode === 'multiple-choice') {
+  if (
+    mode === 'reverse-multiple-choice' ||
+    mode === 'multiple-choice' ||
+    mode === 'context-sentence'
+  ) {
     return SKILLS.RECOGNITION;
   }
   if (mode === 'typing') return SKILLS.RECALL;
   if (mode === 'drawing') return SKILLS.READING_WRITING;
-  if (mode === 'context-sentence') return SKILLS.CONTEXT_PRODUCTION;
+  if (mode === 'context-production') return SKILLS.CONTEXT_PRODUCTION;
   return null;
 }
 

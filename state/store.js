@@ -2,11 +2,12 @@
 
 import { SRS } from '../srs.js';
 import { db, STORES } from '../src/db.js';
+import { compactReviewJournal } from '../src/review-journal.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-export const CURRENT_VERSION = 4;
+export const CURRENT_VERSION = 5;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -69,12 +70,42 @@ const MIGRATIONS = {
     const migratedState = { ...oldState, srs: { ...(oldState.srs || {}) } };
     for (const [cardId, card] of Object.entries(migratedState.srs)) {
       const normalized = SRS.migrateSM2ToFSRS({ ...card, id: card.id || cardId });
-      if (Object.hasOwn(card, 'progress')) normalized.legacyMasteryEstimated = true;
+      if (
+        Object.hasOwn(card, 'progress') ||
+        normalized.reps > 0 ||
+        Number(normalized.stability) > 0
+      ) {
+        normalized.legacyMasteryEstimated = true;
+      }
       migratedState.srs[cardId] = normalized;
     }
     migratedState.reviewEvents = Array.isArray(oldState.reviewEvents) ? oldState.reviewEvents : [];
     migratedState.version = 4;
     return migratedState;
+  },
+  5: (oldState) => {
+    const reviewEvents = Array.isArray(oldState.reviewEvents) ? [...oldState.reviewEvents] : [];
+    const cardsWithCleanEvidence = new Set(
+      reviewEvents
+        .filter((event) => event?.eventType === 'review' && !event.undoneAt)
+        .map((event) => event.cardId)
+    );
+    const srs = Object.fromEntries(
+      Object.entries(oldState.srs || {}).map(([cardId, card]) => [
+        cardId,
+        card.reps > 0 && !cardsWithCleanEvidence.has(cardId)
+          ? { ...card, legacyMasteryEstimated: true }
+          : card,
+      ])
+    );
+    const migratedState = {
+      ...oldState,
+      srs,
+      reviewEvents,
+      masteryArchive: { ...(oldState.masteryArchive || {}) },
+      version: 5,
+    };
+    return compactReviewJournal(migratedState);
   },
 };
 
@@ -85,7 +116,8 @@ export function defaultState() {
     initialized: false,
     chapters: {}, // id -> {started, checklist:{}}
     srs: {}, // cardId -> SRS record
-    reviewEvents: [], // атомарный журнал новых review; legacy REVIEW_LOG хранится отдельно
+    reviewEvents: [], // ограниченное окно событий; полные snapshot остаются только для Undo
+    masteryArchive: {}, // агрегированные доказательства из свёрнутых review events
     streak: { count: 0, lastActive: null },
     savedNotes: [], // {id,title,content,date}
     settings: {
@@ -234,6 +266,7 @@ export function save(immediate = false) {
 }
 
 function performSave() {
+  compactReviewJournal(state);
   // Снимок делается до первого await, а записи выполняются строго по порядку.
   // Поэтому поздний review/Undo не может быть перезаписан более старым save.
   const snapshot =
@@ -254,7 +287,6 @@ async function persistSnapshot(snapshot) {
     );
     await db.set(STORES.APP_STATE, 'state', snapshot);
     console.log('[Store] ✅ Состояние сохранено в IndexedDB');
-    notify(); // Уведомляем подписчиков об изменениях
   } catch (e) {
     console.warn('[Store] Ошибка сохранения в IndexedDB:', e);
 
@@ -286,6 +318,10 @@ async function persistSnapshot(snapshot) {
         console.error('[Store] Полный отказ сохранения');
       }
     }
+  } finally {
+    // Subscribers observe the in-memory state even when persistence used a
+    // fallback or failed; notification semantics must not depend on IndexedDB.
+    notify();
   }
 }
 
