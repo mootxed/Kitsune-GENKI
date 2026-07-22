@@ -177,6 +177,29 @@ describe('SessionManager', () => {
     });
   });
 
+  describe('снимок для undo', () => {
+    it('восстанавливает порядок очереди, метаданные и статистику', () => {
+      const session = new SessionManager(mockCards, {
+        srs: mockSRS,
+        questsManager: mockQuestsManager,
+      });
+      const snapshot = session.createSnapshot();
+
+      session.answerCard('card1', 0, mockSrsCollection);
+      expect(session.queue.map((item) => item.card.id)).not.toEqual(['card1', 'card2', 'card3']);
+      expect(session.stats.attempted).toBe(1);
+
+      expect(session.restoreSnapshot(snapshot)).toBe(true);
+      expect(session.queue.map((item) => item.card.id)).toEqual(['card1', 'card2', 'card3']);
+      expect(session.getCardState('card1')).toEqual({
+        sessionLapses: 0,
+        isFirstAttempt: true,
+        completed: false,
+      });
+      expect(session.stats).toEqual(snapshot.stats);
+    });
+  });
+
   describe('answerCard - первая попытка', () => {
     it('должен завершить карточку при правильном ответе (quality >= 4)', () => {
       const session = new SessionManager(mockCards, {
@@ -203,6 +226,24 @@ describe('SessionManager', () => {
       session.answerCard('card1', 4, mockSrsCollection);
 
       expect(mockSRS.review).toHaveBeenCalledWith(mockSrsCollection.card1, 4);
+    });
+
+    it('передаёт контекст review только в первую попытку', () => {
+      const session = new SessionManager(mockCards, {
+        srs: mockSRS,
+        questsManager: mockQuestsManager,
+      });
+      const reviewContext = { mode: 'typing', responseTimeMs: 850 };
+
+      session.answerCard('card1', 0, mockSrsCollection, reviewContext);
+      expect(mockSRS.review).toHaveBeenCalledWith(mockSrsCollection.card1, 0, reviewContext);
+
+      mockSRS.review.mockClear();
+      session.answerCard('card1', 4, mockSrsCollection, {
+        mode: 'multiple-choice',
+        responseTimeMs: 300,
+      });
+      expect(mockSRS.review).not.toHaveBeenCalled();
     });
 
     it('должен трекать квесты при успешном ответе', () => {

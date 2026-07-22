@@ -31,3 +31,7 @@ build/
 
 # Cline rules
 /.clinerules
+
+# Codex
+.codex/
+

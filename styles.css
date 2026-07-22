@@ -2155,12 +2155,45 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 14px;
 }
 .flash-count {
   font-weight: 800;
   color: var(--text-muted);
   transition: var(--transition-theme);
+}
+.review-undo-btn {
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+  border-radius: 12px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.card-leech-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid rgba(185, 28, 28, 0.22);
+  border-radius: 999px;
+  background: rgba(254, 226, 226, 0.85);
+  color: #991b1b;
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.card-leech-context {
+  margin: -4px 0 12px;
+  padding: 10px 12px;
+  border-left: 3px solid #dc2626;
+  border-radius: 10px;
+  background: rgba(254, 242, 242, 0.9);
+  color: #7f1d1d;
+  font-size: 0.84rem;
+  line-height: 1.45;
 }
 .flash-card-3d {
   flex: 1;
@@ -7850,6 +7883,18 @@ rt {
   line-height: 1.2;
   transition: var(--transition-theme);
 }
+.quiz-question.reverse-question {
+  letter-spacing: 0.04em;
+}
+.quiz-question.context-sentence {
+  max-width: 26ch;
+  margin-inline: auto;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--bg-tag);
+  font-size: clamp(26px, 7vw, 38px);
+  line-height: 1.45;
+}
 
 .quiz-hint {
   font-size: 14px;
@@ -8548,5 +8593,253 @@ rt {
   .sentence-feedback {
     font-size: 14px;
     padding: 12px;
+  }
+}
+
+/* ===== Import Modal (Settings) ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-dialog {
+  background: var(--modal-bg);
+  border-radius: 22px;
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: var(--modal-shadow);
+  animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: var(--transition-theme);
+  box-sizing: border-box;
+  contain: layout;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-dialog h2 {
+  font-size: clamp(20px, 5vw, 24px);
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.modal-content {
+  margin: 20px 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.import-comparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.import-col {
+  background: var(--bg-tag);
+  border-radius: 14px;
+  padding: 10px;
+  border: 2px solid var(--border);
+  transition: var(--transition-theme);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  word-wrap: break-word;
+  box-sizing: border-box;
+  contain: layout;
+  overflow-wrap: anywhere;
+}
+
+.import-col h3 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.import-col p {
+  font-size: 13px;
+  color: var(--text);
+  margin: 6px 0;
+  font-weight: 600;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.import-col:first-child {
+  border-color: var(--text-muted);
+}
+
+.import-col:last-child {
+  border-color: var(--primary);
+  background: var(--orange-soft);
+}
+
+.import-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.import-checkbox:hover {
+  border-color: var(--primary);
+  background: var(--orange-soft);
+}
+
+.import-checkbox input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.import-checkbox span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+
+.import-warning {
+  background: var(--orange-soft);
+  border: 2px solid var(--orange);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  margin-top: 16px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.modal-buttons .btn-ghost,
+.modal-buttons .btn-primary {
+  flex: 1;
+  min-height: 48px;
+}
+
+/* Темная тема */
+[data-theme='dark'] .import-col:last-child {
+  background: rgba(255, 75, 43, 0.1);
+}
+
+[data-theme='dark'] .import-checkbox {
+  background: var(--card);
+  border-color: var(--line);
+}
+
+[data-theme='dark'] .import-checkbox:hover {
+  background: rgba(255, 75, 43, 0.1);
+  border-color: var(--primary);
+}
+
+[data-theme='dark'] .import-warning {
+  background: rgba(255, 75, 43, 0.15);
+  border-color: var(--orange);
+}
+
+/* Адаптив */
+@media (max-width: 480px) {
+  .modal-dialog {
+    padding: 20px;
+    max-width: calc(100% - 32px);
+  }
+
+  .modal-dialog h2 {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+
+  .import-comparison {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .import-col {
+    padding: 12px;
+  }
+
+  .import-col h3 {
+    font-size: 12px;
+  }
+
+  .import-col p {
+    font-size: 12px;
+  }
+
+  .import-checkbox {
+    padding: 12px;
+  }
+
+  .import-checkbox span {
+    font-size: 13px;
+  }
+
+  .import-warning {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+
+  .modal-buttons {
+    flex-direction: column;
+    gap: 10px;
   }
 }
