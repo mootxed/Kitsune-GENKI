@@ -6,6 +6,8 @@ import {
   UNDO_SNAPSHOT_LIMIT,
   compactReviewJournal,
 } from '../src/review-journal.js';
+import { calculateMastery } from '../src/mastery.js';
+import { SRS } from '../srs.js';
 
 function event(index, itemId = 'L1_V001') {
   return {
@@ -69,5 +71,75 @@ describe('bounded review journal', () => {
     expect(state.reviewEvents.filter((entry) => entry.itemId === 'L1_V002')).toHaveLength(20);
     expect(state.masteryArchive.L1_V001.evidenceCount).toBe(4);
     expect(state.masteryArchive.L1_V002.evidenceCount).toBe(3);
+  });
+
+  it('компакция не меняет per-skill accuracy и рассчитанное mastery', () => {
+    const itemId = 'L1_V003';
+    const productionEvents = Array.from({ length: 10 }, (_, index) => ({
+      ...event(index, itemId),
+      eventId: `production-${index}`,
+      cardId: `${itemId}::context-production`,
+      skill: SKILLS.CONTEXT_PRODUCTION,
+      mode: 'context-production',
+      firstAttemptCorrect: index < 8,
+      effectiveRating: index < 8 ? 4 : 0,
+    }));
+    const newerEvents = Array.from({ length: 20 }, (_, index) => ({
+      ...event(index + 20, itemId),
+      eventId: `recognition-${index}`,
+      skill: SKILLS.RECOGNITION,
+      mode: 'reverse-multiple-choice',
+    }));
+    const prerequisiteEvents = [
+      {
+        ...event(-3, itemId),
+        eventId: 'old-recognition',
+        skill: SKILLS.RECOGNITION,
+        mode: 'reverse-multiple-choice',
+      },
+      { ...event(-2, itemId), eventId: 'old-recall-1' },
+      { ...event(-1, itemId), eventId: 'old-recall-2' },
+    ];
+    const state = {
+      reviewEvents: [...prerequisiteEvents, ...productionEvents, ...newerEvents],
+      masteryArchive: {},
+    };
+    const cards = [
+      { ...SRS.newCard(itemId), stability: 95, reps: 5 },
+      {
+        ...SRS.newCard(`${itemId}::recall`, { itemId, skill: SKILLS.RECALL }),
+        stability: 95,
+        reps: 5,
+      },
+      {
+        ...SRS.newCard(`${itemId}::context-production`, {
+          itemId,
+          skill: SKILLS.CONTEXT_PRODUCTION,
+        }),
+        stability: 95,
+        reps: 5,
+      },
+    ];
+    const calculate = () =>
+      calculateMastery({
+        itemId,
+        cards,
+        events: state.reviewEvents,
+        archive: state.masteryArchive[itemId],
+        applicableSkills: [SKILLS.RECOGNITION, SKILLS.RECALL, SKILLS.CONTEXT_PRODUCTION],
+        getRetrievability: () => 0.95,
+      });
+
+    const before = calculate();
+    expect(before.level).toBe('Освоено');
+    compactReviewJournal(state);
+    const after = calculate();
+
+    expect(after.skillMetrics[SKILLS.CONTEXT_PRODUCTION].accuracy).toBe(0.8);
+    expect(after.skillMetrics[SKILLS.CONTEXT_PRODUCTION].accuracy).toBe(
+      before.skillMetrics[SKILLS.CONTEXT_PRODUCTION].accuracy
+    );
+    expect(after.level).toBe(before.level);
+    expect(after.score).toBe(before.score);
   });
 });

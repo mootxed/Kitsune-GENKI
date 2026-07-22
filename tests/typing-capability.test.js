@@ -4,7 +4,13 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SRS } from '../srs.js';
-import { SKILLS, makeCardId, modeCanSchedule, vocabularySkills } from '../src/knowledge-model.js';
+import {
+  SKILLS,
+  makeCardId,
+  modeCanSchedule,
+  vocabularySkills,
+  vocabularySkillsReadyForIntroduction,
+} from '../src/knowledge-model.js';
 import { SessionBatcher } from '../src/session-batcher.js';
 import { calculateMastery, MASTERY_LEVELS } from '../src/mastery.js';
 import {
@@ -33,7 +39,15 @@ describe('typing capability across the lesson catalogue', () => {
     expect(normalizeKanaAnswer('あめりか')).toBe('あめりか');
   });
 
-  it('создаёт проходимые recall и active-production карточки для всех 674 слов', () => {
+  it('явно разворачивает факультативные части ответа', () => {
+    expect(typingCapability({ writing: 'すき（な）' }).acceptedAnswers).toEqual(['すき', 'すきな']);
+    expect(typingCapability({ writing: '（めがねを）かける' }).acceptedAnswers).toEqual([
+      'かける',
+      'めがねをかける',
+    ]);
+  });
+
+  it('создаёт проходимый recall, но не синтетический production для 674 слов', () => {
     const words = catalogueWords();
     expect(words).toHaveLength(674);
 
@@ -42,20 +56,28 @@ describe('typing capability across the lesson catalogue', () => {
       expect(capability.canType, `${word.id}: ${word.writing} (${capability.reason})`).toBe(true);
       expect(capability.acceptedAnswers.length).toBeGreaterThan(0);
       expect(capability.keyboardCharacters.length).toBeLessThanOrEqual(MAX_TYPING_UNIQUE_CHARS);
-      expect(vocabularySkills(word)).toEqual(
-        expect.arrayContaining([SKILLS.RECALL, SKILLS.CONTEXT_PRODUCTION])
-      );
+      expect(vocabularySkills(word)).toContain(SKILLS.RECALL);
+      expect(vocabularySkills(word)).not.toContain(SKILLS.CONTEXT_PRODUCTION);
     }
   });
 
   it('batcher выбирает проходимый typing mode из той же capability', () => {
     const words = catalogueWords();
-    const cards = words.flatMap((word) =>
-      [SKILLS.RECALL, SKILLS.CONTEXT_PRODUCTION].map((skill) => ({
+    const cards = words.flatMap((word) => {
+      const productionWord = {
+        ...word,
+        contextProduction: {
+          prompt: `ID ${word.id}: [ _ ]`,
+          meaningCue: word.translation,
+          acceptedAnswers: typingCapability(word).acceptedAnswers,
+          requiredForm: 'dictionary',
+        },
+      };
+      return [SKILLS.RECALL, SKILLS.CONTEXT_PRODUCTION].map((skill) => ({
         ...SRS.newCard(makeCardId(word.id, skill), { itemId: word.id, skill }),
-        word,
-      }))
-    );
+        word: productionWord,
+      }));
+    });
     const organized = new SessionBatcher(cards, cards.length).organizeBatchInto4Blocks(cards);
 
     for (const card of organized) {
@@ -66,12 +88,62 @@ describe('typing capability across the lesson catalogue', () => {
     }
   });
 
+  it('открывает recall и production только в следующий день после prerequisite', () => {
+    const now = new Date(2026, 6, 22, 12).getTime();
+    const word = {
+      id: 'staged-word',
+      writing: 'がっこう',
+      contextProduction: {
+        prompt: '毎日 [ _ ] へ行きます。',
+        meaningCue: 'школа',
+        acceptedAnswers: ['がっこう'],
+        requiredForm: 'dictionary',
+      },
+    };
+    const success = (skill, reviewedAt) => ({
+      eventType: 'review',
+      itemId: word.id,
+      skill,
+      mode: skill === SKILLS.RECOGNITION ? CARD_MODES.REVERSE_MULTIPLE_CHOICE : CARD_MODES.TYPING,
+      firstAttemptCorrect: true,
+      effectiveRating: SRS.Quality.Good,
+      reviewedAt,
+      undoneAt: null,
+    });
+
+    expect(vocabularySkillsReadyForIntroduction(word, [], null, now)).toEqual([SKILLS.RECOGNITION]);
+    expect(
+      vocabularySkillsReadyForIntroduction(word, [success(SKILLS.RECOGNITION, now)], null, now)
+    ).toEqual([SKILLS.RECOGNITION]);
+    expect(
+      vocabularySkillsReadyForIntroduction(
+        word,
+        [success(SKILLS.RECOGNITION, now - SRS.DAY)],
+        null,
+        now
+      )
+    ).toEqual([SKILLS.RECOGNITION, SKILLS.RECALL]);
+    expect(
+      vocabularySkillsReadyForIntroduction(
+        word,
+        [success(SKILLS.RECOGNITION, now - 2 * SRS.DAY), success(SKILLS.RECALL, now - SRS.DAY)],
+        null,
+        now
+      )
+    ).toEqual([SKILLS.RECOGNITION, SKILLS.RECALL, SKILLS.CONTEXT_PRODUCTION]);
+  });
+
   it('Освоено достижимо для каждого слова каталога', () => {
     const now = new Date(2026, 6, 22, 12).getTime();
     const day = 86_400_000;
 
     for (const word of catalogueWords()) {
       const applicableSkills = vocabularySkills(word);
+      const productionSkill = applicableSkills.includes(SKILLS.CONTEXT_PRODUCTION)
+        ? SKILLS.CONTEXT_PRODUCTION
+        : applicableSkills.includes(SKILLS.READING_WRITING)
+          ? SKILLS.READING_WRITING
+          : SKILLS.RECALL;
       const cards = applicableSkills.map((skill) => ({
         ...SRS.newCard(makeCardId(word.id, skill), { itemId: word.id, skill }),
         stability: 95,
@@ -90,7 +162,9 @@ describe('typing capability across the lesson catalogue', () => {
             ? CARD_MODES.REVERSE_MULTIPLE_CHOICE
             : skill === SKILLS.RECALL
               ? CARD_MODES.TYPING
-              : CARD_MODES.CONTEXT_PRODUCTION,
+              : skill === SKILLS.READING_WRITING
+                ? CARD_MODES.DRAWING
+                : CARD_MODES.CONTEXT_PRODUCTION,
         firstAttemptCorrect: true,
         effectiveRating: SRS.Quality.Good,
         reviewedAt,
@@ -100,8 +174,8 @@ describe('typing capability across the lesson catalogue', () => {
         reviewEvent(SKILLS.RECOGNITION, now - 5 * day),
         reviewEvent(SKILLS.RECALL, now - 4 * day),
         reviewEvent(SKILLS.RECALL, now - 3 * day),
-        reviewEvent(SKILLS.CONTEXT_PRODUCTION, now - 2 * day),
-        reviewEvent(SKILLS.CONTEXT_PRODUCTION, now - day),
+        reviewEvent(productionSkill, now - 2 * day),
+        reviewEvent(productionSkill, now - day),
       ];
       const result = calculateMastery({
         itemId: word.id,

@@ -1,6 +1,8 @@
 /* Stable knowledge-item and skill identifiers shared by SRS, UI and mastery. */
 
 import { typingCapability } from './typing-capability.js';
+import { productionContext } from './production-context.js';
+import { localDateKey } from './local-date.js';
 
 export const KNOWLEDGE_TYPES = Object.freeze({
   VOCABULARY: 'vocabulary',
@@ -53,10 +55,50 @@ export function vocabularySkills(word) {
   const skills = [SKILLS.RECOGNITION];
   if (canType) skills.push(SKILLS.RECALL);
   if (hasKanji) skills.push(SKILLS.READING_WRITING);
-  // This card is rendered as active typing. A curated sentence is used when
-  // available; otherwise the translation remains the production prompt.
-  if (canType) skills.push(SKILLS.CONTEXT_PRODUCTION);
+  if (canType && productionContext(word)) skills.push(SKILLS.CONTEXT_PRODUCTION);
   return skills;
+}
+
+function hasEarlierCleanSuccess(events, archive, itemId, skill, day) {
+  const liveSuccess = (events || []).some(
+    (event) =>
+      event?.itemId === itemId &&
+      event.skill === skill &&
+      modeSkill(event.mode) === skill &&
+      event.eventType === 'review' &&
+      !event.undoneAt &&
+      event.firstAttemptCorrect === true &&
+      event.effectiveRating !== 0 &&
+      Number.isInteger(event.reviewedAt) &&
+      localDateKey(event.reviewedAt) < day
+  );
+  if (liveSuccess) return true;
+  return (archive?.successfulDays?.[skill] || []).some((successDay) => successDay < day);
+}
+
+/** Skills become new cards in stages, never on the same day as their prerequisite. */
+export function vocabularySkillsReadyForIntroduction(
+  word,
+  events = [],
+  archive = null,
+  now = Date.now()
+) {
+  const applicable = vocabularySkills(word);
+  const day = localDateKey(now);
+  const recognitionReady = hasEarlierCleanSuccess(
+    events,
+    archive,
+    word.id,
+    SKILLS.RECOGNITION,
+    day
+  );
+  const recallReady = hasEarlierCleanSuccess(events, archive, word.id, SKILLS.RECALL, day);
+
+  return applicable.filter((skill) => {
+    if (skill === SKILLS.RECOGNITION) return true;
+    if (skill === SKILLS.RECALL) return recognitionReady;
+    return recallReady;
+  });
 }
 
 export function cardsForItem(srsRecords, itemId) {

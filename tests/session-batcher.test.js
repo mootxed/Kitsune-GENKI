@@ -194,6 +194,22 @@ describe('SessionBatcher', () => {
         expect(card.forcedMode).toBeDefined();
       });
     });
+
+    it('разносит skill одного knowledge item по round-robin очереди', () => {
+      const cards = ['a', 'b', 'c'].flatMap((itemId) =>
+        [SKILLS.RECOGNITION, SKILLS.RECALL].map((skill) => ({
+          id: skill === SKILLS.RECOGNITION ? itemId : `${itemId}::${skill}`,
+          itemId,
+          skill,
+          word: { id: itemId, writing: 'かな', category: 'nouns' },
+        }))
+      );
+      const organized = new SessionBatcher(cards, cards.length).organizeBatchInto4Blocks(cards);
+
+      expect(organized.map((card) => card.itemId)).toEqual(['a', 'b', 'c', 'a', 'b', 'c']);
+      expect(organized[0].skill).toBe(SKILLS.RECOGNITION);
+      expect(organized[3].skill).toBe(SKILLS.RECALL);
+    });
   });
 
   describe('Navigation methods', () => {

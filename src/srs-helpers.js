@@ -39,6 +39,7 @@ export function isWordUnlocked(wordId, chapters) {
 export function dueCards(srsRecords, chapterId, now = Date.now()) {
   const seen = new Set();
   return Object.values(srsRecords).filter((c) => {
+    if (c.suspended === true) return false;
     if (chapterId && cardChapter(c.id) !== chapterId) return false;
     if (seen.has(c.id)) return false;
     seen.add(c.id);

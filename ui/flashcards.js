@@ -16,6 +16,7 @@ import {
 } from '../src/knowledge-model.js';
 import { calculateMastery } from '../src/mastery.js';
 import { compactReviewJournal } from '../src/review-journal.js';
+import { productionContext } from '../src/production-context.js';
 import {
   MAX_TYPING_UNIQUE_CHARS,
   hiraganaToKatakana,
@@ -205,6 +206,24 @@ async function undoLastReview(state, dependencies) {
   if (previous?.session && !sessionManager?.restoreSnapshot(previous.session)) return false;
   if (previous?.card) persistedEvent.previousCard = previous.card;
   if (!undoReviewEvent(state, persistedEvent.eventId)) return false;
+  const undoneAt = persistedEvent.undoneAt;
+  SRS.logReviewEvent({
+    eventId: `undo-${persistedEvent.eventId}-${undoneAt}`,
+    eventType: 'undo',
+    targetEventId: persistedEvent.eventId,
+    itemId: persistedEvent.itemId,
+    cardId: persistedEvent.cardId,
+    skill: persistedEvent.skill,
+    mode: persistedEvent.mode,
+    firstAttemptCorrect: false,
+    mistakes: 0,
+    hintUsed: false,
+    responseTimeMs: null,
+    rawRating: persistedEvent.rawRating,
+    effectiveRating: persistedEvent.effectiveRating,
+    reviewedAt: undoneAt,
+    undoneAt,
+  });
 
   flashIdx = previous?.flashIdx ?? flashIdx;
   flashRevealed = previous?.flashRevealed ?? false;
@@ -360,13 +379,57 @@ const HIRAGANA_TO_KATAKANA = {
 };
 
 // Вспомогательная функция перемешивания массива
-function shuffleArray(array) {
+function shuffleArray(array, random = Math.random) {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+export function normalizeChoiceLabel(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLocaleLowerCase('ru')
+    .replace(/[\s\p{P}\p{S}]+/gu, ' ')
+    .trim();
+}
+
+export function canonicalLexeme(word) {
+  if (word?.lexemeId) return `id:${word.lexemeId}`;
+  const japanese = normalizeKanaAnswer(word?.writing || word?.kanji || '');
+  return `${japanese}|${normalizeChoiceLabel(shortT(word))}`;
+}
+
+export function buildMultipleChoiceOptions(
+  word,
+  allWords,
+  optionLabel,
+  { isEligible = () => true, random = Math.random } = {}
+) {
+  const correctLabel = normalizeChoiceLabel(optionLabel(word));
+  const correctLexeme = canonicalLexeme(word);
+  const usedLabels = new Set([correctLabel]);
+  const usedLexemes = new Set([correctLexeme]);
+  const distractors = [];
+  const candidates = [
+    ...(allWords || []).filter((candidate) => candidate.category === word.category),
+    ...(allWords || []).filter((candidate) => candidate.category !== word.category),
+  ];
+
+  for (const candidate of shuffleArray(candidates, random)) {
+    if (candidate.id === word.id || !isEligible(candidate)) continue;
+    const label = normalizeChoiceLabel(optionLabel(candidate));
+    const lexeme = canonicalLexeme(candidate);
+    if (!label || usedLabels.has(label) || usedLexemes.has(lexeme)) continue;
+    distractors.push(candidate);
+    usedLabels.add(label);
+    usedLexemes.add(lexeme);
+    if (distractors.length === 3) break;
+  }
+
+  return shuffleArray([word, ...distractors], random);
 }
 
 // Вспомогательная функция для получения текста прогресса
@@ -625,32 +688,9 @@ function determineCardMode(card, word) {
   return selectMode(card, word);
 }
 
-// Контекстные упражнения строятся только для категорий, где шаблон остаётся естественным.
+// Контекст существует только при наличии валидного структурированного задания.
 export function generateWordContext(word) {
-  if (!word || !word.id || (word.kanji || word.writing || '').includes('～')) return null;
-
-  const category = word.category || '';
-  const templates = {
-    food: ['毎朝 [ _ ] を食べます。', 'Каждое утро я ем ___.'],
-    people: ['私の友達は [ _ ] です。', 'Мой друг — ___.'],
-    person: ['私の友達は [ _ ] です。', 'Мой друг — ___.'],
-    occupation: ['私の父は [ _ ] です。', 'Мой папа — ___.'],
-    family: ['私の [ _ ] は優しいです。', 'Мой/моя ___ добрый/добрая.'],
-    places: ['週末に [ _ ] へ行きます。', 'На выходных я иду в ___.'],
-    location_words: ['[ _ ] に本があります。', 'Книга находится ___.'],
-    countries: ['いつか [ _ ] へ行きたいです。', 'Когда-нибудь я хочу поехать в ___.'],
-    things: ['机の上に [ _ ] があります。', 'На столе есть ___.'],
-    nouns: ['これは [ _ ] です。', 'Это ___.'],
-    time: ['[ _ ] に日本語を勉強します。', 'Я учу японский в ___.'],
-    activities: ['週末に [ _ ] をします。', 'На выходных я занимаюсь ___.'],
-    entertainment: ['週末に [ _ ] を見ます。', 'На выходных я смотрю ___.'],
-    'i-adjectives': ['この本は [ _ ] です。', 'Эта книга ___.'],
-    'na-adjectives': ['この町は [ _ ] です。', 'Этот город ___.'],
-    adjectives: ['この本は [ _ ] です。', 'Эта книга ___.'],
-  };
-
-  const template = templates[category];
-  return template ? { sentence: template[0], hint: template[1] } : null;
+  return productionContext(word);
 }
 
 // Функция проверки, является ли строка одиночным кандзи
@@ -1151,7 +1191,7 @@ function renderTypingMode(word, state, dependencies, modeConfig = {}) {
 
   // Парсим допустимые варианты чтения и очищаем их от служебных символов
   // (~, ～, пробелы, пунктуация, скобки) — на клавиатуре есть только кана
-  const capability = typingCapability(word);
+  const capability = typingCapability(word, modeConfig.acceptedAnswers || null);
   if (!capability.canType) {
     throw new Error(`[Typing] Для ${word.id || displayWriting} нет проходимого ответа`);
   }
@@ -1365,21 +1405,23 @@ function renderContextSentenceMode(word, state, dependencies) {
   renderMultipleChoiceMode(word, state, dependencies, {
     mode: CARD_MODES.CONTEXT_SENTENCE,
     category: 'Контекст слова',
-    question: context.sentence,
-    hint: context.hint,
+    question: context.prompt,
+    hint: context.meaningCue,
     questionClass: 'context-sentence',
   });
 }
 
 function renderContextProductionMode(word, state, dependencies) {
   const context = generateWordContext(word);
+  if (!context) {
+    throw new Error(`[Production] Для ${word.id} нет структурированного задания`);
+  }
   renderTypingMode(word, state, dependencies, {
     mode: CARD_MODES.CONTEXT_PRODUCTION,
     category: 'Активное воспроизведение',
-    question: context?.sentence || word.translation,
-    hint: context
-      ? `${context.hint} Введите пропущенное слово.`
-      : 'Воспроизведите японское слово без вариантов ответа.',
+    question: context.prompt,
+    hint: `${context.meaningCue} · форма: ${context.requiredForm}`,
+    acceptedAnswers: context.acceptedAnswers,
   });
 }
 
@@ -1411,30 +1453,10 @@ function renderMultipleChoiceMode(word, state, dependencies, modeConfig = {}) {
   const tabbar = document.querySelector('.tabbar');
   if (tabbar) tabbar.style.display = 'none';
 
-  // Генерируем 3 отвлекающих варианта
-  const distractors = [];
   const allWords = LESSONS.flatMap((l) => l.words || []);
-
-  const candidates = allWords
-    .filter((w) => w.id !== word.id)
-    .filter((w) => w.category === word.category)
-    .filter((w) => isWordUnlocked(w.id, state.chapters));
-
-  const shuffled = shuffleArray(candidates);
-  for (let i = 0; i < Math.min(3, shuffled.length); i++) {
-    distractors.push(shuffled[i]);
-  }
-
-  // Если не хватает отвлекающих вариантов, берём случайные слова
-  while (distractors.length < 3 && allWords.length >= 4) {
-    const randomWord = allWords[Math.floor(Math.random() * allWords.length)];
-    if (randomWord.id !== word.id && !distractors.find((d) => d.id === randomWord.id)) {
-      distractors.push(randomWord);
-    }
-  }
-
-  // Составляем массив из 4 вариантов и перемешиваем
-  const options = shuffleArray([word, ...distractors.slice(0, 3)]);
+  const options = buildMultipleChoiceOptions(word, allWords, optionLabel, {
+    isEligible: (candidate) => isWordUnlocked(candidate.id, state.chapters),
+  });
 
   body.innerHTML = `
     <div class="flash-wrap">
@@ -2753,7 +2775,7 @@ export function initSessionBatching(dueCardsQueue, lessonsData, batchSize = 20) 
     return { ...card, word };
   });
 
-  const organizedCards = sessionBatcher.organizeBatchInto4Blocks(enrichedCards);
+  const organizedCards = sessionBatcher.organizeBatch(enrichedCards);
 
   flashQueue = organizedCards;
   flashIdx = 0;
@@ -2761,7 +2783,7 @@ export function initSessionBatching(dueCardsQueue, lessonsData, batchSize = 20) 
   return {
     batcher: sessionBatcher,
     currentBatch: firstBatch,
-    organizedCards: organizedCards, // Explicitly expose 4-block ordered array
+    organizedCards,
     totalBatches: sessionBatcher.getTotalBatches(),
   };
 }
@@ -2777,14 +2799,14 @@ export function completeBatchAndMoveNext(state, dependencies) {
   currentBatchIndex = sessionBatcher.getCurrentBatchIndex();
 
   // Обогащаем карточки данными слов (как в initSessionBatching),
-  // иначе определение кандзи для блока 1 не сработает
+  // иначе нельзя надёжно назначить skill-specific режим.
   const lessons = dependencies?.LESSONS || [];
   const enrichedCards = nextBatch.cards.map((card) => {
     const word = wordById(card.id, lessons);
     return { ...card, word };
   });
 
-  const organizedCards = sessionBatcher.organizeBatchInto4Blocks(enrichedCards);
+  const organizedCards = sessionBatcher.organizeBatch(enrichedCards);
 
   flashQueue = organizedCards;
   flashIdx = 0;

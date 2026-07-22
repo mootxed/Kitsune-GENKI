@@ -4,7 +4,13 @@ import { refreshStreakDisplay, syncAvatars, updateSrsBadge } from './shared.js';
 import { $, todayStr, pluralDays } from '../src/utils.js';
 import { dueCards, allCards, cardChapter } from '../src/srs-helpers.js';
 import { SRS } from '../srs.js';
-import { KNOWLEDGE_TYPES, makeCardId, vocabularySkills } from '../src/knowledge-model.js';
+import {
+  KNOWLEDGE_TYPES,
+  SKILLS,
+  makeCardId,
+  vocabularySkills,
+  vocabularySkillsReadyForIntroduction,
+} from '../src/knowledge-model.js';
 import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
 import { db, STORES } from '../src/db.js';
 import { countAvailableCardsForSession } from '../src/srs-limits.js';
@@ -53,6 +59,14 @@ export async function loadLessons() {
     try {
       LESSONS = Array.isArray(raw) ? raw : JSON.parse(raw);
       LESSONS.forEach((l) => loadedChapters.set(l.id, { lesson: l, story: undefined }));
+      let reconciled = false;
+      for (const lesson of LESSONS) {
+        if (!state.chapters[lesson.id]?.started) continue;
+        for (const word of lesson.words || []) {
+          reconciled = ensureVocabularySkillCards(word) || reconciled;
+        }
+      }
+      if (reconciled) await save(true);
     } catch {
       LESSONS = [];
     }
@@ -104,6 +118,9 @@ function normalizeLesson(l) {
       romaji: v.romaji,
       translation: v.translation,
       category: v.category,
+      lexemeId: v.lexemeId || v.lexeme_id || null,
+      acceptedAnswers: v.acceptedAnswers || v.accepted_answers || null,
+      contextProduction: v.contextProduction || v.context_production || null,
     })),
     grammar: arr(l.notes).map((n) => ({ title: n.title, content: n.content })),
     cultural: arr(l.cultural_notes).map((n) => ({ title: n.title, content: n.content })),
@@ -134,6 +151,13 @@ export async function ensureLesson(id) {
 
   const entry = { lesson: normalized, story };
   loadedChapters.set(id, entry);
+  if (state.chapters[id]?.started) {
+    const changed = normalized.words.reduce(
+      (result, word) => ensureVocabularySkillCards(word) || result,
+      false
+    );
+    if (changed) await save(true);
+  }
   return entry;
 }
 
@@ -156,19 +180,38 @@ export async function ensureLessonsForSrs() {
 }
 
 function ensureVocabularySkillCards(word) {
-  let added = false;
-  vocabularySkills(word).forEach((skill) => {
+  let changed = false;
+  const applicable = new Set(vocabularySkills(word));
+  const ready = new Set(
+    vocabularySkillsReadyForIntroduction(
+      word,
+      state.reviewEvents || [],
+      state.masteryArchive?.[word.id]
+    )
+  );
+
+  for (const skill of Object.values(SKILLS)) {
     const cardId = makeCardId(word.id, skill);
-    if (!state.srs[cardId]) {
+    const existing = state.srs[cardId];
+    if (existing) {
+      const shouldSuspend = !applicable.has(skill) || !ready.has(skill);
+      if (existing.suspended !== shouldSuspend) {
+        existing.suspended = shouldSuspend;
+        changed = true;
+      }
+      continue;
+    }
+
+    if (ready.has(skill)) {
       state.srs[cardId] = SRS.newCard(cardId, {
         itemId: word.id,
         skill,
         knowledgeType: KNOWLEDGE_TYPES.VOCABULARY,
       });
-      added = true;
+      changed = true;
     }
-  });
-  return added;
+  }
+  return changed;
 }
 
 export function getLesson(id) {

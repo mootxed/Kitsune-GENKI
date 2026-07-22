@@ -27,13 +27,34 @@ export function parseTypingAnswers(writing) {
   if (!writing) return [];
   return String(writing)
     .split(/[/,、]/)
-    .map((answer) => normalizeKanaAnswer(answer.trim()))
+    .flatMap((answer) => expandOptionalGroups(answer.trim()))
+    .map((answer) => normalizeKanaAnswer(answer))
     .filter(Boolean)
     .filter((answer, index, answers) => answers.indexOf(answer) === index);
 }
 
-export function typingCapability(word) {
-  const acceptedAnswers = parseTypingAnswers(word?.writing);
+function expandOptionalGroups(answer) {
+  const match = /[（(]([^（）()]*)[）)]/u.exec(answer);
+  if (!match) return [answer];
+
+  const before = answer.slice(0, match.index);
+  const after = answer.slice(match.index + match[0].length);
+  return [
+    ...expandOptionalGroups(`${before}${after}`),
+    ...expandOptionalGroups(`${before}${match[1]}${after}`),
+  ];
+}
+
+export function typingCapability(word, answerOverride = null) {
+  const declaredAnswers = Array.isArray(answerOverride)
+    ? answerOverride
+    : Array.isArray(word?.acceptedAnswers)
+      ? word.acceptedAnswers
+      : [word?.writing];
+  const sourceAnswers = declaredAnswers.flatMap((answer) => parseTypingAnswers(answer));
+  const acceptedAnswers = sourceAnswers.filter(
+    (answer, index, answers) => answers.indexOf(answer) === index
+  );
   const keyboardCharacters = [...new Set(acceptedAnswers.flatMap((answer) => [...answer]))];
   const canType =
     acceptedAnswers.length > 0 && keyboardCharacters.length <= MAX_TYPING_UNIQUE_CHARS;

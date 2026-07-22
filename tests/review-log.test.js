@@ -248,4 +248,27 @@ describe('IndexedDB review_log', () => {
       undoneAt: 1_750_000_001_000,
     });
   });
+
+  it('обычный applyReview пишет компактную полную FSRS-историю без snapshot', async () => {
+    const dbModule = await import('../src/db.js');
+    const { appendReviewLog, getReviewLogs } = await import('../src/review-log.js');
+    await dbModule.initializeDB();
+    SRS.setReviewLogger(appendReviewLog);
+    const card = SRS.newCard('L5_w1');
+
+    SRS.applyReview(card, SRS.Quality.Good, {
+      mode: 'reverse-multiple-choice',
+      reviewedAt: 1_750_000_000_000,
+    });
+    const [entry] = await getReviewLogs();
+    SRS.setReviewLogger(null);
+
+    expect(entry).toMatchObject({
+      cardId: 'L5_w1',
+      effectiveRating: SRS.Quality.Good,
+      fsrs: { rating: SRS.Rating.Good, state: SRS.State.New, learning_steps: 0 },
+    });
+    expect(entry.previousCard).toBeUndefined();
+    expect(entry.nextCard).toBeUndefined();
+  });
 });

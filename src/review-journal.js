@@ -12,6 +12,7 @@ function emptyArchiveEntry() {
     successfulSkills: {},
     successfulDays: {},
     successfulCount: {},
+    recentOutcomes: {},
     recentLapseAt: null,
   };
 }
@@ -29,7 +30,17 @@ function isValidEvidenceEvent(event) {
 function archiveEvent(archive, event) {
   if (!isValidEvidenceEvent(event) || !event.itemId) return;
   const entry = archive[event.itemId] || emptyArchiveEntry();
-  entry.evidenceCount += 1;
+  entry.successfulSkills ||= {};
+  entry.successfulDays ||= {};
+  entry.successfulCount ||= {};
+  entry.recentOutcomes ||= {};
+  entry.evidenceCount = (Number(entry.evidenceCount) || 0) + 1;
+  const outcomes = entry.recentOutcomes[event.skill] || [];
+  outcomes.push({
+    correct: event.firstAttemptCorrect === true && event.effectiveRating !== 0,
+    reviewedAt: event.reviewedAt,
+  });
+  entry.recentOutcomes[event.skill] = outcomes.slice(-REVIEW_EVENTS_PER_ITEM);
 
   if (event.effectiveRating === 0) {
     entry.recentLapseAt = Math.max(entry.recentLapseAt || 0, event.reviewedAt);
@@ -52,6 +63,7 @@ export function compactReviewJournal(appState) {
   const events = Array.isArray(appState.reviewEvents) ? appState.reviewEvents : [];
   const archive = { ...(appState.masteryArchive || {}) };
   const retainedIndexes = new Set();
+  const archivedEvents = [];
   const perItemCount = new Map();
 
   for (let index = events.length - 1; index >= 0; index--) {
@@ -61,9 +73,13 @@ export function compactReviewJournal(appState) {
       retainedIndexes.add(index);
       perItemCount.set(itemId, count + 1);
     } else {
-      archiveEvent(archive, events[index]);
+      archivedEvents.push(events[index]);
     }
   }
+
+  archivedEvents
+    .sort((a, b) => (a?.reviewedAt || 0) - (b?.reviewedAt || 0))
+    .forEach((event) => archiveEvent(archive, event));
 
   const retained = events.filter((_, index) => retainedIndexes.has(index));
   const snapshotIndexes = new Set();

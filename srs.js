@@ -64,6 +64,37 @@ function emitReviewLog(entry) {
   }
 }
 
+function compactFsrsReviewLog(event, fsrsLog) {
+  return {
+    eventId: event.eventId,
+    eventType: event.eventType,
+    itemId: event.itemId,
+    cardId: event.cardId,
+    skill: event.skill,
+    mode: event.mode,
+    firstAttemptCorrect: event.firstAttemptCorrect,
+    mistakes: event.mistakes,
+    hintUsed: event.hintUsed,
+    responseTimeMs: event.responseTimeMs,
+    rawRating: event.rawRating,
+    effectiveRating: event.effectiveRating,
+    reviewedAt: event.reviewedAt,
+    undoneAt: null,
+    fsrs: {
+      rating: fsrsLog.rating,
+      state: fsrsLog.state,
+      due: timestamp(fsrsLog.due, event.previousCard.due),
+      stability: finiteNumber(fsrsLog.stability),
+      difficulty: finiteNumber(fsrsLog.difficulty),
+      elapsed_days: finiteNumber(fsrsLog.elapsed_days),
+      last_elapsed_days: finiteNumber(fsrsLog.last_elapsed_days),
+      scheduled_days: finiteNumber(fsrsLog.scheduled_days),
+      learning_steps: finiteNumber(fsrsLog.learning_steps),
+      review: timestamp(fsrsLog.review, event.reviewedAt),
+    },
+  };
+}
+
 /*
  * Базовые автоматические упражнения по умолчанию дают Good за правильный ответ.
  * Easy зарезервирован для редких бонусных сценариев, например идеального рисования.
@@ -239,7 +270,9 @@ function applyReview(card, quality, context = {}) {
     undoneAt: null,
   };
 
-  return { card, event, fsrsLog: result.log };
+  const fsrsLog = result.log;
+  emitReviewLog(compactFsrsReviewLog(event, fsrsLog));
+  return { card, event, fsrsLog };
 }
 
 /*
@@ -248,8 +281,7 @@ function applyReview(card, quality, context = {}) {
  * Мутирует и возвращает ту же запись карточки.
  */
 function review(card, quality, context = {}) {
-  const { event } = applyReview(card, quality, context);
-  emitReviewLog(event);
+  applyReview(card, quality, context);
   return card;
 }
 
@@ -318,6 +350,7 @@ export const SRS = {
   migrateSM2ToFSRS,
   mapQualityToFSRS,
   setReviewLogger,
+  logReviewEvent: emitReviewLog,
   qualityFromMistakes,
   qualityFromDrawingMistakes,
   Quality,

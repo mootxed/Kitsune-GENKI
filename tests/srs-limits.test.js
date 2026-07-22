@@ -6,6 +6,7 @@ import {
   limitNewCardsForSession,
   studyDay,
 } from '../src/srs-limits.js';
+import { SKILLS } from '../src/knowledge-model.js';
 
 const DAY = '2026-07-22';
 
@@ -92,5 +93,25 @@ describe('SRS new-card limits', () => {
     expect(countAvailableCardsForSession(due, records, options)).toBe(2);
     expect(records.n1.introducedOn).toBeUndefined();
     expect(limitNewCardsForSession(due, records, options)).toHaveLength(2);
+  });
+
+  it('считает дневной лимит по knowledge item и не выдаёт два skill одного item', () => {
+    const records = {
+      recognition: { ...card('word'), itemId: 'word', skill: SKILLS.RECOGNITION },
+      recall: {
+        ...card('word::recall'),
+        itemId: 'word',
+        skill: SKILLS.RECALL,
+      },
+      other: { ...card('other'), itemId: 'other', skill: SKILLS.RECOGNITION },
+    };
+
+    const first = limitNewCardsForSession(Object.values(records), records, {
+      day: DAY,
+      config: { dailyNewCardsLimit: 1, sessionNewCardsLimit: 10 },
+    });
+
+    expect(first.map((entry) => entry.id)).toEqual(['word']);
+    expect(countNewCardsIntroducedOn(records, DAY)).toBe(1);
   });
 });

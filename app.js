@@ -368,7 +368,7 @@ function setupRouter() {
     const batchInfo = initSessionBatching(sessionCards, LESSONS, 20);
 
     if (batchInfo && batchInfo.organizedCards) {
-      // Явно устанавливаем очередь с 4-блочным упорядоченным 20-карточным батчем
+      // Устанавливаем skill-safe очередь 20-карточного батча.
       setFlashQueue(batchInfo.organizedCards);
     }
 
@@ -442,7 +442,7 @@ function setupRouter() {
         return;
       }
 
-      // Явно устанавливаем очередь с 4-блочным упорядоченным 20-карточным батчем
+      // Устанавливаем skill-safe очередь 20-карточного батча.
       setFlashQueue(batchInfo.organizedCards);
       console.log('[SRS] Flash queue set, length:', batchInfo.organizedCards.length);
 
