@@ -323,7 +323,7 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
     });
 
     describe('Review log', () => {
-      it('передаёт логгеру состояние карточки до review', () => {
+      it('передаёт логгеру компактное FSRS-состояние до review', () => {
         const now = 1_750_000_000_000;
         vi.setSystemTime(now);
         const logger = vi.fn();
@@ -353,11 +353,19 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
             effectiveRating: SRS.Quality.Good,
             responseTimeMs: 1234,
             reviewedAt: now,
-            previousCard: expect.objectContaining(previous),
-            nextCard: expect.objectContaining({ learning_steps: 1 }),
+            fsrs: expect.objectContaining({
+              rating: SRS.Rating.Good,
+              stability: previous.stability,
+              difficulty: previous.difficulty,
+              state: previous.state,
+              learning_steps: 0,
+              review: now,
+            }),
             undoneAt: null,
           })
         );
+        expect(logger.mock.calls[0][0].previousCard).toBeUndefined();
+        expect(logger.mock.calls[0][0].nextCard).toBeUndefined();
         expect(card.stability).not.toBe(previous.stability);
         expect(card.difficulty).not.toBe(previous.difficulty);
         expect(card.state).not.toBe(previous.state);

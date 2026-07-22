@@ -54,8 +54,13 @@ function retrievabilityForCard(card, now, getRetrievability) {
 }
 
 function metricForSkill({ skill, cards, events, archive, now, getRetrievability }) {
-  const skillEvents = events
-    .filter((event) => event.skill === skill)
+  const archivedOutcomes = (archive?.recentOutcomes?.[skill] || []).map((outcome) => ({
+    firstAttemptCorrect: outcome.correct === true,
+    effectiveRating: outcome.correct === true ? 4 : 0,
+    reviewedAt: outcome.reviewedAt,
+  }));
+  const skillEvents = [...archivedOutcomes, ...events.filter((event) => event.skill === skill)]
+    .sort((a, b) => (a.reviewedAt || 0) - (b.reviewedAt || 0))
     .slice(-MASTERY_RULES.accuracyWindow);
   const successes = skillEvents.filter(
     (event) => event.firstAttemptCorrect && event.effectiveRating !== 0
@@ -119,7 +124,8 @@ export function calculateMastery({
       ? SKILLS.READING_WRITING
       : SKILLS.RECALL;
   const production = metrics[productionSkill];
-  const hasCleanSuccess = Object.values(metrics).some((metric) => metric.hasSuccess);
+  const applicableMetrics = [...applicable].map((skill) => metrics[skill]).filter(Boolean);
+  const hasCleanSuccess = applicableMetrics.some((metric) => metric.hasSuccess);
   const hasLegacyEstimate = cards.some(
     (card) => card.legacyMasteryEstimated && card.reps > 0 && Number(card.stability) > 0
   );
@@ -180,7 +186,7 @@ export function calculateMastery({
     score = 100;
   }
 
-  const practicedMetrics = Object.values(metrics).filter((metric) => metric.card?.reps > 0);
+  const practicedMetrics = applicableMetrics.filter((metric) => metric.card?.reps > 0);
   const retrievability = practicedMetrics.length
     ? Math.min(...practicedMetrics.map((metric) => metric.retrievability))
     : 0;
@@ -220,9 +226,7 @@ export function calculateMastery({
     readinessLabel: readiness,
     score,
     retrievability,
-    skills: Object.values(metrics)
-      .filter((metric) => metric.hasSuccess)
-      .map((metric) => metric.skill),
+    skills: applicableMetrics.filter((metric) => metric.hasSuccess).map((metric) => metric.skill),
     skillMetrics: metrics,
     productionSkill,
     hasRecentLapse,

@@ -1,4 +1,4 @@
-/* src/session-batcher.js — Батчинг SRS-сессий и организация в 4 блока упражнений */
+/* src/session-batcher.js — batching and skill-safe ordering for SRS sessions. */
 
 import { CARD_MODES, hasKanjiChars } from '../ui/flashcards.js';
 import { SKILLS, parseCardIdentity } from './knowledge-model.js';
@@ -6,7 +6,7 @@ import { typingCapability } from './typing-capability.js';
 
 /**
  * SessionBatcher управляет разбиением большой очереди карточек на батчи по 20 карточек
- * и организацией каждого батча в 4 последовательных блока упражнений.
+ * и разносит навыки одного knowledge item по очереди.
  */
 export class SessionBatcher {
   constructor(totalCards, batchSize = 20) {
@@ -39,22 +39,11 @@ export class SessionBatcher {
     return batches;
   }
 
-  /**
-   * Организует карточки батча в 4 последовательных блока упражнений.
-   * Блок 1: Рисование (только для карточек с кандзи)
-   * Блок 2: Квиз по частицам
-   * Блок 3: Ввод каны
-   * Блок 4: Множественный выбор
-   *
-   * КРИТИЧНО: Карточки без кандзи НЕ могут быть в режиме DRAWING.
-   *
-   * @param {Array} cardBatch - массив карточек для организации
-   * @returns {Array} упорядоченный массив карточек с forcedMode
-   */
-  organizeBatchInto4Blocks(cardBatch) {
+  /** Assigns a mode by skill and spreads repeated knowledge items round-robin. */
+  organizeBatch(cardBatch) {
     // Mode is a stable projection of the card skill. Vocabulary cards are never
     // repurposed as particle/grammar questions.
-    return cardBatch.map((card) => {
+    const projected = cardBatch.map((card) => {
       const skill = parseCardIdentity(card).skill;
       const word = card.word || card;
       const typing = typingCapability(word);
@@ -74,6 +63,30 @@ export class SessionBatcher {
 
       return { ...card, forcedMode };
     });
+
+    // Round-robin by knowledge item. If several due skills of one word happen
+    // to share a batch, recognition cannot reveal the immediately next answer.
+    const groups = new Map();
+    for (const card of projected) {
+      const itemId = parseCardIdentity(card).itemId;
+      if (!groups.has(itemId)) groups.set(itemId, []);
+      groups.get(itemId).push(card);
+    }
+
+    const organized = [];
+    let round = 0;
+    while (organized.length < projected.length) {
+      for (const cards of groups.values()) {
+        if (cards[round]) organized.push(cards[round]);
+      }
+      round++;
+    }
+    return organized;
+  }
+
+  /** @deprecated Compatibility alias for older callers. */
+  organizeBatchInto4Blocks(cardBatch) {
+    return this.organizeBatch(cardBatch);
   }
 
   /**

@@ -45,8 +45,25 @@ function validateReviewLogEntry(entry) {
     if (!Number.isInteger(entry.reviewedAt) || entry.reviewedAt < 0) {
       throw new Error('[ReviewLog] Некорректный reviewedAt');
     }
-    if (!entry.previousCard || !entry.nextCard) {
-      throw new Error('[ReviewLog] previousCard и nextCard обязательны');
+    if (entry.eventType === 'undo') {
+      if (typeof entry.targetEventId !== 'string' || entry.targetEventId.length === 0) {
+        throw new Error('[ReviewLog] targetEventId обязателен для Undo');
+      }
+      if (!Number.isInteger(entry.reviewedAt) || entry.reviewedAt < 0) {
+        throw new Error('[ReviewLog] Некорректный reviewedAt');
+      }
+      return;
+    }
+    const hasLegacySnapshots = entry.previousCard && entry.nextCard;
+    const hasCompactFsrs =
+      entry.fsrs &&
+      [1, 2, 3, 4].includes(entry.fsrs.rating) &&
+      Number.isInteger(entry.fsrs.state) &&
+      Number.isFinite(entry.fsrs.stability) &&
+      Number.isFinite(entry.fsrs.difficulty) &&
+      Number.isInteger(entry.fsrs.review);
+    if (!hasLegacySnapshots && !hasCompactFsrs) {
+      throw new Error('[ReviewLog] FSRS-поля обязательны');
     }
     if (entry.undoneAt !== null && (!Number.isInteger(entry.undoneAt) || entry.undoneAt < 0)) {
       throw new Error('[ReviewLog] Некорректный undoneAt');

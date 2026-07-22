@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CARD_MODES,
+  buildMultipleChoiceOptions,
   generateWordContext,
   getAdaptiveModeWeights,
   selectMode,
@@ -56,23 +57,63 @@ describe('adaptive flashcard modes', () => {
 
   it('выбирает reverse и context как подрежимы recognition', () => {
     const newCard = { state: 0, reps: 0 };
+    const contextWord = {
+      ...kanjiWord,
+      contextProduction: {
+        prompt: '毎日 [ _ ] へ行きます。',
+        meaningCue: 'школа',
+        acceptedAnswers: ['がっこう'],
+        requiredForm: 'dictionary',
+      },
+    };
 
-    expect(selectMode(newCard, kanjiWord, randomSequence(0.1, 0.1))).toBe(
+    expect(selectMode(newCard, contextWord, randomSequence(0.1, 0.1))).toBe(
       CARD_MODES.CONTEXT_SENTENCE
     );
-    expect(selectMode(newCard, kanjiWord, randomSequence(0.1, 0.4))).toBe(
+    expect(selectMode(newCard, contextWord, randomSequence(0.1, 0.4))).toBe(
       CARD_MODES.REVERSE_MULTIPLE_CHOICE
     );
-    expect(selectMode(newCard, kanjiWord, randomSequence(0.1, 0.9))).toBe(
+    expect(selectMode(newCard, contextWord, randomSequence(0.1, 0.9))).toBe(
       CARD_MODES.MULTIPLE_CHOICE
     );
   });
 
   it('создаёт контекст только для безопасных категорий', () => {
-    expect(generateWordContext({ ...kanjiWord, category: 'food' })).toEqual({
-      sentence: '毎朝 [ _ ] を食べます。',
-      hint: 'Каждое утро я ем ___.',
+    expect(generateWordContext({ ...kanjiWord, category: 'food' })).toBeNull();
+    expect(
+      generateWordContext({
+        ...kanjiWord,
+        contextProduction: {
+          prompt: '毎朝 [ _ ] へ行きます。',
+          meaningCue: 'школа',
+          acceptedAnswers: ['がっこう'],
+          requiredForm: 'dictionary',
+        },
+      })
+    ).toEqual({
+      prompt: '毎朝 [ _ ] へ行きます。',
+      meaningCue: 'школа',
+      acceptedAnswers: ['がっこう'],
+      requiredForm: 'dictionary',
     });
     expect(generateWordContext(kanaWord)).toBeNull();
+  });
+
+  it('не создаёт визуально одинаковые или lexeme-дубли в multiple choice', () => {
+    const words = [
+      { ...kanaWord, id: 'formal', translation: 'Доброе утро! (вежливо)' },
+      { ...kanaWord, id: 'duplicate', translation: 'Доброе утро! (другое)' },
+      { id: 'thanks', writing: 'ありがとう', translation: 'Спасибо', category: 'greetings' },
+      { id: 'bye', writing: 'さようなら', translation: 'До свидания', category: 'greetings' },
+      { id: 'yes', writing: 'はい', translation: 'Да', category: 'greetings' },
+    ];
+    const options = buildMultipleChoiceOptions(words[0], words, (option) =>
+      option.translation.split('(')[0].trim()
+    );
+    const labels = options.map((option) => option.translation.split('(')[0].trim());
+
+    expect(options).toHaveLength(4);
+    expect(new Set(labels).size).toBe(4);
+    expect(options.some((option) => option.id === 'duplicate')).toBe(false);
   });
 });
