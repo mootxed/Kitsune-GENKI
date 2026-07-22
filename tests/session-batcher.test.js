@@ -74,6 +74,7 @@ describe('SessionBatcher', () => {
         expect([
           CARD_MODES.DRAWING,
           CARD_MODES.PARTICLE_QUIZ,
+          CARD_MODES.SENTENCE_BUILDING,
           CARD_MODES.TYPING,
           CARD_MODES.MULTIPLE_CHOICE,
         ]).toContain(card.forcedMode);

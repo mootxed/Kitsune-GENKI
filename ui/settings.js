@@ -8,6 +8,8 @@ import {
   shareJSON,
   downloadJSON,
 } from '../src/backup-manager.js';
+import { db, STORES } from '../src/db.js';
+import { clearReviewLogs } from '../src/review-log.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -49,18 +51,7 @@ export function renderSettings(state, dependencies) {
 
     <div class="set-group">
       <div class="set-item">
-        <label>📦 Бэкап прогресса</label>
-        <div class="set-hint">Сохраните копию вашего прогресса (стрик, карточки SRS, настройки), чтобы перенести на другое устройство или восстановить.</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
-          <button class="btn-ghost" id="btn-share-backup" data-testid="share-backup-btn">💾 Сохранить копию</button>
-          <button class="btn-ghost" id="btn-restore-backup" data-testid="restore-backup-btn">📂 Восстановить</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="set-group">
-      <div class="set-item">
-        <label>🔐 Полный экспорт прогресса</label>
+        <label> Полный экспорт прогресса</label>
         <div class="set-hint">
           Экспорт всего localStorage включая достижения, квесты и историю чата.
           <strong>⚠️ Внимание:</strong> Включает API-ключ OpenRouter!
@@ -147,24 +138,36 @@ export function renderSettings(state, dependencies) {
   bindEvent('#theme-dark', 'click', () => setThemeAndSave('dark', state, dependencies));
   bindEvent('#theme-custom', 'click', () => setThemeAndSave('custom', state, dependencies));
 
-  bindEvent('#btn-reset', 'click', () => {
+  bindEvent('#btn-reset', 'click', async () => {
     if (confirm('Сбросить весь прогресс? Это действие необратимо.')) {
-      // Чистим ВСЕ ключи приложения (включая все ключи SRS/FSRS внутри kitsune_state_v1),
-      // тему оформления оставляем.
-      Object.keys(localStorage)
-        .filter((k) => k.startsWith('kitsune_') && k !== LS_THEME)
-        .forEach((k) => localStorage.removeItem(k));
-      // Перечитываем состояние: получаем чистый defaultState (chapters = {}, srs = {})
-      loadState();
-      // Явно сохраняем в localStorage немедленно (без дебаунса)
-      save(true);
-      toast('Прогресс сброшен. Доступна только Глава 1');
-      nav('home');
+      try {
+        // 1. Очищаем IndexedDB (основное хранилище данных)
+        await db.clear(STORES.APP_STATE);
+        await db.clear(STORES.CONTENT_CACHE);
+        await clearReviewLogs();
+
+        // Очищаем флаг миграции, но сохраняем тему
+        await db.delete(STORES.UI_PREFERENCES, 'idb_migrated');
+
+        // 2. Очищаем localStorage (для обратной совместимости)
+        Object.keys(localStorage)
+          .filter((k) => k.startsWith('kitsune_') && k !== LS_THEME)
+          .forEach((k) => localStorage.removeItem(k));
+
+        // 3. Перезагружаем состояние (получаем чистый defaultState)
+        await loadState();
+
+        // 4. Сохраняем чистое состояние в IndexedDB
+        save(true);
+
+        toast('Прогресс сброшен. Доступна только Глава 1');
+        nav('home');
+      } catch (error) {
+        console.error('Ошибка при сбросе прогресса:', error);
+        toast('Ошибка при сбросе прогресса. Попробуйте перезагрузить страницу.');
+      }
     }
   });
-
-  bindEvent('#btn-share-backup', 'click', () => handleFullExport(state, toast));
-  bindEvent('#btn-restore-backup', 'click', () => handleFullImport(state, dependencies, toast));
 
   bindEvent('#btn-export-full', 'click', () => handleFullExport(state, toast));
   bindEvent('#btn-import-full', 'click', () => handleFullImport(state, dependencies, toast));
@@ -198,7 +201,8 @@ function setThemeAndSave(theme, state, dependencies) {
 // Обработчик полного экспорта
 async function handleFullExport(state, toastFn) {
   try {
-    const data = exportFullProgress();
+    // exportFullProgress теперь async
+    const data = await exportFullProgress();
     const filename = `kitsune_genki_full_${new Date().toISOString().split('T')[0]}.json`;
 
     const shared = await shareJSON(data, filename);
@@ -301,13 +305,15 @@ function showImportConfirmDialog(data, state, dependencies, toastFn) {
   cancelBtn.onclick = () => overlay.remove();
 
   const confirmBtn = overlay.querySelector('#btn-confirm-import');
-  confirmBtn.onclick = () => {
+  confirmBtn.onclick = async () => {
     const preserveApiKey = overlay.querySelector('#preserve-api-key')?.checked || false;
 
-    const result = importFullProgress(data, preserveApiKey);
+    // importFullProgress теперь async
+    const result = await importFullProgress(data, preserveApiKey);
 
     if (result.success) {
-      loadState();
+      // loadState теперь async
+      await loadState();
       save();
 
       overlay.remove();

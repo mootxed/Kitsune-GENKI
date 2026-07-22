@@ -1,6 +1,9 @@
-/* backup-manager.js — Полный экспорт/импорт localStorage */
+/* backup-manager.js — Полный экспорт/импорт данных приложения */
 
-// Константы ключей localStorage
+import { db, STORES } from './db.js';
+import { getReviewLogs, replaceReviewLogs } from './review-log.js';
+
+// Константы ключей localStorage (для обратной совместимости со старыми бэкапами)
 const LS_STATE = 'kitsune_state_v1';
 const LS_LESSONS = 'kitsune_lessons_v1';
 const LS_LESSON_VERSION = 'kitsune_lessons_version_v1';
@@ -8,30 +11,76 @@ const LS_LAST_ACTIVITY_DAY = 'kitsune_last_activity_day';
 const LS_THEME = 'kitsune_theme';
 
 // Версия схемы для совместимости при будущих изменениях
-const SCHEMA_VERSION = '2.0';
+const SCHEMA_VERSION = '3.0'; // Версия формата бэкапа (не версия схемы IndexedDB)
+const LEGACY_SCHEMA_VERSION = '2.0'; // localStorage версия
 
 /**
- * Экспортирует все данные из localStorage (кроме кэша уроков)
- * @returns {Object} Структурированные данные для экспорта
+ * Экспортирует все данные из IndexedDB (с фоллбэком на localStorage)
+ * @returns {Promise<Object>} Структурированные данные для экспорта
  */
-export function exportFullProgress() {
+export async function exportFullProgress() {
   try {
+    // Читаем данные из IndexedDB
+    let state = await db.get(STORES.APP_STATE, 'state');
+    let lessonVersion = await db.get(STORES.CONTENT_CACHE, 'lesson_version');
+    let lastActivityDay = await db.get(STORES.CONTENT_CACHE, 'last_activity_day');
+    let theme = await db.get(STORES.UI_PREFERENCES, 'theme');
+    const reviewLog = await getReviewLogs();
+
+    // Фоллбэк на localStorage если IndexedDB пустой
+    if (!state) {
+      console.warn('[Export] State не найден в IndexedDB, пробую localStorage...');
+      const lsState = localStorage.getItem(LS_STATE);
+      if (lsState) {
+        try {
+          state = JSON.parse(lsState);
+          console.log('[Export] State восстановлен из localStorage');
+        } catch (e) {
+          console.error('[Export] Ошибка парсинга localStorage state:', e);
+        }
+      }
+    }
+
+    if (!lessonVersion) {
+      lessonVersion = localStorage.getItem(LS_LESSON_VERSION);
+    }
+    if (!lastActivityDay) {
+      lastActivityDay = localStorage.getItem(LS_LAST_ACTIVITY_DAY);
+    }
+    if (!theme) {
+      theme = localStorage.getItem(LS_THEME);
+    }
+
+    // Проверяем, что хотя бы state есть
+    if (!state) {
+      throw new Error('Нет данных для экспорта. Попробуйте сначала пройти хотя бы один урок.');
+    }
+
+    console.log('[Export] Данные для экспорта:', {
+      hasState: !!state,
+      stateKeys: state ? Object.keys(state) : [],
+      lessonVersion,
+      lastActivityDay,
+      theme,
+    });
+
     const exportData = {
       app: 'kitsune_genki',
-      exportType: 'full_localstorage',
+      exportType: 'full_indexeddb',
       schemaVersion: SCHEMA_VERSION,
       timestamp: new Date().toISOString(),
       data: {
-        state: JSON.parse(localStorage.getItem(LS_STATE) || 'null'),
-        lessonVersion: localStorage.getItem(LS_LESSON_VERSION),
-        lastActivityDay: localStorage.getItem(LS_LAST_ACTIVITY_DAY),
-        theme: localStorage.getItem(LS_THEME),
+        state,
+        lessonVersion,
+        lastActivityDay,
+        theme,
+        reviewLog,
       },
     };
 
     return exportData;
   } catch (error) {
-    console.error('Ошибка экспорта:', error);
+    console.error('[Export] Ошибка экспорта:', error);
     throw new Error('Не удалось создать экспорт: ' + error.message);
   }
 }
@@ -39,19 +88,25 @@ export function exportFullProgress() {
 /**
  * Валидирует структуру импортируемых данных
  * @param {Object} data Данные для импорта
- * @returns {Object} { valid: boolean, error: string }
+ * @returns {Object} { valid: boolean, error: string, isLegacy: boolean }
  */
 export function validateImportData(data) {
   // Проверка формата
-  if (!data.exportType || data.exportType !== 'full_localstorage') {
+  const isIndexedDB = data.exportType === 'full_indexeddb';
+  const isLocalStorage = data.exportType === 'full_localstorage';
+
+  if (!isIndexedDB && !isLocalStorage) {
     return { valid: false, error: 'Неверный тип экспорта' };
   }
 
   // Проверка версии схемы
-  if (!data.schemaVersion || data.schemaVersion !== SCHEMA_VERSION) {
+  const isCurrentVersion = data.schemaVersion === SCHEMA_VERSION;
+  const isLegacyVersion = data.schemaVersion === LEGACY_SCHEMA_VERSION;
+
+  if (!isCurrentVersion && !isLegacyVersion) {
     return {
       valid: false,
-      error: `Несовместимая версия схемы данных (требуется ${SCHEMA_VERSION})`,
+      error: `Несовместимая версия схемы данных (требуется ${SCHEMA_VERSION} или ${LEGACY_SCHEMA_VERSION})`,
     };
   }
 
@@ -60,19 +115,23 @@ export function validateImportData(data) {
     return { valid: false, error: 'Отсутствуют обязательные данные' };
   }
 
-  return { valid: true };
+  return { valid: true, isLegacy: isLocalStorage };
 }
 
 /**
- * Импортирует данные в localStorage
+ * Импортирует данные в IndexedDB (с поддержкой старых localStorage бэкапов)
  * @param {Object} data Валидированные данные для импорта
  * @param {boolean} preserveApiKey Сохранить текущий API-ключ
+ * @returns {Promise<Object>} { success: boolean, error?: string }
  */
-export function importFullProgress(data, preserveApiKey = false) {
+export async function importFullProgress(data, preserveApiKey = false) {
   try {
-    const currentApiKey = preserveApiKey
-      ? JSON.parse(localStorage.getItem(LS_STATE) || '{}')?.settings?.openrouterKey
-      : null;
+    // Получаем текущий API-ключ если нужно сохранить
+    let currentApiKey = null;
+    if (preserveApiKey) {
+      const currentState = await db.get(STORES.APP_STATE, 'state');
+      currentApiKey = currentState?.settings?.openrouterKey;
+    }
 
     // Восстанавливаем state
     if (data.data.state) {
@@ -84,18 +143,41 @@ export function importFullProgress(data, preserveApiKey = false) {
         stateToImport.settings.openrouterKey = currentApiKey;
       }
 
-      localStorage.setItem(LS_STATE, JSON.stringify(stateToImport));
+      await db.set(STORES.APP_STATE, 'state', stateToImport);
     }
 
-    // Восстанавливаем остальные ключи
+    // Восстанавливаем остальные данные
     if (data.data.lessonVersion) {
-      localStorage.setItem(LS_LESSON_VERSION, data.data.lessonVersion);
+      await db.set(STORES.CONTENT_CACHE, 'lesson_version', data.data.lessonVersion);
     }
     if (data.data.lastActivityDay) {
-      localStorage.setItem(LS_LAST_ACTIVITY_DAY, data.data.lastActivityDay);
+      await db.set(STORES.CONTENT_CACHE, 'last_activity_day', data.data.lastActivityDay);
     }
     if (data.data.theme) {
-      localStorage.setItem(LS_THEME, data.data.theme);
+      await db.set(STORES.UI_PREFERENCES, 'theme', data.data.theme);
+    }
+
+    // Старые бэкапы не содержат журнал: в этом случае импортируем пустую историю.
+    await replaceReviewLogs(data.data.reviewLog);
+
+    // Если импортируем старый бэкап (localStorage), также пишем в localStorage для совместимости
+    if (data.exportType === 'full_localstorage') {
+      try {
+        if (data.data.state) {
+          localStorage.setItem(LS_STATE, JSON.stringify(data.data.state));
+        }
+        if (data.data.lessonVersion) {
+          localStorage.setItem(LS_LESSON_VERSION, data.data.lessonVersion);
+        }
+        if (data.data.lastActivityDay) {
+          localStorage.setItem(LS_LAST_ACTIVITY_DAY, data.data.lastActivityDay);
+        }
+        if (data.data.theme) {
+          localStorage.setItem(LS_THEME, data.data.theme);
+        }
+      } catch (e) {
+        console.warn('Не удалось записать в localStorage (фоллбэк):', e);
+      }
     }
 
     return { success: true };

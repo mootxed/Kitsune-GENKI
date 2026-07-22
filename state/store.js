@@ -1,6 +1,7 @@
 /* state/store.js — Centralized state management with versioning, migrations, and subscriptions */
 
 import { SRS } from '../srs.js';
+import { db, STORES } from '../src/db.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
@@ -148,19 +149,49 @@ function notify() {
 }
 
 // ---------- Load State ----------
-export function loadState() {
+export async function loadState() {
   try {
-    const loaded = JSON.parse(localStorage.getItem(LS_STATE));
+    console.log('[Store] Попытка загрузки состояния из IndexedDB...');
+    // Пытаемся загрузить из IndexedDB
+    const loaded = await db.get(STORES.APP_STATE, 'state');
+    console.log('[Store] Результат загрузки:', loaded ? 'данные найдены' : 'данных нет');
 
     if (loaded) {
       // Прогоняем миграции если версия старая
       state = runMigrations(loaded);
+      console.log(
+        '[Store] ✅ Состояние загружено из IndexedDB. XP:',
+        state.xp,
+        'Chapters:',
+        Object.keys(state.chapters).length
+      );
     } else {
-      state = defaultState();
+      // Фоллбек: пытаемся загрузить из localStorage (на случай первого запуска)
+      const fallback = localStorage.getItem(LS_STATE);
+      if (fallback) {
+        const parsedFallback = JSON.parse(fallback);
+        state = runMigrations(parsedFallback);
+        console.log('[Store] Состояние загружено из localStorage (фоллбек)');
+      } else {
+        state = defaultState();
+        console.log('[Store] Инициализировано состояние по умолчанию');
+      }
     }
   } catch (err) {
     console.error('[Store] Ошибка загрузки state:', err);
-    state = defaultState();
+
+    // Последний фоллбек: localStorage
+    try {
+      const fallback = localStorage.getItem(LS_STATE);
+      if (fallback) {
+        state = runMigrations(JSON.parse(fallback));
+        console.warn('[Store] Использован localStorage после ошибки IndexedDB');
+      } else {
+        state = defaultState();
+      }
+    } catch {
+      state = defaultState();
+    }
   }
 
   // Инициализация квестов через QuestsManager
@@ -186,20 +217,47 @@ export function save(immediate = false) {
   }
 }
 
-function performSave() {
+async function performSave() {
   try {
-    localStorage.setItem(LS_STATE, JSON.stringify(state));
+    console.log(
+      '[Store] Сохранение состояния. XP:',
+      state.xp,
+      'Chapters:',
+      Object.keys(state.chapters).length
+    );
+    await db.set(STORES.APP_STATE, 'state', state);
+    console.log('[Store] ✅ Состояние сохранено в IndexedDB');
     notify(); // Уведомляем подписчиков об изменениях
   } catch (e) {
-    console.warn('[Store] localStorage переполнен. Попытка сохранить только критичные данные...');
-    const minimal = { ...state, savedNotes: state.savedNotes.slice(0, 20) };
-    try {
-      localStorage.setItem(LS_STATE, JSON.stringify(minimal));
-      if (window.toast) window.toast('⚠️ Данные сокращены — слишком много заметок');
-    } catch {
-      const emergency = { ...state, savedNotes: [] };
-      localStorage.setItem(LS_STATE, JSON.stringify(emergency));
-      if (window.toast) window.toast('⚠️ Заметки удалены — не хватило места в хранилище');
+    console.warn('[Store] Ошибка сохранения в IndexedDB:', e);
+
+    // Обработка переполнения квоты
+    if (e.name === 'QuotaExceededError') {
+      console.warn('[Store] Квота переполнена. Попытка сохранить только критичные данные...');
+      const minimal = { ...state, savedNotes: state.savedNotes.slice(0, 20) };
+
+      try {
+        await db.set(STORES.APP_STATE, 'state', minimal);
+        if (window.toast) window.toast('⚠️ Данные сокращены — слишком много заметок');
+      } catch (err2) {
+        // Последний фоллбек: emergency state в localStorage
+        console.error('[Store] Критическая ошибка сохранения, используем localStorage:', err2);
+        const emergency = { ...state, savedNotes: [] };
+        try {
+          localStorage.setItem(LS_STATE, JSON.stringify(emergency));
+          if (window.toast) window.toast('⚠️ Заметки удалены — не хватило места в хранилище');
+        } catch {
+          console.error('[Store] Не удалось сохранить даже в localStorage');
+        }
+      }
+    } else {
+      // Для других ошибок — фоллбек в localStorage
+      try {
+        localStorage.setItem(LS_STATE, JSON.stringify(state));
+        console.warn('[Store] Использован localStorage после ошибки IndexedDB');
+      } catch {
+        console.error('[Store] Полный отказ сохранения');
+      }
     }
   }
 }

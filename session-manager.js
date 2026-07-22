@@ -92,12 +92,55 @@ class SessionManager {
   }
 
   /**
+   * Создать снимок изменяемого состояния сессии для отмены ответа.
+   */
+  createSnapshot() {
+    return {
+      queue: this.queue.map((item) => ({
+        cardId: item.card.id,
+        forcedMode: item.forcedMode,
+        sessionLapses: item.sessionLapses,
+        isFirstAttempt: item.isFirstAttempt,
+        completed: item.completed,
+      })),
+      stats: { ...this.stats },
+    };
+  }
+
+  /**
+   * Восстановить очередь и статистику без замены ссылок на карточки.
+   */
+  restoreSnapshot(snapshot) {
+    if (!snapshot?.queue || !snapshot?.stats) return false;
+
+    const currentItems = new Map(this.queue.map((item) => [item.card.id, item]));
+    const restoredQueue = [];
+
+    for (const saved of snapshot.queue) {
+      const item = currentItems.get(saved.cardId);
+      if (!item) return false;
+      restoredQueue.push({
+        ...item,
+        forcedMode: saved.forcedMode,
+        sessionLapses: saved.sessionLapses,
+        isFirstAttempt: saved.isFirstAttempt,
+        completed: saved.completed,
+      });
+    }
+
+    this.queue = restoredQueue;
+    this.stats = { ...snapshot.stats };
+    return true;
+  }
+
+  /**
    * Обработать ответ пользователя на карточку
    * @param {string} cardId - ID карточки
    * @param {number} quality - качество ответа (0-5)
    * @param {Object} srsCollection - коллекция карточек из state.srs (объект с ключами-ID)
+   * @param {Object|null} reviewContext - mode и responseTimeMs для review log
    */
-  answerCard(cardId, quality, srsCollection) {
+  answerCard(cardId, quality, srsCollection, reviewContext = null) {
     // Найти карточку в очереди
     const queueIndex = this.queue.findIndex((item) => item.card.id === cardId && !item.completed);
 
@@ -115,7 +158,11 @@ class SessionManager {
       // Применяем полный FSRS алгоритм
       const cardInSrs = srsCollection[cardId];
       if (cardInSrs && this.srs) {
-        this.srs.review(cardInSrs, quality);
+        if (reviewContext) {
+          this.srs.review(cardInSrs, quality, reviewContext);
+        } else {
+          this.srs.review(cardInSrs, quality);
+        }
       }
 
       item.isFirstAttempt = false;

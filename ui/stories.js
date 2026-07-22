@@ -147,10 +147,9 @@ function renderLibraryNotes(state, dependencies) {
   });
 }
 
-// Вкладка «Грамматика» — список глав с переходом к уроку
-function renderLibraryGrammar(state, dependencies) {
+// Вкладка «Грамматика» — горизонтальные кнопки глав + карточки грамматики
+async function renderLibraryGrammar(state, dependencies) {
   const { CH_NAMES, chState } = deps || dependencies;
-  const navFn = deps?.nav || window.nav || (() => {});
   const body = $('#library-body');
   if (!body) return;
 
@@ -159,19 +158,98 @@ function renderLibraryGrammar(state, dependencies) {
     return;
   }
 
-  body.innerHTML = CONTENT_INDEX.map((ch) => {
+  // Определяем активную главу (первая разблокированная или первая)
+  let activeChapterId = state.activeGrammarChapter || 1;
+  const activeChapter = CONTENT_INDEX.find((ch) => ch.id === activeChapterId);
+  const isUnlocked = activeChapter ? chState(activeChapter.id).started : false;
+
+  // Генерируем кнопки глав
+  const chaptersButtons = CONTENT_INDEX.map((ch) => {
     const unlocked = chState(ch.id).started;
-    const name = (CH_NAMES[ch.id] || [`Урок ${ch.id}`, ''])[0];
+    const isActive = ch.id === activeChapterId;
     return `
-      <div class="story-card ${unlocked ? '' : 'story-locked'}" data-chapter-id="${ch.id}">
-        <div class="story-info">
-          <h3 class="story-title">${unlocked ? '📖' : '🔒'} Урок ${ch.id}: ${escapeHtmlLocal(name)}</h3>
-        </div>
-      </div>`;
+      <button 
+        class="grammar-chapter-btn ${isActive ? 'active' : ''} ${unlocked ? '' : 'locked'}" 
+        data-chapter-id="${ch.id}"
+        ${unlocked ? '' : 'disabled'}
+      >
+        ${unlocked ? `Гл.${ch.id}` : `Гл.${ch.id} 🔒`}
+      </button>`;
   }).join('');
 
-  body.querySelectorAll('[data-chapter-id]').forEach((card) => {
-    card.onclick = () => navFn('chapter', parseInt(card.dataset.chapterId, 10));
+  // Генерируем заголовок главы
+  const chapterName = activeChapter
+    ? (CH_NAMES[activeChapter.id] || [`Глава ${activeChapter.id}`, ''])[0]
+    : '';
+  const chapterTitle = `ГЛАВА ${activeChapterId}: ${chapterName.toUpperCase()}`;
+
+  // Показываем лоадер перед загрузкой
+  body.innerHTML = `
+    <div class="grammar-chapters-row">
+      ${chaptersButtons}
+    </div>
+    <h2 class="grammar-chapter-title">${chapterTitle}</h2>
+    <div class="loader-container">
+      <div class="loader"></div>
+    </div>
+  `;
+
+  // Генерируем карточки грамматики
+  let grammarCards = '';
+  if (!isUnlocked) {
+    grammarCards = `
+      <div class="grammar-empty">
+        <div class="grammar-empty-icon">🔒</div>
+        <p class="grammar-empty-text">Завершите урок ${activeChapterId}, чтобы открыть грамматику</p>
+      </div>`;
+  } else {
+    try {
+      // Загружаем полные данные урока
+      const { lesson } = await loadChapterData(activeChapterId);
+      const notes = lesson?.notes || [];
+
+      if (notes.length > 0) {
+        grammarCards = notes
+          .map(
+            (note) => `
+          <div class="grammar-card">
+            <h3 class="grammar-card-title">${escapeHtmlLocal(note.title)}</h3>
+            <p class="grammar-card-content">${escapeHtmlLocal(note.content)}</p>
+          </div>`
+          )
+          .join('');
+      } else {
+        grammarCards = `
+          <div class="grammar-empty">
+            <div class="grammar-empty-icon">📝</div>
+            <p class="grammar-empty-text">В этой главе пока нет грамматических правил</p>
+          </div>`;
+      }
+    } catch (error) {
+      grammarCards = `
+        <div class="grammar-empty">
+          <div class="grammar-empty-icon">⚠️</div>
+          <p class="grammar-empty-text">Ошибка загрузки грамматики</p>
+        </div>`;
+    }
+  }
+
+  // Обновляем контент с загруженной грамматикой
+  body.innerHTML = `
+    <div class="grammar-chapters-row">
+      ${chaptersButtons}
+    </div>
+    <h2 class="grammar-chapter-title">${chapterTitle}</h2>
+    ${grammarCards}
+  `;
+
+  // Навешиваем обработчики на кнопки глав
+  body.querySelectorAll('.grammar-chapter-btn:not(.locked)').forEach((btn) => {
+    btn.onclick = () => {
+      const chapterId = parseInt(btn.dataset.chapterId, 10);
+      state.activeGrammarChapter = chapterId;
+      renderLibraryGrammar(state, dependencies);
+    };
   });
 }
 

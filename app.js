@@ -11,6 +11,11 @@ import { API } from './services.js';
 import { SRS } from './srs.js';
 import { SessionManager } from './session-manager.js';
 
+// IndexedDB модули
+import { initializeDB } from './src/db.js';
+import { migrateFromLocalStorage } from './src/migration.js';
+import { appendReviewLog } from './src/review-log.js';
+
 // Утилиты
 import {
   $,
@@ -31,6 +36,7 @@ import {
   getUserRankData,
 } from './src/xp-system.js';
 import { cardChapter, wordById, isWordUnlocked, dueCards, allCards } from './src/srs-helpers.js';
+import { limitNewCardsForSession } from './src/srs-limits.js';
 import {
   exportFullProgress,
   validateImportData,
@@ -93,6 +99,7 @@ import { renderStories, openWordBottomSheet, closeWordBottomSheet } from './ui/s
 import { renderSensei } from './ui/chat.js';
 import { renderSettings } from './ui/settings.js';
 import { renderCrossword } from './ui/crossword.js';
+import { renderParticlesList } from './ui/particles.js';
 
 // ===== ГЛОБАЛЬНЫЕ ЭКСПОРТЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ =====
 window.SRS = SRS;
@@ -115,8 +122,8 @@ const LS_LAST_ACTIVITY_DAY = 'kitsune_last_activity_day';
 const LS_THEME = 'kitsune_theme';
 
 // ===== WRAPPER ФУНКЦИИ ДЛЯ STATE =====
-function loadState() {
-  loadStateFromStore();
+async function loadState() {
+  await loadStateFromStore();
 }
 
 function save(immediate = false) {
@@ -347,8 +354,18 @@ function setupRouter() {
     setFlashRevealed(false);
     setFlashIdx(0);
 
+    const sessionCards = limitNewCardsForSession(chapterDue, state.srs);
+    if (sessionCards.length === 0) {
+      toast('Лимит новых карточек на сегодня исчерпан');
+      if (tabbar) tabbar.style.display = '';
+      return;
+    }
+
+    // Фиксируем выданные новые карточки до начала сессии.
+    save();
+
     // Инициализируем батчинг (20 карточек на батч)
-    const batchInfo = initSessionBatching(chapterDue, LESSONS, 20);
+    const batchInfo = initSessionBatching(sessionCards, LESSONS, 20);
 
     if (batchInfo && batchInfo.organizedCards) {
       // Явно устанавливаем очередь с 4-блочным упорядоченным 20-карточным батчем
@@ -396,6 +413,16 @@ function setupRouter() {
         return;
       }
 
+      const sessionCards = limitNewCardsForSession(due, state.srs);
+      if (sessionCards.length === 0) {
+        toast('Лимит новых карточек на сегодня исчерпан');
+        if (tabbar) tabbar.style.display = '';
+        return;
+      }
+
+      // Фиксируем выданные новые карточки сразу, чтобы лимит сохранялся между сессиями.
+      save();
+
       // Чистый старт сессии повторения
       setSessionManager(null);
       setFlashCtx(null);
@@ -404,7 +431,7 @@ function setupRouter() {
 
       // Инициализируем батчинг (20 карточек на батч)
       console.log('[SRS] Initializing session batching...');
-      const batchInfo = initSessionBatching(due, LESSONS, 20);
+      const batchInfo = initSessionBatching(sessionCards, LESSONS, 20);
       console.log('[SRS] Batch info:', batchInfo);
 
       if (!batchInfo || !batchInfo.organizedCards) {
@@ -463,7 +490,7 @@ function setupRouter() {
     const tabsContainerDashboard = document.getElementById('srs-tabs-container');
     if (tabsContainerDashboard) tabsContainerDashboard.classList.remove('hidden');
 
-    // Привязка вкладок SRS (Повторение / Словарь)
+    // Привязка вкладок SRS (Повторение / Словарь / Частицы)
     $$('#srs-tabs-container .lib-tab').forEach((tab) => {
       tab.classList.toggle('active', tab.dataset.tab === 'repetition');
       tab.onclick = () => {
@@ -472,6 +499,11 @@ function setupRouter() {
             t.classList.toggle('active', t === tab)
           );
           renderDictionary(state, dependencies);
+        } else if (tab.dataset.tab === 'particles') {
+          $$('#srs-tabs-container .lib-tab').forEach((t) =>
+            t.classList.toggle('active', t === tab)
+          );
+          renderParticlesDictionary();
         } else {
           renderSrsDashboard();
         }
@@ -532,58 +564,94 @@ function setupRouter() {
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 async function init() {
-  // Загрузка состояния
-  loadState();
+  try {
+    // 1. Инициализация IndexedDB
+    console.log('[Init] Инициализация IndexedDB...');
+    await initializeDB();
+    SRS.setReviewLogger(appendReviewLog);
 
-  // Инициализация глобальных систем
-  window.QuestsManager = QuestsManager;
-  window.AchievementSystem = AchievementSystem;
-  window.Achievements = AchievementSystem;
+    // 2. Миграция из localStorage (если нужна)
+    console.log('[Init] Проверка миграции данных...');
+    await migrateFromLocalStorage();
 
-  // Инициализация квестов
-  if (QuestsManager) {
-    QuestsManager.initializeQuests(state);
-    QuestsManager.checkQuestReset(state);
-  }
+    // 3. Загрузка состояния из IndexedDB
+    console.log('[Init] Загрузка состояния приложения...');
+    await loadState();
 
-  // Загрузка уроков
-  await loadLessons();
+    // Инициализация глобальных систем
+    window.QuestsManager = QuestsManager;
+    window.AchievementSystem = AchievementSystem;
+    window.Achievements = AchievementSystem;
 
-  // Применение темы
-  applyTheme();
+    // Инициализация квестов
+    if (QuestsManager) {
+      QuestsManager.initializeQuests(state);
+      QuestsManager.checkQuestReset(state);
+    }
 
-  // Настройка роутера
-  setupRouter();
+    // Загрузка уроков
+    await loadLessons();
 
-  // Первичный рендер главного экрана: роутер при старте сам обработчик не вызывает,
-  // без этого список глав остаётся пустым до первого клика по табам
-  history.replaceState({ screen: 'home' }, '', '');
-  nav('home', null, true);
+    // Применение темы
+    applyTheme();
 
-  // Начальная отрисовка
-  if (!state.initialized) {
-    state.initialized = true;
-    save();
-  }
+    // Настройка роутера
+    setupRouter();
 
-  // Синхронизация аватаров
-  syncAvatars();
+    // Первичный рендер главного экрана: роутер при старте сам обработчик не вызывает,
+    // без этого список глав остаётся пустым до первого клика по табам
+    history.replaceState({ screen: 'home' }, '', '');
+    nav('home', null, true);
 
-  // Обновление стрика
-  refreshStreakDisplay();
+    // Начальная отрисовка
+    if (!state.initialized) {
+      state.initialized = true;
+      save();
+    }
 
-  // Применение скина карточки стрика
-  applyStreakSkin();
+    // Синхронизация аватаров
+    syncAvatars();
 
-  // Применение кастомной темы (если выбрана)
-  applyCustomTheme();
+    // Обновление стрика
+    refreshStreakDisplay();
 
-  // Скрытие загрузочного экрана после полной инициализации
-  const loader = document.getElementById('app-loader');
-  if (loader) {
-    loader.style.transition = 'opacity 0.3s ease';
-    loader.style.opacity = '0';
-    setTimeout(() => loader.remove(), 300);
+    // Применение скина карточки стрика
+    applyStreakSkin();
+
+    // Применение кастомной темы (если выбрана)
+    applyCustomTheme();
+
+    // Скрытие загрузочного экрана после полной инициализации
+    const loader = document.getElementById('app-loader');
+    if (loader) {
+      loader.style.transition = 'opacity 0.3s ease';
+      loader.style.opacity = '0';
+      setTimeout(() => loader.remove(), 300);
+    }
+
+    console.log('[Init] ✅ Приложение успешно инициализировано');
+  } catch (error) {
+    console.error('[Init] ❌ Критическая ошибка инициализации:', error);
+
+    // Показываем пользователю сообщение об ошибке
+    const loader = document.getElementById('app-loader');
+    if (loader) {
+      loader.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+          <h2 style="color: var(--danger, #f44336); margin-bottom: 16px;">⚠️ Ошибка загрузки</h2>
+          <p style="margin-bottom: 16px;">Не удалось инициализировать приложение</p>
+          <button onclick="location.reload()" style="
+            padding: 12px 24px;
+            background: var(--primary, #FF7A1A);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+          ">Перезагрузить</button>
+        </div>
+      `;
+    }
   }
 }
 
@@ -657,6 +725,19 @@ function showUpdateNotification(worker) {
     }
   }, 100);
 }
+
+// ===== ФУНКЦИЯ ОТОБРАЖЕНИЯ СЛОВАРЯ ЧАСТИЦ =====
+async function renderParticlesDictionary() {
+  const dependencies = createDependencies();
+  renderParticlesList(dependencies);
+}
+
+// ===== ОБРАБОТЧИК BEFOREUNLOAD =====
+// Гарантируем сохранение данных перед закрытием вкладки/приложения
+window.addEventListener('beforeunload', () => {
+  // Принудительное немедленное сохранение
+  save(true);
+});
 
 // ===== ЗАПУСК =====
 if (document.readyState === 'loading') {

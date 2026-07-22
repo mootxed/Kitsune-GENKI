@@ -7,6 +7,7 @@ import { SRS } from '../srs.js';
 import { speakJapanese } from '../src/audio-helper.js';
 import { SessionBatcher } from '../src/session-batcher.js';
 import { SessionManager } from '../session-manager.js';
+import { UndoStack, adjustQualityByTime, isLeech, restoreCardState } from '../src/card-behavior.js';
 import {
   CURATED_PARTICLE_SENTENCES,
   SMART_PARTICLE_TEMPLATES,
@@ -23,6 +24,10 @@ let flashIdx = 0;
 let flashRevealed = false;
 let flashCtx = null;
 let sessionManager = null;
+let activeReviewTiming = null;
+let activeReviewState = null;
+let activeReviewDependencies = null;
+const reviewUndoStack = new UndoStack(10);
 
 // Глобальные переменные для батчинга сессий
 let sessionBatcher = null;
@@ -37,20 +42,176 @@ let totalDrawingMistakes = 0;
 let kanjiSequence = [];
 let currentKanjiIndex = 0;
 
-// Константы вероятности режимов карточек
-const DRAWING_MODE_PROBABILITY = 0.25;
-const TYPING_MODE_PROBABILITY = 0.25;
-const MULTIPLE_CHOICE_PROBABILITY = 0.5;
-// Оставшиеся 50% — режим множественного выбора
-
 // Типы режимов карточек
 export const CARD_MODES = {
   DRAWING: 'drawing',
   TYPING: 'typing',
   MULTIPLE_CHOICE: 'multiple-choice',
+  REVERSE_MULTIPLE_CHOICE: 'reverse-multiple-choice',
+  CONTEXT_SENTENCE: 'context-sentence',
   PARTICLE_QUIZ: 'particle-quiz',
   SENTENCE_BUILDING: 'sentence-building',
 };
+
+function monotonicNow() {
+  return typeof globalThis.performance !== 'undefined' &&
+    typeof globalThis.performance.now === 'function'
+    ? globalThis.performance.now()
+    : Date.now();
+}
+
+function startReviewTiming(cardId, mode) {
+  activeReviewTiming = {
+    cardId,
+    mode,
+    startedAt: monotonicNow(),
+    answeredAt: null,
+  };
+  renderCardBehaviorControls(cardId);
+}
+
+function markReviewAnswered(cardId) {
+  if (activeReviewTiming?.cardId === cardId && activeReviewTiming.answeredAt === null) {
+    activeReviewTiming.answeredAt = monotonicNow();
+  }
+}
+
+function consumeReviewContext(cardId, fallbackMode = 'unknown') {
+  if (activeReviewTiming?.cardId !== cardId) {
+    return { mode: fallbackMode, responseTimeMs: null };
+  }
+
+  const finishedAt = activeReviewTiming.answeredAt ?? monotonicNow();
+  const context = {
+    mode: activeReviewTiming.mode,
+    responseTimeMs: Math.max(0, Math.round(finishedAt - activeReviewTiming.startedAt)),
+  };
+  activeReviewTiming = null;
+  return context;
+}
+
+function submitReview(card, quality, state, context = null) {
+  const reviewContext = context || consumeReviewContext(card.id);
+  if (context && activeReviewTiming?.cardId === card.id) activeReviewTiming = null;
+
+  const srsCard = state.srs[card.id];
+  const isUserAction = Number.isFinite(reviewContext.responseTimeMs);
+  if (isUserAction && srsCard) {
+    reviewUndoStack.push(card.id, {
+      card: srsCard,
+      session: sessionManager?.createSnapshot() || null,
+      flashIdx,
+      flashRevealed,
+    });
+  }
+
+  const adjustedQuality = adjustQualityByTime(
+    quality,
+    reviewContext.responseTimeMs,
+    reviewContext.mode
+  );
+  const wasLeech = isLeech(srsCard);
+
+  if (isUserAction && srsCard) updateCardProgress(srsCard, adjustedQuality);
+
+  if (sessionManager) {
+    sessionManager.answerCard(card.id, adjustedQuality, state.srs, reviewContext);
+  } else if (srsCard) {
+    SRS.review(srsCard, adjustedQuality, reviewContext);
+  }
+
+  if (!wasLeech && isLeech(srsCard)) {
+    activeReviewDependencies?.toast?.(
+      '🩸 Карточка часто забывается. Добавьте к ней мнемонику или личную подсказку.'
+    );
+  }
+
+  return adjustedQuality;
+}
+
+function updateCardProgress(card, quality) {
+  if (card.progress === undefined) card.progress = 0;
+
+  if (quality === SRS.Quality.Again) card.progress = Math.max(0, card.progress - 5);
+  else if (quality === SRS.Quality.Hard) card.progress = Math.max(0, card.progress - 3);
+  else if (quality === SRS.Quality.Good) card.progress = Math.min(100, card.progress + 5);
+  else if (quality === SRS.Quality.Easy) card.progress = Math.min(100, card.progress + 10);
+}
+
+function undoLastReview(state, dependencies) {
+  let restored = false;
+  const undone = reviewUndoStack.undo((cardId, previous) => {
+    const card = state.srs[cardId];
+    if (previous.session && !sessionManager?.restoreSnapshot(previous.session)) return;
+    if (!restoreCardState(card, previous.card)) return;
+
+    flashIdx = previous.flashIdx;
+    flashRevealed = previous.flashRevealed;
+    activeReviewTiming = null;
+    kanjiSequence = [];
+    currentKanjiIndex = 0;
+    totalDrawingMistakes = 0;
+    restored = true;
+  });
+
+  if (!undone || !restored) return false;
+
+  document.getElementById('completion-overlay')?.classList.add('hidden');
+  dependencies.save(true);
+  dependencies.updateSrsBadge?.();
+  dependencies.toast?.('↩️ Последний ответ отменён');
+  renderFlash(state, dependencies);
+  return true;
+}
+
+function createUndoButton(state, dependencies) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn-ghost review-undo-btn';
+  button.dataset.testid = 'review-undo';
+  button.textContent = '↩️ Отменить ответ';
+  button.onclick = () => undoLastReview(state, dependencies);
+  return button;
+}
+
+function renderCardBehaviorControls(cardId) {
+  const state = activeReviewState;
+  const dependencies = activeReviewDependencies;
+  if (!state || !dependencies) return;
+
+  const top = document.querySelector('#srs-body .flash-top');
+  if (!top) return;
+
+  if (reviewUndoStack.canUndo && !top.querySelector('.review-undo-btn')) {
+    top.insertBefore(createUndoButton(state, dependencies), top.lastElementChild);
+  }
+
+  const card = state.srs[cardId];
+  if (!isLeech(card)) return;
+
+  const badge = document.createElement('span');
+  badge.className = 'card-leech-badge';
+  badge.title = `Карточка с ${card.lapses} провалами`;
+  badge.textContent = '🩸 Сложная карточка';
+  top.insertBefore(badge, top.lastElementChild);
+
+  const wrap = top.closest('.flash-wrap');
+  if (wrap && !wrap.querySelector('.card-leech-context')) {
+    const context = document.createElement('div');
+    context.className = 'card-leech-context';
+    context.innerHTML =
+      '<strong>Нужна другая ассоциация.</strong> Придумайте мнемонику, образ или короткий пример с этим словом.';
+    top.insertAdjacentElement('afterend', context);
+  }
+}
+
+function renderCompletionUndo(state, dependencies) {
+  const rewards = document.getElementById('completion-rewards');
+  if (!rewards) return;
+  rewards.parentElement?.querySelector('.review-undo-btn')?.remove();
+  if (!reviewUndoStack.canUndo) return;
+  rewards.insertAdjacentElement('afterend', createUndoButton(state, dependencies));
+}
 
 // Короткая форма перевода: первая часть до пояснения в скобках/после ';'
 function shortT(word) {
@@ -357,23 +518,95 @@ function generateSrsKeyboard(acceptedAnswers) {
   return shuffleArray([...limitedCorrect, ...distractors]).slice(0, 8);
 }
 
-// Функция определения режима карточки
-function determineCardMode(word) {
-  const rand = Math.random();
-  const hasKanji = getAllKanji(word.kanji || word.writing).length > 0;
+export function weightedRandom(weights, random = Math.random) {
+  const entries = Object.entries(weights).filter(([, weight]) => weight > 0);
+  const total = entries.reduce((sum, [, weight]) => sum + weight, 0);
+  if (total <= 0) return CARD_MODES.MULTIPLE_CHOICE;
 
-  // Режим ввода доступен только для слов, помещающихся на клавиатуру (≤8 уникальных символов)
-  if (hasKanji && rand < DRAWING_MODE_PROBABILITY) {
-    return CARD_MODES.DRAWING;
-  } else if (
-    hasKanji &&
-    rand < DRAWING_MODE_PROBABILITY + TYPING_MODE_PROBABILITY &&
-    isWordTypingEligible(word)
-  ) {
-    return CARD_MODES.TYPING;
-  } else {
-    return CARD_MODES.MULTIPLE_CHOICE;
+  let cursor = random() * total;
+  for (const [mode, weight] of entries) {
+    cursor -= weight;
+    if (cursor < 0) return mode;
   }
+  return entries.at(-1)[0];
+}
+
+export function getAdaptiveModeWeights(card, word) {
+  const hasKanji = hasKanjiChars(word.kanji || word.writing);
+  const canType = isWordTypingEligible(word);
+  const isNewOrEarly = card?.state === SRS.State.New || (card?.reps ?? 0) <= 2;
+  const isMature = !isNewOrEarly && (card?.stability ?? 0) >= 7;
+
+  const weights = isNewOrEarly
+    ? { multipleChoice: 0.7, typing: hasKanji ? 0.2 : 0.3, drawing: hasKanji ? 0.1 : 0 }
+    : isMature
+      ? { multipleChoice: 0.2, typing: hasKanji ? 0.3 : 0.8, drawing: hasKanji ? 0.5 : 0 }
+      : { multipleChoice: 0.4, typing: hasKanji ? 0.3 : 0.6, drawing: hasKanji ? 0.3 : 0 };
+
+  if (!canType) weights.typing = 0;
+  return weights;
+}
+
+function hasWordContext(word) {
+  return Boolean(generateWordContext(word));
+}
+
+function selectRecognitionMode(word, random) {
+  const weights = hasWordContext(word)
+    ? {
+        [CARD_MODES.CONTEXT_SENTENCE]: 0.25,
+        [CARD_MODES.REVERSE_MULTIPLE_CHOICE]: 0.3,
+        [CARD_MODES.MULTIPLE_CHOICE]: 0.45,
+      }
+    : {
+        [CARD_MODES.REVERSE_MULTIPLE_CHOICE]: 0.3,
+        [CARD_MODES.MULTIPLE_CHOICE]: 0.7,
+      };
+  return weightedRandom(weights, random);
+}
+
+// Выбирает сложность упражнения по зрелости карточки: recognition → recall → production.
+export function selectMode(card, word, random = Math.random) {
+  const weights = getAdaptiveModeWeights(card, word);
+  const baseMode = weightedRandom(weights, random);
+
+  if (baseMode === 'multipleChoice') return selectRecognitionMode(word, random);
+  if (baseMode === 'typing') return CARD_MODES.TYPING;
+  if (baseMode === 'drawing') return CARD_MODES.DRAWING;
+  return CARD_MODES.MULTIPLE_CHOICE;
+}
+
+// Функция определения режима карточки
+function determineCardMode(card, word) {
+  return selectMode(card, word);
+}
+
+// Контекстные упражнения строятся только для категорий, где шаблон остаётся естественным.
+export function generateWordContext(word) {
+  if (!word || !word.id || (word.kanji || word.writing || '').includes('～')) return null;
+
+  const category = word.category || '';
+  const templates = {
+    food: ['毎朝 [ _ ] を食べます。', 'Каждое утро я ем ___.'],
+    people: ['私の友達は [ _ ] です。', 'Мой друг — ___.'],
+    person: ['私の友達は [ _ ] です。', 'Мой друг — ___.'],
+    occupation: ['私の父は [ _ ] です。', 'Мой папа — ___.'],
+    family: ['私の [ _ ] は優しいです。', 'Мой/моя ___ добрый/добрая.'],
+    places: ['週末に [ _ ] へ行きます。', 'На выходных я иду в ___.'],
+    location_words: ['[ _ ] に本があります。', 'Книга находится ___.'],
+    countries: ['いつか [ _ ] へ行きたいです。', 'Когда-нибудь я хочу поехать в ___.'],
+    things: ['机の上に [ _ ] があります。', 'На столе есть ___.'],
+    nouns: ['これは [ _ ] です。', 'Это ___.'],
+    time: ['[ _ ] に日本語を勉強します。', 'Я учу японский в ___.'],
+    activities: ['週末に [ _ ] をします。', 'На выходных я занимаюсь ___.'],
+    entertainment: ['週末に [ _ ] を見ます。', 'На выходных я смотрю ___.'],
+    'i-adjectives': ['この本は [ _ ] です。', 'Эта книга ___.'],
+    'na-adjectives': ['この町は [ _ ] です。', 'Этот город ___.'],
+    adjectives: ['この本は [ _ ] です。', 'Эта книга ___.'],
+  };
+
+  const template = templates[category];
+  return template ? { sentence: template[0], hint: template[1] } : null;
 }
 
 // Функция проверки, является ли строка одиночным кандзи
@@ -500,7 +733,10 @@ function initDrawingMode(
       // Если слово не найдено - пропускаем карточку
       toast('⚠️ Слово не найдено');
       if (sessionManager) {
-        sessionManager.answerCard(card.id, 5, state.srs);
+        submitReview(card, SRS.Quality.Good, state, {
+          mode: 'system-fallback',
+          responseTimeMs: null,
+        });
       } else {
         flashIdx += 1;
       }
@@ -558,19 +794,22 @@ function initDrawingMode(
         }
 
         // Все кандзи нарисованы
-        const quality = totalDrawingMistakes >= 3 ? 0 : 5;
+        const quality = SRS.qualityFromDrawingMistakes(totalDrawingMistakes);
         const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+        markReviewAnswered(card.id);
 
         const resultText =
-          quality === 5 ? '✅ Отлично! Нарисовано без подсказок' : '📝 Нарисовано с подсказками';
+          quality === SRS.Quality.Easy
+            ? '✅ Отлично! Нарисовано без ошибок'
+            : quality === SRS.Quality.Good
+              ? '✅ Хорошо! Нарисовано с небольшими ошибками'
+              : quality === SRS.Quality.Hard
+                ? '📝 Нарисовано с ошибками'
+                : '📝 Нарисовано с подсказками';
         toast(resultText);
 
-        if (sessionManager) {
-          sessionManager.answerCard(card.id, quality, state.srs);
-        } else {
-          SRS.review(state.srs[card.id], quality);
-          flashIdx += 1;
-        }
+        submitReview(card, quality, state);
+        if (!sessionManager) flashIdx += 1;
 
         appAddXP(XP_CARD);
         save(true);
@@ -679,7 +918,10 @@ function initDrawingMode(
         } else {
           toast('⚠️ Слово не найдено, пропускаем карточку');
           if (sessionManager) {
-            sessionManager.answerCard(card.id, 5, state.srs);
+            submitReview(card, SRS.Quality.Good, state, {
+              mode: 'system-fallback',
+              responseTimeMs: null,
+            });
           } else {
             flashIdx += 1;
           }
@@ -709,15 +951,11 @@ function initDrawingMode(
         currentKanjiIndex = 0;
         totalDrawingMistakes = 0;
 
-        const quality = 5; // Simulate perfect completion
+        const quality = SRS.Quality.Good; // Simulate correct completion
         const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-        if (sessionManager) {
-          sessionManager.answerCard(card.id, quality, state.srs);
-        } else {
-          SRS.review(state.srs[card.id], quality);
-          flashIdx += 1;
-        }
+        submitReview(card, quality, state, { mode: 'debug-skip', responseTimeMs: null });
+        if (!sessionManager) flashIdx += 1;
 
         appAddXP(XP_CARD);
         save(true);
@@ -756,6 +994,8 @@ function showCardAfterDrawing(
     dependencies;
 
   const body = $('#srs-body');
+  const activeCard = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+  if (activeCard) startReviewTiming(activeCard.id, CARD_MODES.DRAWING);
 
   body.innerHTML = `
     <div class="flash-wrap">
@@ -832,23 +1072,10 @@ function showCardAfterDrawing(
     b.onclick = () => {
       const quality = parseInt(b.dataset.q, 10);
       const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+      markReviewAnswered(card.id);
 
-      const srsCard = state.srs[card.id];
-      if (srsCard) {
-        if (srsCard.progress === undefined) srsCard.progress = 0;
-
-        if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
-        else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
-        else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
-        else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
-      }
-
-      if (sessionManager) {
-        sessionManager.answerCard(card.id, quality, state.srs);
-      } else {
-        SRS.review(state.srs[card.id], quality);
-        flashIdx += 1;
-      }
+      submitReview(card, quality, state);
+      if (!sessionManager) flashIdx += 1;
 
       appAddXP(XP_CARD);
       save(true);
@@ -935,6 +1162,8 @@ function renderTypingMode(word, state, dependencies) {
       </div>
     </div>`;
 
+  startReviewTiming(word.id, CARD_MODES.TYPING);
+
   const input = $('#typing-input');
   const checkBtn = $('#typing-check');
   const hintMessage = $('#typing-hint-message');
@@ -969,7 +1198,8 @@ function renderTypingMode(word, state, dependencies) {
       input.classList.add('correct');
       input.classList.remove('incorrect', 'shake-error');
 
-      const quality = typingMistakes === 0 ? 5 : 3;
+      const quality = SRS.qualityFromMistakes(typingMistakes);
+      markReviewAnswered(word.id);
 
       setTimeout(() => {
         handleRating(quality);
@@ -1000,9 +1230,10 @@ function renderTypingMode(word, state, dependencies) {
         const allAnswers = acceptedAnswers.join(' или ');
         hintMessage.innerHTML = `<p style="color: var(--danger); margin: 8px 0;">❌ Неправильно</p><p style="margin: 4px 0;">Правильный ответ: <strong style="color: var(--primary);">${allAnswers}</strong></p>`;
         hintMessage.classList.remove('hidden');
+        markReviewAnswered(word.id);
 
         setTimeout(() => {
-          handleRating(0);
+          handleRating(SRS.Quality.Again);
         }, 1000);
       }
     }
@@ -1013,22 +1244,8 @@ function renderTypingMode(word, state, dependencies) {
   const handleRating = (quality) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-    const srsCard = state.srs[card.id];
-    if (srsCard) {
-      if (srsCard.progress === undefined) srsCard.progress = 0;
-
-      if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
-      else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
-      else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
-      else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
-    }
-
-    if (sessionManager) {
-      sessionManager.answerCard(card.id, quality, state.srs);
-    } else {
-      SRS.review(state.srs[card.id], quality);
-      flashIdx += 1;
-    }
+    submitReview(card, quality, state);
+    if (!sessionManager) flashIdx += 1;
 
     appAddXP(XP_CARD);
     save(true);
@@ -1093,8 +1310,24 @@ function renderTypingMode(word, state, dependencies) {
   }
 }
 
+function renderContextSentenceMode(word, state, dependencies) {
+  const context = generateWordContext(word);
+  if (!context) {
+    renderMultipleChoiceMode(word, state, dependencies);
+    return;
+  }
+
+  renderMultipleChoiceMode(word, state, dependencies, {
+    mode: CARD_MODES.CONTEXT_SENTENCE,
+    category: 'Контекст слова',
+    question: context.sentence,
+    hint: context.hint,
+    questionClass: 'context-sentence',
+  });
+}
+
 // Функция рендеринга режима множественного выбора (4 варианта)
-function renderMultipleChoiceMode(word, state, dependencies) {
+function renderMultipleChoiceMode(word, state, dependencies, modeConfig = {}) {
   const {
     save,
     showCompletionScreen,
@@ -1109,7 +1342,11 @@ function renderMultipleChoiceMode(word, state, dependencies) {
   const body = $('#srs-body');
   const displayKanji = word.kanji || word.writing;
   const displayTranslation = word.translation;
-  const displayCategory = word.category || 'Слово';
+  const displayCategory = modeConfig.category || word.category || 'Слово';
+  const displayQuestion = modeConfig.question || displayTranslation;
+  const displayHint = modeConfig.hint || 'Выберите правильное слово';
+  const questionClass = modeConfig.questionClass || '';
+  const optionLabel = modeConfig.optionLabel || ((option) => option.kanji || option.writing);
 
   let mistakeCount = 0;
 
@@ -1151,15 +1388,15 @@ function renderMultipleChoiceMode(word, state, dependencies) {
       <div class="quiz-mode-container">
         <div class="quiz-prompt">
           <div class="flash-cat">${displayCategory}</div>
-          <p class="quiz-question">${displayTranslation}</p>
-          <p class="quiz-hint">Выберите правильное слово</p>
+          <p class="quiz-question ${questionClass}">${displayQuestion}</p>
+          <p class="quiz-hint">${displayHint}</p>
         </div>
         <div class="quiz-options-grid">
           ${options
             .map(
               (opt) => `
             <button class="quiz-option-btn" data-word-id="${opt.id}">
-              ${opt.kanji || opt.writing}
+              ${optionLabel(opt)}
             </button>
           `
             )
@@ -1168,25 +1405,13 @@ function renderMultipleChoiceMode(word, state, dependencies) {
       </div>
     </div>`;
 
+  startReviewTiming(word.id, modeConfig.mode || CARD_MODES.MULTIPLE_CHOICE);
+
   const handleRating = (quality) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-    const srsCard = state.srs[card.id];
-    if (srsCard) {
-      if (srsCard.progress === undefined) srsCard.progress = 0;
-
-      if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
-      else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
-      else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
-      else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
-    }
-
-    if (sessionManager) {
-      sessionManager.answerCard(card.id, quality, state.srs);
-    } else {
-      SRS.review(state.srs[card.id], quality);
-      flashIdx += 1;
-    }
+    submitReview(card, quality, state);
+    if (!sessionManager) flashIdx += 1;
 
     appAddXP(XP_CARD);
     save(true);
@@ -1208,14 +1433,8 @@ function renderMultipleChoiceMode(word, state, dependencies) {
         btn.disabled = true;
 
         // Вычисляем качество на основе ошибок
-        let quality;
-        if (mistakeCount === 0) {
-          quality = 5; // Easy
-        } else if (mistakeCount === 1) {
-          quality = 3; // Hard
-        } else {
-          quality = 0; // Again
-        }
+        const quality = SRS.qualityFromMistakes(mistakeCount);
+        markReviewAnswered(word.id);
 
         setTimeout(() => {
           handleRating(quality);
@@ -1235,9 +1454,10 @@ function renderMultipleChoiceMode(word, state, dependencies) {
               b.classList.add('correct');
             }
           });
+          markReviewAnswered(word.id);
 
           setTimeout(() => {
-            handleRating(0);
+            handleRating(SRS.Quality.Again);
           }, 1000);
         }
       }
@@ -1316,7 +1536,10 @@ function renderSentenceBuilding(particleCard, state, dependencies) {
       renderMultipleChoiceMode(word, state, dependencies);
     } else {
       if (sessionManager) {
-        sessionManager.answerCard(particleCard.id, 4, state.srs);
+        submitReview(particleCard, SRS.Quality.Good, state, {
+          mode: 'system-fallback',
+          responseTimeMs: null,
+        });
       } else {
         flashIdx += 1;
       }
@@ -1424,6 +1647,8 @@ function renderSentenceBuilding(particleCard, state, dependencies) {
       </div>
     </div>`;
 
+  startReviewTiming(particleCard.id, CARD_MODES.SENTENCE_BUILDING);
+
   updateUI();
 
   const clearBtn = $('#sentence-clear-btn');
@@ -1444,22 +1669,8 @@ function renderSentenceBuilding(particleCard, state, dependencies) {
   const handleRating = (quality) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-    const srsCard = state.srs[card.id];
-    if (srsCard) {
-      if (srsCard.progress === undefined) srsCard.progress = 0;
-
-      if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
-      else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
-      else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
-      else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
-    }
-
-    if (sessionManager) {
-      sessionManager.answerCard(card.id, quality, state.srs);
-    } else {
-      SRS.review(state.srs[card.id], quality);
-      flashIdx += 1;
-    }
+    submitReview(card, quality, state);
+    if (!sessionManager) flashIdx += 1;
 
     appAddXP(XP_CARD);
     save(true);
@@ -1491,7 +1702,8 @@ function renderSentenceBuilding(particleCard, state, dependencies) {
           feedback.classList.remove('hidden');
         }
 
-        const quality = mistakeCount === 0 ? 5 : 3;
+        const quality = SRS.qualityFromMistakes(mistakeCount);
+        markReviewAnswered(particleCard.id);
         setTimeout(() => handleRating(quality), 800);
       } else {
         mistakeCount++;
@@ -1511,8 +1723,9 @@ function renderSentenceBuilding(particleCard, state, dependencies) {
 
           if (checkBtn) checkBtn.disabled = true;
           if (clearBtn) clearBtn.disabled = true;
+          markReviewAnswered(particleCard.id);
 
-          setTimeout(() => handleRating(0), 2000);
+          setTimeout(() => handleRating(SRS.Quality.Again), 2000);
         }
       }
     };
@@ -1590,7 +1803,10 @@ function renderParticleQuizMode(particleCard, state, dependencies) {
     } else {
       // Слова нет — завершаем карточку без штрафа
       if (sessionManager) {
-        sessionManager.answerCard(particleCard.id, 4, state.srs);
+        submitReview(particleCard, SRS.Quality.Good, state, {
+          mode: 'system-fallback',
+          responseTimeMs: null,
+        });
       } else {
         flashIdx += 1;
       }
@@ -1641,25 +1857,13 @@ function renderParticleQuizMode(particleCard, state, dependencies) {
       </div>
     </div>`;
 
+  startReviewTiming(particleCard.id, CARD_MODES.PARTICLE_QUIZ);
+
   const handleRating = (quality) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-    const srsCard = state.srs[card.id];
-    if (srsCard) {
-      if (srsCard.progress === undefined) srsCard.progress = 0;
-
-      if (quality === 0) srsCard.progress = Math.max(0, srsCard.progress - 5);
-      else if (quality === 3) srsCard.progress = Math.max(0, srsCard.progress - 3);
-      else if (quality === 4) srsCard.progress = Math.min(100, srsCard.progress + 5);
-      else if (quality === 5) srsCard.progress = Math.min(100, srsCard.progress + 10);
-    }
-
-    if (sessionManager) {
-      sessionManager.answerCard(card.id, quality, state.srs);
-    } else {
-      SRS.review(state.srs[card.id], quality);
-      flashIdx += 1;
-    }
+    submitReview(card, quality, state);
+    if (!sessionManager) flashIdx += 1;
 
     appAddXP(XP_CARD);
     save(true);
@@ -1681,14 +1885,8 @@ function renderParticleQuizMode(particleCard, state, dependencies) {
         btn.disabled = true;
 
         // Вычисляем качество на основе ошибок
-        let quality;
-        if (mistakeCount === 0) {
-          quality = 5; // Easy
-        } else if (mistakeCount === 1) {
-          quality = 3; // Hard
-        } else {
-          quality = 0; // Again
-        }
+        const quality = SRS.qualityFromMistakes(mistakeCount);
+        markReviewAnswered(particleCard.id);
 
         setTimeout(() => {
           handleRating(quality);
@@ -1708,9 +1906,10 @@ function renderParticleQuizMode(particleCard, state, dependencies) {
               b.classList.add('correct');
             }
           });
+          markReviewAnswered(particleCard.id);
 
           setTimeout(() => {
-            handleRating(0);
+            handleRating(SRS.Quality.Again);
           }, 1000);
         }
       }
@@ -1773,6 +1972,9 @@ export function renderFlash(state, dependencies) {
     markActivity,
   } = dependencies;
 
+  activeReviewState = state;
+  activeReviewDependencies = dependencies;
+
   console.log('[renderFlash] Called');
   console.log('[renderFlash] sessionManager:', sessionManager);
   console.log('[renderFlash] flashQueue:', flashQueue);
@@ -1822,6 +2024,7 @@ export function renderFlash(state, dependencies) {
           flashCtx ? nav('chapter', flashCtx) : nav('srs');
         },
       });
+      renderCompletionUndo(state, dependencies);
       return;
     }
   } else {
@@ -1840,6 +2043,7 @@ export function renderFlash(state, dependencies) {
           flashCtx ? nav('chapter', flashCtx) : nav('srs');
         },
       });
+      renderCompletionUndo(state, dependencies);
       return;
     }
     card = flashQueue[flashIdx];
@@ -1864,7 +2068,10 @@ export function renderFlash(state, dependencies) {
     console.warn('[renderFlash] Word not found, skipping card:', card.id);
     // При использовании sessionManager помечаем карточку как завершённую
     if (sessionManager) {
-      sessionManager.answerCard(card.id, 5, state.srs);
+      submitReview(card, SRS.Quality.Good, state, {
+        mode: 'system-fallback',
+        responseTimeMs: null,
+      });
     } else {
       flashIdx += 1;
     }
@@ -1879,8 +2086,11 @@ export function renderFlash(state, dependencies) {
   const hideRomaji = state.settings?.hideRomaji || false;
   const displayRomaji = word.romaji || '';
 
-  // Определяем режим карточки: используем forcedMode если есть, иначе случайный выбор
-  const cardMode = card.forcedMode || determineCardMode(word);
+  // Специальные упражнения батча сохраняем, а базовые режимы выбираем по зрелости карточки.
+  const isSpecialBatchMode = [CARD_MODES.PARTICLE_QUIZ, CARD_MODES.SENTENCE_BUILDING].includes(
+    card.forcedMode
+  );
+  const cardMode = isSpecialBatchMode ? card.forcedMode : determineCardMode(card, word);
 
   // Режим квиза по частицам (блок 2 сессии)
   if (cardMode === CARD_MODES.PARTICLE_QUIZ) {
@@ -1891,6 +2101,23 @@ export function renderFlash(state, dependencies) {
   // Режим составления предложений (блок 2 сессии, 30% вероятность)
   if (cardMode === CARD_MODES.SENTENCE_BUILDING) {
     renderSentenceBuilding({ ...card, lessonId: cardChapter(card.id) }, state, dependencies);
+    return;
+  }
+
+  if (cardMode === CARD_MODES.CONTEXT_SENTENCE) {
+    renderContextSentenceMode(word, state, dependencies);
+    return;
+  }
+
+  if (cardMode === CARD_MODES.REVERSE_MULTIPLE_CHOICE) {
+    renderMultipleChoiceMode(word, state, dependencies, {
+      mode: CARD_MODES.REVERSE_MULTIPLE_CHOICE,
+      category: 'Японский → русский',
+      question: displayKanji,
+      hint: 'Выберите правильный перевод',
+      questionClass: 'reverse-question',
+      optionLabel: (option) => shortT(option),
+    });
     return;
   }
 
@@ -1919,6 +2146,8 @@ export function renderFlash(state, dependencies) {
           </div>
         </div>
       </div>`;
+
+    startReviewTiming(card.id, CARD_MODES.DRAWING);
 
     const exitBtn = $('#flash-exit');
     if (exitBtn) {
@@ -2428,6 +2657,7 @@ export function startExtraReview(state, dependencies) {
   if (tabsContainer) tabsContainer.classList.add('hidden');
 
   sessionManager = null;
+  reviewUndoStack.clear();
   flashCtx = null;
   flashRevealed = false;
   flashIdx = 0;
@@ -2502,6 +2732,8 @@ function startNextBatchIfAny(state, dependencies) {
   const result = completeBatchAndMoveNext(state, dependencies);
   if (!result || !result.organizedCards) return false;
 
+  reviewUndoStack.clear();
+
   sessionManager = new SessionManager(result.organizedCards, {
     srs: SRS,
     questsManager: dependencies.QuestsManager || window.QuestsManager || null,
@@ -2533,6 +2765,7 @@ export function resetSessionBatching() {
 // Экспорт функций для установки глобальных переменных из app.js
 export function setFlashQueue(queue) {
   flashQueue = queue;
+  reviewUndoStack.clear();
 }
 
 export function setFlashIdx(idx) {
@@ -2548,6 +2781,7 @@ export function setFlashCtx(ctx) {
 }
 
 export function setSessionManager(manager) {
+  if (sessionManager !== manager) reviewUndoStack.clear();
   sessionManager = manager;
 }
 

@@ -5,6 +5,7 @@ import { $, todayStr, pluralDays } from '../src/utils.js';
 import { dueCards, allCards, cardChapter } from '../src/srs-helpers.js';
 import { SRS } from '../srs.js';
 import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
+import { db, STORES } from '../src/db.js';
 
 // ---------- Constants ----------
 const LS_LESSONS = 'kitsune_lessons_v1';
@@ -44,11 +45,11 @@ export let CONTENT_INDEX = [];
 // На старте грузим только лёгкий content-index; полные уроки подгружаются
 // по требованию через ensureLesson()
 export async function loadLessons() {
-  // Восстанавливаем ранее загруженные уроки из localStorage (оффлайн-доступ)
-  const raw = localStorage.getItem(LS_LESSONS);
+  // Восстанавливаем ранее загруженные уроки из IndexedDB (оффлайн-доступ)
+  const raw = await db.get(STORES.CONTENT_CACHE, 'lessons');
   if (raw) {
     try {
-      LESSONS = JSON.parse(raw);
+      LESSONS = Array.isArray(raw) ? raw : JSON.parse(raw);
       LESSONS.forEach((l) => loadedChapters.set(l.id, { lesson: l, story: undefined }));
     } catch {
       LESSONS = [];
@@ -58,13 +59,13 @@ export async function loadLessons() {
   try {
     const data = await loadContentIndex();
     const fileVersion = data.version || 0;
-    const cachedVersion = localStorage.getItem(LS_LESSON_VERSION);
+    const cachedVersion = await db.get(STORES.CONTENT_CACHE, 'lesson_version');
     if (String(cachedVersion) !== String(fileVersion)) {
       // Версия контента изменилась — сбрасываем устаревший кэш уроков
       LESSONS = [];
       loadedChapters.clear();
-      localStorage.removeItem(LS_LESSONS);
-      localStorage.setItem(LS_LESSON_VERSION, String(fileVersion));
+      await db.delete(STORES.CONTENT_CACHE, 'lessons');
+      await db.set(STORES.CONTENT_CACHE, 'lesson_version', String(fileVersion));
     }
     CONTENT_INDEX = data.chapters || [];
   } catch (e) {
@@ -107,11 +108,11 @@ function normalizeLesson(l) {
   };
 }
 
-function persistLessonsCache() {
+async function persistLessonsCache() {
   try {
-    localStorage.setItem(LS_LESSONS, JSON.stringify(LESSONS));
+    await db.set(STORES.CONTENT_CACHE, 'lessons', LESSONS);
   } catch (e) {
-    console.warn('Не удалось закэшировать уроки в localStorage:', e);
+    console.warn('Не удалось закэшировать уроки в IndexedDB:', e);
   }
 }
 
@@ -149,24 +150,24 @@ export function getLesson(id) {
 }
 
 // ---------- Streak + Daily Goal ----------
-function getLastActivityDay() {
-  return localStorage.getItem(LS_LAST_ACTIVITY_DAY);
+async function getLastActivityDay() {
+  return await db.get(STORES.CONTENT_CACHE, 'last_activity_day');
 }
 
-function setLastActivityDay(t) {
-  localStorage.setItem(LS_LAST_ACTIVITY_DAY, t);
+async function setLastActivityDay(t) {
+  await db.set(STORES.CONTENT_CACHE, 'last_activity_day', t);
 }
 
-export function markActivity(toastFn = null) {
+export async function markActivity(toastFn = null) {
   const t = todayStr();
   const s = state.streak;
 
-  // Сброс dailyCards при смене дня (сохраняем в localStorage)
-  const lastDay = getLastActivityDay();
+  // Сброс dailyCards при смене дня (сохраняем в IndexedDB)
+  const lastDay = await getLastActivityDay();
   if (lastDay !== t) {
     state.dailyCards = 0;
     state._dailyGoalClaimed = false;
-    setLastActivityDay(t);
+    await setLastActivityDay(t);
   }
 
   // Увеличиваем счётчик ежедневных карточек и историю
@@ -221,9 +222,9 @@ export function markActivity(toastFn = null) {
   save();
 }
 
-export function resetDailyGoalFlag() {
+export async function resetDailyGoalFlag() {
   state._dailyGoalClaimed = false;
-  setLastActivityDay(todayStr());
+  await setLastActivityDay(todayStr());
   save();
 }
 

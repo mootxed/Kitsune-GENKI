@@ -10,6 +10,7 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    SRS.setReviewLogger(null);
     card = SRS.newCard(testCardId);
   });
 
@@ -36,6 +37,29 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
       const newCard = SRS.newCard('test-123');
       expect(newCard.due).toBeGreaterThanOrEqual(now - 100);
       expect(newCard.due).toBeLessThanOrEqual(now + 100);
+    });
+  });
+
+  describe('Scheduler configuration', () => {
+    it('включает fuzz и ограничивает интервалы одним годом', () => {
+      expect(SRS.schedulerConfig.enableFuzz).toBe(true);
+      expect(SRS.schedulerConfig.maximumInterval).toBe(SRS.MAX_INTERVAL);
+      expect(SRS.MAX_INTERVAL).toBe(365);
+    });
+
+    it('не назначает интервал дольше максимального', () => {
+      const now = Date.now();
+      const matureCard = SRS.migrateSM2ToFSRS({
+        id: 'mature',
+        ef: 2.5,
+        interval: 365,
+        reps: 50,
+        due: now,
+        lastReview: now - 365 * SRS.DAY,
+      });
+
+      SRS.review(matureCard, SRS.Quality.Easy);
+      expect(matureCard.scheduled_days).toBeLessThanOrEqual(SRS.MAX_INTERVAL);
     });
   });
 
@@ -71,6 +95,25 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
         SRS.review(card, 0);
         expect(typeof card.stability).toBe('number');
         expect(card.stability).toBeGreaterThan(0);
+      });
+
+      it('помечает leech на восьмом провале, не меняя политику scheduler', () => {
+        card = SRS.migrateSM2ToFSRS({
+          id: testCardId,
+          ef: 2.5,
+          interval: 10,
+          reps: 5,
+          due: Date.now(),
+          lastReview: Date.now() - 10 * SRS.DAY,
+        });
+        card.lapses = SRS.LEECH_THRESHOLD - 1;
+
+        SRS.review(card, SRS.Quality.Again);
+
+        expect(card.lapses).toBe(SRS.LEECH_THRESHOLD);
+        expect(card.isLeech).toBe(true);
+        expect(card.leechNotified).toBe(true);
+        expect(SRS.schedulerConfig.maximumInterval).toBe(SRS.MAX_INTERVAL);
       });
     });
 
@@ -181,13 +224,51 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
         expect(SRS.Rating.Easy).toBe(4);
       });
 
-      it('принимает прямые значения Rating FSRS (1..4)', () => {
-        expect(() => SRS.review(card, Rating.Good)).not.toThrow();
-        expect(card.reps).toBe(1);
+      it.each([
+        [SRS.Quality.Again, Rating.Again],
+        [SRS.Quality.Hard, Rating.Hard],
+        [SRS.Quality.Good, Rating.Good],
+        [SRS.Quality.Easy, Rating.Easy],
+      ])('явно преобразует quality=%i в Rating=%i', (quality, rating) => {
+        expect(SRS.mapQualityToFSRS(quality)).toBe(rating);
+      });
+
+      it('не принимает однозначно чужие значения шкалы Rating', () => {
+        expect(() => SRS.review(card, Rating.Again)).toThrow();
+        expect(() => SRS.review(card, Rating.Hard)).toThrow();
       });
 
       it('выбрасывает ошибку на некорректной оценке', () => {
         expect(() => SRS.review(card, 99)).toThrow();
+        expect(() => SRS.review(card, '4')).toThrow();
+      });
+    });
+
+    describe('Автоматическая оценка упражнений', () => {
+      it('назначает Good за правильный ответ без ошибок', () => {
+        expect(SRS.qualityFromMistakes(0)).toBe(SRS.Quality.Good);
+      });
+
+      it('назначает Hard после одной ошибки и Again после двух', () => {
+        expect(SRS.qualityFromMistakes(1)).toBe(SRS.Quality.Hard);
+        expect(SRS.qualityFromMistakes(2)).toBe(SRS.Quality.Again);
+      });
+
+      it.each([
+        [0, SRS.Quality.Easy],
+        [1, SRS.Quality.Good],
+        [2, SRS.Quality.Good],
+        [3, SRS.Quality.Hard],
+        [5, SRS.Quality.Hard],
+        [6, SRS.Quality.Again],
+      ])('оценивает рисование с %i ошибками как quality=%i', (mistakes, quality) => {
+        expect(SRS.qualityFromDrawingMistakes(mistakes)).toBe(quality);
+      });
+
+      it('назначает Easy только за идеальное рисование', () => {
+        expect(SRS.qualityFromMistakes(0)).not.toBe(SRS.Quality.Easy);
+        expect(SRS.qualityFromDrawingMistakes(0)).toBe(SRS.Quality.Easy);
+        expect(SRS.qualityFromDrawingMistakes(1)).not.toBe(SRS.Quality.Easy);
       });
     });
 
@@ -204,6 +285,65 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
 
         SRS.review(card, 4);
         expect(card.lastReview).toBe(later);
+      });
+    });
+
+    describe('Review log', () => {
+      it('передаёт логгеру состояние карточки до review', () => {
+        const now = 1_750_000_000_000;
+        vi.setSystemTime(now);
+        const logger = vi.fn();
+        SRS.setReviewLogger(logger);
+
+        const previous = {
+          stability: card.stability,
+          difficulty: card.difficulty,
+          state: card.state,
+        };
+
+        SRS.review(card, SRS.Quality.Good, {
+          mode: 'typing',
+          responseTimeMs: 1234.4,
+        });
+
+        expect(logger).toHaveBeenCalledTimes(1);
+        expect(logger).toHaveBeenCalledWith({
+          cardId: testCardId,
+          quality: SRS.Quality.Good,
+          mode: 'typing',
+          responseTimeMs: 1234,
+          timestamp: now,
+          previousStability: previous.stability,
+          previousDifficulty: previous.difficulty,
+          previousState: previous.state,
+        });
+        expect(card.stability).not.toBe(previous.stability);
+        expect(card.difficulty).not.toBe(previous.difficulty);
+        expect(card.state).not.toBe(previous.state);
+      });
+
+      it('не создаёт запись при отклонённом quality', () => {
+        const logger = vi.fn();
+        SRS.setReviewLogger(logger);
+
+        expect(() => SRS.review(card, 99, { mode: 'typing', responseTimeMs: 100 })).toThrow();
+        expect(logger).not.toHaveBeenCalled();
+      });
+
+      it('не прерывает FSRS review при синхронной ошибке хранилища', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        SRS.setReviewLogger(() => {
+          throw new Error('IndexedDB недоступна');
+        });
+
+        expect(() =>
+          SRS.review(card, SRS.Quality.Good, { mode: 'typing', responseTimeMs: 500 })
+        ).not.toThrow();
+        expect(card.reps).toBe(1);
+        expect(warn).toHaveBeenCalledWith(
+          '[SRS] Не удалось сохранить review log:',
+          expect.any(Error)
+        );
       });
     });
   });
