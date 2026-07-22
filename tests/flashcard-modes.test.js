@@ -116,4 +116,32 @@ describe('adaptive flashcard modes', () => {
     expect(new Set(labels).size).toBe(4);
     expect(options.some((option) => option.id === 'duplicate')).toBe(false);
   });
+
+  it('исключает одинаковое японское написание при разных переводах и lexemeId', () => {
+    const correct = {
+      id: 'L1_V019',
+      lexemeId: 'friend-1',
+      writing: 'ともだち',
+      translation: 'друг',
+      category: 'people',
+    };
+    const duplicate = {
+      id: 'L11_V028',
+      lexemeId: 'friend-2',
+      writing: 'トモダチ',
+      translation: 'друг, товарищ',
+      category: 'people',
+    };
+    const words = [
+      correct,
+      duplicate,
+      { id: 'teacher', writing: 'せんせい', translation: 'учитель', category: 'people' },
+      { id: 'student', writing: 'がくせい', translation: 'студент', category: 'people' },
+      { id: 'child', writing: 'こども', translation: 'ребёнок', category: 'people' },
+    ];
+
+    const options = buildMultipleChoiceOptions(correct, words, (word) => word.translation);
+    expect(options).toHaveLength(4);
+    expect(options.some((option) => option.id === duplicate.id)).toBe(false);
+  });
 });

@@ -1,7 +1,7 @@
 /* src/db.js — Promise-based обёртка над IndexedDB с graceful degradation */
 
 const DB_NAME = 'KitsuneGenkiDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // Object Stores
 const STORES = {
@@ -66,8 +66,9 @@ class IndexedDBWrapper {
             console.log('[DB] Создан store:', STORES.UI_PREFERENCES);
           }
 
+          let reviewLogStore;
           if (!db.objectStoreNames.contains(STORES.REVIEW_LOG)) {
-            const reviewLogStore = db.createObjectStore(STORES.REVIEW_LOG, {
+            reviewLogStore = db.createObjectStore(STORES.REVIEW_LOG, {
               keyPath: 'id',
               autoIncrement: true,
             });
@@ -76,7 +77,13 @@ class IndexedDBWrapper {
             reviewLogStore.createIndex('cardId_timestamp', ['cardId', 'timestamp'], {
               unique: false,
             });
+            reviewLogStore.createIndex('eventId', 'eventId', { unique: true });
             console.log('[DB] Создан store:', STORES.REVIEW_LOG);
+          } else if (event.target.transaction) {
+            reviewLogStore = event.target.transaction.objectStore(STORES.REVIEW_LOG);
+            if (!reviewLogStore.indexNames.contains('eventId')) {
+              reviewLogStore.createIndex('eventId', 'eventId', { unique: true });
+            }
           }
         };
 
@@ -144,14 +151,12 @@ class IndexedDBWrapper {
 
         const request = store.put(data);
 
-        request.onsuccess = () => {
-          resolve();
-        };
-
         request.onerror = () => {
           console.error(`[DB] Ошибка записи в ${storeName}:`, request.error);
-          reject(request.error);
         };
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error || request.error);
+        transaction.onabort = () => reject(transaction.error || request.error);
       } catch (error) {
         console.error(`[DB] Исключение при записи в ${storeName}:`, error);
         reject(error);
@@ -184,6 +189,45 @@ class IndexedDBWrapper {
         transaction.oncomplete = () => resolve(generatedKey);
         transaction.onerror = () => reject(transaction.error || request.error);
         transaction.onabort = () => reject(transaction.error || request.error);
+      } catch (error) {
+        console.error(`[DB] Исключение при добавлении в ${storeName}:`, error);
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * Идемпотентно добавляет запись по значению уникального индекса.
+   */
+  async addUnique(storeName, indexName, key, value) {
+    await this.ensureInitialized();
+
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = this.db.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const lookup = store.index(indexName).get(key);
+        let resultKey;
+
+        lookup.onsuccess = () => {
+          if (lookup.result) {
+            resultKey = lookup.result.id;
+            return;
+          }
+          const request = store.add(value);
+          request.onsuccess = () => {
+            resultKey = request.result;
+          };
+          request.onerror = () => {
+            console.error(`[DB] Ошибка добавления в ${storeName}:`, request.error);
+          };
+        };
+        lookup.onerror = () => {
+          console.error(`[DB] Ошибка поиска в ${storeName}:`, lookup.error);
+        };
+        transaction.oncomplete = () => resolve(resultKey);
+        transaction.onerror = () => reject(transaction.error || lookup.error);
+        transaction.onabort = () => reject(transaction.error || lookup.error);
       } catch (error) {
         console.error(`[DB] Исключение при добавлении в ${storeName}:`, error);
         reject(error);
@@ -343,6 +387,14 @@ class InMemoryFallback {
     records.push({ ...value, id: nextId });
     this.storage.set(storeKey, records);
     return nextId;
+  }
+
+  async addUnique(storeName, _indexName, key, value) {
+    const storeKey = `${storeName}:__records__`;
+    const records = this.storage.get(storeKey) || [];
+    const existing = records.find((record) => record.eventId === key);
+    if (existing) return existing.id;
+    return this.add(storeName, value);
   }
 
   async getAll(storeName) {

@@ -14,7 +14,6 @@ import { SessionManager } from './session-manager.js';
 // IndexedDB модули
 import { initializeDB } from './src/db.js';
 import { migrateFromLocalStorage } from './src/migration.js';
-import { appendReviewLog } from './src/review-log.js';
 
 // Утилиты
 import {
@@ -569,7 +568,9 @@ async function init() {
     // 1. Инициализация IndexedDB
     console.log('[Init] Инициализация IndexedDB...');
     await initializeDB();
-    SRS.setReviewLogger(appendReviewLog);
+    // App reviews are persisted through the transactional outbox in app_state.
+    // The optional SRS logger remains available for diagnostics and isolated use.
+    SRS.setReviewLogger(null);
 
     // 2. Миграция из localStorage (если нужна)
     console.log('[Init] Проверка миграции данных...');

@@ -118,17 +118,23 @@ export function calculateMastery({
   );
   const recognition = metrics[SKILLS.RECOGNITION];
   const recall = metrics[SKILLS.RECALL];
+  // Only an explicit active context task is production evidence. Recall and
+  // kanji drawing remain useful axes, but cannot stand in for using a word.
   const productionSkill = applicable.has(SKILLS.CONTEXT_PRODUCTION)
     ? SKILLS.CONTEXT_PRODUCTION
-    : applicable.has(SKILLS.READING_WRITING)
-      ? SKILLS.READING_WRITING
-      : SKILLS.RECALL;
-  const production = metrics[productionSkill];
+    : null;
+  const production = productionSkill ? metrics[productionSkill] : null;
   const applicableMetrics = [...applicable].map((skill) => metrics[skill]).filter(Boolean);
   const hasCleanSuccess = applicableMetrics.some((metric) => metric.hasSuccess);
   const hasLegacyEstimate = cards.some(
     (card) => card.legacyMasteryEstimated && card.reps > 0 && Number(card.stability) > 0
   );
+  const lapseAt = Math.max(
+    archive?.recentLapseAt || 0,
+    ...validEvents.filter((event) => event.effectiveRating === 0).map((event) => event.reviewedAt),
+    0
+  );
+  const hasRecentLapse = lapseAt >= now - MASTERY_RULES.recentLapseDays * DAY;
 
   let level = MASTERY_LEVELS.NEW;
   if (hasCleanSuccess || hasLegacyEstimate) level = MASTERY_LEVELS.FAMILIAR;
@@ -150,12 +156,19 @@ export function calculateMastery({
 
   const mastered =
     level === MASTERY_LEVELS.CONFIDENT &&
+    production !== null &&
     production.hasSuccess &&
     production.successfulDays >= 2 &&
     production.accuracy >= MASTERY_RULES.productionAccuracy &&
     production.stability >= MASTERY_RULES.masteredStabilityDays &&
     recall.stability >= MASTERY_RULES.masteredStabilityDays;
   if (mastered) level = MASTERY_LEVELS.MASTERED;
+
+  // Mastery is a current claim, not a lifetime badge. A recent failed recall
+  // temporarily requires the learner to reconfirm the highest level.
+  if (level === MASTERY_LEVELS.MASTERED && hasRecentLapse) {
+    level = MASTERY_LEVELS.CONFIDENT;
+  }
 
   let score = 0;
   if (level === MASTERY_LEVELS.FAMILIAR) {
@@ -175,12 +188,14 @@ export function calculateMastery({
     );
     score = Math.round(40 + 29 * confidentProgress);
   } else if (level === MASTERY_LEVELS.CONFIDENT) {
-    const masteredProgress = Math.min(
-      progressRatio(recall.stability, MASTERY_RULES.masteredStabilityDays),
-      progressRatio(production.stability, MASTERY_RULES.masteredStabilityDays),
-      progressRatio(production.successfulDays, 2),
-      progressRatio(production.accuracy, MASTERY_RULES.productionAccuracy)
-    );
+    const masteredProgress = production
+      ? Math.min(
+          progressRatio(recall.stability, MASTERY_RULES.masteredStabilityDays),
+          progressRatio(production.stability, MASTERY_RULES.masteredStabilityDays),
+          progressRatio(production.successfulDays, 2),
+          progressRatio(production.accuracy, MASTERY_RULES.productionAccuracy)
+        )
+      : 0;
     score = Math.round(70 + 29 * masteredProgress);
   } else if (level === MASTERY_LEVELS.MASTERED) {
     score = 100;
@@ -191,12 +206,6 @@ export function calculateMastery({
     ? Math.min(...practicedMetrics.map((metric) => metric.retrievability))
     : 0;
   const due = practicedMetrics.some((metric) => Number(metric.card.due) <= now);
-  const lapseAt = Math.max(
-    archive?.recentLapseAt || 0,
-    ...validEvents.filter((event) => event.effectiveRating === 0).map((event) => event.reviewedAt),
-    0
-  );
-  const hasRecentLapse = lapseAt >= now - MASTERY_RULES.recentLapseDays * DAY;
   const readinessThreshold =
     level === MASTERY_LEVELS.MASTERED
       ? 0.9
@@ -229,6 +238,9 @@ export function calculateMastery({
     skills: applicableMetrics.filter((metric) => metric.hasSuccess).map((metric) => metric.skill),
     skillMetrics: metrics,
     productionSkill,
+    productionStatus: production?.hasSuccess
+      ? 'Production проверен'
+      : 'Production пока не проверен',
     hasRecentLapse,
     lowRetrievability,
     needsRefresh: readiness === READINESS.REFRESH,

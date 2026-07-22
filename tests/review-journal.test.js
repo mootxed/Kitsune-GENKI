@@ -4,7 +4,9 @@ import { SKILLS } from '../src/knowledge-model.js';
 import {
   REVIEW_EVENTS_PER_ITEM,
   UNDO_SNAPSHOT_LIMIT,
+  acknowledgeReviewLogs,
   compactReviewJournal,
+  enqueueReviewLog,
 } from '../src/review-journal.js';
 import { calculateMastery } from '../src/mastery.js';
 import { SRS } from '../srs.js';
@@ -30,6 +32,18 @@ function event(index, itemId = 'L1_V001') {
 }
 
 describe('bounded review journal', () => {
+  it('дедуплицирует outbox и подтверждает только записанные события', () => {
+    const state = { pendingReviewLogs: [] };
+    const first = { eventId: 'event-1', cardId: 'card-1' };
+    const second = { eventId: 'event-2', cardId: 'card-2' };
+
+    expect(enqueueReviewLog(state, first)).toBe(true);
+    expect(enqueueReviewLog(state, first)).toBe(false);
+    expect(enqueueReviewLog(state, second)).toBe(true);
+    acknowledgeReviewLogs(state, ['event-1']);
+
+    expect(state.pendingReviewLogs).toEqual([second]);
+  });
   it('оставляет 20 событий на item и только 10 полных Undo snapshot', () => {
     const state = {
       reviewEvents: Array.from({ length: 25 }, (_, index) => event(index)),

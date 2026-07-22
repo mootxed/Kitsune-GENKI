@@ -20,6 +20,7 @@ function createFakeIndexedDB() {
       };
       stores.set(name, definition);
       return {
+        indexNames: { contains: (indexName) => definition.indexes.has(indexName) },
         createIndex(indexName, keyPath, indexOptions) {
           definition.indexes.set(indexName, { keyPath, options: indexOptions });
         },
@@ -30,6 +31,20 @@ function createFakeIndexedDB() {
       const definition = stores.get(storeName);
 
       transaction.objectStore = () => ({
+        index(indexName) {
+          return {
+            get(key) {
+              const request = { result: undefined, error: null };
+              defer(() => {
+                const keyPath = definition.indexes.get(indexName).keyPath;
+                request.result = definition.records.find((record) => record[keyPath] === key);
+                request.onsuccess?.();
+                defer(() => transaction.oncomplete?.());
+              });
+              return request;
+            },
+          };
+        },
         get(key) {
           const request = { result: undefined, error: null };
           defer(() => {
@@ -49,6 +64,7 @@ function createFakeIndexedDB() {
             else definition.records.push({ ...value });
             request.result = key;
             request.onsuccess?.();
+            defer(() => transaction.oncomplete?.());
           });
           return request;
         },
@@ -97,7 +113,21 @@ function createFakeIndexedDB() {
 
   const factory = {
     open: vi.fn((name, version) => {
-      const request = { result: database, error: null };
+      const request = {
+        result: database,
+        error: null,
+        transaction: {
+          objectStore(storeName) {
+            const definition = stores.get(storeName);
+            return {
+              indexNames: { contains: (indexName) => definition.indexes.has(indexName) },
+              createIndex(indexName, keyPath, indexOptions) {
+                definition.indexes.set(indexName, { keyPath, options: indexOptions });
+              },
+            };
+          },
+        },
+      };
       defer(() => {
         request.onupgradeneeded?.({ target: request, oldVersion: 0, newVersion: version });
         request.onsuccess?.();
@@ -123,6 +153,33 @@ function makeEntry(overrides = {}) {
   };
 }
 
+function makeModernEntry(overrides = {}) {
+  return {
+    eventId: 'event-1',
+    eventType: 'review',
+    itemId: 'L1_V001',
+    cardId: 'L1_V001::recall',
+    skill: 'recall',
+    mode: 'typing',
+    firstAttemptCorrect: true,
+    mistakes: 0,
+    hintUsed: false,
+    responseTimeMs: 800,
+    rawRating: 4,
+    effectiveRating: 4,
+    reviewedAt: 1_750_000_000_000,
+    undoneAt: null,
+    fsrs: {
+      rating: 3,
+      state: 2,
+      stability: 12,
+      difficulty: 5,
+      review: 1_750_000_000_000,
+    },
+    ...overrides,
+  };
+}
+
 describe('IndexedDB review_log', () => {
   let fakeIndexedDB;
 
@@ -140,7 +197,7 @@ describe('IndexedDB review_log', () => {
     vi.unstubAllGlobals();
   });
 
-  it('создаёт v2 store с autoIncrement и индексами', async () => {
+  it('создаёт v3 store с autoIncrement и индексами', async () => {
     const { DB_NAME, DB_VERSION, STORES, initializeDB } = await import('../src/db.js');
     const existingAppState = {
       options: { keyPath: 'id' },
@@ -153,12 +210,39 @@ describe('IndexedDB review_log', () => {
     await initializeDB();
 
     expect(fakeIndexedDB.factory.open).toHaveBeenCalledWith(DB_NAME, DB_VERSION);
-    expect(DB_VERSION).toBe(2);
+    expect(DB_VERSION).toBe(3);
     const store = fakeIndexedDB.stores.get(STORES.REVIEW_LOG);
     expect(store.options).toEqual({ keyPath: 'id', autoIncrement: true });
-    expect([...store.indexes.keys()]).toEqual(['cardId', 'timestamp', 'cardId_timestamp']);
+    expect([...store.indexes.keys()]).toEqual([
+      'cardId',
+      'timestamp',
+      'cardId_timestamp',
+      'eventId',
+    ]);
     expect(fakeIndexedDB.stores.get(STORES.APP_STATE)).toBe(existingAppState);
     expect(existingAppState.records).toEqual([{ id: 'state', value: { xp: 42 } }]);
+  });
+
+  it('добавляет уникальный eventId index при обновлении существующего review_log', async () => {
+    const { STORES, initializeDB } = await import('../src/db.js');
+    const existingReviewLog = {
+      options: { keyPath: 'id', autoIncrement: true },
+      indexes: new Map([
+        ['cardId', { keyPath: 'cardId', options: { unique: false } }],
+        ['timestamp', { keyPath: 'timestamp', options: { unique: false } }],
+        ['cardId_timestamp', { keyPath: ['cardId', 'timestamp'], options: { unique: false } }],
+      ]),
+      records: [],
+      nextId: 1,
+    };
+    fakeIndexedDB.stores.set(STORES.REVIEW_LOG, existingReviewLog);
+
+    await initializeDB();
+
+    expect(existingReviewLog.indexes.get('eventId')).toEqual({
+      keyPath: 'eventId',
+      options: { unique: true },
+    });
   });
 
   it('добавляет записи без перезаписи и читает их в стабильном порядке', async () => {
@@ -174,6 +258,36 @@ describe('IndexedDB review_log', () => {
     expect(entries.map((entry) => entry.id)).toEqual([1, 2]);
     expect(entries[0]).toMatchObject(makeEntry());
     expect(entries[1]).toMatchObject(makeEntry({ quality: 3, mode: 'drawing' }));
+  });
+
+  it('идемпотентно повторяет append по eventId', async () => {
+    const { initializeDB } = await import('../src/db.js');
+    const { appendReviewLog, getReviewLogs } = await import('../src/review-log.js');
+    await initializeDB();
+
+    await appendReviewLog(makeModernEntry());
+    await appendReviewLog(makeModernEntry());
+
+    expect(await getReviewLogs()).toEqual([expect.objectContaining(makeModernEntry())]);
+  });
+
+  it('при загрузке доставляет сохранённый outbox и очищает его после подтверждения', async () => {
+    const dbModule = await import('../src/db.js');
+    const storeModule = await import('../state/store.js');
+    const { getReviewLogs } = await import('../src/review-log.js');
+    await dbModule.initializeDB();
+
+    const savedState = storeModule.defaultState();
+    savedState.pendingReviewLogs = [makeModernEntry()];
+    await dbModule.db.set(dbModule.STORES.APP_STATE, 'state', savedState);
+
+    await storeModule.loadState();
+
+    expect(storeModule.state.pendingReviewLogs).toEqual([]);
+    expect((await dbModule.db.get(dbModule.STORES.APP_STATE, 'state')).pendingReviewLogs).toEqual(
+      []
+    );
+    expect(await getReviewLogs()).toEqual([expect.objectContaining(makeModernEntry())]);
   });
 
   it('заменяет и очищает журнал для импорта и полного сброса', async () => {
