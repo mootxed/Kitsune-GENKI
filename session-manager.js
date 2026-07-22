@@ -46,7 +46,6 @@ class SessionManager {
     // Базовые шаги откидывания в зависимости от качества ответа
     this.backtrackSteps = {
       0: 10, // Again → 10 позиций назад
-      3: 15, // Hard → 15 позиций назад
     };
 
     this.currentIndex = 0;
@@ -150,8 +149,9 @@ class SessionManager {
     }
 
     const item = this.queue[queueIndex];
-    // Новое условие успеха: только Good (4) и Easy (5) завершают карточку
-    const isError = quality < 4;
+    // Only Again means retrieval failed. Hard is a successful first recall
+    // with explicit difficulty and must not enter the relearning loop.
+    const isError = quality === 0;
     let reviewResult = null;
 
     // ===== ЛОГИКА ПЕРВОЙ ПОПЫТКИ =====

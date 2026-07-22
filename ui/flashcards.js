@@ -8,8 +8,20 @@ import { speakJapanese } from '../src/audio-helper.js';
 import { SessionBatcher } from '../src/session-batcher.js';
 import { SessionManager } from '../session-manager.js';
 import { UndoStack, adjustQualityByTime, isLeech, undoReviewEvent } from '../src/card-behavior.js';
-import { cardsForItem, modeCanSchedule, parseCardIdentity } from '../src/knowledge-model.js';
+import {
+  cardsForItem,
+  modeCanSchedule,
+  parseCardIdentity,
+  vocabularySkills,
+} from '../src/knowledge-model.js';
 import { calculateMastery } from '../src/mastery.js';
+import { compactReviewJournal } from '../src/review-journal.js';
+import {
+  MAX_TYPING_UNIQUE_CHARS,
+  hiraganaToKatakana,
+  normalizeKanaAnswer,
+  typingCapability,
+} from '../src/typing-capability.js';
 import {
   CURATED_PARTICLE_SENTENCES,
   SMART_PARTICLE_TEMPLATES,
@@ -52,6 +64,7 @@ export const CARD_MODES = {
   MULTIPLE_CHOICE: 'multiple-choice',
   REVERSE_MULTIPLE_CHOICE: 'reverse-multiple-choice',
   CONTEXT_SENTENCE: 'context-sentence',
+  CONTEXT_PRODUCTION: 'context-production',
   PARTICLE_QUIZ: 'particle-quiz',
   SENTENCE_BUILDING: 'sentence-building',
 };
@@ -135,8 +148,7 @@ export function submitReview(card, quality, state, context = null) {
     mistakes,
     hintUsed,
     rawRating: quality,
-    firstAttemptCorrect:
-      isFirstAttempt && adjustedQuality >= SRS.Quality.Good && mistakes === 0 && !hintUsed,
+    firstAttemptCorrect: isFirstAttempt && mistakes === 0 && !hintUsed,
   };
 
   let result;
@@ -149,6 +161,7 @@ export function submitReview(card, quality, state, context = null) {
   if (result?.event) {
     if (!Array.isArray(state.reviewEvents)) state.reviewEvents = [];
     state.reviewEvents.push(result.event);
+    compactReviewJournal(state);
     reviewUndoStack.push(
       card.id,
       {
@@ -171,7 +184,11 @@ export function submitReview(card, quality, state, context = null) {
 }
 
 function latestUndoableEvent(state) {
-  return [...(state.reviewEvents || [])].reverse().find((event) => !event.undoneAt) || null;
+  return (
+    [...(state.reviewEvents || [])]
+      .reverse()
+      .find((event) => !event.undoneAt && event.previousCard && event.nextCard) || null
+  );
 }
 
 async function undoLastReview(state, dependencies) {
@@ -509,45 +526,30 @@ export function hasKanjiChars(text) {
 // Очищает строку ответа от служебных символов (~, ～, пробелы, пунктуация, скобки),
 // оставляя только символы, доступные на виртуальной клавиатуре (кана)
 export function cleanKanaString(text) {
-  if (!text) return '';
-  const kana = new Set(Object.keys(HIRAGANA_TO_KATAKANA));
-  return text
-    .split('')
-    .filter((ch) => kana.has(ch))
-    .join('');
+  return normalizeKanaAnswer(text);
 }
 
 // Максимальное количество уникальных символов каны для режима ввода с клавиатуры
-export const MAX_TYPING_UNIQUE_CHARS = 8;
+export { MAX_TYPING_UNIQUE_CHARS };
 
 // Проверяет, допустимо ли слово для режима ввода с клавиатуры:
 // - после очистки должен остаться хотя бы один символ каны
 // - уникальных символов каны должно быть не больше MAX_TYPING_UNIQUE_CHARS
 export function isWordTypingEligible(word) {
-  if (!word || !word.writing) return false;
-  const answers = parseAcceptedAnswers(word.writing).map(cleanKanaString).filter(Boolean);
-  if (answers.length === 0) return false;
-  const uniqueChars = new Set(answers.join('').split(''));
-  return uniqueChars.size <= MAX_TYPING_UNIQUE_CHARS;
+  return typingCapability(word).canType;
 }
 
 // Функция генерации виртуальной клавиатуры для SRS
 function generateSrsKeyboard(acceptedAnswers) {
-  const allKana = Object.keys(HIRAGANA_TO_KATAKANA);
+  const correctLetters = [...new Set(acceptedAnswers.flatMap((answer) => [...answer]))];
+  const allKana = [...new Set([...Object.keys(HIRAGANA_TO_KATAKANA), ...correctLetters])];
 
   // Собираем уникальные символы из ВСЕХ вариантов правильных ответов
-  const correctLetters = [
-    ...new Set(
-      acceptedAnswers.flatMap((answer) => answer.split('')).filter((char) => allKana.includes(char))
-    ),
-  ];
+  const limitedCorrect = correctLetters.slice(0, MAX_TYPING_UNIQUE_CHARS);
 
-  // Ограничиваем до максимум 8 символов
-  const limitedCorrect = correctLetters.slice(0, 8);
-
-  // Добавляем отвлекающие символы до ровно 8
+  // Добавляем отвлекающие символы до целевого компактного размера.
   const distractors = [];
-  const targetTotal = 8;
+  const targetTotal = Math.max(8, limitedCorrect.length);
   const distractorCount = targetTotal - limitedCorrect.length;
 
   while (distractors.length < distractorCount) {
@@ -557,8 +559,7 @@ function generateSrsKeyboard(acceptedAnswers) {
     }
   }
 
-  // Перемешиваем и гарантируем ровно 8 символов
-  return shuffleArray([...limitedCorrect, ...distractors]).slice(0, 8);
+  return shuffleArray([...limitedCorrect, ...distractors]).slice(0, targetTotal);
 }
 
 export function weightedRandom(weights, random = Math.random) {
@@ -1132,33 +1133,29 @@ function showCardAfterDrawing(
   });
 }
 
-// Функция парсинга допустимых вариантов чтения (для слов с несколькими чтениями)
-function parseAcceptedAnswers(writingStr) {
-  if (!writingStr) return [''];
-  return writingStr
-    .split(/[/,、]/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-}
-
 // Функция рендеринга режима ввода с клавиатуры
-function renderTypingMode(word, state, dependencies) {
+function renderTypingMode(word, state, dependencies, modeConfig = {}) {
   const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav, markActivity } =
     dependencies;
 
   const body = $('#srs-body');
   const displayWriting = word.writing;
   const displayTranslation = word.translation;
-  const displayCategory = word.category || 'Слово';
+  const displayCategory = modeConfig.category || word.category || 'Слово';
+  const displayQuestion = modeConfig.question || displayTranslation;
+  const displayHint = modeConfig.hint || 'Введите слово на японском';
+  const typingMode = modeConfig.mode || CARD_MODES.TYPING;
 
   let isChecked = false;
   let typingMistakes = 0;
 
   // Парсим допустимые варианты чтения и очищаем их от служебных символов
   // (~, ～, пробелы, пунктуация, скобки) — на клавиатуре есть только кана
-  const acceptedAnswers = [
-    ...new Set(parseAcceptedAnswers(displayWriting).map(cleanKanaString).filter(Boolean)),
-  ];
+  const capability = typingCapability(word);
+  if (!capability.canType) {
+    throw new Error(`[Typing] Для ${word.id || displayWriting} нет проходимого ответа`);
+  }
+  const acceptedAnswers = capability.acceptedAnswers;
 
   // Скрываем tabbar во время SRS-сессии
   const tabbar = document.querySelector('.tabbar');
@@ -1176,8 +1173,8 @@ function renderTypingMode(word, state, dependencies) {
       <div class="typing-mode-container">
         <div class="typing-prompt">
           <div class="flash-cat">${displayCategory}</div>
-          <p class="typing-kanji">${displayTranslation}</p>
-          <p class="typing-hint">Введите слово на японском</p>
+          <p class="typing-kanji">${displayQuestion}</p>
+          <p class="typing-hint">${displayHint}</p>
         </div>
         <input 
           type="text" 
@@ -1185,7 +1182,6 @@ function renderTypingMode(word, state, dependencies) {
           id="typing-input"
           autocomplete="off"
           placeholder="например: だいがく"
-          readonly
         />
         <div class="srs-keyboard-container" id="srs-keyboard">
           ${keyboardLetters
@@ -1193,7 +1189,7 @@ function renderTypingMode(word, state, dependencies) {
               (letter) => `
             <button class="srs-kana-key" data-letter="${letter}">
               <span class="key-hira">${letter}</span>
-              <span class="key-kata">${HIRAGANA_TO_KATAKANA[letter] || letter}</span>
+              <span class="key-kata">${hiraganaToKatakana(letter)}</span>
             </button>
           `
             )
@@ -1208,7 +1204,7 @@ function renderTypingMode(word, state, dependencies) {
     </div>`;
 
   const reviewCardId = (sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx])?.id;
-  startReviewTiming(reviewCardId || word.id, CARD_MODES.TYPING);
+  startReviewTiming(reviewCardId || word.id, typingMode);
 
   const input = $('#typing-input');
   const checkBtn = $('#typing-check');
@@ -1235,7 +1231,7 @@ function renderTypingMode(word, state, dependencies) {
   const handleCheck = () => {
     if (isChecked) return;
 
-    const userAnswer = input.value.trim();
+    const userAnswer = normalizeKanaAnswer(input.value);
 
     // Проверяем, соответствует ли ввод ЛЮБОМУ из допустимых вариантов
     const isCorrect = acceptedAnswers.some((answer) => answer === userAnswer);
@@ -1372,6 +1368,18 @@ function renderContextSentenceMode(word, state, dependencies) {
     question: context.sentence,
     hint: context.hint,
     questionClass: 'context-sentence',
+  });
+}
+
+function renderContextProductionMode(word, state, dependencies) {
+  const context = generateWordContext(word);
+  renderTypingMode(word, state, dependencies, {
+    mode: CARD_MODES.CONTEXT_PRODUCTION,
+    category: 'Активное воспроизведение',
+    question: context?.sentence || word.translation,
+    hint: context
+      ? `${context.hint} Введите пропущенное слово.`
+      : 'Воспроизведите японское слово без вариантов ответа.',
   });
 }
 
@@ -2165,6 +2173,11 @@ export function renderFlash(state, dependencies) {
     return;
   }
 
+  if (cardMode === CARD_MODES.CONTEXT_PRODUCTION) {
+    renderContextProductionMode(word, state, dependencies);
+    return;
+  }
+
   if (cardMode === CARD_MODES.REVERSE_MULTIPLE_CHOICE) {
     renderMultipleChoiceMode(word, state, dependencies, {
       mode: CARD_MODES.REVERSE_MULTIPLE_CHOICE,
@@ -2354,6 +2367,8 @@ function renderDictionaryLessons(state, dependencies, searchQuery = '') {
           itemId: word.id,
           cards: itemCards,
           events: state.reviewEvents || [],
+          archive: state.masteryArchive?.[word.id],
+          applicableSkills: vocabularySkills(word),
           getRetrievability: (card, now) => SRS.getRetrievability(card, now),
         });
         const progress = mastery.score;
@@ -2394,7 +2409,7 @@ function renderDictionaryLessons(state, dependencies, searchQuery = '') {
             <div class="dict-progress-bar">
               <div class="dict-progress-fill ${progressClass}" style="width: ${progress}%"></div>
             </div>
-            <span class="dict-progress-text" title="Mastery score ${progress}/100">${mastery.label}</span>
+              <span class="dict-progress-text" title="Mastery score ${progress}/100">${mastery.label} · ${mastery.readinessLabel}</span>
           </div>
         </div>
       `;

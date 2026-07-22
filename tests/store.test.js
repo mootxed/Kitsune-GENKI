@@ -14,9 +14,9 @@ describe('Store - Версионирование и миграции', () => {
   });
 
   describe('defaultState', () => {
-    it('должен содержать поле version со значением 4', () => {
+    it('должен содержать поле version со значением 5', () => {
       const state = defaultState();
-      expect(state.version).toBe(4);
+      expect(state.version).toBe(5);
     });
 
     it('должен содержать все необходимые поля', () => {
@@ -26,6 +26,8 @@ describe('Store - Версионирование и миграции', () => {
       expect(state).toHaveProperty('initialized');
       expect(state).toHaveProperty('chapters');
       expect(state).toHaveProperty('srs');
+      expect(state).toHaveProperty('reviewEvents');
+      expect(state).toHaveProperty('masteryArchive');
       expect(state).toHaveProperty('settings');
       expect(state).toHaveProperty('unlockedAchievements');
       expect(state).toHaveProperty('claimedAchievements');
@@ -35,12 +37,12 @@ describe('Store - Версионирование и миграции', () => {
   });
 
   describe('Миграции', () => {
-    it('должен создать новое состояние с версией 4 при первой загрузке', () => {
-      loadState();
-      expect(state.version).toBe(4);
+    it('должен создать новое состояние с версией 5 при первой загрузке', async () => {
+      await loadState();
+      expect(state.version).toBe(5);
     });
 
-    it('должен мигрировать старое состояние без версии → версия 4', () => {
+    it('должен мигрировать старое состояние без версии → версия 5', async () => {
       const oldState = {
         initialized: true,
         xp: 500,
@@ -50,10 +52,10 @@ describe('Store - Версионирование и миграции', () => {
       };
 
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
-      loadState();
+      await loadState();
 
       // Проверяем что версия проставлена
-      expect(state.version).toBe(4);
+      expect(state.version).toBe(5);
 
       // Проверяем что старые данные сохранились
       expect(state.xp).toBe(500);
@@ -68,7 +70,7 @@ describe('Store - Версионирование и миграции', () => {
       expect(state.quests).toBeNull();
     });
 
-    it('должен сохранять существующие достижения при миграции', () => {
+    it('должен сохранять существующие достижения при миграции', async () => {
       const oldState = {
         xp: 100,
         unlockedAchievements: ['first_steps', 'quick_learner'],
@@ -76,14 +78,14 @@ describe('Store - Версионирование и миграции', () => {
       };
 
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
-      loadState();
+      await loadState();
 
-      expect(state.version).toBe(4);
+      expect(state.version).toBe(5);
       expect(state.unlockedAchievements).toEqual(['first_steps', 'quick_learner']);
       expect(state.claimedAchievements).toEqual(['first_steps']);
     });
 
-    it('должен мерджить настройки при миграции', () => {
+    it('должен мерджить настройки при миграции', async () => {
       const oldState = {
         settings: {
           openrouterKey: 'test_key',
@@ -92,9 +94,9 @@ describe('Store - Версионирование и миграции', () => {
       };
 
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
-      loadState();
+      await loadState();
 
-      expect(state.version).toBe(4);
+      expect(state.version).toBe(5);
       expect(state.settings.openrouterKey).toBe('test_key');
       expect(state.settings.darkMode).toBe('dark');
       // Проверяем что дефолтные настройки добавлены
@@ -102,7 +104,7 @@ describe('Store - Версионирование и миграции', () => {
       expect(state.settings.notifyEnabled).toBe(false);
     });
 
-    it('сохраняет данные версии 3 при добавлении полной FSRS-схемы', () => {
+    it('сохраняет данные версии 3 при добавлении полной FSRS-схемы', async () => {
       const currentState = {
         version: 3,
         xp: 1000,
@@ -111,15 +113,15 @@ describe('Store - Версионирование и миграции', () => {
       };
 
       localStorage.setItem(LS_STATE, JSON.stringify(currentState));
-      loadState();
+      await loadState();
 
-      expect(state.version).toBe(4);
+      expect(state.version).toBe(5);
       expect(state.xp).toBe(1000);
       expect(state.level).toBe(10);
       expect(state.unlockedAchievements).toEqual(['achievement1', 'achievement2']);
     });
 
-    it('должен мигрировать SM-2 карточки в FSRS при переходе на версию 3', () => {
+    it('должен мигрировать SM-2 карточки в FSRS при переходе на версию 3', async () => {
       const legacyDue = 1700000000000;
       const oldState = {
         version: 2,
@@ -144,9 +146,9 @@ describe('Store - Версионирование и миграции', () => {
       };
 
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
-      loadState();
+      await loadState();
 
-      expect(state.version).toBe(4);
+      expect(state.version).toBe(5);
 
       const card = state.srs.L1_w1;
       // FSRS-схема
@@ -157,6 +159,7 @@ describe('Store - Версионирование и миграции', () => {
       expect(card).not.toHaveProperty('ef');
       expect(card).not.toHaveProperty('interval');
       expect(card.learning_steps).toBe(0);
+      expect(card.legacyMasteryEstimated).toBe(true);
       // КРИТИЧНО: абсолютные метки времени не перезаписаны
       expect(card.due).toBe(legacyDue);
       expect(card.lastReview).toBe(1699990000000);
@@ -187,7 +190,7 @@ describe('Store - Версионирование и миграции', () => {
         },
       });
 
-      expect(migrated.version).toBe(4);
+      expect(migrated.version).toBe(5);
       expect(migrated.reviewEvents).toEqual([]);
       expect(migrated.srs.L1_w9).toMatchObject({
         learning_steps: 0,
@@ -195,6 +198,30 @@ describe('Store - Версионирование и миграции', () => {
         legacyMasteryEstimated: true,
         itemId: 'L1_w9',
         skill: 'recognition',
+      });
+    });
+
+    it('миграция v4 ограничивает review journal и создаёт mastery archive', () => {
+      const reviewEvents = Array.from({ length: 21 }, (_, index) => ({
+        eventId: `event-${index}`,
+        eventType: 'review',
+        itemId: 'L1_V001',
+        cardId: 'L1_V001::recall',
+        skill: 'recall',
+        mode: 'typing',
+        firstAttemptCorrect: true,
+        effectiveRating: 4,
+        reviewedAt: new Date(2026, 0, index + 1).getTime(),
+        undoneAt: null,
+      }));
+
+      const migrated = runMigrations({ version: 4, srs: {}, reviewEvents });
+
+      expect(migrated.version).toBe(5);
+      expect(migrated.reviewEvents).toHaveLength(20);
+      expect(migrated.masteryArchive.L1_V001).toMatchObject({
+        evidenceCount: 1,
+        successfulSkills: { recall: true },
       });
     });
   });
@@ -207,88 +234,72 @@ describe('Store - Версионирование и миграции', () => {
       expect(typeof unsubscribe).toBe('function');
     });
 
-    it('должен вызывать подписчиков при сохранении', (done) => {
-      loadState();
+    it('должен вызывать подписчиков при сохранении', async () => {
+      await loadState();
 
-      const callback = vi.fn((updatedState) => {
-        expect(updatedState).toBe(state);
-        expect(callback).toHaveBeenCalledTimes(1);
-        done();
-      });
+      const callback = vi.fn();
 
-      subscribe(callback);
+      const unsubscribe = subscribe(callback);
 
       state.xp = 100;
-      save(true); // immediate save
+      await save(true);
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(callback).toHaveBeenCalledWith(state);
+      unsubscribe();
     });
 
-    it('должен поддерживать несколько подписчиков', (done) => {
-      loadState();
+    it('должен поддерживать несколько подписчиков', async () => {
+      await loadState();
 
       const callback1 = vi.fn();
       const callback2 = vi.fn();
       const callback3 = vi.fn();
 
-      subscribe(callback1);
-      subscribe(callback2);
-      subscribe(callback3);
+      const unsubscribers = [subscribe(callback1), subscribe(callback2), subscribe(callback3)];
 
       state.level = 5;
-      save(true);
+      await save(true);
 
-      setTimeout(() => {
-        expect(callback1).toHaveBeenCalledTimes(1);
-        expect(callback2).toHaveBeenCalledTimes(1);
-        expect(callback3).toHaveBeenCalledTimes(1);
-        done();
-      }, 50);
+      expect(callback1).toHaveBeenCalledTimes(1);
+      expect(callback2).toHaveBeenCalledTimes(1);
+      expect(callback3).toHaveBeenCalledTimes(1);
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
     });
 
-    it('должен позволять отписаться от изменений', (done) => {
-      loadState();
+    it('должен позволять отписаться от изменений', async () => {
+      await loadState();
 
       const callback = vi.fn();
       const unsubscribe = subscribe(callback);
 
       state.xp = 50;
-      save(true);
+      await save(true);
+      expect(callback).toHaveBeenCalledTimes(1);
 
-      setTimeout(() => {
-        expect(callback).toHaveBeenCalledTimes(1);
-
-        // Отписываемся
-        unsubscribe();
-
-        state.xp = 100;
-        save(true);
-
-        setTimeout(() => {
-          // Не должен вызваться второй раз
-          expect(callback).toHaveBeenCalledTimes(1);
-          done();
-        }, 50);
-      }, 50);
+      unsubscribe();
+      state.xp = 100;
+      await save(true);
+      expect(callback).toHaveBeenCalledTimes(1);
     });
 
-    it('должен обрабатывать ошибки в подписчиках', (done) => {
-      loadState();
+    it('должен обрабатывать ошибки в подписчиках', async () => {
+      await loadState();
 
       const errorCallback = vi.fn(() => {
         throw new Error('Test error');
       });
       const normalCallback = vi.fn();
 
-      subscribe(errorCallback);
-      subscribe(normalCallback);
+      const unsubscribeError = subscribe(errorCallback);
+      const unsubscribeNormal = subscribe(normalCallback);
 
       state.coins = 50;
-      save(true);
+      await save(true);
 
-      setTimeout(() => {
-        expect(errorCallback).toHaveBeenCalled();
-        expect(normalCallback).toHaveBeenCalled(); // Не должен сломаться из-за ошибки в первом
-        done();
-      }, 50);
+      expect(errorCallback).toHaveBeenCalled();
+      expect(normalCallback).toHaveBeenCalled();
+      unsubscribeError();
+      unsubscribeNormal();
     });
 
     it('должен выбрасывать ошибку если callback не функция', () => {
@@ -300,8 +311,8 @@ describe('Store - Версионирование и миграции', () => {
   });
 
   describe('Обратная совместимость', () => {
-    it('должен корректно работать с полностью пустым localStorage', () => {
-      loadState();
+    it('должен корректно работать с полностью пустым localStorage', async () => {
+      await loadState();
 
       const defaultData = defaultState();
       expect(state.version).toBe(defaultData.version);
@@ -309,38 +320,33 @@ describe('Store - Версионирование и миграции', () => {
       expect(state.level).toBe(defaultData.level);
     });
 
-    it('должен восстанавливаться из битых данных', () => {
+    it('должен восстанавливаться из битых данных', async () => {
       localStorage.setItem(LS_STATE, 'invalid json {{{');
 
-      loadState();
+      await loadState();
 
       // Должен вернуться к defaultState
-      expect(state.version).toBe(4);
+      expect(state.version).toBe(5);
       expect(state.xp).toBe(0);
       expect(state.level).toBe(1);
     });
   });
 
   describe('Интеграция с save/load', () => {
-    it('должен сохранять и загружать состояние с версией', (done) => {
-      loadState();
+    it('должен сохранять и загружать состояние с версией', async () => {
+      await loadState();
 
       state.xp = 999;
       state.level = 15;
       state.coins = 500;
 
-      save(true);
+      await save(true);
 
-      setTimeout(() => {
-        // Эмулируем перезагрузку страницы
-        loadState();
-
-        expect(state.version).toBe(4);
-        expect(state.xp).toBe(999);
-        expect(state.level).toBe(15);
-        expect(state.coins).toBe(500);
-        done();
-      }, 50);
+      await loadState();
+      expect(state.version).toBe(5);
+      expect(state.xp).toBe(999);
+      expect(state.level).toBe(15);
+      expect(state.coins).toBe(500);
     });
   });
 });

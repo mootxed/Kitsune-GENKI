@@ -68,31 +68,26 @@ function emitReviewLog(entry) {
  * Базовые автоматические упражнения по умолчанию дают Good за правильный ответ.
  * Easy зарезервирован для редких бонусных сценариев, например идеального рисования.
  */
-function qualityFromMistakes(mistakeCount, againAt = 2) {
+function qualityFromMistakes(mistakeCount) {
   if (!Number.isInteger(mistakeCount) || mistakeCount < 0) {
     throw new Error(`[SRS] Некорректное количество ошибок: ${mistakeCount}`);
   }
-  if (!Number.isInteger(againAt) || againAt < 2) {
-    throw new Error(`[SRS] Некорректный порог Again: ${againAt}`);
-  }
 
   if (mistakeCount === 0) return Quality.Good;
-  if (mistakeCount < againAt) return Quality.Hard;
+  // In an objective exercise the first wrong attempt means retrieval failed.
+  // Hard is reserved for a correct first attempt with explicit difficulty
+  // (for example a slow answer adjusted by card-behavior).
   return Quality.Again;
 }
 
-/*
- * Рисование допускает больше попыток из-за сложности ввода штрихов.
- * Easy выдаётся только за идеальное прохождение; основной успешный результат — Good.
- */
+/* Drawing is also an objective retrieval exercise: any wrong stroke means the
+ * first reproduction was not correct. Easy is reserved for an ideal drawing. */
 function qualityFromDrawingMistakes(mistakeCount) {
   if (!Number.isInteger(mistakeCount) || mistakeCount < 0) {
     throw new Error(`[SRS] Некорректное количество ошибок рисования: ${mistakeCount}`);
   }
 
   if (mistakeCount === 0) return Quality.Easy;
-  if (mistakeCount <= 2) return Quality.Good;
-  if (mistakeCount <= 5) return Quality.Hard;
   return Quality.Again;
 }
 
@@ -229,7 +224,7 @@ function applyReview(card, quality, context = {}) {
     skill: identity.skill,
     mode: typeof context.mode === 'string' && context.mode ? context.mode : 'unknown',
     firstAttemptCorrect:
-      context.firstAttemptCorrect ?? (quality >= Quality.Good && mistakes === 0 && !hintUsed),
+      context.firstAttemptCorrect ?? (quality !== Quality.Again && mistakes === 0 && !hintUsed),
     mistakes,
     hintUsed,
     responseTimeMs:

@@ -1,7 +1,8 @@
 /* src/session-batcher.js — Батчинг SRS-сессий и организация в 4 блока упражнений */
 
-import { CARD_MODES, hasKanjiChars, isWordTypingEligible } from '../ui/flashcards.js';
+import { CARD_MODES, hasKanjiChars } from '../ui/flashcards.js';
 import { SKILLS, parseCardIdentity } from './knowledge-model.js';
+import { typingCapability } from './typing-capability.js';
 
 /**
  * SessionBatcher управляет разбиением большой очереди карточек на батчи по 20 карточек
@@ -56,17 +57,20 @@ export class SessionBatcher {
     return cardBatch.map((card) => {
       const skill = parseCardIdentity(card).skill;
       const word = card.word || card;
+      const typing = typingCapability(word);
       let forcedMode = CARD_MODES.REVERSE_MULTIPLE_CHOICE;
 
-      if (skill === SKILLS.RECALL) forcedMode = CARD_MODES.TYPING;
+      if (skill === SKILLS.RECALL && typing.canType) forcedMode = CARD_MODES.TYPING;
       if (skill === SKILLS.READING_WRITING) {
         forcedMode = hasKanjiChars(word.kanji || word.writing)
           ? CARD_MODES.DRAWING
-          : isWordTypingEligible(word)
+          : typing.canType
             ? CARD_MODES.TYPING
             : CARD_MODES.MULTIPLE_CHOICE;
       }
-      if (skill === SKILLS.CONTEXT_PRODUCTION) forcedMode = CARD_MODES.CONTEXT_SENTENCE;
+      if (skill === SKILLS.CONTEXT_PRODUCTION && typing.canType) {
+        forcedMode = CARD_MODES.CONTEXT_PRODUCTION;
+      }
 
       return { ...card, forcedMode };
     });

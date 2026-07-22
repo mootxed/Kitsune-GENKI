@@ -250,17 +250,50 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
         expect(SRS.qualityFromMistakes(0)).toBe(SRS.Quality.Good);
       });
 
-      it('назначает Hard после одной ошибки и Again после двух', () => {
-        expect(SRS.qualityFromMistakes(1)).toBe(SRS.Quality.Hard);
+      it('назначает Again уже после первой ошибки', () => {
+        expect(SRS.qualityFromMistakes(1)).toBe(SRS.Quality.Again);
         expect(SRS.qualityFromMistakes(2)).toBe(SRS.Quality.Again);
+      });
+
+      it('первая ошибка автоматического задания увеличивает lapse в FSRS', () => {
+        const mature = SRS.migrateSM2ToFSRS({
+          id: testCardId,
+          ef: 2.5,
+          interval: 10,
+          reps: 5,
+          due: Date.now(),
+          lastReview: Date.now() - 10 * SRS.DAY,
+        });
+        const lapsesBefore = mature.lapses;
+        const quality = SRS.qualityFromMistakes(1);
+        const { event } = SRS.applyReview(mature, quality, {
+          mode: 'reverse-multiple-choice',
+          mistakes: 1,
+          firstAttemptCorrect: false,
+        });
+
+        expect(mature.lapses).toBe(lapsesBefore + 1);
+        expect(event.effectiveRating).toBe(SRS.Quality.Again);
+        expect(event.firstAttemptCorrect).toBe(false);
+      });
+
+      it('Hard остаётся успешной первой попыткой с явным затруднением', () => {
+        const hard = SRS.newCard(testCardId);
+        const { event } = SRS.applyReview(hard, SRS.Quality.Hard, {
+          mode: 'reverse-multiple-choice',
+          mistakes: 0,
+        });
+
+        expect(event.firstAttemptCorrect).toBe(true);
+        expect(event.effectiveRating).toBe(SRS.Quality.Hard);
       });
 
       it.each([
         [0, SRS.Quality.Easy],
-        [1, SRS.Quality.Good],
-        [2, SRS.Quality.Good],
-        [3, SRS.Quality.Hard],
-        [5, SRS.Quality.Hard],
+        [1, SRS.Quality.Again],
+        [2, SRS.Quality.Again],
+        [3, SRS.Quality.Again],
+        [5, SRS.Quality.Again],
         [6, SRS.Quality.Again],
       ])('оценивает рисование с %i ошибками как quality=%i', (mistakes, quality) => {
         expect(SRS.qualityFromDrawingMistakes(mistakes)).toBe(quality);
