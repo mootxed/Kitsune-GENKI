@@ -665,14 +665,14 @@ p {
   position: relative;
   overflow: hidden;
   border-radius: 22px;
-  padding: 20px;
+  padding: 16px 18px;
   color: var(--streak-text-color, #fff);
   background: linear-gradient(
     135deg,
     var(--streak-bg-start, var(--orange)) 0%,
     var(--streak-bg-end, var(--orange-dark)) 100%
   );
-  box-shadow: 0 8px 22px rgba(245, 78, 0, 0.28);
+  box-shadow: 0 4px 14px rgba(245, 78, 0, 0.12);
   margin-bottom: 16px;
   width: 100%;
   max-width: 100%;
@@ -9439,8 +9439,12 @@ rt {
 }
 
 .today-action {
-  padding: 13px 0;
+  padding: 13px 8px;
   border-top: 1px solid var(--border);
+  border-radius: 14px;
+  margin-left: -8px;
+  margin-right: -8px;
+  transition: background-color 0.2s ease;
 }
 
 .today-action-icon {
@@ -9506,20 +9510,121 @@ rt {
 
 .today-action-button {
   flex: 0 0 auto;
-  padding: 9px 11px;
+  padding: 8px 14px;
   border: 1px solid var(--border);
-  border-radius: 11px;
+  border-radius: 16px;
   color: var(--text);
   font: inherit;
   font-size: 11px;
   font-weight: 800;
   background: var(--bg);
   cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .today-action-button:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+.today-action-button.primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(255, 75, 43, 0.2);
+}
+
+.today-action-button.primary:not(:disabled):hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  box-shadow: 0 6px 16px rgba(255, 75, 43, 0.3);
+}
+
+.today-action-button.secondary {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 20%, transparent);
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 19px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.today-action-button.secondary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  border-color: var(--primary);
+}
+
+.today-action-button.neutral {
+  background: var(--bg-tag);
+  color: var(--text);
+  border-color: var(--border);
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.today-action-button.neutral:not(:disabled):hover {
+  background: color-mix(in srgb, var(--text-muted) 10%, transparent);
+}
+
+/* Completed task status label */
+.task-status-completed {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  color: var(--ok);
+  background-color: color-mix(in srgb, var(--ok) 12%, transparent);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.today-action.clickable {
+  cursor: pointer;
+}
+
+.today-action.clickable:hover {
+  background-color: color-mix(in srgb, var(--primary) 5%, transparent);
+}
+
+/* Accessible focus-visible outline */
+.today-action.clickable:focus-visible,
+.today-action-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.today-completed-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.today-completed-state .completed-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.today-completed-state p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .btn-primary.compact {

@@ -399,44 +399,96 @@ export function renderHome() {
   const continueContext = $('#continue-learning-context');
   const dueFirst = due >= DUE_FIRST_THRESHOLD;
 
+  const dateStatus = state.studyPlan
+    ? StudyPlan.getDateStatus(state.studyPlan, today, {
+        today,
+        learningEvents: state.learningEvents || [],
+        reviewEvents: state.reviewEvents || [],
+      })
+    : null;
+  const isRestDay = dateStatus === 'rest-day';
+
   if (continueTitle) {
-    continueTitle.textContent =
-      activeChapterId === null ? 'Повторить слабые знания' : 'Продолжить обучение';
+    if (isRestDay) {
+      continueTitle.textContent = 'День отдыха';
+    } else if (dueFirst || activeChapterId === null) {
+      continueTitle.textContent =
+        activeChapterId === null ? 'Повторить слабые знания' : 'Повторить SRS';
+    } else {
+      continueTitle.textContent = 'Продолжить обучение';
+    }
   }
   if (continueContext) {
-    if (dueFirst) {
+    if (isRestDay) {
+      continueContext.textContent =
+        due > 0
+          ? `По плану отдых, но накопилось ${due} повторений`
+          : 'Сегодня по плану отдых. Проведите день с пользой!';
+    } else if (dueFirst) {
       continueContext.textContent = `${due} обязательных повторений накопилось — сначала разберём их`;
     } else if (activeChapter && progress) {
-      const section = progress.nextSection?.label || 'Итоговая проверка';
-      const minutes = activeChapter.estimatedMinutes
-        ? ` · ~${Math.max(10, Math.ceil(activeChapter.estimatedMinutes / 5))} мин`
-        : '';
-      continueContext.textContent = `Глава ${activeChapter.id}: ${activeChapter.title} · ${section} · ${progress.completedCount} из ${progress.totalCount}${minutes}`;
+      // Visual/semantic separation: just show high-level chapter info
+      continueContext.textContent = `Глава ${activeChapter.id}: ${activeChapter.title}`;
     } else {
       continueContext.textContent = 'Все главы завершены — закрепите знания по FSRS';
     }
   }
   if (continueButton) {
     continueButton.onclick = () => {
-      if (dueFirst || activeChapterId === null) window.nav('srs');
-      else window.nav('chapter', activeChapterId);
+      if (isRestDay) {
+        if (due > 0) window.nav('srs');
+        else window.nav('course');
+      } else if (dueFirst || activeChapterId === null) {
+        window.nav('srs');
+      } else {
+        window.nav('chapter', activeChapterId);
+      }
     };
   }
 
   const todayContainer = $('#home-plan-today');
   if (todayContainer) {
     todayContainer.innerHTML = renderHomeTodayCard(state, activeChapter, progress);
-    todayContainer.querySelector('[data-action="review"]')?.addEventListener('click', () => {
-      window.nav('srs');
-    });
-    todayContainer.querySelector('[data-action="chapter"]')?.addEventListener('click', () => {
-      if (activeChapterId) window.nav('chapter', activeChapterId);
-    });
+
+    // Bind click events on interactive child elements within today-plan-empty
     todayContainer.querySelector('[data-action="create-plan"]')?.addEventListener('click', () => {
       window.nav('plan');
     });
     todayContainer.querySelector('[data-action="open-plan"]')?.addEventListener('click', () => {
       window.nav('plan');
+    });
+
+    // Bind row click handlers and double-click protection for buttons
+    todayContainer.querySelectorAll('.today-action.clickable').forEach((row) => {
+      row.addEventListener('click', (e) => {
+        // Double-click protection if clicking on the action button directly
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        const action = row.dataset.action;
+        if (action === 'review') window.nav('srs');
+        else if (action === 'chapter') {
+          if (activeChapterId) window.nav('chapter', activeChapterId);
+        } else if (action === 'ai-story') {
+          window.nav('ai-story');
+        } else if (action === 'crossword') {
+          window.nav('crossword');
+        }
+      });
+    });
+
+    // Also bind explicit button clicks inside the rows
+    todayContainer.querySelectorAll('.today-action-button').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Stop propagation to avoid duplicate trigger
+        const action = btn.dataset.action;
+        if (action === 'review') window.nav('srs');
+        else if (action === 'chapter') {
+          if (activeChapterId) window.nav('chapter', activeChapterId);
+        } else if (action === 'ai-story') {
+          window.nav('ai-story');
+        } else if (action === 'crossword') {
+          window.nav('crossword');
+        }
+      });
     });
   }
 
@@ -446,7 +498,7 @@ export function renderHome() {
   syncAvatars();
 }
 
-function renderHomeTodayCard(appState, activeChapter, progress) {
+export function renderHomeTodayCard(appState, activeChapter, progress) {
   if (!appState.studyPlan) {
     return `
       <div class="today-plan-empty">
@@ -459,65 +511,223 @@ function renderHomeTodayCard(appState, activeChapter, progress) {
       </div>`;
   }
 
+  const today = todayStr();
   const context = StudyPlan.getDailyPlanContext(
     appState.studyPlan,
     appState.srs || {},
     appState.masteryArchive || {},
-    undefined,
+    today,
     {
       reviewEvents: appState.reviewEvents || [],
       learningEvents: appState.learningEvents || [],
     }
   );
-  const segment = context.activeSegment;
-  const remaining = Math.max(0, (progress?.totalCount || 0) - (progress?.completedCount || 0));
-  const duration = activeChapter?.estimatedMinutes
-    ? Math.max(10, Math.ceil(activeChapter.estimatedMinutes / 5))
-    : null;
-  const reviewLabel =
-    context.reviewTotalToday > 0
-      ? `${context.reviewedToday} из ${context.reviewTotalToday} выполнено`
-      : 'На сегодня всё выполнено';
-  const overdueLabel =
-    context.overdueCount > 0
-      ? `<span class="today-overdue">${context.overdueCount} просрочено</span>`
-      : '<span class="today-ok">без просрочки</span>';
+
+  const dateStatus = context.dateStatus;
+  const dueCount = context.dueCount;
+  const reviewedToday = context.reviewedToday;
+  const reviewTotalToday = context.reviewTotalToday;
+  const overdueCount = context.overdueCount;
+
+  // Real event evidence of learning section completion today
+  const hasLearningEvidence =
+    (appState.learningEvents || []).some(
+      (event) =>
+        !event.undoneAt &&
+        event.dateKey === today &&
+        event.chapterId === (activeChapter?.id || null) &&
+        ['section-completed', 'chapter-completed'].includes(event.eventType)
+    ) || false;
+
+  const hasFSRSTask = dueCount > 0 || reviewedToday > 0;
+  const fsrsCompleted = dueCount === 0;
+
+  const isRestDay = dateStatus === 'rest-day';
+  const hasChapterTask = !isRestDay && activeChapter !== null;
+  const chapterCompleted = progress ? progress.completed || hasLearningEvidence : true;
+
+  // Build the display tasks array
+  const tasksToDisplay = [];
+
+  if (hasFSRSTask) {
+    const overdueLabel =
+      overdueCount > 0 ? ` · <span class="today-overdue">${overdueCount} просрочено</span>` : '';
+    tasksToDisplay.push({
+      id: 'fsrs',
+      isMandatory: true,
+      isCompleted: fsrsCompleted,
+      title: `Повторить ${reviewTotalToday} карточек`,
+      subtext: `${reviewedToday} из ${reviewTotalToday} выполнено${overdueLabel}`,
+      action: 'review',
+      progressHTML: `<div class="today-progress"><i style="width:${Math.round(context.reviewProgress * 100)}%"></i></div>`,
+    });
+  }
+
+  if (hasChapterTask) {
+    const remaining = Math.max(0, (progress?.totalCount || 0) - (progress?.completedCount || 0));
+    const duration = activeChapter?.estimatedMinutes
+      ? Math.max(10, Math.ceil(activeChapter.estimatedMinutes / 5))
+      : null;
+    const durationLabel = duration ? ` · ~${duration} мин` : '';
+    const sectionLabel = progress?.nextSection?.label || 'Итоговая проверка';
+
+    tasksToDisplay.push({
+      id: 'chapter',
+      isMandatory: true,
+      isCompleted: chapterCompleted,
+      title: `Глава ${activeChapter.id} · ${sectionLabel}`,
+      subtext: `${progress?.completedCount || 0} из ${progress?.totalCount || 0} разделов · осталось ${remaining}${durationLabel}`,
+      action: 'chapter',
+      progressHTML: `<div class="today-progress chapter"><i style="width:${Math.round((progress?.ratio || 0) * 100)}%"></i></div>`,
+    });
+  }
+
+  // Bonus task check: weak words / lapses / low retrievability
+  const now = Date.now();
+  const activeCards = Object.values(appState.srs || {}).filter((c) => !c.suspended && c.reps > 0);
+  const weakCards = activeCards.filter((c) => {
+    const retrievability = SRS.getRetrievability(c, now);
+    return c.lapses > 0 || c.difficulty >= 6.5 || (retrievability > 0 && retrievability < 0.85);
+  });
+
+  const startedLessons = Object.keys(appState.chapters || {}).filter(
+    (id) => appState.chapters[id].started === true
+  ).length;
+  const crosswordUnlocked = startedLessons >= 3;
+
+  let bonusTask = null;
+  if (weakCards.length > 0) {
+    bonusTask = {
+      id: 'ai-story',
+      title: 'Закрепить слабые слова в AI-истории',
+      subtext: `У вас есть ${weakCards.length} сложных слов для тренировки`,
+      action: 'ai-story',
+    };
+  } else if (crosswordUnlocked) {
+    bonusTask = {
+      id: 'crossword',
+      title: 'Решить кроссворд',
+      subtext: 'Закрепляйте изученные слова в игровой форме',
+      action: 'crossword',
+    };
+  }
+
+  if (bonusTask) {
+    tasksToDisplay.push({
+      id: bonusTask.id,
+      isMandatory: false,
+      isCompleted: false,
+      title: bonusTask.title,
+      subtext: bonusTask.subtext,
+      action: bonusTask.action,
+    });
+  }
+
+  // Distribute button styles for uncompleted tasks
+  const uncompletedMandatory = tasksToDisplay.filter((t) => t.isMandatory && !t.isCompleted);
+  tasksToDisplay.forEach((t) => {
+    if (t.isCompleted) return;
+    if (t.isMandatory) {
+      if (t === uncompletedMandatory[0]) {
+        t.btnStyle = 'primary';
+      } else {
+        t.btnStyle = 'secondary';
+      }
+    } else {
+      t.btnStyle = 'neutral';
+    }
+  });
+
+  // Check if all mandatory tasks are done
+  const mandatoryTasks = [];
+  if (hasFSRSTask) mandatoryTasks.push({ isCompleted: fsrsCompleted });
+  if (hasChapterTask) mandatoryTasks.push({ isCompleted: chapterCompleted });
+  const allMandatoryDone =
+    mandatoryTasks.length === 0 || mandatoryTasks.every((t) => t.isCompleted);
+
+  const headerTitle = allMandatoryDone
+    ? 'План на сегодня выполнен ✓'
+    : isRestDay
+      ? 'День отдыха'
+      : 'Конкретные шаги';
+
+  const tasksHTML =
+    tasksToDisplay.length === 0
+      ? `
+      <div class="today-completed-state">
+        <span class="completed-icon">🎉</span>
+        <p>Вы выполнили все обязательные задачи на сегодня. Отличная работа!</p>
+      </div>`
+      : tasksToDisplay
+          .map((task) => {
+            const icon =
+              task.id === 'chapter'
+                ? '章'
+                : task.id === 'ai-story'
+                  ? '✨'
+                  : task.id === 'crossword'
+                    ? '🧩'
+                    : '↻';
+
+            const kindLabel =
+              task.id === 'fsrs'
+                ? 'ОБЯЗАТЕЛЬНО · FSRS'
+                : task.id === 'chapter'
+                  ? 'ОБЯЗАТЕЛЬНО · АКТИВНАЯ ГЛАВА'
+                  : 'ДОПОЛНИТЕЛЬНО · БОНУС';
+
+            const ctaHTML = task.isCompleted
+              ? `<span class="task-status-completed">✓ Выполнено</span>`
+              : (() => {
+                  const btnText =
+                    task.id === 'fsrs'
+                      ? 'Начать повторение'
+                      : task.id === 'chapter'
+                        ? 'Продолжить'
+                        : 'Начать';
+
+                  const btnClass = `today-action-button${
+                    task.btnStyle === 'primary'
+                      ? ' primary'
+                      : task.btnStyle === 'secondary'
+                        ? ' secondary'
+                        : task.btnStyle === 'neutral'
+                          ? ' neutral'
+                          : ''
+                  }`;
+
+                  return `<button class="${btnClass}" data-action="${task.action}">${btnText}</button>`;
+                })();
+
+            const clickableClass = !task.isCompleted ? 'clickable' : '';
+
+            return `
+        <div class="today-action ${task.isMandatory ? 'required' : ''} ${clickableClass}" data-action="${task.action}">
+          <div class="today-action-icon">${icon}</div>
+          <div class="today-action-copy">
+            <span class="today-action-kind">${kindLabel}</span>
+            <strong>${task.title}</strong>
+            <small>${task.subtext}</small>
+            ${task.progressHTML || ''}
+          </div>
+          <div class="today-action-cta">
+            ${ctaHTML}
+          </div>
+        </div>
+      `;
+          })
+          .join('');
 
   return `
     <div class="today-card-header">
       <div>
         <span class="today-eyebrow">ПЛАН НА СЕГОДНЯ</span>
-        <h2>${context.dateStatus === 'rest-day' ? 'День отдыха' : 'Конкретные шаги'}</h2>
+        <h2>${headerTitle}</h2>
       </div>
       <button class="text-button" data-action="open-plan">Весь план</button>
     </div>
-    <div class="today-action required">
-      <div class="today-action-icon">↻</div>
-      <div class="today-action-copy">
-        <span class="today-action-kind">ОБЯЗАТЕЛЬНО · FSRS</span>
-        <strong>Повторить ${context.dueCount} карточек</strong>
-        <small>${reviewLabel} · ${overdueLabel}</small>
-        <div class="today-progress"><i style="width:${Math.round(context.reviewProgress * 100)}%"></i></div>
-      </div>
-      <button class="today-action-button" data-action="review" ${context.dueCount === 0 ? 'disabled' : ''}>Начать</button>
-    </div>
-    ${
-      activeChapter && progress
-        ? `<div class="today-action">
-      <div class="today-action-icon">章</div>
-      <div class="today-action-copy">
-        <span class="today-action-kind">${segment ? 'ТЕКУЩИЙ СЕГМЕНТ' : 'ОСНОВНОЙ РАЗДЕЛ'}</span>
-        <strong>Глава ${activeChapter.id}: ${progress.nextSection?.label || 'Итоговая проверка'}</strong>
-        <small>${progress.completedCount} из ${progress.totalCount} разделов · осталось ${remaining}${duration ? ` · ~${duration} мин` : ''}</small>
-        <div class="today-progress chapter"><i style="width:${Math.round(progress.ratio * 100)}%"></i></div>
-      </div>
-      <button class="today-action-button" data-action="chapter">Продолжить</button>
-    </div>`
-        : `<div class="today-action complete">
-      <div class="today-action-icon">✓</div>
-      <div class="today-action-copy"><strong>Основной курс завершён</strong><small>FSRS продолжит назначать повторения слабых знаний.</small></div>
-    </div>`
-    }`;
+    ${tasksHTML}
+  `;
 }
 
 export function renderCourse() {

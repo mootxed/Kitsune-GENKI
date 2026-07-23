@@ -1,7 +1,7 @@
 import { formatDateKey, getTodayDateKey } from './local-date.js';
 
 export const REQUIRED_CHAPTER_SECTIONS = Object.freeze([
-  Object.freeze({ id: 'vocab', label: 'Слова' }),
+  Object.freeze({ id: 'vocab', label: 'Лексика' }),
   Object.freeze({ id: 'grammar', label: 'Грамматика' }),
   Object.freeze({ id: 'dialog', label: 'Диалог' }),
   Object.freeze({ id: 'listening', label: 'Аудирование' }),
