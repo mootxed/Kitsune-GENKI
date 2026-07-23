@@ -4,7 +4,12 @@
   --orange: #ff4b2b;
   --orange-dark: #e63946;
   --orange-soft: #ffe6d2;
-  --cream: #fff8f5;
+  --indigo: #1e224e;
+  --indigo-dark: #121530;
+  --indigo-soft: #eef0ff;
+  --red-accent: #e04a3f;
+  --red-accent-hover: #c63b31;
+  --cream: #fdfaf6;
   --card: #ffffff;
   --ink: #2b2118;
   --muted: #9a8c7c;
@@ -61,6 +66,11 @@
   --line: #2a2a40;
   --tag: #2a2a40;
   --orange-soft: #2a1a0e;
+  --indigo: #8a91cf;
+  --indigo-dark: #1c1c30;
+  --indigo-soft: #252542;
+  --red-accent: #f86c5f;
+  --red-accent-hover: #ff7f73;
   --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.25);
   --bg: var(--cream);
@@ -1395,7 +1405,7 @@ p {
   transform: translateX(2px) scale(0.98);
 }
 
-/* Кастомный чекбокс */
+/* Кастомный чекбокс - квадратная галочка */
 .chapter-checkbox-item input[type='checkbox'] {
   position: absolute;
   opacity: 0;
@@ -1412,69 +1422,65 @@ p {
   flex: 1;
 }
 
-/* Кастомный чекбокс - органическая форма */
+/* Квадратный чекбокс */
 .chapter-checkbox-item input[type='checkbox'] + .chapter-checkbox-label::before {
   content: '';
   position: absolute;
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 30px;
-  height: 15px;
+  width: 24px;
+  height: 24px;
   border: 3px solid var(--border);
-  border-radius: 30px 100px 100px 100px;
+  border-radius: 6px;
   background: var(--bg-card);
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Переключатель внутри */
+/* Галочка внутри */
 .chapter-checkbox-item input[type='checkbox'] + .chapter-checkbox-label::after {
   content: '';
   position: absolute;
-  left: 0;
+  left: 8px;
   top: 50%;
-  transform: translateY(-50%) scale(0.7);
-  width: 15px;
-  height: 15px;
-  border: 3px solid var(--border);
-  border-radius: 30px 100px 100px 100px;
-  background: var(--orange);
-  box-sizing: border-box;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-50%) rotate(45deg) scale(0);
+  width: 6px;
+  height: 11px;
+  border: solid white;
+  border-width: 0 2.5px 2.5px 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
 }
 
 /* Чекбокс при наведении */
 .chapter-checkbox-item:hover input[type='checkbox'] + .chapter-checkbox-label::before {
   border-color: var(--orange);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-  transform: translateY(-50%) translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 122, 26, 0.3);
+  transform: translateY(-50%) scale(1.05);
 }
 
 /* Активное состояние (нажатие) */
 .chapter-checkbox-item:active input[type='checkbox'] + .chapter-checkbox-label::before {
-  transform: translateY(-50%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-50%) scale(0.95);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Отмеченный чекбокс */
 .chapter-checkbox-item input[type='checkbox']:checked + .chapter-checkbox-label::before {
   background: var(--orange);
-  border-radius: 100px 100px 30px 100px;
   border-color: var(--orange);
+  box-shadow: 0 2px 8px rgba(255, 122, 26, 0.3);
 }
 
 .chapter-checkbox-item input[type='checkbox']:checked + .chapter-checkbox-label::after {
-  left: 15px;
-  background: var(--bg-card);
-  border-radius: 100px 100px 30px 100px;
-  border-color: var(--orange);
+  opacity: 1;
+  transform: translateY(-50%) rotate(45deg) scale(1);
 }
 
 /* Анимация при отметке */
 .chapter-checkbox-item input[type='checkbox']:checked + .chapter-checkbox-label::before {
-  animation: checkboxPulse 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  animation: checkboxPulse 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 @keyframes checkboxPulse {
@@ -3664,6 +3670,116 @@ p {
   color: var(--text);
 }
 
+/* ===== Grammar Tab Styles ===== */
+.grammar-chapters-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 16px 16px;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+.grammar-chapters-row::-webkit-scrollbar {
+  display: none;
+}
+.grammar-chapter-btn {
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 10px 18px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text);
+  white-space: nowrap;
+  min-height: 44px;
+  transition:
+    var(--transition-theme),
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  touch-action: manipulation;
+  box-shadow: 0 2px 0 var(--border);
+}
+.grammar-chapter-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--border);
+}
+.grammar-chapter-btn.active {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+  box-shadow: 0 3px 0 var(--orange-dark);
+}
+.grammar-chapter-btn.active:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--orange-dark);
+}
+.grammar-chapter-btn.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: 0 1px 0 var(--border);
+}
+.grammar-chapter-btn.locked:active {
+  transform: none;
+}
+.grammar-chapter-title {
+  font-weight: 800;
+  font-size: clamp(16px, 4vw, 20px);
+  text-align: center;
+  margin: 0 16px 20px;
+  color: var(--text);
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+  transition: var(--transition-theme);
+}
+.grammar-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 18px;
+  margin: 0 16px 14px;
+  box-shadow: var(--shadow-card);
+  transition: var(--transition-theme);
+}
+.grammar-card-title {
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.3;
+  transition: var(--transition-theme);
+}
+.grammar-card-content {
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  transition: var(--transition-theme);
+}
+.grammar-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.grammar-empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+.grammar-empty-text {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
 /* ===== Settings ===== */
 .set-group {
   background: var(--bg-card);
@@ -3967,11 +4083,11 @@ p {
 }
 
 /* ===== План обучения - форма ===== */
-.plan-entry-card {
+.card.plan-entry-card {
   cursor: pointer;
   transition: transform 0.2s;
 }
-.plan-entry-card:active {
+.card.plan-entry-card:active {
   transform: scale(0.98);
 }
 
@@ -3996,6 +4112,29 @@ p {
 .form-group {
   margin-bottom: 12px;
 }
+
+/* Стили для date input */
+input[type='date'] {
+  position: relative;
+  cursor: pointer;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+input[type='date']:focus {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(255, 75, 43, 0.1);
+}
+
 
 /* Переключатели */
 .plan-deadline-toggle,
@@ -4033,15 +4172,15 @@ p {
 }
 
 .toggle-btn.active {
-  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+  background: var(--indigo, #1e224e);
   color: white;
-  border-color: var(--orange);
-  box-shadow: 0 4px 12px rgba(255, 122, 26, 0.3);
+  border-color: var(--indigo, #1e224e);
+  box-shadow: 0 4px 10px rgba(30, 34, 78, 0.2);
   transform: translateY(0);
 }
 
 .toggle-btn.active:hover {
-  box-shadow: 0 6px 16px rgba(255, 122, 26, 0.4);
+  box-shadow: 0 6px 14px rgba(30, 34, 78, 0.3);
   transform: translateY(-1px);
 }
 
@@ -4080,15 +4219,15 @@ p {
 }
 
 .weekday-btn.active {
-  background: var(--orange);
+  background: var(--indigo, #1e224e);
   color: white;
-  border-color: var(--orange);
-  box-shadow: 0 4px 12px rgba(255, 122, 26, 0.3);
+  border-color: var(--indigo, #1e224e);
+  box-shadow: 0 4px 10px rgba(30, 34, 78, 0.25);
 }
 
 .weekday-btn.active:hover {
-  background: var(--orange-dark);
-  border-color: var(--orange-dark);
+  background: var(--indigo-dark, #121530);
+  border-color: var(--indigo-dark, #121530);
 }
 
 .plan-warning {
@@ -4109,13 +4248,15 @@ p {
 
 .segment-card {
   background: var(--bg-card);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 18px;
   box-shadow: var(--shadow-card);
-  border-left: 4px solid var(--orange);
+  border-left: 5px solid var(--red-accent, #e04a3f);
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.2s ease;
   min-height: 44px;
+  border: 1px solid var(--border);
+  border-left-width: 5px;
 }
 
 .segment-card:active {
@@ -4123,8 +4264,8 @@ p {
 }
 
 .segment-card.review {
-  border-left-color: #9c27b0;
-  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(156, 39, 176, 0.1) 100%);
+  border-left-color: var(--indigo, #1e224e);
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--indigo-soft, #eef0ff) 100%);
 }
 
 .segment-card.in-progress {
@@ -4232,67 +4373,91 @@ p {
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(40px, 48px));
-  gap: 3px;
+  grid-template-columns: repeat(7, minmax(36px, 44px));
+  gap: 6px;
   background: var(--bg-card);
-  padding: 12px;
-  border-radius: 12px;
+  padding: 16px;
+  border-radius: 16px;
   max-width: 360px;
   margin: 0 auto;
   justify-content: center;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border);
 }
 
 .calendar-cell {
   aspect-ratio: 1;
   width: 100%;
-  border-radius: 6px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
-  transition: transform 0.2s;
-  background: rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
   position: relative;
+  color: var(--text);
+  user-select: none;
 }
 
 .calendar-cell.empty {
   background: transparent;
+  color: var(--text-muted);
+  opacity: 0.4;
   cursor: default;
+  padding: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  aspect-ratio: 1;
 }
 
 .calendar-cell.chapter {
-  background: var(--orange);
+  background: var(--red-accent, #e04a3f);
   color: white;
+  box-shadow: 0 4px 8px rgba(224, 74, 63, 0.25);
 }
 
 .calendar-cell.review {
-  background: #9c27b0;
+  background: var(--indigo, #1e224e);
   color: white;
+  box-shadow: 0 4px 8px rgba(30, 34, 78, 0.25);
 }
 
 .calendar-cell.done {
-  opacity: 0.5;
+  opacity: 0.4;
+  box-shadow: none;
 }
 
 .calendar-cell.today {
-  box-shadow: 0 0 0 3px #4caf50;
+  box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--ok);
+}
+
+.calendar-cell.today.chapter {
+  box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--orange);
+}
+
+.calendar-cell.today.review {
+  box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px #7b1fa2;
+}
+
+.calendar-cell:not(.empty):hover {
+  transform: scale(1.1);
+  z-index: 2;
 }
 
 .calendar-cell:not(.empty):active {
-  transform: scale(0.9);
+  transform: scale(0.95);
 }
 
 .calendar-cell-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  background: rgba(0, 0, 0, 0.3);
-  color: white;
-  font-size: 9px;
-  padding: 1px 4px;
-  border-radius: 4px;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  line-height: 1;
 }
 
 /* ===== AI-рекомендации ===== */
@@ -8842,4 +9007,111 @@ rt {
     flex-direction: column;
     gap: 10px;
   }
+}
+
+/* ===== План на сегодня ===== */
+.plan-today-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-card);
+  color: var(--text);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle kitsune ornament in the background */
+.plan-today-card::before {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  right: -20px;
+  width: 120px;
+  height: 120px;
+  opacity: 0.03;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 15 L80 45 L70 50 L80 80 L50 65 L20 80 L30 50 L20 45 Z' fill='%231f2351'/%3E%3C/svg%3E") no-repeat center;
+  background-size: contain;
+  pointer-events: none;
+}
+
+.plan-today-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.plan-today-title {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--indigo, #1e224e);
+}
+
+.plan-today-date {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--red-accent, #e04a3f);
+}
+
+.plan-today-chapter {
+  padding: 8px 0;
+  margin-bottom: 16px;
+}
+
+.plan-today-chapter-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 4px 0;
+  color: var(--indigo, #1e224e);
+}
+
+.plan-today-chapter-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin: 0;
+}
+
+.plan-today-advice {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+}
+
+.plan-today-advice-title {
+  font-size: 12px;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+  color: var(--red-accent, #e04a3f);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.plan-today-advice-tip {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ===== План - календарь ===== */
+.plan-calendar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.plan-calendar-container p.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 16px;
 }

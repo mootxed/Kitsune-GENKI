@@ -1,6 +1,6 @@
 // ui/stories.js - Модуль интерактивных историй
 
-import { $ } from '../src/utils.js';
+import { $, $$ } from '../src/utils.js';
 import { CONTENT_INDEX } from './home.js';
 import { loadChapterData } from '../src/content-loader.js';
 
