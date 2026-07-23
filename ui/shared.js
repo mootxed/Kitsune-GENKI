@@ -6,9 +6,6 @@ import { $, todayStr, pluralDays } from '../src/utils.js';
 
 // ===== COMPLETION SCREEN (ЭКРАН УСПЕХА) =====
 export function showCompletionScreen(options) {
-  console.log('=== ВНУТРИ showCompletionScreen ===');
-  console.log('Полученные опции:', options);
-
   const {
     title = 'おめでとう!',
     subtitle = 'Congratulations!',
@@ -19,16 +16,10 @@ export function showCompletionScreen(options) {
   } = options;
 
   const overlay = document.getElementById('completion-overlay');
-  console.log('Overlay найден в DOM:', !!overlay);
 
   if (!overlay) {
-    console.error('❌ Completion overlay не найден в DOM!');
     return;
   }
-
-  console.log('Классы до показа:', overlay.className);
-  console.log('Display до показа:', window.getComputedStyle(overlay).display);
-  console.log('Opacity до показа:', window.getComputedStyle(overlay).opacity);
 
   // Заполнить контент
   document.getElementById('completion-title').textContent = title;
@@ -57,16 +48,9 @@ export function showCompletionScreen(options) {
   // Показать оверлей
   overlay.classList.remove('hidden');
 
-  console.log('Классы после показа:', overlay.className);
-  console.log('Display после показа:', window.getComputedStyle(overlay).display);
-  console.log('Opacity после показа:', window.getComputedStyle(overlay).opacity);
-  console.log('Z-index после показа:', window.getComputedStyle(overlay).zIndex);
-  console.log('✅ Оверлей должен быть видимым!');
-
   // Обработчик кнопки
   const btn = document.getElementById('btn-completion-continue');
   btn.onclick = () => {
-    console.log('Клик по кнопке CONTINUE');
     overlay.classList.add('hidden');
 
     // Восстанавливаем tabbar при закрытии completion screen

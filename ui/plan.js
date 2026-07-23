@@ -2,8 +2,9 @@
 
 import { StudyPlan } from '../studyplan.js';
 import { $ } from '../src/utils.js';
-import { LESSONS, CONTENT_INDEX } from './home.js';
+import { LESSONS, CONTENT_INDEX, ensureLesson } from './home.js';
 import { nav } from './router.js';
+import { localDateKey, parseDateKey } from '../src/local-date.js';
 
 /**
  * Инициализация и рендеринг экрана плана обучения
@@ -12,10 +13,6 @@ import { nav } from './router.js';
  */
 export function renderPlan(state, dependencies) {
   const { save } = dependencies;
-
-  console.log('[Plan] renderPlan called');
-  console.log('[Plan] LESSONS:', LESSONS);
-  console.log('[Plan] LESSONS length:', LESSONS?.length);
 
   // Кнопка "Назад"
   const backBtn = $('[data-testid="plan-back-btn"]');
@@ -32,7 +29,6 @@ export function renderPlan(state, dependencies) {
 
   // Генерация списка чекбоксов глав - используем setTimeout для гарантии готовности DOM
   setTimeout(() => {
-    console.log('[Plan] Rendering completed chapters list');
     renderCompletedChaptersList(state);
   }, 0);
 
@@ -78,6 +74,78 @@ export function renderPlan(state, dependencies) {
     };
   }
 
+  // Кнопка "Изменить"
+  const editBtn = $('#plan-edit-btn');
+  if (editBtn) {
+    editBtn.onclick = () => {
+      const formContainer = $('#plan-form-container');
+      if (formContainer) {
+        const isHidden = formContainer.classList.contains('hidden');
+        if (isHidden) {
+          formContainer.classList.remove('hidden');
+          // Заполняем форму текущими параметрами плана
+          if (state.studyPlan) {
+            const plan = state.studyPlan;
+            const startDateInput = $('#plan-start-date');
+            if (startDateInput && plan.startDate) {
+              startDateInput.value = plan.startDate;
+            }
+
+            const totalDaysInput = $('#plan-total-days');
+            const deadlineDateInput = $('#plan-deadline-date');
+            const deadlineToggles = document.querySelectorAll('.plan-deadline-toggle .toggle-btn');
+            const daysInputContainer = $('#plan-days-input');
+            const deadlineInputContainer = $('#plan-deadline-input');
+
+            if (plan.deadline) {
+              deadlineToggles.forEach((b) =>
+                b.classList.toggle('active', b.dataset.mode === 'date')
+              );
+              daysInputContainer?.classList.add('hidden');
+              deadlineInputContainer?.classList.remove('hidden');
+              if (deadlineDateInput) deadlineDateInput.value = plan.deadline;
+            } else if (plan.totalDays) {
+              deadlineToggles.forEach((b) =>
+                b.classList.toggle('active', b.dataset.mode === 'days')
+              );
+              daysInputContainer?.classList.remove('hidden');
+              deadlineInputContainer?.classList.add('hidden');
+              if (totalDaysInput) totalDaysInput.value = plan.totalDays;
+            }
+
+            // Дни недели
+            const weekdayBtns = document.querySelectorAll('.weekday-btn');
+            weekdayBtns.forEach((btn) => {
+              const day = parseInt(btn.dataset.day);
+              btn.classList.toggle('active', plan.studyDaysOfWeek?.includes(day));
+            });
+
+            // Изученные главы (чекбоксы)
+            const checkboxes = document.querySelectorAll('.chapter-checkbox');
+            checkboxes.forEach((cb) => {
+              const chId = parseInt(cb.dataset.chapterId);
+              cb.checked = plan.completedChapters?.includes(chId) || false;
+            });
+
+            // Обновим виджет прогресса сразу
+            const totalChaptersCount = checkboxes.length;
+            const checkedCount = document.querySelectorAll('.chapter-checkbox:checked').length;
+            const pct =
+              totalChaptersCount > 0 ? Math.round((checkedCount / totalChaptersCount) * 100) : 0;
+            const progressBarFill = $('#plan-progress-bar-fill');
+            const progressText = $('#plan-progress-text');
+            if (progressBarFill) progressBarFill.style.width = `${pct}%`;
+            if (progressText) {
+              progressText.textContent = `Изучено: ${checkedCount} из ${totalChaptersCount} глав (${pct}%)`;
+            }
+          }
+        } else {
+          formContainer.classList.add('hidden');
+        }
+      }
+    };
+  }
+
   // Кнопка "Пересчитать план"
   const recalcBtn = $('#plan-recalc-btn');
   if (recalcBtn) {
@@ -85,9 +153,13 @@ export function renderPlan(state, dependencies) {
       if (!state.studyPlan) return;
 
       const completedChapters = getCompletedChapters();
-      // ИСПРАВЛЕНИЕ: используем CONTENT_INDEX если LESSONS пуст
-      const chaptersSource = LESSONS.length > 0 ? LESSONS : CONTENT_INDEX;
-      const recalculated = StudyPlan.recalcPlan(state.studyPlan, chaptersSource, completedChapters);
+      const recalculated = StudyPlan.recalcPlan(state.studyPlan, CONTENT_INDEX, completedChapters);
+
+      // Дедлайн истёк — показываем диалог выбора
+      if (recalculated.deadlineExpired) {
+        showDeadlineExpiredDialog(recalculated, state, save, completedChapters);
+        return;
+      }
 
       if (recalculated.error) {
         showPlanWarning(recalculated.error);
@@ -98,6 +170,36 @@ export function renderPlan(state, dependencies) {
       save();
       renderPlanView(state);
       toast('План пересчитан! 🔄', { duration: 3000 });
+    };
+  }
+
+  // Кнопка "Приостановить"
+  const pauseBtn = $('#plan-pause-btn');
+  if (pauseBtn) {
+    pauseBtn.onclick = () => {
+      if (!state.studyPlan) return;
+      state.studyPlan.paused = !state.studyPlan.paused;
+      save();
+      pauseBtn.innerHTML = state.studyPlan.paused ? '▶️ Возобновить' : '⏸️ Приостановить';
+      const viewContainer = $('#plan-view-container');
+      if (viewContainer) {
+        viewContainer.classList.toggle('plan-paused', state.studyPlan.paused);
+      }
+      toast(state.studyPlan.paused ? 'План приостановлен ⏸️' : 'План возобновлен ▶️', {
+        duration: 3000,
+      });
+    };
+  }
+
+  // Кнопка "Удалить"
+  const deleteBtn = $('#plan-delete-btn');
+  if (deleteBtn) {
+    deleteBtn.onclick = () => {
+      if (!confirm('Вы действительно хотите удалить текущий план обучения?')) return;
+      state.studyPlan = null;
+      save();
+      renderPlan(state, dependencies);
+      toast('План обучения удален 🗑️', { duration: 3000 });
     };
   }
 
@@ -114,25 +216,15 @@ export function renderPlan(state, dependencies) {
 function renderCompletedChaptersList(state) {
   const container = $('#completed-chapters-list');
 
-  console.log('[Plan] renderCompletedChaptersList called');
-  console.log('[Plan] Container:', container);
-  console.log('[Plan] LESSONS:', LESSONS);
-  console.log('[Plan] CONTENT_INDEX:', CONTENT_INDEX);
-  console.log('[Plan] CONTENT_INDEX length:', CONTENT_INDEX?.length);
-
   if (!container) {
-    console.error('[Plan] Container #completed-chapters-list not found!');
     return;
   }
 
-  // Используем CONTENT_INDEX если LESSONS ещё не загружен
-  const chapters = LESSONS.length > 0 ? LESSONS : CONTENT_INDEX;
+  const chapters = CONTENT_INDEX.length > 0 ? CONTENT_INDEX : LESSONS;
 
   if (!chapters || chapters.length === 0) {
-    console.error('[Plan] Both LESSONS and CONTENT_INDEX are empty!');
     container.innerHTML =
       '<p style="color: var(--text-muted); font-size: 14px;">Загрузка глав...</p>';
-    // ИСПРАВЛЕНИЕ: Повторяем попытку через 500ms если данные ещё не загружены
     setTimeout(() => {
       if ((LESSONS.length > 0 || CONTENT_INDEX.length > 0) && container) {
         renderCompletedChaptersList(state);
@@ -141,20 +233,21 @@ function renderCompletedChaptersList(state) {
     return;
   }
 
-  // Проверяем реальный прогресс из state.chapters
-  console.log('[Plan] state.chapters:', state.chapters);
-  console.log('[Plan] Using chapters source:', LESSONS.length > 0 ? 'LESSONS' : 'CONTENT_INDEX');
+  const totalChaptersCount = chapters.length;
+  let completedChaptersCount = 0;
 
   const html = chapters
     .map((chapter) => {
-      // Проверяем, завершена ли глава (все чек-итемы выполнены)
       const chapterData = state.chapters?.[chapter.id];
       let isCompleted = false;
 
       if (chapterData?.items) {
-        // Глава считается завершённой, если все чек-итемы выполнены
         const itemsArray = Object.values(chapterData.items);
         isCompleted = itemsArray.length > 0 && itemsArray.every((done) => done === true);
+      }
+
+      if (isCompleted) {
+        completedChaptersCount++;
       }
 
       return `
@@ -171,9 +264,32 @@ function renderCompletedChaptersList(state) {
     })
     .join('');
 
-  console.log('[Plan] Generated HTML length:', html.length);
   container.innerHTML = html;
-  console.log('[Plan] Checkboxes rendered successfully');
+
+  // Обновляем компактный виджет прогресса
+  const percentage =
+    totalChaptersCount > 0 ? Math.round((completedChaptersCount / totalChaptersCount) * 100) : 0;
+  const progressBarFill = $('#plan-progress-bar-fill');
+  const progressText = $('#plan-progress-text');
+  if (progressBarFill) {
+    progressBarFill.style.width = `${percentage}%`;
+  }
+  if (progressText) {
+    progressText.textContent = `Изучено автоматически: ${completedChaptersCount} из ${totalChaptersCount} глав (${percentage}%)`;
+  }
+
+  // При изменении чекбоксов (ручной выбор) динамически обновляем процент
+  container.querySelectorAll('.chapter-checkbox').forEach((cb) => {
+    cb.addEventListener('change', () => {
+      const checkedCount = container.querySelectorAll('.chapter-checkbox:checked').length;
+      const pct =
+        totalChaptersCount > 0 ? Math.round((checkedCount / totalChaptersCount) * 100) : 0;
+      if (progressBarFill) progressBarFill.style.width = `${pct}%`;
+      if (progressText) {
+        progressText.textContent = `Изучено: ${checkedCount} из ${totalChaptersCount} глав (${pct}%)`;
+      }
+    });
+  });
 }
 
 /**
@@ -228,8 +344,9 @@ function collectPlanParams(state) {
     params.deadline = deadlineDateInput.value;
   }
 
-  // ИСПРАВЛЕНИЕ: используем CONTENT_INDEX если LESSONS пуст
-  const chaptersSource = LESSONS.length > 0 ? LESSONS : CONTENT_INDEX;
+  // CONTENT_INDEX гарантированно заполнен после loadLessons().
+  // Полные данные (LESSONS) используются только в getHeuristicAdvice (через ensureLesson).
+  const chaptersSource = CONTENT_INDEX;
   const plan = StudyPlan.generatePlan(params, chaptersSource, completedChapters);
 
   if (plan.error) {
@@ -260,6 +377,66 @@ function showPlanWarning(message) {
 }
 
 /**
+ * Показывает диалог выбора при истёкшем дедлайне.
+ * Предлагает два варианта: сдвинуть дедлайн или повысить нагрузку.
+ *
+ * @param {Object} expiredResult - результат recalcPlan с deadlineExpired: true
+ * @param {Object} state         - глобальное состояние
+ * @param {Function} save        - функция сохранения
+ * @param {number[]} completedChapters
+ */
+function showDeadlineExpiredDialog(expiredResult, state, save, completedChapters) {
+  const warning = $('#plan-warning');
+  if (!warning) return;
+
+  warning.innerHTML = `
+    <div class="deadline-expired-dialog">
+      <p class="deadline-expired-title">⏰ Дедлайн <strong>${expiredResult.expiredDeadline}</strong> истёк!</p>
+      <p class="deadline-expired-subtitle">Выберите, как продолжить:</p>
+      <div class="deadline-expired-options">
+        ${expiredResult.options
+          .map(
+            (opt) => `
+          <button
+            class="deadline-option-btn"
+            data-option-type="${opt.type}"
+            data-params='${JSON.stringify(opt.params)}'
+          >${opt.label}</button>
+        `
+          )
+          .join('')}
+      </div>
+    </div>
+  `;
+  warning.classList.remove('hidden');
+
+  // Обработчики кнопок выбора
+  warning.querySelectorAll('.deadline-option-btn').forEach((btn) => {
+    btn.onclick = () => {
+      const params = JSON.parse(btn.dataset.params);
+      const newPlan = StudyPlan.generatePlan(params, CONTENT_INDEX, completedChapters);
+
+      if (newPlan.error) {
+        showPlanWarning(newPlan.error);
+        return;
+      }
+
+      newPlan.completedChapters = completedChapters;
+      state.studyPlan = newPlan;
+      save();
+      warning.classList.add('hidden');
+      renderPlanView(state);
+      toast('План пересчитан! 🔄', { duration: 3000 });
+    };
+  });
+
+  // Автоскрытие через 30 сек
+  setTimeout(() => {
+    warning.classList.add('hidden');
+  }, 30000);
+}
+
+/**
  * Отобразить сгенерированный план
  * @param {Object} state - Глобальное состояние приложения
  */
@@ -267,35 +444,41 @@ function renderPlanView(state) {
   const formContainer = $('#plan-form-container');
   const viewContainer = $('#plan-view-container');
   const generateBtn = $('#plan-generate-btn');
-  const recalcBtn = $('#plan-recalc-btn');
+  const planControls = $('#plan-controls');
 
   if (!state.studyPlan || state.studyPlan.error) {
-    // Если плана нет или есть ошибка, показываем форму
     if (formContainer) formContainer.classList.remove('hidden');
     if (viewContainer) viewContainer.classList.add('hidden');
     if (generateBtn) generateBtn.classList.remove('hidden');
-    if (recalcBtn) recalcBtn.classList.add('hidden');
+    if (planControls) planControls.classList.add('hidden');
     return;
   }
 
-  // Скрываем форму и кнопку "Создать"
   if (formContainer) formContainer.classList.add('hidden');
   if (generateBtn) generateBtn.classList.add('hidden');
+  if (viewContainer) {
+    viewContainer.classList.remove('hidden');
+    viewContainer.classList.toggle('plan-paused', !!state.studyPlan.paused);
+  }
 
-  // Показываем "Пересчитать" и контейнер с планом
-  if (recalcBtn) recalcBtn.classList.remove('hidden');
-  if (viewContainer) viewContainer.classList.remove('hidden');
+  if (planControls) {
+    planControls.classList.remove('hidden');
+    const pauseBtn = $('#plan-pause-btn');
+    if (pauseBtn) {
+      pauseBtn.innerHTML = state.studyPlan.paused ? '▶️ Возобновить' : '⏸️ Приостановить';
+    }
+  }
 
-  // Рендерим содержимое плана
-  renderPlanTimeline(state.studyPlan, viewContainer);
+  renderPlanTimeline(state.studyPlan, viewContainer, state);
 }
 
 /**
  * Отобразить план обучения с виджетом "План на сегодня", таймлайном, календарём и советами
  * @param {Object} plan - Объект плана обучения
  * @param {HTMLElement} container - Контейнер для рендеринга
+ * @param {Object} [state] - Глобальное состояние (для FSRS + mastery в renderTodayPlan)
  */
-function renderPlanTimeline(plan, container) {
+function renderPlanTimeline(plan, container, state) {
   if (!plan || !plan.segments || plan.segments.length === 0) {
     container.innerHTML = '<p class="empty">План обучения пуст</p>';
     return;
@@ -309,7 +492,7 @@ function renderPlanTimeline(plan, container) {
 
   // 1. Показываем/скрываем и рендерим План на сегодня
   if (todayCard) {
-    const todayWidget = renderTodayPlan(plan);
+    const todayWidget = renderTodayPlan(plan, state);
     if (todayWidget) {
       todayCard.innerHTML = todayWidget;
       todayCard.classList.remove('hidden');
@@ -325,15 +508,22 @@ function renderPlanTimeline(plan, container) {
     // Добавляем интерактивность кликам на карточки таймлайна
     const timelineCards = timelineContainer.querySelectorAll('.segment-card');
     timelineCards.forEach((card) => {
+      // Ленивая подгрузка полного урока для получения words/grammar (getHeuristicAdvice)
       card.onclick = () => {
         const chapterId = parseInt(card.dataset.chapterId);
         if (!chapterId) return;
-        const chaptersSource = LESSONS.length > 0 ? LESSONS : CONTENT_INDEX;
-        const chapterData = chaptersSource.find((c) => c.id === chapterId);
+        const chaptersSource = CONTENT_INDEX;
         const segment = plan.segments.find((s) => s.chapterId === chapterId);
-        if (chapterData && segment) {
-          renderAdvice(chapterData, segment.days);
-          $('#plan-advice-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (segment) {
+          ensureLesson(chapterId)
+            .then(({ lesson }) => {
+              renderAdvice(lesson, segment.days);
+              $('#plan-advice-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            })
+            .catch(() => {
+              const chapterData = chaptersSource.find((c) => c.id === chapterId);
+              if (chapterData) renderAdvice(chapterData, segment.days);
+            });
         }
       };
     });
@@ -341,25 +531,7 @@ function renderPlanTimeline(plan, container) {
 
   // 3. Рендерим календарную сетку
   if (calendarGrid) {
-    calendarGrid.innerHTML = renderPlanCalendar(plan);
-
-    // Добавляем интерактивность кликам по дням календаря
-    const calendarCells = calendarGrid.querySelectorAll('.calendar-cell');
-    calendarCells.forEach((cell) => {
-      cell.onclick = () => {
-        const chapterInfo = cell.dataset.chapterInfo;
-        if (!chapterInfo || chapterInfo === 'Повторение') return;
-        const chapterId = parseInt(chapterInfo.replace('Глава ', ''));
-        if (!chapterId) return;
-        const chaptersSource = LESSONS.length > 0 ? LESSONS : CONTENT_INDEX;
-        const chapterData = chaptersSource.find((c) => c.id === chapterId);
-        const segment = plan.segments.find((s) => s.chapterId === chapterId);
-        if (chapterData && segment) {
-          renderAdvice(chapterData, segment.days);
-          $('#plan-advice-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-      };
-    });
+    renderPlanCalendar(plan);
   }
 
   // 4. Переключатели вида
@@ -394,14 +566,18 @@ function renderPlanTimeline(plan, container) {
 
   // 5. Рендерим советы по умолчанию для первой незавершённой главы
   if (adviceContainer) {
-    const chaptersSource = LESSONS.length > 0 ? LESSONS : CONTENT_INDEX;
+    // CONTENT_INDEX гарантированно заполнен после loadLessons()
+    const chaptersSource = CONTENT_INDEX.length > 0 ? CONTENT_INDEX : LESSONS;
     const activeSegment = plan.segments.find(
       (s) => s.type === 'chapter' && !plan.completedChapters?.includes(s.chapterId)
     );
     if (activeSegment) {
       const chapterData = chaptersSource.find((c) => c.id === activeSegment.chapterId);
       if (chapterData) {
-        renderAdvice(chapterData, activeSegment.days);
+        // Ленивая подгрузка полного урока для получения words/grammar
+        ensureLesson(chapterData.id)
+          .then(({ lesson }) => renderAdvice(lesson, activeSegment.days))
+          .catch(() => renderAdvice(chapterData, activeSegment.days));
       } else {
         adviceContainer.classList.add('hidden');
       }
@@ -425,14 +601,16 @@ function renderPlanTimeline(plan, container) {
  * @returns {string} HTML список сегментов
  */
 function renderTimelineList(plan) {
-  const chaptersSource = LESSONS.length > 0 ? LESSONS : CONTENT_INDEX;
-  const today = new Date();
+  const chaptersSource = CONTENT_INDEX.length > 0 ? CONTENT_INDEX : LESSONS;
+  const today = parseDateKey(localDateKey()); // локальная полночь, без UTC-сдвига
   today.setHours(0, 0, 0, 0);
 
   return plan.segments
+    .filter((segment) => segment.type === 'chapter')
     .map((segment) => {
-      const start = new Date(segment.startDate);
-      const end = new Date(segment.endDate);
+      // parseDateKey: правильный локальный парсинг вместо new Date(string)
+      const start = parseDateKey(segment.startDate);
+      const end = parseDateKey(segment.endDate);
       start.setHours(0, 0, 0, 0);
       end.setHours(0, 0, 0, 0);
 
@@ -453,7 +631,10 @@ function renderTimelineList(plan) {
         segmentLabel = 'Изучение новой темы';
         badgeText = `${segment.days} дн.`;
 
-        if (plan.completedChapters?.includes(segment.chapterId)) {
+        // Проверяем сохранённый статус из dateStatuses, затем completedChapters
+        const todayKey = localDateKey();
+        const savedStatus = segment.dateStatuses?.[todayKey];
+        if (savedStatus === 'done' || plan.completedChapters?.includes(segment.chapterId)) {
           isDone = true;
           isOverdue = false;
         }
@@ -468,11 +649,21 @@ function renderTimelineList(plan) {
         }
       }
 
+      // Сохранённый статус из dateStatuses переопределяет вычисленный
+      const storedStatus = segment.dateStatuses?.[localDateKey()];
       let statusText = 'Предстоит';
       let statusClass = 'upcoming';
       let cardClass = '';
 
-      if (isDone) {
+      if (storedStatus === 'skipped') {
+        statusText = 'Пропущено';
+        statusClass = 'skipped';
+        cardClass = 'skipped';
+      } else if (storedStatus === 'rescheduled') {
+        statusText = 'Перенесено';
+        statusClass = 'rescheduled';
+        cardClass = 'rescheduled';
+      } else if (isDone) {
         statusText = 'Завершено';
         statusClass = 'done';
         cardClass = 'done';
@@ -492,8 +683,8 @@ function renderTimelineList(plan) {
         cardClass += ' review';
       }
 
-      const startStr = formatDate(start);
-      const endStr = formatDate(end);
+      const startStr = formatDate(parseDateKey(segment.startDate));
+      const endStr = formatDate(parseDateKey(segment.endDate));
 
       return `
       <div class="segment-card ${cardClass}" data-chapter-id="${segment.chapterId || ''}">
@@ -570,22 +761,32 @@ function renderAdvice(chapter, days) {
 }
 
 /**
- * Рендер виджета "План на сегодня"
- * @param {Object} plan - Объект плана обучения
+ * Рендер виджета "План на сегодня" с FSRS-контекстом.
+ * @param {Object} plan  - объект плана
+ * @param {Object} state - глобальное состояние (для FSRS + mastery)
  * @returns {string} HTML виджета
  */
-function renderTodayPlan(plan) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+function renderTodayPlan(plan, state) {
+  const today = localDateKey();
+  const todayDate = parseDateKey(today);
+  todayDate.setHours(0, 0, 0, 0);
 
-  // Найти сегмент на сегодня
-  const todaySegment = plan.segments.find((segment) => {
-    const start = new Date(segment.startDate);
-    const end = new Date(segment.endDate);
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
-    return today >= start && today <= end;
-  });
+  // FSRS-контекст: due-карточки + mastery + режим сессии
+  const ctx = state
+    ? StudyPlan.getDailyPlanContext(plan, state.srs || {}, state.masteryArchive || {})
+    : null;
+
+  // Найти сегмент на сегодня (assignedDates-формат или диапазон)
+  const todaySegment =
+    ctx?.activeSegment ||
+    plan.segments.find((segment) => {
+      if (segment.assignedDates) return segment.assignedDates.includes(today);
+      const start = parseDateKey(segment.startDate);
+      const end = parseDateKey(segment.endDate);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      return todayDate >= start && todayDate <= end;
+    });
 
   if (!todaySegment) {
     return ''; // Нет задания на сегодня
@@ -601,18 +802,30 @@ function renderTodayPlan(plan) {
       ? 'Изучение нового материала'
       : 'Закрепление пройденного';
 
-  // Умный совет на основе типа задания
+  // Основной совет на основе типа задания
   const advice =
     todaySegment.type === 'chapter' && todaySegment.chapterId
       ? 'Сконцентрируйтесь на понимании грамматики и практике новых слов.'
       : 'Повторите карточки и пройдите квиз для закрепления материала.';
 
+  // FSRS-блоки: предупреждение о много дю и низком mastery
+  const dueWarning =
+    ctx && ctx.dueCount > 5
+      ? `<p class="plan-due-warning">⚠️ ${ctx.dueCount} карточек к повторению — начните с них!</p>`
+      : '';
+
+  const masteryHint =
+    ctx && ctx.shouldSlowDown
+      ? `<p class="plan-mastery-hint">🐢 Mastery низкий (${Math.round(ctx.chapterMastery.avgScore)}%) — замедлитесь, закрепите текущий материал</p>`
+      : '';
+
   return `
     <div class="plan-today-card">
       <div class="plan-today-header">
         <h3 class="plan-today-title">📅 План на сегодня</h3>
-        <span class="plan-today-date">${formatDate(today)}</span>
+        <span class="plan-today-date">${formatDate(todayDate)}</span>
       </div>
+      ${dueWarning}${masteryHint}
       <div class="plan-today-chapter">
         <h4 class="plan-today-chapter-title">${chapterText}</h4>
         <p class="plan-today-chapter-subtitle">${chapterSubtitle}</p>
@@ -625,56 +838,14 @@ function renderTodayPlan(plan) {
   `;
 }
 
-/**
- * Рендер календаря с планом обучения
- * @param {Object} plan - Объект плана обучения
- * @returns {string} HTML календаря
- */
-function renderPlanCalendar(plan) {
-  // Создаём карту дат -> главы
-  const dateMap = new Map();
-  plan.segments.forEach((segment) => {
-    const start = new Date(segment.startDate);
-    const end = new Date(segment.endDate);
-
-    let d = new Date(start);
-    while (d <= end) {
-      const dateKey = d.toISOString().split('T')[0];
-      const info = segment.type === 'chapter' ? `Глава ${segment.chapterId}` : 'Повторение';
-      dateMap.set(dateKey, info);
-      d.setUTCDate(d.getUTCDate() + 1);
-    }
-  });
-
-  // Определяем диапазон месяцев для отображения
-  const startDate = new Date(plan.segments[0].startDate);
-  const endDate = new Date(plan.segments[plan.segments.length - 1].endDate);
-
-  let html = '<div class="plan-calendar-container">';
-
-  // Генерируем календари для каждого месяца
-  let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-  const lastMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-
-  while (current <= lastMonth) {
-    html += renderMonthCalendar(current, dateMap);
-    current.setMonth(current.getMonth() + 1);
-  }
-
-  html += '</div>';
-  return html;
-}
+// Глобальное состояние месяца для календаря плана (выносим наружу чтобы сохранялось при перерендерах)
+let planHeatmapMonth = new Date();
 
 /**
- * Рендер календаря одного месяца
- * @param {Date} month - Месяц для отображения
- * @param {Map} dateMap - Карта дат с информацией о главах
- * @returns {string} HTML календаря месяца
+ * Вспомогательная функция для форматирования месяца и года
  */
-function renderMonthCalendar(month, dateMap) {
-  const year = month.getFullYear();
-  const monthIndex = month.getMonth();
-  const monthNames = [
+function monthLabel(date) {
+  const months = [
     'Январь',
     'Февраль',
     'Март',
@@ -688,77 +859,170 @@ function renderMonthCalendar(month, dateMap) {
     'Ноябрь',
     'Декабрь',
   ];
+  return `${months[date.getMonth()]} ${date.getFullYear()}`;
+}
 
-  const firstDay = new Date(year, monthIndex, 1);
-  const lastDay = new Date(year, monthIndex + 1, 0);
-  const daysInMonth = lastDay.getDate();
-  const startDayOfWeek = (firstDay.getDay() + 6) % 7; // Понедельник = 0
+/**
+ * Рендер календаря с планом обучения в виде Heatmap
+ * @param {Object} plan - Объект плана обучения
+ */
+function renderPlanCalendar(plan) {
+  const grid = $('#plan-heatmap-grid');
+  const label = $('#plan-heatmap-month-label');
+  const legend = $('#plan-heatmap-legend');
 
+  if (!grid || !label) return;
+  grid.innerHTML = '';
+  label.textContent = monthLabel(planHeatmapMonth);
+
+  const year = planHeatmapMonth.getFullYear();
+  const month = planHeatmapMonth.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayDate = today.getDate();
+  const todayMonth = today.getMonth();
+  const todayYear = today.getFullYear();
 
-  let html = `
-    <div class="calendar-month">
-      <h3 class="calendar-month-header">${monthNames[monthIndex]} ${year}</h3>
-      <div class="calendar-weekdays">
-        <div class="calendar-weekday">Пн</div>
-        <div class="calendar-weekday">Вт</div>
-        <div class="calendar-weekday">Ср</div>
-        <div class="calendar-weekday">Чт</div>
-        <div class="calendar-weekday">Пт</div>
-        <div class="calendar-weekday">Сб</div>
-        <div class="calendar-weekday">Вс</div>
-      </div>
-      <div class="calendar-grid">
-  `;
-
-  // Пустые ячейки до первого дня месяца
-  for (let i = 0; i < startDayOfWeek; i++) {
-    html += '<div class="calendar-cell empty"></div>';
+  // Собираем карту дней из плана
+  const dateMap = new Map();
+  if (plan && plan.segments) {
+    plan.segments
+      .filter((segment) => segment.type === 'chapter')
+      .forEach((segment) => {
+        const dates = segment.assignedDates || getDateRange(segment.startDate, segment.endDate);
+        dates.forEach((dateKey) => {
+          const info = `Глава ${segment.chapterId}`;
+          dateMap.set(dateKey, { dateKey, info, type: segment.type, chapterId: segment.chapterId });
+        });
+      });
   }
 
-  // Дни месяца
+  // Подсчитываем статистику для легенды за выбранный месяц
+  let chaptersCount = 0;
   for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, monthIndex, day);
-    const dateKey = date.toISOString().split('T')[0];
-    const chapters = dateMap.get(dateKey);
+    const mm = String(month + 1).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+    const key = `${year}-${mm}-${dd}`;
+    const planItem = dateMap.get(key);
+    if (planItem && planItem.type === 'chapter') {
+      chaptersCount++;
+    }
+  }
 
-    let classes = 'calendar-cell';
-    let content = day;
-    let dataAttrs = '';
+  // Обновляем легенду
+  if (legend) {
+    legend.innerHTML = `
+      <div class="heatmap-legend-item">
+        <div class="heatmap-legend-dot" style="background:var(--ok)"></div>
+        <span>${chaptersCount} дн. изучения глав</span>
+      </div>
+    `;
+  }
 
-    if (chapters) {
-      dataAttrs = `data-chapter-info="${chapters}"`;
-      if (chapters === 'Повторение') {
-        classes += ' review';
-      } else {
-        classes += ' chapter';
-      }
+  // Первый день месяца (Пн = 0, Вт = 1, ..., Вс = 6)
+  let firstDay = new Date(year, month, 1).getDay();
+  firstDay = firstDay === 0 ? 6 : firstDay - 1;
 
-      if (date.getTime() === today.getTime()) {
-        classes += ' today';
-      }
+  // Пустые ячейки до первого дня
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'heatmap-day heatmap-empty';
+    grid.appendChild(empty);
+  }
 
-      if (date < today) {
-        classes += ' done';
-      }
+  // Заполняем дни месяца
+  for (let day = 1; day <= daysInMonth; day++) {
+    const mm = String(month + 1).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+    const key = `${year}-${mm}-${dd}`;
+    const planItem = dateMap.get(key);
 
-      // Добавляем бейдж с информацией
-      const badge = chapters === 'Повторение' ? '🔄' : `📖`;
-      content = `${day}<span class="calendar-cell-badge">${badge}</span>`;
-    } else {
-      classes += ' empty';
+    const cell = document.createElement('div');
+    cell.className = 'heatmap-day';
+    cell.style.flexDirection = 'column'; // Чтобы текст был под цифрой
+    cell.style.gap = '2px';
+
+    const dayNumber = document.createElement('span');
+    dayNumber.textContent = day;
+    cell.appendChild(dayNumber);
+
+    // Проверяем, является ли этот день сегодняшним
+    const isToday = day === todayDate && month === todayMonth && year === todayYear;
+
+    if (isToday) {
+      cell.classList.add('today');
     }
 
-    html += `<div class="${classes}" ${dataAttrs}>${content}</div>`;
+    if (planItem) {
+      // Подсвечиваем цветом главы
+      cell.style.backgroundColor = 'var(--ok)';
+      cell.style.color = '#fff';
+      cell.title = planItem.info;
+
+      const infoText = document.createElement('span');
+      infoText.style.fontSize = '8px';
+      infoText.style.lineHeight = '1';
+      infoText.style.fontWeight = '500';
+      infoText.style.opacity = '0.9';
+      infoText.textContent = `Гл. ${planItem.chapterId}`;
+      cell.appendChild(infoText);
+
+      // Клик по ячейке с планом
+      cell.onclick = (e) => {
+        e.stopPropagation();
+        if (!planItem.chapterId) return;
+        const chaptersSource = LESSONS.length > 0 ? LESSONS : CONTENT_INDEX;
+        const chapterData = chaptersSource.find((c) => c.id === planItem.chapterId);
+        const segment = plan.segments.find((s) => s.chapterId === planItem.chapterId);
+        if (chapterData && segment) {
+          renderAdvice(chapterData, segment.days);
+          $('#plan-advice-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      };
+    } else {
+      cell.title = 'Нет занятий';
+      // Если день в прошлом и не today, немного гасим (как в future)
+      const cellDate = new Date(year, month, day);
+      if (cellDate < today && !isToday) {
+        cell.style.opacity = '0.5';
+      } else if (cellDate > today) {
+        cell.classList.add('future');
+      }
+    }
+
+    grid.appendChild(cell);
   }
 
-  html += `
-      </div>
-    </div>
-  `;
+  // Обработчики кнопок навигации месяцев (навешиваем один раз, поэтому проверяем)
+  const prevBtn = $('#plan-heatmap-prev');
+  const nextBtn = $('#plan-heatmap-next');
+  if (prevBtn && !prevBtn.onclick) {
+    prevBtn.onclick = () => {
+      planHeatmapMonth.setMonth(planHeatmapMonth.getMonth() - 1);
+      renderPlanCalendar(plan);
+    };
+  }
+  if (nextBtn && !nextBtn.onclick) {
+    nextBtn.onclick = () => {
+      planHeatmapMonth.setMonth(planHeatmapMonth.getMonth() + 1);
+      renderPlanCalendar(plan);
+    };
+  }
+}
 
-  return html;
+/**
+ * Вспомогательная функция для обратной совместимости со старыми планами (без assignedDates).
+ * Использует parseDateKey — нет UTC-сдвига.
+ */
+function getDateRange(startDate, endDate) {
+  const dates = [];
+  const current = parseDateKey(startDate);
+  const end = parseDateKey(endDate);
+  while (current <= end) {
+    dates.push(localDateKey(current));
+    current.setDate(current.getDate() + 1);
+  }
+  return dates;
 }
 
 /**

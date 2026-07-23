@@ -470,8 +470,6 @@ function generateParticleQuiz(particle, lessonData, state, LESSONS) {
     const distractors = shuffleArray(unlockedParticles).slice(0, 3);
     const options = shuffleArray([example.correct, ...distractors]);
 
-    console.log(`[particle-quiz] Использую готовое предложение для частицы ${particle}`);
-
     return {
       sentence: example.sentence,
       correctParticle: example.correct,
@@ -531,10 +529,8 @@ function generateParticleQuiz(particle, lessonData, state, LESSONS) {
       selectedWords.map((w) => w.id),
       selectedWords
     );
+
     if (!word) {
-      console.log(
-        `[particle-quiz] Не удалось подобрать слова для частицы ${particle}, откат к готовым предложениям`
-      );
       // Откат к готовым предложениям если они есть
       if (curatedSentences && curatedSentences.length > 0) {
         const example = curatedSentences[Math.floor(Math.random() * curatedSentences.length)];
@@ -574,8 +570,6 @@ function generateParticleQuiz(particle, lessonData, state, LESSONS) {
 
   const distractors = shuffleArray(unlockedParticles).slice(0, 3);
   const options = shuffleArray([particle, ...distractors]);
-
-  console.log(`[particle-quiz] Использую умный шаблон для частицы ${particle}`);
 
   return {
     sentence,
@@ -1037,7 +1031,6 @@ function initDrawingMode(
     const skipBtn = import.meta.env.DEV ? document.getElementById('debug-skip-btn') : null;
     if (skipBtn) {
       skipBtn.onclick = () => {
-        console.log('[DEBUG] Skip button clicked - auto-completing kanji');
         kanjiSequence = [];
         currentKanjiIndex = 0;
         totalDrawingMistakes = 0;
@@ -2069,11 +2062,6 @@ export function renderFlash(state, dependencies) {
   activeReviewState = state;
   activeReviewDependencies = dependencies;
 
-  console.log('[renderFlash] Called');
-  console.log('[renderFlash] sessionManager:', sessionManager);
-  console.log('[renderFlash] flashQueue:', flashQueue);
-  console.log('[renderFlash] flashIdx:', flashIdx);
-
   // Скрываем .tabbar при входе в режим SRS-карточек
   const tabbar = document.querySelector('.tabbar');
   if (tabbar) tabbar.style.display = 'none';
@@ -2090,9 +2078,7 @@ export function renderFlash(state, dependencies) {
   let card;
 
   if (sessionManager) {
-    console.log('[renderFlash] Using sessionManager');
     card = sessionManager.getNextCard();
-    console.log('[renderFlash] Card from sessionManager:', card);
 
     if (!card) {
       // Батч завершён: если есть следующий — запускаем его и продолжаем сессию
@@ -2148,15 +2134,7 @@ export function renderFlash(state, dependencies) {
     renderParticleQuizMode(card, state, dependencies);
     return;
   }
-
-  console.log(
-    '[renderFlash] Looking for word with id:',
-    card.id,
-    'LESSONS length:',
-    LESSONS?.length
-  );
   const word = wordById(card.id, LESSONS);
-  console.log('[renderFlash] wordById result:', word);
 
   if (!word) {
     console.warn('[renderFlash] Word not found, skipping card:', card.id);
