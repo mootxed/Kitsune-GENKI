@@ -309,7 +309,6 @@ function showNotification(title, body) {
 function scheduleNotify() {
   // Заглушка для планировщика уведомлений
   // В будущем здесь можно реализовать логику напоминаний
-  console.log('Уведомления запланированы');
 }
 
 // Экспортируем в глобальную область для обратной совместимости
@@ -381,8 +380,6 @@ function setupRouter() {
 
   // Функция запуска сессии повторения карточек
   const startSrsSession = async () => {
-    console.log('[SRS] startSrsSession triggered');
-
     // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Явно переключаемся на экран SRS
     // Скрываем все экраны
     $$('.screen').forEach((s) => s.classList.add('hidden'));
@@ -391,20 +388,17 @@ function setupRouter() {
     const srsScreen = document.getElementById('screen-srs');
     if (srsScreen) {
       srsScreen.classList.remove('hidden');
-      console.log('[SRS] Screen visibility toggled: #screen-srs now visible');
     }
 
     // Скрываем tabbar во время сессии
     const tabbar = document.querySelector('.tabbar');
     if (tabbar) {
       tabbar.style.display = 'none';
-      console.log('[SRS] Tabbar hidden');
     }
 
     try {
       await ensureLessonsForSrs();
       const due = dueCards(state.srs);
-      console.log('[SRS] Due cards:', due?.length);
 
       if (!due || due.length === 0) {
         toast('Нет карточек для повторения');
@@ -430,9 +424,7 @@ function setupRouter() {
       setFlashIdx(0);
 
       // Инициализируем батчинг (20 карточек на батч)
-      console.log('[SRS] Initializing session batching...');
       const batchInfo = initSessionBatching(sessionCards, LESSONS, 20);
-      console.log('[SRS] Batch info:', batchInfo);
 
       if (!batchInfo || !batchInfo.organizedCards) {
         console.error('[SRS] Failed to generate organized cards batch!');
@@ -444,7 +436,6 @@ function setupRouter() {
 
       // Устанавливаем skill-safe очередь 20-карточного батча.
       setFlashQueue(batchInfo.organizedCards);
-      console.log('[SRS] Flash queue set, length:', batchInfo.organizedCards.length);
 
       // Создаём SessionManager с батчем карточек
       const manager = new SessionManager(batchInfo.organizedCards, {
@@ -454,7 +445,6 @@ function setupRouter() {
         onSave: save,
       });
       setSessionManager(manager);
-      console.log('[SRS] SessionManager initialized');
 
       // Скрываем header и табы SRS во время сессии для полноэкранного интерфейса флэшкарточек
       const srsHeader = document.querySelector('#screen-srs .app-header');
@@ -467,12 +457,9 @@ function setupRouter() {
       const srsBody = document.getElementById('srs-body');
       if (srsBody) {
         srsBody.innerHTML = '';
-        console.log('[SRS] Dashboard cleared from #srs-body');
       }
 
-      console.log('[SRS] Calling renderFlash...');
       renderFlash(state, dependencies);
-      console.log('[SRS] renderFlash executed successfully');
     } catch (err) {
       console.error('[SRS] Error in startSrsSession:', err);
       toast('Ошибка при запуске сессии: ' + err.message);
@@ -553,7 +540,6 @@ function setupRouter() {
     quests: () => renderQuests(state, dependencies),
     'ai-story': () => {
       // AI-история рендерится через отдельный механизм
-      console.log('AI-Story screen');
     },
     crossword: () => renderCrossword(state, dependencies),
   });
@@ -567,18 +553,15 @@ function setupRouter() {
 async function init() {
   try {
     // 1. Инициализация IndexedDB
-    console.log('[Init] Инициализация IndexedDB...');
     await initializeDB();
     // App reviews are persisted through the transactional outbox in app_state.
     // The optional SRS logger remains available for diagnostics and isolated use.
     SRS.setReviewLogger(null);
 
     // 2. Миграция из localStorage (если нужна)
-    console.log('[Init] Проверка миграции данных...');
     await migrateFromLocalStorage();
 
     // 3. Загрузка состояния из IndexedDB
-    console.log('[Init] Загрузка состояния приложения...');
     await loadState();
 
     // Инициализация глобальных систем
@@ -631,8 +614,6 @@ async function init() {
       loader.style.opacity = '0';
       setTimeout(() => loader.remove(), 300);
     }
-
-    console.log('[Init] ✅ Приложение успешно инициализировано');
   } catch (error) {
     console.error('[Init] ❌ Критическая ошибка инициализации:', error);
 
@@ -664,17 +645,13 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker
       .register(`${import.meta.env.BASE_URL}sw.js`)
       .then((registration) => {
-        console.log('✅ Service Worker зарегистрирован');
-
         // Отслеживание обновлений SW
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
-          console.log('🔄 Обнаружено обновление Service Worker');
 
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // Новая версия доступна!
-              console.log('✨ Новая версия приложения готова');
               showUpdateNotification(newWorker);
             }
           });
@@ -687,7 +664,6 @@ if ('serviceWorker' in navigator) {
 
   // Автоматическая перезагрузка при активации нового SW
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    console.log('🔄 Активирован новый Service Worker, перезагрузка...');
     window.location.reload();
   });
 }
@@ -718,7 +694,6 @@ function showUpdateNotification(worker) {
     const updateBtn = document.getElementById('sw-update-btn');
     if (updateBtn) {
       updateBtn.addEventListener('click', () => {
-        console.log('👆 Пользователь запросил обновление');
         worker.postMessage({ type: 'SKIP_WAITING' });
 
         // Закрываем toast

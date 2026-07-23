@@ -417,28 +417,56 @@
               </div>
             </div>
 
-            <label class="form-label">Уже изученные главы</label>
-            <p style="font-size: 0.875rem; color: #666; margin-bottom: 1rem">
-              Отметьте главы, которые вы уже изучили. Они не будут включены в план обучения.
-            </p>
-            <div id="completed-chapters-list" class="completed-chapters-list"></div>
+            <!-- Прогресс изученных глав -->
+            <div class="plan-progress-widget card">
+              <span class="form-label">Прогресс обучения</span>
+              <div class="plan-progress-bar-container">
+                <div
+                  id="plan-progress-bar-fill"
+                  class="plan-progress-bar-fill"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <span id="plan-progress-text" class="plan-progress-text">Загрузка прогресса...</span>
+            </div>
+
+            <!-- Дополнительные настройки -->
+            <details class="plan-advanced-details">
+              <summary>Дополнительные настройки</summary>
+              <div class="plan-advanced-content">
+                <label class="form-label">Уже изученные главы (ручная корректировка)</label>
+                <p style="font-size: 0.875rem; color: #666; margin-bottom: 1rem">
+                  Отметьте главы, которые вы уже изучили. Они не будут включены в план обучения.
+                </p>
+                <div id="completed-chapters-list" class="completed-chapters-list"></div>
+              </div>
+            </details>
 
             <div id="plan-warning" class="plan-warning hidden"></div>
 
             <button class="btn btn-primary" id="plan-generate-btn" data-testid="plan-generate-btn">
               Создать план
             </button>
-            <button
-              class="btn btn-secondary hidden"
-              id="plan-recalc-btn"
-              data-testid="plan-recalc-btn"
-            >
-              Пересчитать план
-            </button>
           </div>
 
           <!-- Контейнер плана (показывается после генерации) -->
           <div id="plan-view-container" class="hidden">
+            <!-- Панель управления планом -->
+            <div id="plan-controls" class="plan-controls card hidden">
+              <button class="btn btn-secondary" id="plan-edit-btn" data-testid="plan-edit-btn">
+                ✏️ Изменить
+              </button>
+              <button class="btn btn-secondary" id="plan-recalc-btn" data-testid="plan-recalc-btn">
+                🔄 Пересчитать
+              </button>
+              <button class="btn btn-secondary" id="plan-pause-btn" data-testid="plan-pause-btn">
+                ⏸️ Приостановить
+              </button>
+              <button class="btn btn-danger" id="plan-delete-btn" data-testid="plan-delete-btn">
+                🗑️ Удалить
+              </button>
+            </div>
+
             <!-- План на сегодня -->
             <div id="plan-today-card" class="plan-today-card hidden"></div>
 
@@ -456,14 +484,31 @@
             <div id="plan-timeline" class="plan-timeline"></div>
 
             <!-- Календарная сетка -->
-            <div id="plan-calendar-grid" class="plan-calendar-grid hidden"></div>
+            <div id="plan-calendar-grid" class="heatmap-calendar-card hidden">
+              <div class="heatmap-nav">
+                <button class="heatmap-nav-btn" id="plan-heatmap-prev">←</button>
+                <span class="heatmap-month-label" id="plan-heatmap-month-label">Месяц</span>
+                <button class="heatmap-nav-btn" id="plan-heatmap-next">→</button>
+              </div>
+              <div class="heatmap-legend" id="plan-heatmap-legend"></div>
+              <div class="heatmap-weekdays">
+                <div class="heatmap-weekday">Пн</div>
+                <div class="heatmap-weekday">Вт</div>
+                <div class="heatmap-weekday">Ср</div>
+                <div class="heatmap-weekday">Чт</div>
+                <div class="heatmap-weekday">Пт</div>
+                <div class="heatmap-weekday">Сб</div>
+                <div class="heatmap-weekday">Вс</div>
+              </div>
+              <div class="heatmap-grid" id="plan-heatmap-grid"></div>
+            </div>
 
             <!-- Рекомендации по распределению времени -->
             <div id="plan-advice-container" class="card hidden">
               <h3>Распределение времени</h3>
               <p class="advice-subtitle">Рекомендации оптимального баланса</p>
-              <div id="plan-advice-bar" class="advice-bar"></div>
-              <div id="plan-advice-percentages" class="advice-percentages"></div>
+              <div id="plan-advice-bar" class="advice-bar hidden"></div>
+              <div id="plan-advice-percentages" class="advice-percentages hidden"></div>
               <p id="plan-advice-tip" class="advice-tip"></p>
             </div>
           </div>

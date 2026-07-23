@@ -1,6 +1,6 @@
 /* studyplan.js — Study plan generator for Kitsune Genki */
 
-import { localDateKey } from './src/local-date.js';
+import { localDateKey, parseDateKey } from './src/local-date.js';
 
 const WEIGHT_VOCAB = 1;
 const WEIGHT_GRAMMAR = 0.5;
@@ -37,27 +37,38 @@ const CHAPTER_IMPORTANCE = {
  * @returns {number} Weight value
  */
 function calculateChapterWeight(lesson) {
-  const vocabCount = lesson.words ? lesson.words.length : 0;
-  let grammarComplexity = 0;
-  if (lesson.grammar) {
-    if (Array.isArray(lesson.grammar)) {
-      grammarComplexity = lesson.grammar.length;
-      lesson.grammar.forEach((item) => {
-        if (typeof item === 'string') grammarComplexity += item.length / 100;
-        else if (item.text) grammarComplexity += item.text.length / 100;
-      });
-    } else if (typeof lesson.grammar === 'string') {
-      grammarComplexity = lesson.grammar.length / 100;
+  // Поддерживаем как полный урок (LESSONS), так и лёгкий индекс (CONTENT_INDEX).
+  // CONTENT_INDEX содержит vocabCount/grammarCount/importanceWeight напрямую;
+  // полный урок — lesson.words и lesson.grammar.
+  const vocabCount = lesson.vocabCount ?? (lesson.words ? lesson.words.length : 0);
+
+  let grammarComplexity;
+  if (typeof lesson.grammarCount === 'number') {
+    // Быстрый путь: CONTENT_INDEX уже содержит готовый счётчик
+    grammarComplexity = lesson.grammarCount;
+  } else {
+    grammarComplexity = 0;
+    if (lesson.grammar) {
+      if (Array.isArray(lesson.grammar)) {
+        grammarComplexity = lesson.grammar.length;
+        lesson.grammar.forEach((item) => {
+          if (typeof item === 'string') grammarComplexity += item.length / 100;
+          else if (item.text) grammarComplexity += item.text.length / 100;
+        });
+      } else if (typeof lesson.grammar === 'string') {
+        grammarComplexity = lesson.grammar.length / 100;
+      }
     }
   }
 
   // Базовый вес главы
   const baseWeight = WEIGHT_VOCAB * vocabCount + WEIGHT_GRAMMAR * grammarComplexity;
 
-  // Применяем коэффициент важности главы
-  const importanceMultiplier = CHAPTER_IMPORTANCE[lesson.id] || 1.0;
+  // importanceWeight берём из поля (CONTENT_INDEX), затем из таблицы, затем 1.0
+  const importanceMultiplier = lesson.importanceWeight ?? CHAPTER_IMPORTANCE[lesson.id] ?? 1.0;
 
-  return baseWeight * importanceMultiplier;
+  // Защита от нулевого веса: каждая глава получает хотя бы базовую единицу
+  return baseWeight * importanceMultiplier || 1.0;
 }
 
 /**
@@ -69,8 +80,10 @@ function calculateChapterWeight(lesson) {
  */
 function getStudyDaysInRange(startDate, endDate, daysOfWeek) {
   const days = [];
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  // parseDateKey вместо new Date(string): строка без времени парсится как UTC-полночь,
+  // что в отрицательных UTC-offset зонах (LA, NY и др.) сдвигает день на -1.
+  const start = parseDateKey(startDate);
+  const end = parseDateKey(endDate);
   const current = new Date(start);
 
   while (current <= end) {
@@ -162,14 +175,16 @@ function mapSegmentsToCalendar(segments, studyDays) {
   segments.forEach((seg) => {
     if (dayIndex >= studyDays.length) return;
 
-    const startDate = studyDays[dayIndex];
     const endIndex = Math.min(dayIndex + seg.days - 1, studyDays.length - 1);
-    const endDate = studyDays[endIndex];
+    // assignedDates — точный массив дат сегмента (устраняет проблему диапазонов).
+    // startDate/endDate сохраняем для обратной совместимости с UI-кодом и тестами.
+    const assignedDates = studyDays.slice(dayIndex, endIndex + 1);
 
     result.push({
       ...seg,
-      startDate,
-      endDate,
+      assignedDates,
+      startDate: assignedDates[0],
+      endDate: assignedDates[assignedDates.length - 1],
     });
 
     dayIndex = endIndex + 1;
@@ -277,25 +292,74 @@ function generatePlan(params, lessons, completedChapters = []) {
 }
 
 /**
- * Recalculate plan from current date
- * @param {Object} currentPlan - Existing plan
- * @param {Array} lessons - Array of lesson data
- * @param {number[]} completedChapters - Updated completed chapters
- * @returns {Object} Recalculated plan
+ * Пересчёт плана с текущей даты.
+ *
+ * Если дедлайн уже истёк — НЕ сохраняем его принудительно.
+ * Вместо этого возвращаем объект с `deadlineExpired: true` и двумя вариантами:
+ *   - extend_deadline: сдвинуть дедлайн, сохранив привычную нагрузку
+ *   - increase_load: уложиться в остаток оригинального периода, занимаясь каждый день
+ *
+ * UI должен показать диалог выбора и вызвать generatePlan с выбранными params.
+ *
+ * @param {Object}   currentPlan      - Существующий план
+ * @param {Array}    lessons          - Данные уроков (CONTENT_INDEX или LESSONS)
+ * @param {number[]} completedChapters - ID завершённых глав
+ * @returns {Object} план или { deadlineExpired: true, options: [...] }
  */
 function recalcPlan(currentPlan, lessons, completedChapters) {
   const today = localDateKey();
 
-  // Сохраняем оригинальный deadline без изменений (для обратной совместимости с тестами)
-  const newParams = {
-    startDate: today,
-    deadline: currentPlan.deadline,
-    studyDaysOfWeek: currentPlan.studyDaysOfWeek,
-    _originalStartDate: currentPlan.startDate,
-    _preserveDeadline: true, // Отключаем автокоррекцию deadline
-  };
+  // Дедлайн уже прошёл
+  if (currentPlan.deadline && currentPlan.deadline < today) {
+    const remaining = lessons.filter((l) => !completedChapters.includes(l.id));
 
-  return generatePlan(newParams, lessons, completedChapters);
+    // Вариант 1: сдвиг дедлайна — сохраняем привычные дни недели
+    const extendedParams = {
+      startDate: today,
+      totalDays: Math.max(MIN_TOTAL_DAYS, remaining.length * 3),
+      studyDaysOfWeek: currentPlan.studyDaysOfWeek,
+    };
+
+    // Вариант 2: повышение нагрузки — занимаемся каждый день, но короткий период
+    const originalDays = getStudyDaysInRange(
+      currentPlan.startDate,
+      currentPlan.deadline,
+      currentPlan.studyDaysOfWeek
+    );
+    const intensiveParams = {
+      startDate: today,
+      totalDays: Math.max(MIN_TOTAL_DAYS, Math.ceil(originalDays.length * 0.3)),
+      studyDaysOfWeek: [0, 1, 2, 3, 4, 5, 6], // каждый день
+    };
+
+    return {
+      deadlineExpired: true,
+      expiredDeadline: currentPlan.deadline,
+      options: [
+        {
+          type: 'extend_deadline',
+          label: 'Сдвинуть дедлайн',
+          params: extendedParams,
+        },
+        {
+          type: 'increase_load',
+          label: 'Повысить нагрузку (занимаемся каждый день)',
+          params: intensiveParams,
+        },
+      ],
+    };
+  }
+
+  // Дедлайн актуален — обычный пересчёт
+  return generatePlan(
+    {
+      startDate: today,
+      deadline: currentPlan.deadline,
+      studyDaysOfWeek: currentPlan.studyDaysOfWeek,
+    },
+    lessons,
+    completedChapters
+  );
 }
 
 /**
@@ -346,8 +410,98 @@ function getHeuristicAdvice(chapter, daysLeft) {
   return { words, grammar, reading, listening, tip };
 }
 
+/**
+ * Устанавливает статус конкретной даты в сегменте плана.
+ * Статус сохраняется в `seg.dateStatuses[dateKey]` и переживает перезагрузку.
+ *
+ * @param {Object} plan    - объект studyPlan
+ * @param {string} dateKey - дата в формате YYYY-MM-DD
+ * @param {'done'|'skipped'|'overdue'|'rescheduled'} status
+ * @returns {boolean} true если сегмент найден и статус записан
+ */
+function markDateStatus(plan, dateKey, status) {
+  const VALID = new Set(['done', 'skipped', 'overdue', 'rescheduled']);
+  if (!VALID.has(status)) throw new Error(`[StudyPlan] Неверный статус даты: ${status}`);
+
+  const seg = plan.segments.find((s) => {
+    // Поддерживаем оба формата: новый assignedDates и устаревший диапазон
+    if (s.assignedDates) return s.assignedDates.includes(dateKey);
+    return dateKey >= s.startDate && dateKey <= s.endDate;
+  });
+
+  if (!seg) return false;
+  if (!seg.dateStatuses) seg.dateStatuses = {};
+  seg.dateStatuses[dateKey] = status;
+  return true;
+}
+
+/**
+ * Формирует контекст ежедневного плана с учётом FSRS-приоритетов и mastery.
+ *
+ * Приоритеты:
+ *   1. due-повторения (много карточек просрочено → режим review_first)
+ *   2. mastery текущей главы (< 40% → режим consolidate, замедлить новый материал)
+ *   3. нет особых условий → normal
+ *
+ * @param {Object} plan       - текущий studyPlan
+ * @param {Object} srsRecords - state.srs (все карточки)
+ * @param {Object} masteryMap - { [itemId]: { score: number } } (state.masteryArchive)
+ * @param {string} today      - YYYY-MM-DD (по умолчанию localDateKey())
+ * @returns {Object} dailyContext
+ */
+function getDailyPlanContext(plan, srsRecords, masteryMap, today = localDateKey()) {
+  const now = Date.now();
+
+  // 1. FSRS: карточки, которые уже due
+  const allDue = Object.values(srsRecords || {}).filter(
+    (c) => !c.suspended && Number.isFinite(c.due) && c.due <= now
+  );
+
+  // 2. Активный сегмент плана на сегодня
+  const activeSegment = plan.segments.find((s) => {
+    if (s.assignedDates) return s.assignedDates.includes(today);
+    return today >= s.startDate && today <= s.endDate;
+  });
+
+  // 3. Mastery текущей главы (из masteryArchive)
+  let chapterMastery = null;
+  if (activeSegment?.chapterId) {
+    const prefix = `L${activeSegment.chapterId}_`;
+    const chapterItems = Object.entries(masteryMap || {}).filter(([id]) => id.startsWith(prefix));
+    if (chapterItems.length > 0) {
+      const avgScore =
+        chapterItems.reduce((s, [, m]) => s + (m?.score ?? 0), 0) / chapterItems.length;
+      chapterMastery = { avgScore, itemCount: chapterItems.length };
+    }
+  }
+
+  const dueCount = allDue.length;
+  const shouldSlowDown = chapterMastery !== null && chapterMastery.avgScore < 40;
+
+  // 4. Определяем рекомендуемый режим сессии
+  let recommendedMode;
+  if (dueCount > 10) {
+    recommendedMode = 'review_first'; // сначала повторение накопившихся карточек
+  } else if (shouldSlowDown) {
+    recommendedMode = 'consolidate'; // закрепление без спешки с новым материалом
+  } else {
+    recommendedMode = 'normal';
+  }
+
+  return {
+    today,
+    activeSegment,
+    dueCount,
+    chapterMastery,
+    shouldSlowDown,
+    recommendedMode,
+  };
+}
+
 export const StudyPlan = {
   generatePlan,
   recalcPlan,
   getHeuristicAdvice,
+  markDateStatus,
+  getDailyPlanContext,
 };
