@@ -24,6 +24,7 @@ export default [
         FormData: 'readonly',
         crypto: 'readonly',
         Notification: 'readonly',
+        SpeechSynthesisUtterance: 'readonly',
         location: 'readonly',
         history: 'readonly',
         setTimeout: 'readonly',
@@ -36,6 +37,8 @@ export default [
         confirm: 'readonly',
         alert: 'readonly',
         prompt: 'readonly',
+        process: 'readonly',
+        global: 'readonly',
         // Service Worker
         self: 'readonly',
         caches: 'readonly',

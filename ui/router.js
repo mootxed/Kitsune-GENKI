@@ -14,6 +14,7 @@ export function initRouter(handlers) {
 
   // Регистрируем обработчики рендера для каждого экрана
   router.registerRenderHandler('home', handlers.home);
+  router.registerRenderHandler('course', handlers.course);
   router.registerRenderHandler('profile', handlers.profile);
   router.registerRenderHandler('chapter', handlers.chapter);
   router.registerRenderHandler('srs', handlers.srs);

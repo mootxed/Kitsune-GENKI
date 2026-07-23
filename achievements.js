@@ -213,7 +213,9 @@ export const ACHIEVEMENTS = [
 function isChapterComplete(state, chId) {
   const ch = state.chapters[chId];
   if (!ch || !ch.checklist) return false;
-  return Object.values(ch.checklist).every((v) => v === true);
+  if (ch.completedAt) return true;
+  const checklist = Object.values(ch.checklist);
+  return checklist.length > 0 && checklist.every((v) => v === true);
 }
 
 function completedChapters(state) {

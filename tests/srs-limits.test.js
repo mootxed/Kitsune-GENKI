@@ -68,7 +68,7 @@ describe('SRS new-card limits', () => {
   it('считает выдачу по календарному дню и формирует ISO-день', () => {
     const records = { a: card('a', State.Review, DAY) };
     expect(countNewCardsIntroducedOn(records, DAY)).toBe(1);
-    expect(studyDay(Date.UTC(2026, 6, 22))).toBe(DAY);
+    expect(studyDay(new Date(2026, 6, 22, 12).getTime())).toBe(DAY);
   });
 
   it('переключает дневной лимит по локальной полуночи', () => {

@@ -1,9 +1,10 @@
 /* ui/home.js — Home screen */
 import { state, save, chState, loadedChapters } from '../state/store.js';
 import { refreshStreakDisplay, syncAvatars, updateSrsBadge } from './shared.js';
-import { $, todayStr, pluralDays } from '../src/utils.js';
+import { $, todayStr } from '../src/utils.js';
 import { dueCards, allCards, cardChapter } from '../src/srs-helpers.js';
 import { SRS } from '../srs.js';
+import { StudyPlan } from '../studyplan.js';
 import {
   KNOWLEDGE_TYPES,
   SKILLS,
@@ -14,12 +15,16 @@ import {
 import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
 import { db, STORES } from '../src/db.js';
 import { countAvailableCardsForSession } from '../src/srs-limits.js';
+import { formatDateKey, parseDateKey } from '../src/local-date.js';
+import {
+  REQUIRED_CHAPTER_SECTIONS,
+  ensureActiveChapterId,
+  getChapterProgress,
+  isChapterAvailable,
+  isChapterCompleted,
+} from '../src/chapter-progress.js';
 
 // ---------- Constants ----------
-const LS_LESSONS = 'kitsune_lessons_v1';
-const LS_LESSON_VERSION = 'kitsune_lessons_version_v1';
-const LS_LAST_ACTIVITY_DAY = 'kitsune_last_activity_day';
-
 export const CH_NAMES = {
   1: ['Приветствия', '挨拶 (あいさつ)'],
   2: ['Числа и время', '数字と時間 (すうじととき)'],
@@ -35,13 +40,43 @@ export const CH_NAMES = {
   12: ['Путешествия', '旅行 (りょこう)'],
 };
 
-export const CHECK_ITEMS = [
-  ['vocab', 'Слова'],
-  ['grammar', 'Грамматика'],
-  ['dialog', 'Диалог'],
-  ['listening', 'Аудирование'],
-  ['reading', 'Чтение'],
+export const CHECK_ITEMS = REQUIRED_CHAPTER_SECTIONS.map(({ id, label }) => [id, label]);
+
+const DUE_FIRST_THRESHOLD = 20;
+const FALLBACK_CHAPTER_METRICS = [
+  [60, 5, 2, 105],
+  [57, 9, 1.5, 125],
+  [56, 11, 1.5, 135],
+  [62, 13, 1, 145],
+  [52, 8, 1.5, 115],
+  [47, 9, 1.5, 120],
+  [52, 8, 1, 110],
+  [56, 10, 1.5, 130],
+  [55, 7, 1, 115],
+  [56, 10, 1, 130],
+  [68, 10, 0.7, 145],
+  [53, 7, 1, 110],
 ];
+
+function fallbackContentIndex() {
+  return FALLBACK_CHAPTER_METRICS.map(
+    ([vocabCount, grammarCount, importanceWeight, estimatedMinutes], index) => {
+      const id = index + 1;
+      return {
+        id,
+        title: `Урок ${id}`,
+        lesson: `data/lessons/lesson-${String(id).padStart(2, '0')}.json`,
+        story: `data/stories/story-${String(id).padStart(2, '0')}.json`,
+        vocabCount,
+        grammarCount,
+        estimatedItems: vocabCount + grammarCount * 4,
+        importanceWeight,
+        estimatedMinutes,
+        checklist: CHECK_ITEMS.map(([sectionId]) => sectionId),
+      };
+    }
+  );
+}
 
 // Полные уроки, загруженные лениво (по мере обращения к главам)
 export let LESSONS = [];
@@ -84,15 +119,15 @@ export async function loadLessons() {
       await db.set(STORES.CONTENT_CACHE, 'lesson_version', String(fileVersion));
     }
     CONTENT_INDEX = data.chapters || [];
+    await db.set(STORES.CONTENT_CACHE, 'content_index', data);
+    const previousActiveChapterId = state.activeChapterId;
+    ensureActiveChapterId(state, CONTENT_INDEX);
+    if (previousActiveChapterId !== state.activeChapterId) await save(true);
   } catch (e) {
     console.error('Не удалось загрузить content-index.json:', e);
-    // Фоллбэк: строим индекс из того, что есть в кэше
-    CONTENT_INDEX = LESSONS.map((l) => ({
-      id: l.id,
-      title: l.title,
-      story: null,
-      storyMeta: null,
-    }));
+    // План никогда не строится из частично загруженного LESSONS.
+    const cachedIndex = await db.get(STORES.CONTENT_CACHE, 'content_index');
+    CONTENT_INDEX = cachedIndex?.chapters || fallbackContentIndex();
   }
 
   // Принудительно обновляем отображение глав после загрузки данных
@@ -227,6 +262,20 @@ async function setLastActivityDay(t) {
   await db.set(STORES.CONTENT_CACHE, 'last_activity_day', t);
 }
 
+export function countCompletedReviewsForDate(appState, dateKey) {
+  return new Set(
+    (appState.reviewEvents || [])
+      .filter(
+        (event) =>
+          !event.undoneAt &&
+          event.eventType === 'review' &&
+          Number.isInteger(event.reviewedAt) &&
+          formatDateKey(event.reviewedAt) === dateKey
+      )
+      .map((event) => event.eventId || `${event.cardId}:${event.reviewedAt}`)
+  ).size;
+}
+
 export async function markActivity(toastFn = null) {
   const t = todayStr();
   const s = state.streak;
@@ -239,13 +288,16 @@ export async function markActivity(toastFn = null) {
     await setLastActivityDay(t);
   }
 
-  // Увеличиваем счётчик ежедневных карточек и историю
-  state.dailyCards += 1;
-  state.history[t] = (state.history[t] || 0) + 1;
+  // dailyCards — только фактически записанные FSRS review events.
+  // Запуск главы, Sensei, история и чек-лист больше не раздувают этот счётчик.
+  const previousDailyCards = Number(state.dailyCards || 0);
+  state.dailyCards = countCompletedReviewsForDate(state, t);
+  state.history[t] = state.dailyCards;
+  const reviewDelta = Math.max(0, state.dailyCards - previousDailyCards);
 
   // Обновляем прогресс квестов (daily_cards)
-  if (window.QuestsManager) {
-    window.QuestsManager.updateQuestProgress(state, 'daily_cards', 1);
+  if (window.QuestsManager && reviewDelta > 0) {
+    window.QuestsManager.updateQuestProgress(state, 'daily_cards', reviewDelta);
     window.QuestsManager.checkQuestReset(state);
   }
 
@@ -278,7 +330,7 @@ export async function markActivity(toastFn = null) {
   }
   if (!s.lastActive) s.count = 1;
   else {
-    const diff = Math.round((new Date(t) - new Date(s.lastActive)) / 86400000);
+    const diff = Math.round((parseDateKey(t) - parseDateKey(s.lastActive)) / 86400000);
     if (diff === 1) {
       s.count += 1;
       // Награда за продление стрика
@@ -301,12 +353,18 @@ export async function resetDailyGoalFlag() {
 export function startChapter(id, toastFn = null) {
   const cs = chState(id);
   if (cs.started) return;
+  if (!isChapterAvailable(state, CONTENT_INDEX, id)) {
+    if (toastFn) toastFn('Сначала завершите предыдущую главу');
+    return;
+  }
   const lesson = getLesson(id);
   if (!lesson) {
     if (toastFn) toastFn('Глава не найдена');
     return;
   }
   cs.started = true;
+  cs.startedAt ||= Date.now();
+  if (!state.activeChapterId) state.activeChapterId = Number(id);
   lesson.words.forEach((w) => {
     ensureVocabularySkillCards(w);
   });
@@ -325,65 +383,172 @@ export function updateMainQuestsTimer() {
 
 // ---------- Render: Home ----------
 export function renderHome() {
+  const today = todayStr();
+  state.dailyCards = countCompletedReviewsForDate(state, today);
+  state.history[today] = state.dailyCards;
   refreshStreakDisplay();
-  updateMainQuestsTimer();
+  if (state.studyPlan) state.studyPlan = StudyPlan.normalizePlan(state.studyPlan);
   const due = countAvailableCardsForSession(dueCards(state.srs), state.srs);
-  const total = allCards(state.srs).length;
-  $('#stat-due').textContent = due;
-  $('#stat-cards').textContent = total;
-  $('#stat-chapters').textContent = CONTENT_INDEX.length;
-  const btn = $('#btn-study-due');
-  const extraBtn = $('#btn-extra-review');
-  $('#study-due-label').textContent =
-    due > 0 ? `Повторить ${due} карточек` : 'Нет карточек к повторению';
-  btn.disabled = due === 0;
-  btn.onclick = () => window.nav('srs');
-  if (extraBtn) {
-    extraBtn.classList.toggle('hidden', due > 0);
+  const activeChapterId = ensureActiveChapterId(state, CONTENT_INDEX);
+  const activeChapter = CONTENT_INDEX.find((chapter) => chapter.id === activeChapterId) || null;
+  const progress = activeChapter
+    ? getChapterProgress(state, activeChapter.id, activeChapter)
+    : null;
+  const continueButton = $('#btn-continue-learning');
+  const continueTitle = $('#continue-learning-title');
+  const continueContext = $('#continue-learning-context');
+  const dueFirst = due >= DUE_FIRST_THRESHOLD;
+
+  if (continueTitle) {
+    continueTitle.textContent =
+      activeChapterId === null ? 'Повторить слабые знания' : 'Продолжить обучение';
   }
-  updateSrsBadge();
-
-  const list = $('#chapter-list');
-  list.innerHTML = '';
-  CONTENT_INDEX.forEach((ch) => {
-    const nm = CH_NAMES[ch.id] || [ch.title || 'Глава ' + ch.id, ''];
-    const cs = chState(ch.id);
-
-    // Проверка разблокировки: Глава 1 всегда открыта, остальные открываются если предыдущая начата
-    const isUnlocked = ch.id === 1 || (ch.id > 1 && chState(ch.id - 1).started);
-
-    const items = CHECK_ITEMS.length;
-    const done = CHECK_ITEMS.filter((c) => cs.checklist[c[0]]).length;
-    const pct = Math.round((done / items) * 100);
-    const el = document.createElement('div');
-    el.className = 'chapter-card' + (cs.started ? ' started' : '') + (!isUnlocked ? ' locked' : '');
-    el.dataset.testid = 'chapter-card-' + ch.id;
-
-    if (!isUnlocked) {
-      el.innerHTML = `
-        <div class="ch-badge">🔒</div>
-        <div class="ch-main">
-          <p class="ch-name">${nm[0]}</p>
-          <p class="ch-sub">Завершите предыдущую главу</p>
-          <div class="ch-prog"><i style="width:0%"></i></div>
-        </div>
-        <div class="ch-arrow">›</div>`;
-      el.onclick = () => {
-        if (window.toast) window.toast('Сначала завершите предыдущую главу');
-      };
+  if (continueContext) {
+    if (dueFirst) {
+      continueContext.textContent = `${due} обязательных повторений накопилось — сначала разберём их`;
+    } else if (activeChapter && progress) {
+      const section = progress.nextSection?.label || 'Итоговая проверка';
+      const minutes = activeChapter.estimatedMinutes
+        ? ` · ~${Math.max(10, Math.ceil(activeChapter.estimatedMinutes / 5))} мин`
+        : '';
+      continueContext.textContent = `Глава ${activeChapter.id}: ${activeChapter.title} · ${section} · ${progress.completedCount} из ${progress.totalCount}${minutes}`;
     } else {
-      el.innerHTML = `
-        <div class="ch-badge">${ch.id}</div>
-        <div class="ch-main">
-          <p class="ch-name">${nm[0]}</p>
-          <p class="ch-sub">${nm[1] || ''}</p>
-          <div class="ch-prog"><i style="width:${pct}%"></i></div>
-        </div>
-        <div class="ch-arrow">›</div>`;
-      el.onclick = () => window.nav('chapter', ch.id);
+      continueContext.textContent = 'Все главы завершены — закрепите знания по FSRS';
     }
+  }
+  if (continueButton) {
+    continueButton.onclick = () => {
+      if (dueFirst || activeChapterId === null) window.nav('srs');
+      else window.nav('chapter', activeChapterId);
+    };
+  }
 
-    list.appendChild(el);
-  });
+  const todayContainer = $('#home-plan-today');
+  if (todayContainer) {
+    todayContainer.innerHTML = renderHomeTodayCard(state, activeChapter, progress);
+    todayContainer.querySelector('[data-action="review"]')?.addEventListener('click', () => {
+      window.nav('srs');
+    });
+    todayContainer.querySelector('[data-action="chapter"]')?.addEventListener('click', () => {
+      if (activeChapterId) window.nav('chapter', activeChapterId);
+    });
+    todayContainer.querySelector('[data-action="create-plan"]')?.addEventListener('click', () => {
+      window.nav('plan');
+    });
+    todayContainer.querySelector('[data-action="open-plan"]')?.addEventListener('click', () => {
+      window.nav('plan');
+    });
+  }
+
+  const courseButton = $('#home-course-link');
+  if (courseButton) courseButton.onclick = () => window.nav('course');
+  updateSrsBadge();
   syncAvatars();
+}
+
+function renderHomeTodayCard(appState, activeChapter, progress) {
+  if (!appState.studyPlan) {
+    return `
+      <div class="today-plan-empty">
+        <div>
+          <span class="today-eyebrow">ПЛАН НА СЕГОДНЯ</span>
+          <h2>Составить план обучения</h2>
+          <p>Выберите учебные дни и срок — план свяжет главы с ежедневными повторениями.</p>
+        </div>
+        <button class="btn-primary compact" data-action="create-plan">Составить план</button>
+      </div>`;
+  }
+
+  const context = StudyPlan.getDailyPlanContext(
+    appState.studyPlan,
+    appState.srs || {},
+    appState.masteryArchive || {},
+    undefined,
+    {
+      reviewEvents: appState.reviewEvents || [],
+      learningEvents: appState.learningEvents || [],
+    }
+  );
+  const segment = context.activeSegment;
+  const remaining = Math.max(0, (progress?.totalCount || 0) - (progress?.completedCount || 0));
+  const duration = activeChapter?.estimatedMinutes
+    ? Math.max(10, Math.ceil(activeChapter.estimatedMinutes / 5))
+    : null;
+  const reviewLabel =
+    context.reviewTotalToday > 0
+      ? `${context.reviewedToday} из ${context.reviewTotalToday} выполнено`
+      : 'На сегодня всё выполнено';
+  const overdueLabel =
+    context.overdueCount > 0
+      ? `<span class="today-overdue">${context.overdueCount} просрочено</span>`
+      : '<span class="today-ok">без просрочки</span>';
+
+  return `
+    <div class="today-card-header">
+      <div>
+        <span class="today-eyebrow">ПЛАН НА СЕГОДНЯ</span>
+        <h2>${context.dateStatus === 'rest-day' ? 'День отдыха' : 'Конкретные шаги'}</h2>
+      </div>
+      <button class="text-button" data-action="open-plan">Весь план</button>
+    </div>
+    <div class="today-action required">
+      <div class="today-action-icon">↻</div>
+      <div class="today-action-copy">
+        <span class="today-action-kind">ОБЯЗАТЕЛЬНО · FSRS</span>
+        <strong>Повторить ${context.dueCount} карточек</strong>
+        <small>${reviewLabel} · ${overdueLabel}</small>
+        <div class="today-progress"><i style="width:${Math.round(context.reviewProgress * 100)}%"></i></div>
+      </div>
+      <button class="today-action-button" data-action="review" ${context.dueCount === 0 ? 'disabled' : ''}>Начать</button>
+    </div>
+    ${
+      activeChapter && progress
+        ? `<div class="today-action">
+      <div class="today-action-icon">章</div>
+      <div class="today-action-copy">
+        <span class="today-action-kind">${segment ? 'ТЕКУЩИЙ СЕГМЕНТ' : 'ОСНОВНОЙ РАЗДЕЛ'}</span>
+        <strong>Глава ${activeChapter.id}: ${progress.nextSection?.label || 'Итоговая проверка'}</strong>
+        <small>${progress.completedCount} из ${progress.totalCount} разделов · осталось ${remaining}${duration ? ` · ~${duration} мин` : ''}</small>
+        <div class="today-progress chapter"><i style="width:${Math.round(progress.ratio * 100)}%"></i></div>
+      </div>
+      <button class="today-action-button" data-action="chapter">Продолжить</button>
+    </div>`
+        : `<div class="today-action complete">
+      <div class="today-action-icon">✓</div>
+      <div class="today-action-copy"><strong>Основной курс завершён</strong><small>FSRS продолжит назначать повторения слабых знаний.</small></div>
+    </div>`
+    }`;
+}
+
+export function renderCourse() {
+  const list = $('#course-list');
+  if (!list) return;
+  ensureActiveChapterId(state, CONTENT_INDEX);
+  list.innerHTML = '';
+  CONTENT_INDEX.forEach((chapter) => {
+    const chapterState = chState(chapter.id);
+    const progress = getChapterProgress(state, chapter.id, chapter);
+    const available = isChapterAvailable(state, CONTENT_INDEX, chapter.id);
+    const completed = isChapterCompleted(chapterState, chapter);
+    const element = document.createElement('button');
+    element.type = 'button';
+    element.className = `chapter-card course-chapter ${completed ? 'completed' : ''} ${available ? '' : 'locked'}`;
+    element.dataset.testid = `chapter-card-${chapter.id}`;
+    element.innerHTML = `
+      <span class="ch-badge">${completed ? '✓' : available ? chapter.id : '🔒'}</span>
+      <span class="ch-main">
+        <span class="ch-name">Глава ${chapter.id}: ${chapter.title}</span>
+        <span class="ch-sub">${completed ? 'Завершено' : `${progress.completedCount} из ${progress.totalCount} разделов`}</span>
+        <span class="ch-prog"><i style="width:${Math.round(progress.ratio * 100)}%"></i></span>
+      </span>
+      <span class="ch-arrow">›</span>`;
+    element.onclick = () => {
+      if (!available && !completed) {
+        window.toast?.('Сначала завершите предыдущую главу');
+        return;
+      }
+      window.nav('chapter', chapter.id);
+    };
+    list.appendChild(element);
+  });
 }

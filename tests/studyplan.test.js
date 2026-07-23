@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { StudyPlan } from '../studyplan.js';
+import { getLocalWeekday, getTodayDateKey, parseDateKey } from '../src/local-date.js';
 
 describe('StudyPlan', () => {
   let mockLessons;
@@ -142,7 +143,7 @@ describe('StudyPlan', () => {
       expect(chapter2Days).toBeGreaterThan(chapter1Days);
     });
 
-    it('должен включить дни для повторения каждые 3 главы', () => {
+    it('не создаёт искусственные дни повторения: их назначает FSRS', () => {
       const manyLessons = Array(9)
         .fill(null)
         .map((_, i) => ({
@@ -159,9 +160,8 @@ describe('StudyPlan', () => {
 
       const plan = StudyPlan.generatePlan(params, manyLessons, []);
 
-      // Должны быть дни для повторения
       const reviewSegments = plan.segments.filter((s) => s.type === 'review');
-      expect(reviewSegments.length).toBeGreaterThan(0);
+      expect(reviewSegments).toHaveLength(0);
     });
 
     it('должен назначить каждому сегменту даты начала и окончания', () => {
@@ -176,8 +176,8 @@ describe('StudyPlan', () => {
       plan.segments.forEach((segment) => {
         expect(segment.startDate).toBeDefined();
         expect(segment.endDate).toBeDefined();
-        expect(new Date(segment.startDate)).toBeInstanceOf(Date);
-        expect(new Date(segment.endDate)).toBeInstanceOf(Date);
+        expect(parseDateKey(segment.startDate)).toBeInstanceOf(Date);
+        expect(parseDateKey(segment.endDate)).toBeInstanceOf(Date);
       });
     });
 
@@ -192,10 +192,13 @@ describe('StudyPlan', () => {
 
       // Проверяем что все даты соответствуют выбранным дням недели
       plan.segments.forEach((segment) => {
-        const startDay = new Date(segment.startDate).getDay();
-        const endDay = new Date(segment.endDate).getDay();
+        const startDay = getLocalWeekday(segment.startDate);
+        const endDay = getLocalWeekday(segment.endDate);
         expect([1, 3, 5]).toContain(startDay);
         expect([1, 3, 5]).toContain(endDay);
+        expect(
+          segment.assignedDates.every((date) => [1, 3, 5].includes(getLocalWeekday(date)))
+        ).toBe(true);
       });
     });
 
@@ -224,10 +227,11 @@ describe('StudyPlan', () => {
         segments: [],
       };
 
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getTodayDateKey();
       const recalculated = StudyPlan.recalcPlan(originalPlan, mockLessons, []);
 
-      expect(recalculated.startDate).toBe(today);
+      expect(recalculated.startDate).toBe(originalPlan.startDate);
+      expect(recalculated.recalculatedFrom).toBe(today);
       expect(recalculated.deadline).toBe(originalPlan.deadline);
       expect(recalculated.studyDaysOfWeek).toEqual(originalPlan.studyDaysOfWeek);
     });
@@ -351,7 +355,7 @@ describe('StudyPlan', () => {
       const plan = StudyPlan.generatePlan(params, genkiLessons, []);
 
       expect(plan.error).toBeUndefined();
-      expect(plan.segments.length).toBeGreaterThan(12); // Главы + дни повторения
+      expect(plan.segments).toHaveLength(12);
 
       // Проверяем что все 12 глав включены
       const chaptersInPlan = plan.segments
@@ -401,13 +405,205 @@ describe('StudyPlan', () => {
       expect(plan.segments.filter((s) => s.type === 'chapter')).toHaveLength(3);
 
       // Завершили главу 1
-      plan = StudyPlan.recalcPlan(plan, mockLessons, [1]);
-      expect(plan.segments.filter((s) => s.type === 'chapter')).toHaveLength(2);
+      plan = StudyPlan.recalcPlan(plan, mockLessons, [1], { today: '2026-02-01' });
+      expect(
+        plan.segments.filter(
+          (s) => s.type === 'chapter' && !plan.completedChapters.includes(s.chapterId)
+        )
+      ).toHaveLength(2);
 
       // Завершили главы 1 и 2
-      plan = StudyPlan.recalcPlan(plan, mockLessons, [1, 2]);
-      expect(plan.segments.filter((s) => s.type === 'chapter')).toHaveLength(1);
+      plan = StudyPlan.recalcPlan(plan, mockLessons, [1, 2], { today: '2026-03-01' });
+      expect(
+        plan.segments.filter(
+          (s) => s.type === 'chapter' && !plan.completedChapters.includes(s.chapterId)
+        )
+      ).toHaveLength(1);
       expect(plan.segments.find((s) => s.chapterId === 3)).toBeDefined();
+    });
+  });
+
+  describe('точные даты, статусы и FSRS-контекст', () => {
+    it('режим количества дней создаёт ровно N уникальных assignedDates без +1', () => {
+      const plan = StudyPlan.generatePlan(
+        {
+          startDate: '2026-01-05',
+          totalDays: 12,
+          studyDaysOfWeek: [1, 3, 5],
+        },
+        mockLessons,
+        []
+      );
+      const dates = plan.segments.flatMap((segment) => segment.assignedDates);
+      expect(dates).toHaveLength(12);
+      expect(new Set(dates).size).toBe(12);
+      expect(dates[0]).toBe('2026-01-05');
+      expect(plan.deadline).toBe(dates.at(-1));
+      expect(dates.every((date) => [1, 3, 5].includes(getLocalWeekday(date)))).toBe(true);
+    });
+
+    it('безопасно дополняет старый studyPlan точными датами и новыми статусами', () => {
+      const normalized = StudyPlan.normalizePlan({
+        startDate: '2026-01-05',
+        deadline: '2026-01-09',
+        studyDaysOfWeek: [1, 3, 5],
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 1,
+            startDate: '2026-01-05',
+            endDate: '2026-01-09',
+            days: 5,
+            dateStatuses: { '2026-01-05': 'done' },
+          },
+        ],
+      });
+      expect(normalized.segments[0].assignedDates).toEqual([
+        '2026-01-05',
+        '2026-01-07',
+        '2026-01-09',
+      ]);
+      expect(normalized.segments[0].dateStatuses['2026-01-05']).toBe('completed');
+    });
+
+    it('прошедшая дата без события становится overdue, а не completed', () => {
+      const plan = StudyPlan.generatePlan(
+        {
+          startDate: '2026-01-05',
+          totalDays: 12,
+          studyDaysOfWeek: [1, 2, 3, 4, 5],
+        },
+        mockLessons,
+        []
+      );
+      expect(
+        StudyPlan.getDateStatus(plan, plan.segments[0].assignedDates[0], {
+          today: '2026-02-01',
+        })
+      ).toBe('overdue');
+      StudyPlan.markDateStatus(plan, plan.segments[0].assignedDates[0], 'skipped');
+      expect(
+        StudyPlan.getDateStatus(plan, plan.segments[0].assignedDates[0], {
+          today: '2026-02-01',
+        })
+      ).toBe('skipped');
+    });
+
+    it('использует фактическую структуру masteryArchive без поля score', () => {
+      const plan = StudyPlan.generatePlan(
+        {
+          startDate: '2026-01-05',
+          totalDays: 12,
+          studyDaysOfWeek: [1, 2, 3, 4, 5],
+        },
+        mockLessons,
+        []
+      );
+      const context = StudyPlan.getDailyPlanContext(
+        plan,
+        {},
+        {
+          L1_V001: {
+            evidenceCount: 4,
+            successfulSkills: { recognition: true, recall: true },
+            successfulDays: { recall: ['2026-01-01', '2026-01-02'] },
+            successfulCount: { recognition: 1, recall: 2 },
+            recentOutcomes: {
+              recognition: [{ correct: true, reviewedAt: new Date(2026, 0, 1).getTime() }],
+              recall: [{ correct: true, reviewedAt: new Date(2026, 0, 2).getTime() }],
+            },
+            recentLapseAt: null,
+          },
+        },
+        '2026-01-05',
+        { now: new Date(2026, 0, 5, 12).getTime() }
+      );
+      expect(context.chapterMastery.itemCount).toBe(1);
+      expect(context.chapterMastery.avgScore).toBeGreaterThan(0);
+    });
+
+    it('считает due и прогресс только по FSRS/review events, а не dailyCards', () => {
+      const now = new Date(2026, 0, 5, 12).getTime();
+      const plan = StudyPlan.generatePlan(
+        {
+          startDate: '2026-01-05',
+          totalDays: 12,
+          studyDaysOfWeek: [1, 2, 3, 4, 5],
+        },
+        mockLessons,
+        []
+      );
+      const context = StudyPlan.getDailyPlanContext(
+        plan,
+        {
+          L1_V001: { id: 'L1_V001', due: now - 1, suspended: false },
+          L1_V002: { id: 'L1_V002', due: now + 10_000, suspended: false },
+        },
+        {},
+        '2026-01-05',
+        {
+          now,
+          reviewEvents: [
+            {
+              eventId: 'review-1',
+              eventType: 'review',
+              cardId: 'L1_V003',
+              itemId: 'L1_V003',
+              reviewedAt: now - 1_000,
+              undoneAt: null,
+            },
+          ],
+          dailyCards: 999,
+        }
+      );
+      expect(context.dueCount).toBe(1);
+      expect(context.reviewedToday).toBe(1);
+      expect(context.reviewTotalToday).toBe(2);
+    });
+
+    it('при пересчёте сохраняет прошлые даты и статусы', () => {
+      const plan = StudyPlan.generatePlan(
+        {
+          startDate: '2026-01-05',
+          deadline: '2026-03-31',
+          studyDaysOfWeek: [1, 2, 3, 4, 5],
+        },
+        mockLessons,
+        []
+      );
+      const historicalDate = plan.segments[0].assignedDates[0];
+      StudyPlan.markDateStatus(plan, historicalDate, 'completed');
+      const recalculated = StudyPlan.recalcPlan(plan, mockLessons, [1], {
+        today: '2026-02-01',
+      });
+      const preserved = recalculated.segments.find((segment) =>
+        segment.assignedDates.includes(historicalDate)
+      );
+      expect(preserved.dateStatuses[historicalDate]).toBe('completed');
+      expect(recalculated.history.some((event) => event.eventType === 'plan-recalculated')).toBe(
+        true
+      );
+    });
+
+    it('для истёкшего дедлайна возвращает явные варианты без изменения истории', () => {
+      const result = StudyPlan.recalcPlan(
+        {
+          startDate: '2026-01-01',
+          deadline: '2026-01-31',
+          studyDaysOfWeek: [1, 2, 3, 4, 5],
+          segments: [],
+          history: [{ eventId: 'past' }],
+        },
+        mockLessons,
+        [],
+        { today: '2026-02-01' }
+      );
+      expect(result.deadlineExpired).toBe(true);
+      expect(result.options.map((option) => option.type)).toEqual([
+        'extend_deadline',
+        'increase_load',
+        'keep_overdue',
+      ]);
     });
   });
 });

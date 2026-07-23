@@ -121,6 +121,8 @@ export function defaultState() {
     version: CURRENT_VERSION,
     initialized: false,
     chapters: {}, // id -> {started, checklist:{}}
+    activeChapterId: null, // единый указатель на главу для «Продолжить обучение»
+    learningEvents: [], // фактические события разделов/глав для плана, отдельно от dailyCards
     srs: {}, // cardId -> SRS record
     reviewEvents: [], // ограниченное окно событий; полные snapshot остаются только для Undo
     masteryArchive: {}, // агрегированные доказательства из свёрнутых review events
@@ -179,6 +181,42 @@ export function runMigrations(loadedState) {
   return migratedState;
 }
 
+function normalizeRuntimeShape(loadedState) {
+  const base = defaultState();
+  const normalized = { ...base, ...loadedState };
+  normalized.settings = { ...base.settings, ...(loadedState.settings || {}) };
+  normalized.chapters =
+    loadedState.chapters && typeof loadedState.chapters === 'object' ? loadedState.chapters : {};
+  for (const chapter of Object.values(normalized.chapters)) {
+    chapter.checklist =
+      chapter.checklist && typeof chapter.checklist === 'object' ? chapter.checklist : {};
+    const values = Object.values(chapter.checklist);
+    if (!chapter.completedAt && values.length > 0 && values.every((value) => value === true)) {
+      const legacyCompletedAt = chapter.updatedAt || chapter.startedAt || Date.now();
+      chapter.completedAt = legacyCompletedAt;
+      chapter.completionRewardedAt ||= legacyCompletedAt;
+    }
+  }
+  normalized.learningEvents = Array.isArray(loadedState.learningEvents)
+    ? loadedState.learningEvents
+    : [];
+  const activeChapterId = Number(loadedState.activeChapterId);
+  normalized.activeChapterId =
+    loadedState.activeChapterId != null && Number.isInteger(activeChapterId) && activeChapterId > 0
+      ? activeChapterId
+      : null;
+  normalized.studyPlan = loadedState.studyPlan || null;
+  if (normalized.studyPlan) {
+    normalized.studyPlan.segments = Array.isArray(normalized.studyPlan.segments)
+      ? normalized.studyPlan.segments
+      : [];
+    normalized.studyPlan.history = Array.isArray(normalized.studyPlan.history)
+      ? normalized.studyPlan.history
+      : [];
+  }
+  return normalized;
+}
+
 // ---------- Pub/Sub System ----------
 export function subscribe(callback) {
   if (typeof callback !== 'function') {
@@ -211,7 +249,7 @@ export async function loadState() {
 
     if (loaded) {
       // Прогоняем миграции если версия старая
-      state = runMigrations(loaded);
+      state = normalizeRuntimeShape(runMigrations(loaded));
       console.log(
         '[Store] ✅ Состояние загружено из IndexedDB. XP:',
         state.xp,
@@ -223,7 +261,7 @@ export async function loadState() {
       const fallback = localStorage.getItem(LS_STATE);
       if (fallback) {
         const parsedFallback = JSON.parse(fallback);
-        state = runMigrations(parsedFallback);
+        state = normalizeRuntimeShape(runMigrations(parsedFallback));
         console.log('[Store] Состояние загружено из localStorage (фоллбек)');
       } else {
         state = defaultState();
@@ -237,7 +275,7 @@ export async function loadState() {
     try {
       const fallback = localStorage.getItem(LS_STATE);
       if (fallback) {
-        state = runMigrations(JSON.parse(fallback));
+        state = normalizeRuntimeShape(runMigrations(JSON.parse(fallback)));
         console.warn('[Store] Использован localStorage после ошибки IndexedDB');
       } else {
         state = defaultState();
