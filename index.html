@@ -119,7 +119,7 @@
             <span id="study-due-label">Повторить карточки</span>
           </button>
 
-          <div class="card plan-entry-card" data-testid="plan-entry-btn">
+          <div class="card plan-entry-card" data-nav="plan" data-testid="plan-entry-btn">
             <div style="display: flex; align-items: center; gap: 12px">
               <span style="font-size: 32px">📅</span>
               <div>
@@ -439,6 +439,9 @@
 
           <!-- Контейнер плана (показывается после генерации) -->
           <div id="plan-view-container" class="hidden">
+            <!-- План на сегодня -->
+            <div id="plan-today-card" class="plan-today-card hidden"></div>
+
             <!-- Переключатель вида -->
             <div class="plan-view-toggle card">
               <button class="toggle-btn active" data-view="timeline" data-testid="view-timeline">

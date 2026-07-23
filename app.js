@@ -99,6 +99,7 @@ import { renderSensei } from './ui/chat.js';
 import { renderSettings } from './ui/settings.js';
 import { renderCrossword } from './ui/crossword.js';
 import { renderParticlesList } from './ui/particles.js';
+import { renderPlan } from './ui/plan.js';
 
 // ===== ГЛОБАЛЬНЫЕ ЭКСПОРТЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ =====
 window.SRS = SRS;
@@ -548,7 +549,7 @@ function setupRouter() {
     library: () => renderStories(state, dependencies),
     sensei: () => renderSensei(state, dependencies),
     settings: () => renderSettings(state, dependencies),
-    plan: () => {}, // План обучения (пока заглушка)
+    plan: () => renderPlan(state, dependencies),
     quests: () => renderQuests(state, dependencies),
     'ai-story': () => {
       // AI-история рендерится через отдельный механизм
