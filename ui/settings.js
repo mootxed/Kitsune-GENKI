@@ -37,6 +37,23 @@ export function renderSettings(state, dependencies) {
   const body = $('#settings-body');
   body.innerHTML = `
     <div class="set-group">
+      <div class="set-item settings-destination">
+        <div>
+          <label>📅 План обучения</label>
+          <div class="set-hint">Расписание, дедлайн, нагрузка и управление планом.</div>
+        </div>
+        <button class="btn-ghost" id="btn-study-plan" data-testid="settings-plan-btn">Открыть</button>
+      </div>
+      <div class="set-item settings-destination">
+        <div>
+          <label>📚 Все главы</label>
+          <div class="set-hint">Открывайте начатые и уже завершённые главы курса.</div>
+        </div>
+        <button class="btn-ghost" id="btn-course" data-testid="settings-course-btn">Открыть</button>
+      </div>
+    </div>
+
+    <div class="set-group">
       <div class="set-item">
         <label>🔑 API-ключ OpenRouter</label>
         <input type="password" id="set-key" value="${s.openrouterKey || ''}" placeholder="sk-or-v1-..." data-testid="set-openrouter-key" />
@@ -130,6 +147,8 @@ export function renderSettings(state, dependencies) {
   bindEvent('#btn-test-notif', 'click', () =>
     showNotification('Kitsune Genki 🦊', 'Пора продолжить изучение японского!')
   );
+  bindEvent('#btn-study-plan', 'click', () => nav('plan'));
+  bindEvent('#btn-course', 'click', () => nav('course'));
   bindEvent('#set-hide-romaji', 'change', (e) => {
     s.hideRomaji = e.target.checked;
     save();

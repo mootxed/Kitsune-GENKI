@@ -1,7 +1,7 @@
 /* sw.js — Kitsune Genki Service Worker */
 
 // ===== ВЕРСИОНИРОВАННЫЕ КЕШИ =====
-const CACHE_VERSION = '13';
+const CACHE_VERSION = '14';
 const CACHE_STATIC = `kitsune-static-v${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `kitsune-dynamic-v${CACHE_VERSION}`;
 const CACHE_LESSON = `kitsune-lesson-v${CACHE_VERSION}`;
@@ -25,15 +25,33 @@ const STATIC_ASSETS = [
   // JavaScript модули
   'src/audio-helper.js',
   'src/backup-manager.js',
+  'src/card-behavior.js',
+  'src/chapter-progress.js',
   'src/content-loader.js',
+  'src/db.js',
+  'src/knowledge-model.js',
+  'src/local-date.js',
+  'src/mastery.js',
+  'src/migration.js',
+  'src/particle-templates.js',
+  'src/production-context.js',
+  'src/review-journal.js',
+  'src/review-log.js',
+  'src/session-batcher.js',
+  'src/srs-config.js',
   'src/srs-helpers.js',
+  'src/srs-limits.js',
+  'src/typing-capability.js',
   'src/utils.js',
   'src/xp-system.js',
   'state/store.js',
   'ui/chapter.js',
   'ui/chat.js',
+  'ui/crossword.js',
   'ui/flashcards.js',
   'ui/home.js',
+  'ui/particles.js',
+  'ui/plan.js',
   'ui/profile.js',
   'ui/router.js',
   'ui/settings.js',

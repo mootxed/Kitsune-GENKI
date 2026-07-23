@@ -1,8 +1,9 @@
 /* ui/shared.js — Shared UI utilities */
-import { state, save } from '../state/store.js';
+import { state } from '../state/store.js';
 import { countAvailableCardsForSession } from '../src/srs-limits.js';
-import { XP_PER_LEVEL, COINS_PER_LEVEL } from '../src/xp-system.js';
+import { XP_PER_LEVEL } from '../src/xp-system.js';
 import { $, todayStr, pluralDays } from '../src/utils.js';
+import { parseDateKey } from '../src/local-date.js';
 
 // ===== COMPLETION SCREEN (ЭКРАН УСПЕХА) =====
 export function showCompletionScreen(options) {
@@ -74,7 +75,7 @@ export function refreshStreakDisplay() {
   const s = state.streak;
   let shown = s.count;
   if (s.lastActive) {
-    const diff = Math.round((new Date(todayStr()) - new Date(s.lastActive)) / 86400000);
+    const diff = Math.round((parseDateKey(todayStr()) - parseDateKey(s.lastActive)) / 86400000);
     if (diff > 1) shown = 0;
   } else shown = 0;
 

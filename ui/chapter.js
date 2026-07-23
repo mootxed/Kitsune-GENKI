@@ -1,12 +1,20 @@
 /* ui/chapter.js — Chapter screen */
-import { state, save, chState } from '../state/store.js';
+import { save, chState } from '../state/store.js';
 import { refreshStreakDisplay } from './shared.js';
 import { $, $$ } from '../src/utils.js';
 import { allCards, dueCards } from '../src/srs-helpers.js';
 import { XP_CHECK, XP_CHAPTER_FULL, addXP } from '../src/xp-system.js';
-import { CHECK_ITEMS, getLesson, ensureLesson, startChapter, markActivity } from './home.js';
-import { toast } from '../app.js';
+import {
+  CHECK_ITEMS,
+  CONTENT_INDEX,
+  getLesson,
+  ensureLesson,
+  startChapter,
+  markActivity,
+} from './home.js';
 import { countAvailableCardsForSession } from '../src/srs-limits.js';
+import { StudyPlan } from '../studyplan.js';
+import { completeChapter, setChapterSection } from '../src/chapter-progress.js';
 
 // ---------- Render: Chapter ----------
 export async function renderChapter(id, state, dependencies) {
@@ -95,12 +103,12 @@ export async function renderChapter(id, state, dependencies) {
     $('#ch-start').onclick = () => {
       startChapter(id, toast);
       renderChapter(id, state, dependencies);
-      if (window.renderHome) window.renderHome();
+      dependencies?.renderHome?.();
     };
   }
 
   $$('#chapter-body .check-item').forEach((el) => {
-    el.onclick = (e) => {
+    el.onclick = async (e) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -110,54 +118,36 @@ export async function renderChapter(id, state, dependencies) {
       }
 
       const k = el.dataset.check;
+      const wasCompleted = cs.checklist[k] === true;
+      const sectionResult = setChapterSection(state, id, k, !wasCompleted, {
+        chapters: CONTENT_INDEX,
+      });
+      if (!sectionResult.changed) return;
 
-      // Исправлено: теперь можно снимать галочки
-      if (cs.checklist[k]) {
-        // Снимаем галочку
-        cs.checklist[k] = false;
+      if (wasCompleted) {
         state.xp = Math.max(0, state.xp - XP_CHECK);
         toast(`❌ Отметка снята, -${XP_CHECK} XP`);
-        save(true);
-        markActivity(toast);
-        el.classList.remove('done');
-        const cb = el.querySelector('.checkbox');
-        if (cb) cb.textContent = '';
-        const items = CHECK_ITEMS.length;
-        const done = CHECK_ITEMS.filter((c) => cs.checklist[c[0]]).length;
-        $$('#chapter-body .prog-dash .segment').forEach((seg, idx) => {
-          seg.classList.toggle('active', idx < done);
-        });
-        const progText = $('#chapter-body .row-between b');
-        if (progText) progText.textContent = `${done}/${items}`;
-        refreshStreakDisplay();
-        return;
+      } else {
+        addXP(XP_CHECK, state);
+        toast(`+${XP_CHECK} XP за чек-лист!`);
+
+        if (sectionResult.completedNow) {
+          const completion = completeChapter(state, id, {
+            chapters: CONTENT_INDEX,
+            recalculatePlan: StudyPlan.recalculateFuturePlan,
+          });
+          if (completion.rewardGranted) {
+            addXP(XP_CHAPTER_FULL, state);
+            toast(`🎉 Глава пройдена! +${XP_CHAPTER_FULL} XP!`);
+          }
+        }
       }
 
-      // Ставим галочку
-      cs.checklist[k] = true;
-
-      // XP награды за чек-лист
-      addXP(XP_CHECK, state, { save: save, markActivity: () => markActivity(toast) });
-      toast(`+${XP_CHECK} XP за чек-лист!`);
-
-      const doneCount = CHECK_ITEMS.filter((c) => cs.checklist[c[0]]).length;
-      if (doneCount === CHECK_ITEMS.length) {
-        addXP(XP_CHAPTER_FULL, state, { save: save, markActivity: () => markActivity(toast) });
-        toast(`🎉 Глава пройдена! +${XP_CHAPTER_FULL} XP!`);
-      }
-
-      save(true);
+      await save(true);
       markActivity(toast);
-      el.classList.add('done');
-      const cb = el.querySelector('.checkbox');
-      if (cb) cb.textContent = '✓';
-      const items = CHECK_ITEMS.length;
-      const done = CHECK_ITEMS.filter((c) => cs.checklist[c[0]]).length;
-      $$('#chapter-body .prog-dash .segment').forEach((seg, idx) => {
-        seg.classList.toggle('active', idx < done);
-      });
-      const progText = $('#chapter-body .row-between b');
-      if (progText) progText.textContent = `${done}/${items}`;
+      refreshStreakDisplay();
+      await renderChapter(id, state, dependencies);
+      dependencies?.renderHome?.();
     };
   });
 }

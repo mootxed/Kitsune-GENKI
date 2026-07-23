@@ -1,12 +1,15 @@
 /* Calendar-day helpers that intentionally use the user's local timezone. */
 
-export function localDateKey(value = Date.now()) {
+export function formatDateKey(value = Date.now()) {
   const date = value instanceof Date ? value : new Date(value);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
+export const localDateKey = formatDateKey;
+export const getTodayDateKey = () => formatDateKey();
 
 /**
  * Парсит строку "YYYY-MM-DD" в локальный Date без UTC-сдвига.
@@ -19,6 +22,29 @@ export function localDateKey(value = Date.now()) {
  * @returns {Date} локальный Date на начало указанного дня
  */
 export function parseDateKey(dateStr) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateStr))) {
+    throw new Error(`[LocalDate] Неверный ключ даты: ${dateStr}`);
+  }
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d); // локальный конструктор, не UTC
+  const result = new Date(y, m - 1, d);
+  if (result.getFullYear() !== y || result.getMonth() !== m - 1 || result.getDate() !== d) {
+    throw new Error(`[LocalDate] Несуществующая дата: ${dateStr}`);
+  }
+  return result; // локальный конструктор, не UTC
+}
+
+export function addLocalDays(dateKey, amount) {
+  const date = parseDateKey(dateKey);
+  date.setDate(date.getDate() + Number(amount || 0));
+  return formatDateKey(date);
+}
+
+export function getLocalWeekday(dateKey) {
+  return parseDateKey(dateKey).getDay();
+}
+
+export function startOfLocalDay(value = Date.now()) {
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
 }

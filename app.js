@@ -78,6 +78,7 @@ import {
   startChapter,
   updateMainQuestsTimer,
   renderHome,
+  renderCourse,
 } from './ui/home.js';
 import { renderChapter } from './ui/chapter.js';
 import { renderProfile, renderQuests, claimQuest, claimAchievementReward } from './ui/profile.js';
@@ -529,6 +530,7 @@ function setupRouter() {
 
   router = initRouter({
     home: () => renderHome(state, dependencies),
+    course: () => renderCourse(state, dependencies),
     chapter: (id) => renderChapter(parseInt(id), state, dependencies),
     srs: renderSrsDashboard,
     profile: () => renderProfile(state, dependencies),

@@ -25,6 +25,8 @@ describe('Store - Версионирование и миграции', () => {
       expect(state).toHaveProperty('version');
       expect(state).toHaveProperty('initialized');
       expect(state).toHaveProperty('chapters');
+      expect(state).toHaveProperty('activeChapterId', null);
+      expect(state).toHaveProperty('learningEvents');
       expect(state).toHaveProperty('srs');
       expect(state).toHaveProperty('reviewEvents');
       expect(state).toHaveProperty('masteryArchive');
@@ -69,6 +71,15 @@ describe('Store - Версионирование и миграции', () => {
       expect(state.claimedAchievements).toEqual([]);
       expect(state.chatHistory).toEqual([]);
       expect(state.quests).toBeNull();
+    });
+
+    it('без смены schema v6 безопасно дополняет старое состояние полями обучения', () => {
+      const normalized = runMigrations({
+        version: 6,
+        chapters: {},
+        studyPlan: null,
+      });
+      expect(normalized.version).toBe(6);
     });
 
     it('должен сохранять существующие достижения при миграции', async () => {

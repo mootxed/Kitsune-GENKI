@@ -4,6 +4,7 @@ export class Router {
   constructor() {
     this.screens = [
       'home',
+      'course',
       'profile',
       'chapter',
       'srs',
