@@ -90,11 +90,11 @@ function renderSenseiTools(state, dependencies) {
 
   body.innerHTML = `
   <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
-    <!-- AI Сенсей (бывший AI-история) -->
+    <!-- AI-история -->
     <div class="tool-card" data-nav="ai-story">
       <span class="tool-icon">✨</span>
       <div class="tool-info">
-        <h3>AI Сенсей</h3>
+        <h3>AI-история</h3>
         <p>Генерируйте интерактивные истории на основе ваших слабых слов</p>
       </div>
       <span class="tool-arrow">›</span>
@@ -108,6 +108,16 @@ function renderSenseiTools(state, dependencies) {
         <p>${crosswordUnlocked ? 'Закрепляйте изученные слова в игровой форме' : '🔒 Откроется после начала 3 глав'}</p>
       </div>
       <span class="${crosswordUnlocked ? 'tool-arrow' : 'tool-lock'}">${crosswordUnlocked ? '›' : '🔒'}</span>
+    </div>
+
+    <!-- Охота на слова -->
+    <div class="tool-card" data-nav="word-search" data-testid="tool-card-word-search">
+      <span class="tool-icon">🔍</span>
+      <div class="tool-info">
+        <h3>Охота на слова</h3>
+        <p>Находите японские слова в сетке по русскому переводу</p>
+      </div>
+      <span class="tool-arrow">›</span>
     </div>
   </div>
   `;

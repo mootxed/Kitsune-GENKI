@@ -257,7 +257,7 @@ export class ExamplesDBClass {
         );
         if (found) {
           resolvedLexemeId = found.lexemeId || found.id;
-        } else {
+        } else if (!/^L\d+_/i.test(targetId)) {
           console.warn(
             `[ExamplesDB] Warning: Unknown targetWordId/targetLexemeId in curated examples: ${targetId}`
           );

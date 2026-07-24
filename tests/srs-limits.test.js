@@ -114,4 +114,73 @@ describe('SRS new-card limits', () => {
     expect(first.map((entry) => entry.id)).toEqual(['word']);
     expect(countNewCardsIntroducedOn(records, DAY)).toBe(1);
   });
+
+  it('при 30 новых items одна сессия выдаёт 20 новых карточек с новыми лимитами по умолчанию', () => {
+    const records = {};
+    for (let i = 1; i <= 30; i++) {
+      records[`item_${i}`] = card(`item_${i}`, State.New);
+    }
+
+    const selected = limitNewCardsForSession(Object.values(records), records, { day: DAY });
+    expect(selected).toHaveLength(20);
+  });
+
+  it('вторая сессия в тот же день не превышает дневной лимит 20', () => {
+    const records = {};
+    for (let i = 1; i <= 30; i++) {
+      records[`item_${i}`] = card(`item_${i}`, State.New);
+    }
+
+    // Первая сессия выдаёт 20 карточек и помечает их introducedOn = DAY
+    const session1 = limitNewCardsForSession(Object.values(records), records, { day: DAY });
+    expect(session1).toHaveLength(20);
+
+    // Убедимся, что 20 получили introducedOn
+    const introducedCount = countNewCardsIntroducedOn(records, DAY);
+    expect(introducedCount).toBe(20);
+
+    // Вторая сессия должна вернуть 0 оставшихся новых карточек для невыданных items
+    const remainingDue = Object.values(records).filter((c) => !c.introducedOn);
+    const session2 = limitNewCardsForSession(remainingDue, records, { day: DAY });
+    expect(session2).toHaveLength(0);
+  });
+
+  it('обычные reviews не ограничиваются лимитом новых карточек', () => {
+    const records = {};
+    // 25 ревью карточек
+    for (let i = 1; i <= 25; i++) {
+      records[`rev_${i}`] = card(`rev_${i}`, State.Review);
+    }
+    // 30 новых карточек
+    for (let i = 1; i <= 30; i++) {
+      records[`new_${i}`] = card(`new_${i}`, State.New);
+    }
+
+    const selected = limitNewCardsForSession(Object.values(records), records, { day: DAY });
+    // Все 25 reviews + 20 new = 45 карточек
+    expect(selected).toHaveLength(45);
+    const reviewsInSelected = selected.filter((c) => c.state === State.Review);
+    expect(reviewsInSelected).toHaveLength(25);
+  });
+
+  it('dashboard корректно разделяет reviews и new items', () => {
+    const records = {
+      rev1: card('rev1', State.Review),
+      rev2: card('rev2', State.Learning),
+      new1: card('new1', State.New),
+      new2: card('new2', State.New),
+      new3: card('new3', State.New),
+    };
+
+    const due = Object.values(records);
+    const sessionCards = limitNewCardsForSession(due, records, { day: DAY });
+
+    const reviewsCount = due.filter((c) => c.state !== State.New).length;
+    const availableNewCount = sessionCards.filter((c) => c.state === State.New).length;
+    const totalCount = Object.keys(records).length;
+
+    expect(reviewsCount).toBe(2);
+    expect(availableNewCount).toBe(3);
+    expect(totalCount).toBe(5);
+  });
 });

@@ -26,6 +26,7 @@ export function initRouter(handlers) {
   router.registerRenderHandler('quests', handlers.quests);
   router.registerRenderHandler('ai-story', handlers['ai-story']);
   router.registerRenderHandler('crossword', handlers.crossword);
+  router.registerRenderHandler('word-search', handlers['word-search']);
 
   // Инициализация обработчика истории браузера
   router.initHistoryHandler();

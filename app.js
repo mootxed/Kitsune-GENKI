@@ -10,6 +10,7 @@ import { StudyPlan } from './studyplan.js';
 import { API } from './services.js';
 import { SRS } from './srs.js';
 import { SessionManager } from './session-manager.js';
+import { State } from 'ts-fsrs';
 
 // IndexedDB модули
 import { initializeDB } from './src/db.js';
@@ -101,6 +102,8 @@ import { renderSettings } from './ui/settings.js';
 import { renderCrossword } from './ui/crossword.js';
 import { renderParticlesList } from './ui/particles.js';
 import { renderPlan } from './ui/plan.js';
+import { renderAIStory } from './ui/ai-story.js';
+import { renderWordSearch } from './ui/word-search.js';
 
 // ===== ГЛОБАЛЬНЫЕ ЭКСПОРТЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ =====
 window.SRS = SRS;
@@ -502,15 +505,21 @@ function setupRouter() {
     await ensureLessonsForSrs();
 
     const due = dueCards(state.srs);
-    const availableCount = countAvailableCardsForSession(due, state.srs);
+    const sessionCards = limitNewCardsForSession(due, state.srs);
+    const availableCount = sessionCards.length;
+
+    const reviewsCount = due.filter((card) => card.state !== State.New).length;
+    const availableNewCount = sessionCards.filter((card) => card.state === State.New).length;
+    const totalCount = allCards(state.srs).length;
 
     // ВСЕГДА показываем dashboard с кнопкой, даже если есть карточки к повтору
     body.innerHTML = `
-      <div class="stat-row">
-        <div class="stat-box"><div class="stat-num accent">${availableCount}</div><div class="stat-cap">К повтору</div></div>
-        <div class="stat-box"><div class="stat-num">${allCards(state.srs).length}</div><div class="stat-cap">Всего карточек</div></div>
+      <div class="stat-row" data-testid="srs-stat-row">
+        <div class="stat-box" data-testid="stat-reviews"><div class="stat-num accent">${reviewsCount}</div><div class="stat-cap">Повторения</div></div>
+        <div class="stat-box" data-testid="stat-new"><div class="stat-num" style="color:var(--primary, #ff8a2b)">${availableNewCount}</div><div class="stat-cap">Новые слова</div></div>
+        <div class="stat-box" data-testid="stat-total"><div class="stat-num">${totalCount}</div><div class="stat-cap">Всего</div></div>
       </div>
-      <button class="btn-primary" id="srs-start-session" ${availableCount === 0 ? 'disabled' : ''}>
+      <button class="btn-primary" id="srs-start-session" data-testid="srs-start-btn" ${availableCount === 0 ? 'disabled' : ''}>
         ${availableCount === 0 ? 'Всё повторено на сегодня!' : `▶️ Начать повторение (${availableCount})`}
       </button>
       <button class="btn-extra-review" id="srs-extra-review">➕ Практика без изменения расписания</button>
@@ -540,10 +549,9 @@ function setupRouter() {
     settings: () => renderSettings(state, dependencies),
     plan: () => renderPlan(state, dependencies),
     quests: () => renderQuests(state, dependencies),
-    'ai-story': () => {
-      // AI-история рендерится через отдельный механизм
-    },
+    'ai-story': () => renderAIStory(state, dependencies),
     crossword: () => renderCrossword(state, dependencies),
+    'word-search': () => renderWordSearch(state, dependencies),
   });
 
   // Глобальные алиасы для обратной совместимости

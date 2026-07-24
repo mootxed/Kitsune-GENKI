@@ -1,10 +1,10 @@
 /* src/srs-config.js — централизованные, редактируемые параметры нагрузки SRS */
 
 // Сколько ещё не изученных карточек можно впервые показать за один календарный день.
-export const DAILY_NEW_CARDS_LIMIT = 15;
+export const DAILY_NEW_CARDS_LIMIT = 20;
 
 // Сколько новых карточек может попасть в одну сессию. Повторения не ограничиваются.
-export const SESSION_NEW_CARDS_LIMIT = 10;
+export const SESSION_NEW_CARDS_LIMIT = 20;
 
 // Верхняя граница интервала FSRS в днях.
 export const MAX_INTERVAL = 365;

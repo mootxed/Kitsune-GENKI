@@ -16,6 +16,7 @@ export class Router {
       'quests',
       'ai-story',
       'crossword',
+      'word-search',
     ];
     this.renderHandlers = {};
   }

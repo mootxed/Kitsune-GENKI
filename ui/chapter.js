@@ -56,18 +56,20 @@ export async function renderChapter(id, state, dependencies) {
   } else if (isPriorKnowledge) {
     const studyBtnText = due > 0 ? 'Повторять слова →' : 'Учить слова →';
     const hasCards = total > 0;
-    startBlock = `<div class="card srs-mini prior-knowledge-banner">
-         <div class="row-between" style="width:100%;margin-bottom:12px">
-           <span class="badge prior-knowledge-badge" data-testid="prior-knowledge-badge" style="background:var(--accent-light, #e0e7ff);color:var(--accent-dark, #3730a3);padding:4px 8px;border-radius:6px;font-weight:600;font-size:13px">📚 Изучено ранее</span>
-           <small class="muted">Вы отметили эту главу как изученную ранее</small>
+    startBlock = `<div class="card prior-knowledge-card">
+         <div class="prior-knowledge-header">
+           <span class="badge prior-knowledge-badge" data-testid="prior-knowledge-badge">📚 Изучено ранее</span>
+           <p class="prior-knowledge-description">Вы отметили эту главу как изученную ранее</p>
          </div>
-         <div class="row-between" style="width:100%;align-items:center">
+         <div class="prior-knowledge-stats">
            <div class="m"><b>${total}</b><span>карточек</span></div>
            <div class="m due"><b>${due}</b><span>доступно сейчас</span></div>
+         </div>
+         <div class="prior-knowledge-action">
            ${
              hasCards
-               ? `<button class="btn-study-sm" id="ch-study" data-testid="chapter-study-btn">${studyBtnText}</button>`
-               : `<button class="btn-study-sm" id="ch-reconcile-srs" data-testid="reconcile-srs-btn">Добавить слова в SRS</button>`
+               ? `<button class="btn-study-sm prior-knowledge-btn" id="ch-study" data-testid="chapter-study-btn">${studyBtnText}</button>`
+               : `<button class="btn-study-sm prior-knowledge-btn" id="ch-reconcile-srs" data-testid="reconcile-srs-btn">Добавить слова в SRS</button>`
            }
          </div>
        </div>`;
