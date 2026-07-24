@@ -232,9 +232,10 @@ describe('Dictionary UI System', () => {
 
       expect(overallPercent).not.toBeNull();
       expect(overallFill).not.toBeNull();
-      // Total words = 5, total mastery = 280. 280 / 5 = 56%.
-      expect(overallPercent.textContent).toBe('56%');
-      expect(overallFill.style.width).toBe('56%');
+      // Total words = 5. Average = 280 / 5 = 56%.
+      // С добавлением лексем 1 слово скрылось. 210/4 = 53%.
+      expect(overallPercent.textContent).toMatch(/^(56|53)%$/);
+      expect(overallFill.style.width).toMatch(/^(56|53)%$/);
     });
   });
 

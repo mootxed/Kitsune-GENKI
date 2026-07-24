@@ -2430,13 +2430,17 @@ function renderDictionaryLessons(state, dependencies, searchQuery = '', filterQu
   const query = searchQuery.toLowerCase().trim();
   const activeLessonId = state.activeChapterId || 1;
 
-  // 1. Calculate overall mastery score
+  // 1. Calculate overall mastery score (avoiding duplicate lexemeIds)
   let totalMastery = 0;
   let totalWordsCount = 0;
+  const processedLexemes = new Set();
 
   LESSONS.forEach((lesson) => {
     const words = lesson.words || [];
     words.forEach((word) => {
+      if (!word.lexemeId || processedLexemes.has(word.lexemeId)) return;
+      processedLexemes.add(word.lexemeId);
+
       totalWordsCount++;
       const isUnlocked = isWordUnlocked(word.id, state.chapters);
       if (isUnlocked) {
@@ -2670,6 +2674,62 @@ function getVerbClassLabel(vc) {
     irregular: 'Неправильный',
   };
   return mapping[vc] || vc || 'Неизвестно';
+}
+
+function getTopicLabel(topic) {
+  const mapping = {
+    food: 'Еда и напитки',
+    people: 'Люди',
+    places: 'Места',
+    time: 'Время',
+    study: 'Учёба',
+    directions: 'Направления',
+    objects: 'Предметы',
+    family: 'Семья',
+    nature: 'Природа',
+    weather: 'Погода',
+    colors: 'Цвета',
+    body: 'Части тела',
+    clothes: 'Одежда',
+    actions: 'Действия',
+    animals: 'Животные',
+    transport: 'Транспорт',
+    buildings: 'Здания',
+    jobs: 'Профессии',
+    health: 'Здоровье',
+    hobby: 'Хобби',
+    sports: 'Спорт',
+    music: 'Музыка',
+    technology: 'Технологии',
+    money: 'Деньги',
+    shopping: 'Покупки',
+    travel: 'Путешествия',
+    culture: 'Культура',
+    home: 'Дом',
+    school: 'Школа',
+    work: 'Работа',
+    entertainment: 'Развлечения',
+    feelings: 'Чувства',
+    society: 'Общество',
+    politics: 'Политика',
+    science: 'Наука',
+    religion: 'Религия',
+    history: 'История',
+    geography: 'География',
+    math: 'Математика',
+    literature: 'Литература',
+    art: 'Искусство',
+    daily: 'Повседневность',
+  };
+
+  if (!topic) return '';
+  const lowerTopic = topic.toLowerCase().trim();
+
+  // Ищем точное совпадение
+  if (mapping[lowerTopic]) return mapping[lowerTopic];
+
+  // Если тема не найдена в маппинге, пытаемся сделать её читаемой
+  return lowerTopic.charAt(0).toUpperCase() + lowerTopic.slice(1);
 }
 
 function getLessonsLabel(lessonIds) {
@@ -3275,6 +3335,7 @@ export function openDictionaryModal(word, state, dependencies) {
             </div>
             <div class="dict-word-meta-badges">
               <span class="dict-badge badge-pos">${getPartOfSpeechLabel(word.partOfSpeech)}</span>
+              ${word.topic ? `<span class="dict-badge badge-topic">${getTopicLabel(word.topic)}</span>` : ''}
               ${word.partOfSpeech === 'verb' && word.verbClass ? `<span class="dict-badge badge-verbclass">${getVerbClassLabel(word.verbClass)}</span>` : ''}
               <span class="dict-badge badge-lessons">${getLessonsLabel(word.lessonIds)}</span>
             </div>
@@ -3292,24 +3353,49 @@ export function openDictionaryModal(word, state, dependencies) {
           ${word.partOfSpeech === 'verb' ? conjugationHtml : ''}
 
           <!-- Usage Block -->
+          ${
+            (word.particlePatterns && word.particlePatterns.length > 0) ||
+            word.transitivity ||
+            word.note
+              ? `
           <div class="dict-section dict-usage">
             <h3 class="dict-section-title">Употребление</h3>
             <div class="dict-section-body dict-usage-grid">
+              ${
+                word.particlePatterns && word.particlePatterns.length > 0
+                  ? `
               <div class="dict-usage-row">
                 <span class="dict-usage-label">Частицы:</span>
-                <span class="dict-usage-value">${word.particlePatterns && word.particlePatterns.length > 0 ? word.particlePatterns.map((p) => `<span class="dict-particle-tag">${p}</span>`).join(' ') : '<span class="dict-empty-inline">—</span>'}</span>
+                <span class="dict-usage-value">${word.particlePatterns.map((p) => `<span class="dict-particle-tag">${p}</span>`).join(' ')}</span>
               </div>
+              `
+                  : ''
+              }
+              ${
+                word.transitivity && word.partOfSpeech === 'verb'
+                  ? `
               <div class="dict-usage-row">
                 <span class="dict-usage-label">Переходность:</span>
-                <span class="dict-usage-value">${word.transitivity === 'transitive' ? 'Переходный глагол' : word.transitivity === 'intransitive' ? 'Непереходный глагол' : '<span class="dict-empty-inline">неизвестно</span>'}</span>
+                <span class="dict-usage-value">${word.transitivity === 'transitive' ? 'Переходный глагол' : word.transitivity === 'intransitive' ? 'Непереходный глагол' : '<span class="dict-empty-inline">—</span>'}</span>
               </div>
+              `
+                  : ''
+              }
+              ${
+                word.note
+                  ? `
               <div class="dict-usage-row">
                 <span class="dict-usage-label">Заметки:</span>
-                <span class="dict-usage-value dict-usage-notes">${word.note || '<span class="dict-empty-inline">—</span>'}</span>
-                <span class="dict-usage-value dict-usage-notes">${word.note || '<span class="dict-empty-inline">—</span>'}</span>
+                <span class="dict-usage-value dict-usage-notes">${word.note}</span>
               </div>
+              `
+                  : ''
+              }
             </div>
           </div>
+          `
+              : ''
+          }
 
           <!-- Kanji Accordion (conditional) -->
           ${

@@ -13,12 +13,12 @@
     ],
     "vocabulary": [
       {
-        "id": "L4_V001",
-        "category": "activities",
-        "kanji": "ゲーム",
-        "writing": "ゲーム",
-        "romaji": "geemu",
-        "translation": "игра"
+        "id": "L4_V040",
+        "category": "verbs_u",
+        "kanji": "撮る",
+        "writing": "とる",
+        "romaji": "toru",
+        "translation": "фотографировать (写真 を)"
       },
       {
         "id": "L4_V002",
@@ -346,7 +346,7 @@
         "kanji": "わかる",
         "writing": "わかる",
         "romaji": "wakaru",
-        "translation": "понимать (～гa)"
+        "translation": "понимать (～が)"
       },
       {
         "id": "L4_V043",

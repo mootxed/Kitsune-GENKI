@@ -436,17 +436,64 @@ export class ExamplesDBClass {
 export function isWordInSentence(word, sentenceJp) {
   if (!sentenceJp || !word) return false;
 
-  const kanji = (word.kanji || '').trim();
-  const writing = (word.writing || '').trim();
+  const kanji = (word.kanji || '').replace(/～/g, '').trim();
+  const writing = (word.writing || '').replace(/～/g, '').trim();
+
+  // Не искать по слишком коротким частям, чтобы избежать ложных срабатываний (особенно частиц и окончаний)
+  const isShortKanji = kanji.length <= 1;
+  const isShortWriting = writing.length <= 1;
+  const isTooShort = !kanji ? isShortWriting : isShortKanji && isShortWriting;
+
+  // Функция для безопасного поиска (только если не слишком короткое, либо совпадение с границами)
+  const safeIncludes = (text, query) => {
+    if (!query) return false;
+    if (text.includes(query)) {
+      // Для коротких слов (1 символ каны) мы не можем просто использовать includes
+      if (query.length === 1 && /^[\u3040-\u309F\u30A0-\u30FF]$/.test(query)) {
+        // Это слишком рискованно для частиц типа は, に, へ, で
+        // Нам нужен полноценный токенизатор для точного ответа, но здесь мы используем эвристику.
+        // Если это глагол, прилагательное или существительное с 1 символом каны (без кандзи),
+        // мы пока игнорируем это для защиты от ложных срабатываний.
+        if (!kanji) {
+          // Если мы здесь, значит это слово только из 1 символа каны.
+          // Временно отключаем поиск таких коротких слов без кандзи внутри предложений,
+          // если это не точное совпадение
+          if (text === query) return true;
+
+          // Проверка на 歯 (ha), 二 (ni) и т.д.
+          // Если у нас есть кандзи, мы до этого не дойдем.
+          return false;
+        }
+      }
+
+      // Проверка, что это не часть другого слова (эвристика)
+      // Например, "した" в "しました" не должно считаться "下"
+      if (query === 'した' || query === 'する') {
+        // Игнорируем вхождения как суффиксы
+        const idx = text.indexOf(query);
+        if (idx > 0 && /[\u3040-\u309F\u4E00-\u9FAF]/.test(text[idx - 1])) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+    return false;
+  };
 
   // 1. Прямое совпадение кандзи (если оно есть)
-  if (kanji && kanji !== '～' && sentenceJp.includes(kanji)) {
+  if (kanji && kanji.length > 0 && safeIncludes(sentenceJp, kanji)) {
     return true;
   }
 
   // 2. Прямое совпадение каны
-  if (writing && writing !== '～' && sentenceJp.includes(writing)) {
-    return true;
+  // Ищем по кане только если кандзи нет, ИЛИ если это не короткое слово-частица
+  if (writing && writing.length > 0) {
+    if (!kanji || (kanji && writing.length > 1)) {
+      if (safeIncludes(sentenceJp, writing)) {
+        return true;
+      }
+    }
   }
 
   // 3. Проверка спряжений глаголов
@@ -454,10 +501,10 @@ export function isWordInSentence(word, sentenceJp) {
     try {
       const forms = conjugateVerb(word);
       for (const form of forms) {
-        if (form.kanji && sentenceJp.includes(form.kanji)) {
+        if (form.kanji && form.kanji.length > 1 && safeIncludes(sentenceJp, form.kanji)) {
           return true;
         }
-        if (form.kana && sentenceJp.includes(form.kana)) {
+        if (form.kana && form.kana.length > 1 && safeIncludes(sentenceJp, form.kana)) {
           return true;
         }
       }
@@ -471,8 +518,8 @@ export function isWordInSentence(word, sentenceJp) {
     const kanjiStem = kanji.endsWith('い') ? kanji.slice(0, -1) : kanji;
     const writingStem = writing.slice(0, -1);
 
-    if (kanjiStem && sentenceJp.includes(kanjiStem)) return true;
-    if (writingStem && sentenceJp.includes(writingStem)) return true;
+    if (kanjiStem && kanjiStem.length > 0 && safeIncludes(sentenceJp, kanjiStem)) return true;
+    if (writingStem && writingStem.length > 1 && safeIncludes(sentenceJp, writingStem)) return true;
   }
 
   return false;

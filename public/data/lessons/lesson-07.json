@@ -12,12 +12,12 @@
     ],
     "vocabulary": [
       {
-        "id": "L7_V001",
-        "category": "nouns",
-        "kanji": "家族",
-        "writing": "かぞく",
-        "romaji": "kazoku",
-        "translation": "семья"
+        "id": "L7_V042",
+        "category": "verbs_ru",
+        "kanji": "着る",
+        "writing": "きる",
+        "romaji": "kiru",
+        "translation": "надевать, носить (одежду выше пояса: рубашки, свитера) (～を)"
       },
       {
         "id": "L7_V002",

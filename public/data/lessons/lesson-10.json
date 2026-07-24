@@ -390,13 +390,13 @@
         "translation": "пешком"
       },
       {
-        "id": "L10_V048",
-        "category": "adverbs",
-        "kanji": "～で",
-        "writing": "～で",
-        "romaji": "... de",
-        "translation": "на, с помощью",
-        "note": "на (транспорте), с помощью (инструмента), посредством"
+        "id": "L10_V055",
+        "category": "expressions",
+        "kanji": "～後",
+        "writing": "～ご",
+        "romaji": "... go",
+        "translation": "через ... (о времени), спустя ...",
+        "note": "через ... (о времени), спустя ..."
       },
       {
         "id": "L10_V049",

@@ -42,42 +42,53 @@ export function normalizeWord(raw, lessonId) {
     .replace(/\s+/g, ' ')
     .trim();
 
-  // 3. Категоризация, если partOfSpeech / verbClass еще не определены
+  // 3. Категоризация и извлечение тем
   const cat = (raw.category || '').toLowerCase();
+  let topic = raw.topic || null;
+
   if (!partOfSpeech) {
-    if (
-      cat.includes('verbs_u') ||
-      cat.includes('u-verbs') ||
-      cat.includes('u-verb') ||
-      cat.includes('verbs_ru') ||
-      cat.includes('ru-verbs') ||
-      cat.includes('ru-verb') ||
-      cat.includes('verbs_irr') ||
-      cat.includes('irregular') ||
-      cat.includes('verb')
+    if (cat === 'adverbs' || cat === 'adverb' || cat === 'adv') {
+      partOfSpeech = 'adverb';
+    } else if (
+      cat === 'verbs_u' ||
+      cat === 'u-verbs' ||
+      cat === 'u-verb' ||
+      cat === 'verbs_ru' ||
+      cat === 'ru-verbs' ||
+      cat === 'ru-verb' ||
+      cat === 'verbs_irr' ||
+      cat === 'irregular-verbs' ||
+      cat === 'irregular' ||
+      cat === 'verb' ||
+      cat === 'verbs'
     ) {
       partOfSpeech = 'verb';
-    } else if (cat.includes('noun')) {
+    } else if (cat === 'nouns' || cat === 'noun') {
       partOfSpeech = 'noun';
-    } else if (cat.includes('adjective') || cat === 'adj' || cat.includes('adj')) {
+    } else if (
+      cat === 'i-adjectives' ||
+      cat === 'na-adjectives' ||
+      cat === 'adjectives' ||
+      cat === 'adjective' ||
+      cat === 'adj'
+    ) {
       partOfSpeech = 'adjective';
-    } else if (cat.includes('adverb') || cat === 'adv') {
-      partOfSpeech = 'adverb';
     } else if (cat === 'particles' || cat === 'particle') {
       partOfSpeech = 'particle';
     } else if (cat === 'expressions' || cat === 'expression') {
       partOfSpeech = 'expression';
     } else if (cat) {
-      partOfSpeech = cat; // Fallback
+      partOfSpeech = 'other';
+      topic = cat; // Если это не часть речи, то это тема
     }
   }
 
   if (partOfSpeech === 'verb' && !verbClass) {
-    if (cat.includes('verbs_ru') || cat.includes('ru-verbs') || cat.includes('ru-verb')) {
+    if (cat === 'verbs_ru' || cat === 'ru-verbs' || cat === 'ru-verb') {
       verbClass = 'ichidan';
-    } else if (cat.includes('verbs_u') || cat.includes('u-verbs') || cat.includes('u-verb')) {
+    } else if (cat === 'verbs_u' || cat === 'u-verbs' || cat === 'u-verb') {
       verbClass = 'godan';
-    } else if (cat.includes('verbs_irr') || cat.includes('irregular')) {
+    } else if (cat === 'verbs_irr' || cat === 'irregular-verbs' || cat === 'irregular') {
       verbClass = 'irregular';
     }
   }
@@ -110,7 +121,7 @@ export function normalizeWord(raw, lessonId) {
     writing,
     romaji: raw.romaji || '',
     translation,
-    category: raw.category || null,
+    topic,
     partOfSpeech,
     verbClass,
     lexemeId,

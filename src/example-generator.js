@@ -138,6 +138,16 @@ export function isSemanticallySafe(word, companion, template) {
     return false;
   }
 
+  // Запрещено: объект + непереходный глагол с частицей を
+  if (
+    template.particle === 'を' &&
+    companionTags.includes('verb') &&
+    companion.transitivity !== 'transitive' &&
+    companion.transitivity !== undefined // если не указано, считаем что ок, или fallback
+  ) {
+    return false;
+  }
+
   return true;
 }
 

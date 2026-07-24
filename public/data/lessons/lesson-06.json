@@ -9,12 +9,12 @@
     "particles": ["に", "から", "まで"],
     "vocabulary": [
       {
-        "id": "L6_V001",
-        "category": "nouns",
-        "kanji": "かんじ",
-        "writing": "かんじ",
-        "romaji": "kanji",
-        "translation": "кандзи, японские иероглифы"
+        "id": "L6_V034",
+        "category": "verbs_ru",
+        "kanji": "教える",
+        "writing": "おしえる",
+        "romaji": "oshieru",
+        "translation": "обучать, преподавать; объяснять, говорить (кому に что を)"
       },
       {
         "id": "L6_V002",
