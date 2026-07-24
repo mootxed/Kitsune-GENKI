@@ -10960,13 +10960,18 @@ mark.ex-highlight {
 .ws-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
   max-width: 600px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 8px 12px;
   user-select: none;
   -webkit-user-select: none;
   box-sizing: border-box;
+  width: 100%;
+}
+
+body.ws-focus-mode .tabbar {
+  display: none !important;
 }
 
 /* Difficulty Selection Screen */
@@ -11076,51 +11081,50 @@ mark.ex-highlight {
   flex-shrink: 0;
 }
 
-/* Header & Controls */
+/* Header & Controls (Single Line Compact HUD) */
 .ws-info-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 8px;
+  flex-wrap: nowrap;
 }
 
 .ws-info-left {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .ws-diff-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 10px;
+  padding: 4px 8px;
   background: rgba(255, 152, 0, 0.12);
   border: 1px solid var(--orange, #ff9800);
   color: var(--orange, #ff9800);
-  border-radius: 12px;
-  font-size: 13px;
+  border-radius: 10px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .ws-counter {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-main, #333);
 }
 
 .ws-controls {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
 .ws-btn {
-  padding: 8px 14px;
+  padding: 6px 12px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   border: 1px solid var(--border, #ccc);
@@ -11129,8 +11133,30 @@ mark.ex-highlight {
   transition: all 0.2s ease;
 }
 
-.ws-btn:hover {
+.ws-icon-btn {
+  min-width: 44px;
+  height: 44px;
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid var(--border, #ccc);
+  background: var(--bg-card, #fff);
+  color: var(--text-main, #333);
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.ws-icon-btn:hover {
   background: var(--bg-hover, #f0f0f0);
+}
+
+.ws-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .ws-btn-hint {
@@ -11144,86 +11170,100 @@ mark.ex-highlight {
   border: none;
 }
 
-/* Translations Grid (Zero Layout Shift Architecture) */
-.ws-translations-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ws-translations-label {
-  font-size: 14px;
-  font-weight: 600;
-  opacity: 0.75;
-}
-
-.ws-translations-list {
+/* Compact Clue Strip */
+.ws-clue-strip {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, 40px);
+  grid-auto-columns: minmax(110px, max-content);
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
   width: 100%;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
-.ws-translation-item {
+.ws-container[data-difficulty='easy'] .ws-clue-strip {
+  grid-template-rows: repeat(1, 44px);
+}
+
+.ws-clue-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 12px;
+  justify-content: center;
+  padding: 4px 8px;
+  height: 40px;
   background: var(--bg-card, #ffffff);
   border: 1px solid var(--border, #dddddd);
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: 8px;
+  font-size: 12px;
   cursor: pointer;
-  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
-  min-width: 0;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
-.ws-translation-header {
+.ws-clue-header {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
 }
 
-.ws-status-icon {
-  font-size: 12px;
+.ws-clue-check {
+  font-size: 11px;
   font-weight: 800;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  opacity: 0.3;
   flex-shrink: 0;
+  transition: opacity 0.2s ease;
 }
 
-.ws-translation-item.ws-found .ws-status-icon {
+.ws-clue-card.ws-found .ws-clue-check {
   opacity: 1;
 }
 
-.ws-translation-text {
+.ws-clue-translation {
   font-weight: 500;
-  word-break: break-word;
-  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.1;
 }
 
-.ws-translation-item.ws-found .ws-translation-text {
+.ws-clue-card.ws-found .ws-clue-translation {
   text-decoration: line-through;
   opacity: 0.9;
 }
 
-.ws-translation-kana {
-  font-size: 12px;
+.ws-clue-kana {
+  font-size: 11px;
   font-weight: 700;
-  min-height: 1.3em;
+  height: 13px;
+  line-height: 13px;
   visibility: hidden;
   opacity: 0;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.ws-translation-item.ws-found .ws-translation-kana {
+.ws-clue-card.ws-found .ws-clue-kana {
   visibility: visible;
   opacity: 1;
 }
 
-/* Grid Wrapper & Cells */
+/* Grid Wrapper & Max Grid Sizing */
 .ws-grid-wrapper {
   display: flex;
   justify-content: center;
@@ -11234,10 +11274,11 @@ mark.ex-highlight {
 .ws-grid {
   display: grid;
   width: 100%;
-  max-width: 440px;
+  max-width: min(92vw, calc(100vh - 160px));
+  max-height: min(92vw, calc(100vh - 160px));
   aspect-ratio: 1 / 1;
   gap: 4px;
-  padding: 8px;
+  padding: 6px;
   background: var(--bg-card, #ffffff);
   border: 2px solid var(--border, #e0e0e0);
   border-radius: 12px;
@@ -11257,7 +11298,9 @@ mark.ex-highlight {
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
-  transition: background-color 0.15s ease, transform 0.1s ease;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
 }
 
 .ws-cell-active {
@@ -11283,8 +11326,12 @@ mark.ex-highlight {
 }
 
 @keyframes ws-hint-pulse {
-  0% { transform: scale(1); }
-  100% { transform: scale(1.15); }
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.15);
+  }
 }
 
 /* Difficulty Adaptive Sizing */

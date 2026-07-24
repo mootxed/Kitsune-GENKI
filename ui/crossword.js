@@ -1,10 +1,11 @@
 /* ui/crossword.js — Crossword puzzle module */
 
 import { $ } from '../src/utils.js';
-import { allCards, wordById } from '../src/srs-helpers.js';
 import { LESSONS } from './home.js';
 import { speakJapanese } from '../src/audio-helper.js';
 import { showCompletionScreen } from './shared.js';
+import { getAvailableMiniGameCandidates } from '../src/minigame-word-selectors.js';
+import { selectMiniGameWords, recordGameSession } from '../src/minigame-word-rotation.js';
 
 // Конвертер Хирагана → Катакана
 const HIRAGANA_TO_KATAKANA = {
@@ -102,17 +103,11 @@ function shuffleArray(array) {
   return arr;
 }
 
-// Проверка разблокировки слова
-function isWordUnlocked(wordId, state) {
-  return state.srs && state.srs[wordId];
-}
-
 /**
  * Рендер экрана кроссворда
  */
 export function renderCrossword(state, dependencies) {
   const body = $('#crossword-body');
-  const { save, markActivity, toast } = dependencies;
 
   // Генерируем кроссворд
   const crosswordData = generateCrossword(11, state);
@@ -237,7 +232,6 @@ function renderGridCells(grid, gridSize) {
 
 function initCrosswordHandlers(crosswordData, userAnswers, state, dependencies) {
   const { placedWords, grid } = crosswordData;
-  const { save, markActivity, toast } = dependencies;
 
   // Сохраняем в глобальное состояние
   window.cwState = {
@@ -350,8 +344,6 @@ function updateCluePanel(word, userAnswers, grid, placedWords) {
   const panel = $('#clue-panel');
   const translationEl = $('#clue-translation');
   const speakBtn = $('#clue-speak');
-  const { dependencies } = window.cwState;
-  const { save, toast } = dependencies;
 
   if (panel && translationEl) {
     panel.classList.remove('hidden');
@@ -461,7 +453,8 @@ function updateCluePanel(word, userAnswers, grid, placedWords) {
 
         // Подсказка влияет только на локальную попытку кроссворда. Legacy progress
         // и FSRS-расписание здесь намеренно не изменяются.
-        save();
+        const saveFn = window.cwState?.dependencies?.save;
+        if (typeof saveFn === 'function') saveFn();
 
         // Выбираем случайный пустой индекс
         const randomIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
@@ -744,9 +737,6 @@ function insertLetterIntoWord(letter, wordData, userAnswers, grid, placedWords, 
 }
 
 function checkWordCompletion(wordData, userAnswers, grid, placedWords) {
-  const { dependencies } = window.cwState;
-  const { markActivity, toast, addXP } = dependencies;
-
   // Проверяем ВСЕ слова
   placedWords.forEach((pw) => {
     const wordAnswer = userAnswers[pw.word.id];
@@ -775,12 +765,8 @@ function checkWordCompletion(wordData, userAnswers, grid, placedWords) {
       // Обновляем классы всех ячеек
       refreshGridCellClasses(placedWords, userAnswers, wordData.word.id);
 
-      // Награда только за активное слово
+      // Переходим к следующему слову или завершаем кроссворд
       if (pw.word.id === wordData.word.id) {
-        if (markActivity) markActivity(toast);
-        if (addXP) addXP(5);
-
-        // Переходим к следующему
         setTimeout(() => {
           const nextWord = findNextIncompleteWord(placedWords, userAnswers, wordData.word.id);
           if (nextWord) {
@@ -825,6 +811,9 @@ function findNextIncompleteWord(placedWords, userAnswers, currentWordId) {
 }
 
 function completeCrossword(totalWords, userAnswers) {
+  if (window.crosswordFinishedState?.awarded) return;
+  window.crosswordFinishedState = { awarded: true };
+
   const { state, dependencies } = window.cwState;
   const { save, addXP } = dependencies;
 
@@ -1034,7 +1023,7 @@ function handleBackspaceDelete(userAnswers, grid, placedWords) {
   }
 }
 
-function revalidateWord(wordData, userAnswers, grid) {
+function revalidateWord(wordData, userAnswers, _grid) {
   const wordAnswer = userAnswers[wordData.word.id];
   if (!wordAnswer) return;
 
@@ -1114,13 +1103,26 @@ function initCrosswordZoom() {
 }
 
 // Генератор кроссворда
-function generateCrossword(gridSize, state) {
+function generateCrossword(gridSize, state, lessons = LESSONS) {
+  const allCandidates = getAvailableMiniGameCandidates(state, lessons);
+  const validCandidates = allCandidates.filter(
+    (c) => c.kana && c.kana.length >= 2 && c.kana.length <= 8
+  );
+
+  if (validCandidates.length < 3) return null;
+
   const maxAttempts = 20;
   let bestResult = null;
   let bestScore = 0;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const result = tryGenerateCrossword(gridSize, state);
+    const selectedPool = selectMiniGameWords(validCandidates, {
+      gameId: 'crossword',
+      count: 15,
+      history: state,
+    });
+
+    const result = tryGenerateCrosswordWithPool(gridSize, selectedPool);
 
     if (result && result.placedWords.length > bestScore) {
       bestScore = result.placedWords.length;
@@ -1130,32 +1132,36 @@ function generateCrossword(gridSize, state) {
     if (bestScore >= 6) break;
   }
 
+  if (bestResult && bestResult.placedWords.length >= 3) {
+    recordGameSession(
+      state,
+      'crossword',
+      bestResult.placedWords.map((pw) => pw.word.id)
+    );
+  }
+
   return bestResult;
 }
 
-function tryGenerateCrossword(gridSize, state) {
-  // Собираем разблокированные слова
+function tryGenerateCrosswordWithPool(gridSize, candidatePool) {
   const unlockedWords = [];
   const seenKana = new Set();
 
-  LESSONS.forEach((lesson) => {
-    lesson.words.forEach((word) => {
-      if (isWordUnlocked(word.id, state) && word.writing) {
-        if (seenKana.has(word.writing)) return;
-        seenKana.add(word.writing);
-
-        unlockedWords.push({
-          id: word.id,
-          kana: word.writing,
-          kanji: word.kanji || word.writing,
-          translation: word.translation,
-          length: word.writing.length,
-        });
-      }
-    });
+  candidatePool.forEach((word) => {
+    const kana = word.kana || word.writing || '';
+    if (kana && !seenKana.has(kana)) {
+      seenKana.add(kana);
+      unlockedWords.push({
+        id: word.id,
+        kana,
+        kanji: word.kanji || kana,
+        translation: word.translation,
+        length: kana.length,
+      });
+    }
   });
 
-  if (unlockedWords.length < 6) return null;
+  if (unlockedWords.length < 3) return null;
 
   const shuffledWords = shuffleArray(unlockedWords);
 

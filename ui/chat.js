@@ -3,6 +3,7 @@
 import { $, todayStr as getTodayStr } from '../src/utils.js';
 import { syncAvatars } from './shared.js';
 import { API } from '../services.js';
+import { getAvailableChapterCount } from '../src/minigame-word-selectors.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -77,16 +78,16 @@ export function renderSensei(state, dependencies) {
 function renderSenseiTools(state, dependencies) {
   const { CHECK_ITEMS } = dependencies;
   const body = $('#sensei-body');
+  const toast = dependencies?.toast || window.toast || (() => {});
+  const nav = dependencies?.nav || window.nav || (() => {});
 
   const inputBar = body.querySelector('.chat-input-bar');
   if (inputBar) {
     inputBar.remove();
   }
 
-  const startedLessons = Object.keys(state.chapters).filter((id) => {
-    return state.chapters[id].started === true;
-  }).length;
-  const crosswordUnlocked = startedLessons >= 3;
+  const availableLessons = getAvailableChapterCount(state);
+  const crosswordUnlocked = availableLessons >= 3;
 
   body.innerHTML = `
   <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
@@ -105,7 +106,7 @@ function renderSenseiTools(state, dependencies) {
       <span class="tool-icon">🧩</span>
       <div class="tool-info">
         <h3>Кроссворд</h3>
-        <p>${crosswordUnlocked ? 'Закрепляйте изученные слова в игровой форме' : '🔒 Откроется после начала 3 глав'}</p>
+        <p>${crosswordUnlocked ? 'Закрепляйте изученные слова в игровой форме' : '🔒 Откроется после изучения или начала 3 глав'}</p>
       </div>
       <span class="${crosswordUnlocked ? 'tool-arrow' : 'tool-lock'}">${crosswordUnlocked ? '›' : '🔒'}</span>
     </div>
@@ -128,7 +129,7 @@ function renderSenseiTools(state, dependencies) {
       const isLocked = card.dataset.locked === 'true';
 
       if (isLocked) {
-        toast('🔒 Кроссворды откроются после начала 3 глав!');
+        toast('🔒 Кроссворды откроются после изучения или начала 3 глав!');
         return;
       }
 

@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { state, defaultState, loadState, runMigrations, save, subscribe } from '../state/store.js';
+import {
+  state,
+  defaultState,
+  loadState,
+  runMigrations,
+  save,
+  subscribe,
+  CURRENT_VERSION,
+} from '../state/store.js';
 
 describe('Store - Версионирование и миграции', () => {
   const LS_STATE = 'kitsune_state_v1';
@@ -16,7 +24,7 @@ describe('Store - Версионирование и миграции', () => {
   describe('defaultState', () => {
     it('должен содержать поле version со значением 7', () => {
       const state = defaultState();
-      expect(state.version).toBe(7);
+      expect(state.version).toBe(CURRENT_VERSION);
     });
 
     it('должен содержать все необходимые поля', () => {
@@ -43,7 +51,7 @@ describe('Store - Версионирование и миграции', () => {
   describe('Миграции', () => {
     it('должен создать новое состояние с версией 7 при первой загрузке', async () => {
       await loadState();
-      expect(state.version).toBe(7);
+      expect(state.version).toBe(CURRENT_VERSION);
     });
 
     it('должен мигрировать старое состояние без версии → версия 7', async () => {
@@ -59,7 +67,7 @@ describe('Store - Версионирование и миграции', () => {
       await loadState();
 
       // Проверяем что версия проставлена
-      expect(state.version).toBe(7);
+      expect(state.version).toBe(CURRENT_VERSION);
 
       // Проверяем что старые данные сохранились
       expect(state.xp).toBe(500);
@@ -80,7 +88,7 @@ describe('Store - Версионирование и миграции', () => {
         chapters: {},
         studyPlan: null,
       });
-      expect(normalized.version).toBe(7);
+      expect(normalized.version).toBe(CURRENT_VERSION);
     });
 
     it('миграция v6 -> v7 переносит legacy studyPlan.completedChapters в priorKnowledgeChapterIds идемпотентно', () => {
@@ -98,7 +106,7 @@ describe('Store - Версионирование и миграции', () => {
         },
       });
 
-      expect(migrated.version).toBe(7);
+      expect(migrated.version).toBe(CURRENT_VERSION);
       // Глава 1 завершена в приложении, поэтому НЕ должна попадать в priorKnowledgeChapterIds
       // Главы 2, 3, 4 не завершены реально, поэтому должны попасть в priorKnowledgeChapterIds
       expect(migrated.priorKnowledgeChapterIds).toEqual([2, 3, 4]);
@@ -118,7 +126,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       await loadState();
 
-      expect(state.version).toBe(7);
+      expect(state.version).toBe(CURRENT_VERSION);
       expect(state.unlockedAchievements).toEqual(['first_steps', 'quick_learner']);
       expect(state.claimedAchievements).toEqual(['first_steps']);
     });
@@ -134,7 +142,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       await loadState();
 
-      expect(state.version).toBe(7);
+      expect(state.version).toBe(CURRENT_VERSION);
       expect(state.settings.openrouterKey).toBe('test_key');
       expect(state.settings.darkMode).toBe('dark');
       // Проверяем что дефолтные настройки добавлены
@@ -153,7 +161,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(currentState));
       await loadState();
 
-      expect(state.version).toBe(7);
+      expect(state.version).toBe(CURRENT_VERSION);
       expect(state.xp).toBe(1000);
       expect(state.level).toBe(10);
       expect(state.unlockedAchievements).toEqual(['achievement1', 'achievement2']);
@@ -186,7 +194,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       await loadState();
 
-      expect(state.version).toBe(7);
+      expect(state.version).toBe(CURRENT_VERSION);
 
       const card = state.srs.L1_w1;
       // FSRS-схема
@@ -228,7 +236,7 @@ describe('Store - Версионирование и миграции', () => {
         },
       });
 
-      expect(migrated.version).toBe(7);
+      expect(migrated.version).toBe(CURRENT_VERSION);
       expect(migrated.reviewEvents).toEqual([]);
       expect(migrated.srs.L1_w9).toMatchObject({
         learning_steps: 0,
@@ -255,7 +263,7 @@ describe('Store - Версионирование и миграции', () => {
 
       const migrated = runMigrations({ version: 4, srs: {}, reviewEvents });
 
-      expect(migrated.version).toBe(7);
+      expect(migrated.version).toBe(CURRENT_VERSION);
       expect(migrated.pendingReviewLogs).toEqual([]);
       expect(migrated.reviewEvents).toHaveLength(20);
       expect(migrated.masteryArchive.L1_V001).toMatchObject({
@@ -365,7 +373,7 @@ describe('Store - Версионирование и миграции', () => {
       await loadState();
 
       // Должен вернуться к defaultState
-      expect(state.version).toBe(7);
+      expect(state.version).toBe(CURRENT_VERSION);
       expect(state.xp).toBe(0);
       expect(state.level).toBe(1);
     });
@@ -382,7 +390,7 @@ describe('Store - Версионирование и миграции', () => {
       await save(true);
 
       await loadState();
-      expect(state.version).toBe(7);
+      expect(state.version).toBe(CURRENT_VERSION);
       expect(state.xp).toBe(999);
       expect(state.level).toBe(15);
       expect(state.coins).toBe(500);

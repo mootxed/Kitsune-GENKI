@@ -1,6 +1,6 @@
 /* tests/prior-knowledge.test.js — Prior knowledge model, SRS integration & UI tests */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { defaultState, runMigrations } from '../state/store.js';
+import { runMigrations, defaultState, CURRENT_VERSION } from '../state/store.js';
 import { State } from 'ts-fsrs';
 import {
   getCompletedChapterIds,
@@ -265,7 +265,7 @@ describe('Prior Knowledge Synchronization & SRS Integration', () => {
     };
 
     const migrated = runMigrations(v6State);
-    expect(migrated.version).toBe(7);
+    expect(migrated.version).toBe(CURRENT_VERSION);
     expect(migrated.priorKnowledgeChapterIds).toEqual([2, 3, 4]);
 
     const reMigrated = runMigrations(migrated);

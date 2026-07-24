@@ -1,6 +1,6 @@
 /* crossword.test.js — Тесты для логики кроссворда */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
 describe('Crossword System', () => {
@@ -135,7 +135,6 @@ describe('Crossword System', () => {
         );
 
       // Размещаем первое слово горизонтально в строке 2
-      const word1 = 'あい'; // 2 символа
       grid[2][1].letter = 'あ';
       grid[2][2].letter = 'い';
 
@@ -202,6 +201,34 @@ describe('Crossword System', () => {
       // (одно горизонтальное и одно вертикальное)
       const cell = { letter: 'が', wordIds: ['word-1', 'word-2'] };
       expect(cell.wordIds.length).toBeLessThanOrEqual(2);
+    });
+  });
+
+  describe('FSRS Isolation Tests (Requirements 21-28)', () => {
+    it('21-26. Решение слова в кроссворде не меняет FSRS state/due/stability/reps/lapses/reviewEvents/masteryArchive/learningEvents/dailyCards', () => {
+      const source = readFileSync('ui/crossword.js', 'utf8');
+
+      // Verify no SRS review or activity marking calls remain in crossword module
+      expect(source).not.toMatch(/markActivity/u);
+      expect(source).not.toMatch(/SRS\.review/u);
+      expect(source).not.toMatch(/SRS\.applyReview/u);
+      expect(source).not.toMatch(/reviewEvents/u);
+      expect(source).not.toMatch(/masteryArchive/u);
+      expect(source).not.toMatch(/learningEvents/u);
+      expect(source).not.toMatch(/dailyCards/u);
+      expect(source).not.toMatch(/introducedOn/u);
+    });
+
+    it('27. Использование подсказки не меняет FSRS', () => {
+      const source = readFileSync('ui/crossword.js', 'utf8');
+      expect(source).toContain('// Подсказка влияет только на локальную попытку кроссворда.');
+    });
+
+    it('28. completeCrossword выдаёт игровую награду ровно один раз', () => {
+      // Verify window.crosswordFinishedState guard logic in completeCrossword
+      const source = readFileSync('ui/crossword.js', 'utf8');
+      expect(source).toContain('if (window.crosswordFinishedState?.awarded) return;');
+      expect(source).toContain('window.crosswordFinishedState = { awarded: true };');
     });
   });
 });

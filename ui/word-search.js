@@ -3,7 +3,9 @@
 import { $ } from '../src/utils.js';
 import { WORD_SEARCH_DIFFICULTIES, generateWordSearchGrid } from '../src/word-search-generator.js';
 import { getAvailableWordSearchCandidates } from '../src/word-search-selectors.js';
-import { speakJapanese } from '../src/audio-helper.js';
+import { selectMiniGameWords, recordGameSession } from '../src/minigame-word-rotation.js';
+import { speakJapanese, stopSpeaking } from '../src/audio-helper.js';
+import { showCompletionScreen } from './shared.js';
 import { LESSONS } from './home.js';
 
 let activeCleanup = null;
@@ -48,6 +50,19 @@ function formatTime(seconds) {
 }
 
 export function cleanupWordSearch() {
+  const tabbar = document.querySelector('.tabbar');
+  if (tabbar) tabbar.style.display = '';
+
+  document.body.classList.remove('ws-focus-mode');
+
+  if (typeof stopSpeaking === 'function') {
+    try {
+      stopSpeaking();
+    } catch {
+      // Ignore audio stop errors
+    }
+  }
+
   if (typeof activeCleanup === 'function') {
     activeCleanup();
     activeCleanup = null;
@@ -71,6 +86,9 @@ export function renderDifficultySelectionScreen(state, dependencies = {}) {
 
   const body = $('#word-search-body');
   if (!body) return;
+
+  const tabbar = document.querySelector('.tabbar');
+  if (tabbar) tabbar.style.display = '';
 
   const difficulties = [
     WORD_SEARCH_DIFFICULTIES.easy,
@@ -126,15 +144,24 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
 
   const diffConfig = WORD_SEARCH_DIFFICULTIES[difficultyId] || WORD_SEARCH_DIFFICULTIES.medium;
   const lessons = dependencies.lessons || LESSONS || [];
-  const nav = dependencies.nav || window.nav || (() => {});
   const toast = dependencies.toast || window.toast || (() => {});
   const save = dependencies.save || (() => {});
 
-  // 1. Retrieve available candidates
+  // Enable focus mode (hide tabbar)
+  const tabbar = document.querySelector('.tabbar');
+  if (tabbar) tabbar.style.display = 'none';
+  document.body.classList.add('ws-focus-mode');
+
+  // 1. Retrieve candidate pool using shared rotation selector
   const candidates = getAvailableWordSearchCandidates(state, lessons);
+  const selectedPool = selectMiniGameWords(candidates, {
+    gameId: 'wordSearch',
+    count: diffConfig.targetCount + 4,
+    history: state,
+  });
 
   // 2. Generate word search grid for exact difficulty
-  const gameData = generateWordSearchGrid(candidates, {
+  const gameData = generateWordSearchGrid(selectedPool, {
     gridSize: diffConfig.gridSize,
     targetCount: diffConfig.targetCount,
     minCount: diffConfig.minCount,
@@ -166,6 +193,13 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
 
   const { grid, placedWords, gridSize } = gameData;
 
+  // Record placed words into rotation history
+  recordGameSession(
+    state,
+    'wordSearch',
+    placedWords.map((pw) => pw.id)
+  );
+
   // Local Game State
   const gameState = {
     difficultyId,
@@ -187,52 +221,50 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
     hintTimeout: null,
   };
 
-  // Build Game UI Markup
+  // Build Game UI Markup (Compact HUD + Clue Strip + Grid)
   body.innerHTML = `
     <div class="ws-container" data-difficulty="${escapeHtml(difficultyId)}" data-testid="word-search-game">
-      <!-- Header Info Bar -->
+      <!-- Header Info Bar (Single Line Compact HUD) -->
       <div class="ws-info-bar">
         <div class="ws-info-left">
-          <span class="ws-diff-badge" data-testid="ws-diff-badge">${diffConfig.icon} ${escapeHtml(diffConfig.label)} (${gridSize}×${gridSize})</span>
-          <div class="ws-counter" data-testid="ws-counter">
-            Найдено: <span id="ws-found-count">0</span> / ${placedWords.length}
+          <button class="ws-icon-btn ws-btn-back" id="ws-back-btn" data-testid="ws-back-btn" aria-label="К выбору сложности" title="К выбору сложности">←</button>
+          <span class="ws-diff-badge" data-testid="ws-diff-badge">${diffConfig.icon} ${escapeHtml(diffConfig.label)}</span>
+          <div class="ws-counter" data-testid="ws-counter" aria-label="Прогресс">
+            <span id="ws-found-count">0</span> / ${placedWords.length}
           </div>
         </div>
 
         <div class="ws-controls">
-          <button class="ws-btn ws-btn-hint" id="ws-hint-btn" data-testid="ws-hint-btn">
-            💡 Подсказка (<span id="ws-hints-left">${gameState.maxHints}</span>)
+          <button class="ws-icon-btn ws-btn-hint" id="ws-hint-btn" data-testid="ws-hint-btn" aria-label="Подсказка (${gameState.maxHints} осталось)" title="Подсказка (${gameState.maxHints} осталось)">
+            💡 <span id="ws-hints-left">${gameState.maxHints}</span>
           </button>
-          <button class="ws-btn ws-btn-secondary" id="ws-new-game-btn" data-testid="ws-new-game-btn">
-            🔄 Новая игра
+          <button class="ws-icon-btn" id="ws-new-game-btn" data-testid="ws-new-game-btn" aria-label="Новая игра" title="Новая игра">
+            🔄
           </button>
-          <button class="ws-btn ws-btn-secondary" id="ws-change-diff-btn" data-testid="ws-change-diff-btn">
-            ⚙️ Сменить сложность
+          <button class="ws-icon-btn" id="ws-change-diff-btn" data-testid="ws-change-diff-btn" aria-label="Сменить сложность" title="Сменить сложность">
+            ⚙️
           </button>
         </div>
       </div>
 
-      <!-- Translations List (Top, 2-Column Grid with Pre-reserved Space) -->
-      <div class="ws-translations-section">
-        <div class="ws-translations-label">Ищите слова:</div>
-        <div class="ws-translations-list" id="ws-translations-list" data-testid="ws-translations-list">
-          ${placedWords
-            .map(
-              (w) => `
-            <div class="ws-translation-item" data-word-id="${escapeHtml(w.id)}" data-color-index="${w.colorIndex}" data-testid="ws-translation-${escapeHtml(w.id)}">
-              <div class="ws-translation-header">
-                <span class="ws-status-icon">✓</span>
-                <span class="ws-translation-text">${escapeHtml(w.translation)}</span>
-              </div>
-              <div class="ws-translation-kana">${escapeHtml(w.kana)}</div>
+      <!-- Translations Strip (Compact Fixed Height Panel, 2 Rows Grid) -->
+      <div class="ws-clue-strip ws-translations-list" id="ws-translations-list" data-testid="ws-translations-list">
+        ${placedWords
+          .map(
+            (w) => `
+          <div class="ws-clue-card ws-translation-item" data-word-id="${escapeHtml(w.id)}" data-color-index="${w.colorIndex}" data-testid="ws-translation-${escapeHtml(w.id)}" title="${escapeHtml(w.translation)}" aria-label="${escapeHtml(w.translation)}">
+            <div class="ws-clue-header">
+              <span class="ws-clue-check ws-status-icon">✓</span>
+              <span class="ws-clue-translation ws-translation-text">${escapeHtml(w.translation)}</span>
             </div>
-          `
-            )
-            .join('')}
-        </div>
+            <div class="ws-clue-kana ws-translation-kana">${escapeHtml(w.kana)}</div>
+          </div>
+        `
+          )
+          .join('')}
       </div>
 
-      <!-- Word Search Grid -->
+      <!-- Word Search Grid Container -->
       <div class="ws-grid-wrapper">
         <div class="ws-grid" id="ws-grid" data-testid="ws-grid" style="grid-template-columns: repeat(${gridSize}, 1fr);">
           ${grid
@@ -250,26 +282,6 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
             .join('')}
         </div>
       </div>
-
-      <!-- Completion Modal -->
-      <div class="ws-modal-overlay hidden" id="ws-modal" data-testid="ws-modal">
-        <div class="ws-modal-card">
-          <span class="ws-modal-icon">🎉</span>
-          <h2>Партия завершена!</h2>
-          <div class="ws-modal-stats">
-            <div class="ws-stat-row"><span>Сложность:</span> <strong>${escapeHtml(diffConfig.label)}</strong></div>
-            <div class="ws-stat-row"><span>Найдено слов:</span> <strong>${placedWords.length} / ${placedWords.length}</strong></div>
-            <div class="ws-stat-row"><span>Время:</span> <strong id="ws-completion-time">00:00</strong></div>
-            <div class="ws-stat-row"><span>Ошибок:</span> <strong id="ws-wrong-attempts">0</strong></div>
-            <div class="ws-stat-row"><span>Подсказок:</span> <strong id="ws-hints-used">0</strong></div>
-          </div>
-          <div class="ws-modal-actions">
-            <button class="ws-btn ws-btn-primary" id="ws-restart-btn">Сыграть ещё</button>
-            <button class="ws-btn ws-btn-secondary" id="ws-modal-change-diff-btn">Сменить сложность</button>
-            <button class="ws-btn ws-btn-secondary" id="ws-exit-btn">В инструменты</button>
-          </div>
-        </div>
-      </div>
     </div>
   `;
 
@@ -279,7 +291,7 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
   const hintBtn = $('#ws-hint-btn');
   const newGameBtn = $('#ws-new-game-btn');
   const changeDiffBtn = $('#ws-change-diff-btn');
-  const modalEl = $('#ws-modal');
+  const backBtn = $('#ws-back-btn');
 
   // Cell DOM helper
   function getCellEl(r, c) {
@@ -319,7 +331,6 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
       cellEl.style.color = paletteItem.ink;
       cellEl.style.backgroundImage = 'none';
     } else {
-      // Linear gradient combining 2 (or more) word colors for intersections
       const color1 = PALETTE[colorIndexes[0] % PALETTE.length].bg;
       const color2 = PALETTE[colorIndexes[1] % PALETTE.length].bg;
       cellEl.style.backgroundImage = `linear-gradient(135deg, ${color1} 50%, ${color2} 50%)`;
@@ -333,7 +344,6 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
     const dRow = targetRow - startRow;
     const dCol = targetCol - startCol;
 
-    // 1. Horizontal (L -> R)
     if (dRow === 0 && dCol >= 0) {
       const path = [];
       for (let c = startCol; c <= targetCol; c++) {
@@ -342,7 +352,6 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
       return path;
     }
 
-    // 2. Vertical (T -> B)
     if (dCol === 0 && dRow >= 0) {
       const path = [];
       for (let r = startRow; r <= targetRow; r++) {
@@ -351,7 +360,6 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
       return path;
     }
 
-    // 3. Diagonal Down-Right
     if (dRow > 0 && dRow === dCol) {
       const path = [];
       for (let i = 0; i <= dRow; i++) {
@@ -360,7 +368,6 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
       return path;
     }
 
-    // 4. Diagonal Down-Left
     if (dRow > 0 && dRow === -dCol) {
       const path = [];
       for (let i = 0; i <= dRow; i++) {
@@ -574,9 +581,18 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
     const pickedWord = unfoundWords[Math.floor(Math.random() * unfoundWords.length)];
     gameState.hintsUsed++;
 
+    const hintsLeft = gameState.maxHints - gameState.hintsUsed;
     if (hintsLeftEl) {
-      hintsLeftEl.textContent = String(gameState.maxHints - gameState.hintsUsed);
+      hintsLeftEl.textContent = String(hintsLeft);
     }
+
+    if (hintsLeft <= 0) {
+      hintBtn.disabled = true;
+      hintBtn.setAttribute('aria-disabled', 'true');
+    }
+
+    hintBtn.setAttribute('aria-label', `Подсказка (${hintsLeft} осталось)`);
+    hintBtn.setAttribute('title', `Подсказка (${hintsLeft} осталось)`);
 
     // Highlight starting cell for 1.5s
     const firstCellEl = getCellEl(pickedWord.startRow, pickedWord.startCol);
@@ -592,6 +608,9 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
   // Header controls
   newGameBtn.onclick = () => startWordSearchGame(state, dependencies, difficultyId);
   changeDiffBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies);
+  if (backBtn) {
+    backBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies);
+  }
 
   // Completion
   function completeGame() {
@@ -608,31 +627,24 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
       save();
     }
 
-    if (modalEl) {
-      const timeEl = modalEl.querySelector('#ws-completion-time');
-      const wrongEl = modalEl.querySelector('#ws-wrong-attempts');
-      const hintsEl = modalEl.querySelector('#ws-hints-used');
-
-      if (timeEl) timeEl.textContent = formatTime(durationSec);
-      if (wrongEl) wrongEl.textContent = String(gameState.wrongAttempts);
-      if (hintsEl) hintsEl.textContent = String(gameState.hintsUsed);
-
-      modalEl.classList.remove('hidden');
-
-      const restartBtn = modalEl.querySelector('#ws-restart-btn');
-      const modalChangeDiffBtn = modalEl.querySelector('#ws-modal-change-diff-btn');
-      const exitBtn = modalEl.querySelector('#ws-exit-btn');
-
-      if (restartBtn) {
-        restartBtn.onclick = () => startWordSearchGame(state, dependencies, difficultyId);
-      }
-      if (modalChangeDiffBtn) {
-        modalChangeDiffBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies);
-      }
-      if (exitBtn) {
-        exitBtn.onclick = () => nav('sensei');
-      }
-    }
+    // Call global completion screen from ui/shared.js
+    showCompletionScreen({
+      title: 'みつけた！',
+      subtitle: 'Все слова найдены',
+      desc: `Сложность: ${diffConfig.label}`,
+      theme: 'success',
+      rewards: [
+        { icon: '🔍', label: `${placedWords.length} слов` },
+        { icon: '⏱️', label: formatTime(durationSec) },
+        { icon: '❌', label: `${gameState.wrongAttempts} ошибок` },
+        { icon: '💡', label: `${gameState.hintsUsed} подсказок` },
+        { icon: '⭐', label: '+10 XP' },
+      ],
+      onContinue: () => {
+        cleanupWordSearch();
+        renderDifficultySelectionScreen(state, dependencies);
+      },
+    });
   }
 
   // Cleanup handler

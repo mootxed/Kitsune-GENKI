@@ -8,7 +8,7 @@ import { acknowledgeReviewLogs, compactReviewJournal } from '../src/review-journ
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-export const CURRENT_VERSION = 7;
+export const CURRENT_VERSION = 8;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -148,6 +148,29 @@ const MIGRATIONS = {
       version: 7,
     };
   },
+  8: (oldState) => {
+    const baseState = { ...oldState };
+    const history =
+      baseState.miniGameWordHistory && typeof baseState.miniGameWordHistory === 'object'
+        ? baseState.miniGameWordHistory
+        : {};
+    return {
+      ...baseState,
+      miniGameWordHistory: {
+        wordSearch: {
+          recentSessions: Array.isArray(history.wordSearch?.recentSessions)
+            ? history.wordSearch.recentSessions.slice(-5)
+            : [],
+        },
+        crossword: {
+          recentSessions: Array.isArray(history.crossword?.recentSessions)
+            ? history.crossword.recentSessions.slice(-5)
+            : [],
+        },
+      },
+      version: 8,
+    };
+  },
 };
 
 // ---------- Default State ----------
@@ -163,6 +186,10 @@ export function defaultState() {
     reviewEvents: [], // ограниченное окно событий; полные snapshot остаются только для Undo
     masteryArchive: {}, // агрегированные доказательства из свёрнутых review events
     pendingReviewLogs: [], // transactional outbox для append-only review_log
+    miniGameWordHistory: {
+      wordSearch: { recentSessions: [] },
+      crossword: { recentSessions: [] },
+    },
     streak: { count: 0, lastActive: null },
     savedNotes: [], // {id,title,content,date}
     settings: {
@@ -255,6 +282,22 @@ function normalizeRuntimeShape(loadedState) {
       ? normalized.studyPlan.history
       : [];
   }
+  const rawHistory =
+    loadedState.miniGameWordHistory && typeof loadedState.miniGameWordHistory === 'object'
+      ? loadedState.miniGameWordHistory
+      : {};
+  normalized.miniGameWordHistory = {
+    wordSearch: {
+      recentSessions: Array.isArray(rawHistory.wordSearch?.recentSessions)
+        ? rawHistory.wordSearch.recentSessions.slice(-5)
+        : [],
+    },
+    crossword: {
+      recentSessions: Array.isArray(rawHistory.crossword?.recentSessions)
+        ? rawHistory.crossword.recentSessions.slice(-5)
+        : [],
+    },
+  };
   return normalized;
 }
 
