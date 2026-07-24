@@ -13,7 +13,9 @@ import {
   vocabularySkillsReadyForIntroduction,
 } from '../src/knowledge-model.js';
 import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
+import { normalizeWord } from '../src/normalize-word.js';
 import { db, STORES } from '../src/db.js';
+import { ExamplesDB } from '../src/examples-db.js';
 import { countAvailableCardsForSession } from '../src/srs-limits.js';
 import { formatDateKey, parseDateKey } from '../src/local-date.js';
 import {
@@ -93,7 +95,12 @@ export async function loadLessons() {
   if (raw) {
     try {
       LESSONS = Array.isArray(raw) ? raw : JSON.parse(raw);
-      LESSONS.forEach((l) => loadedChapters.set(l.id, { lesson: l, story: undefined }));
+      reconcileLessonIds();
+      LESSONS.forEach((l) => {
+        loadedChapters.set(l.id, { lesson: l, story: undefined });
+        ExamplesDB.registerLesson(l);
+      });
+      ExamplesDB.rebuildIndex();
       let reconciled = false;
       for (const lesson of LESSONS) {
         if (!state.chapters[lesson.id]?.started) continue;
@@ -130,9 +137,47 @@ export async function loadLessons() {
     CONTENT_INDEX = cachedIndex?.chapters || fallbackContentIndex();
   }
 
+  try {
+    const res = await fetch('data/particles-dictionary.json');
+    if (res.ok) {
+      const data = await res.json();
+      ExamplesDB.registerParticlesDictionary(data);
+      ExamplesDB.rebuildIndex();
+    }
+  } catch (e) {
+    console.warn('Не удалось загрузить словарь частиц для ExamplesDB:', e);
+  }
+
   // Принудительно обновляем отображение глав после загрузки данных
   if (state && state.initialized) {
     renderHome();
+  }
+}
+
+export function reconcileLessonIds() {
+  const lexemeToLessons = new Map();
+  // Сначала соберем все lessonIds для каждого lexemeId
+  for (const l of LESSONS) {
+    for (const w of l.words || []) {
+      if (w.lexemeId) {
+        if (!lexemeToLessons.has(w.lexemeId)) {
+          lexemeToLessons.set(w.lexemeId, new Set());
+        }
+        const set = lexemeToLessons.get(w.lexemeId);
+        set.add(Number(l.id));
+        if (Array.isArray(w.lessonIds)) {
+          w.lessonIds.forEach((id) => set.add(Number(id)));
+        }
+      }
+    }
+  }
+  // Теперь обновим lessonIds во всех словах
+  for (const l of LESSONS) {
+    for (const w of l.words || []) {
+      if (w.lexemeId) {
+        w.lessonIds = Array.from(lexemeToLessons.get(w.lexemeId)).sort((a, b) => a - b);
+      }
+    }
   }
 }
 
@@ -146,17 +191,7 @@ function normalizeLesson(l) {
     title: nm[0],
     jp: nm[1],
     particles: arr(l.particles),
-    words: arr(l.vocabulary).map((v) => ({
-      id: v.id,
-      kanji: v.kanji || v.writing,
-      writing: v.writing,
-      romaji: v.romaji,
-      translation: v.translation,
-      category: v.category,
-      lexemeId: v.lexemeId || v.lexeme_id || null,
-      acceptedAnswers: v.acceptedAnswers || v.accepted_answers || null,
-      contextProduction: v.contextProduction || v.context_production || null,
-    })),
+    words: arr(l.vocabulary).map((v) => normalizeWord(v, id)),
     grammar: arr(l.notes).map((n) => ({ title: n.title, content: n.content })),
     cultural: arr(l.cultural_notes).map((n) => ({ title: n.title, content: n.content })),
   };
@@ -178,9 +213,17 @@ export async function ensureLesson(id) {
   const { lesson, story } = await loadChapterData(id);
   const normalized = normalizeLesson(lesson);
 
+  // Register in ExamplesDB
+  ExamplesDB.registerLesson(normalized);
+  if (story) {
+    ExamplesDB.registerStory(story);
+  }
+  ExamplesDB.rebuildIndex();
+
   if (!LESSONS.some((l) => l.id === id)) {
     LESSONS.push(normalized);
     LESSONS.sort((a, b) => a.id - b.id);
+    reconcileLessonIds();
     persistLessonsCache();
   }
 

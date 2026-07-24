@@ -2,6 +2,7 @@
 
 import { $, $$ } from '../src/utils.js';
 import { speakJapanese } from '../src/audio-helper.js';
+import { ExamplesDB } from '../src/examples-db.js';
 
 /**
  * Отображает список частиц в компактном виде
@@ -18,6 +19,9 @@ export async function renderParticlesList(dependencies) {
     if (!response.ok) throw new Error('Не удалось загрузить словарь частиц');
 
     const dictionary = await response.json();
+    ExamplesDB.registerParticlesDictionary(dictionary);
+    ExamplesDB.rebuildIndex();
+
     const particles = Object.values(dictionary.particles);
 
     particles.sort((a, b) => a.introduced_in_lesson - b.introduced_in_lesson);

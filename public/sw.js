@@ -1,7 +1,7 @@
 /* sw.js — Kitsune Genki Service Worker */
 
 // ===== ВЕРСИОНИРОВАННЫЕ КЕШИ =====
-const CACHE_VERSION = '14';
+const CACHE_VERSION = '15';
 const CACHE_STATIC = `kitsune-static-v${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `kitsune-dynamic-v${CACHE_VERSION}`;
 const CACHE_LESSON = `kitsune-lesson-v${CACHE_VERSION}`;
@@ -58,6 +58,8 @@ const STATIC_ASSETS = [
   'ui/shared.js',
   'ui/shop.js',
   'ui/stories.js',
+  // Данные отрисовки кандзи (HanziWriter, офлайн-PWA)
+  'data/kanji-data.json',
 ];
 
 // ===== КОНТЕНТ ГЛАВ (Stale-While-Revalidate) =====

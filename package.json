@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:kanji": "node scripts/build-kanji-data.js",
+    "prebuild": "node scripts/build-kanji-data.js",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -42,7 +44,9 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
+    "@k1low/hanzi-writer-data-jp": "0.8.0",
     "caveman-shrink": "^0.1.0",
+    "hanzi-writer": "3.7.3",
     "headroom-ai": "^0.22.4",
     "rtk": "^4.2.0",
     "ts-fsrs": "^5.4.1"
