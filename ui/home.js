@@ -5,13 +5,6 @@ import { $, todayStr } from '../src/utils.js';
 import { dueCards, allCards, cardChapter } from '../src/srs-helpers.js';
 import { SRS } from '../srs.js';
 import { StudyPlan } from '../studyplan.js';
-import {
-  KNOWLEDGE_TYPES,
-  SKILLS,
-  makeCardId,
-  vocabularySkills,
-  vocabularySkillsReadyForIntroduction,
-} from '../src/knowledge-model.js';
 import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
 import { normalizeWord } from '../src/normalize-word.js';
 import { db, STORES } from '../src/db.js';
@@ -24,7 +17,13 @@ import {
   getChapterProgress,
   isChapterAvailable,
   isChapterCompleted,
+  shouldChapterHaveVocabularyCards,
 } from '../src/chapter-progress.js';
+import {
+  ensureVocabularySkillCards as ensureVocabularySkillCardsImpl,
+  ensureChapterVocabularyCards as ensureChapterVocabularyCardsImpl,
+  reconcilePriorKnowledgeVocabulary,
+} from '../src/chapter-vocabulary.js';
 
 // ---------- Constants ----------
 export const CH_NAMES = {
@@ -151,10 +150,9 @@ export async function loadLessons() {
     ExamplesDB.rebuildIndex();
     let reconciled = false;
     for (const lesson of LESSONS) {
-      if (!state.chapters[lesson.id]?.started) continue;
-      for (const word of lesson.words || []) {
-        reconciled = ensureVocabularySkillCards(word) || reconciled;
-      }
+      if (!shouldChapterHaveVocabularyCards(state, lesson.id)) continue;
+      const res = ensureChapterVocabularyCardsImpl(state, lesson);
+      if (res.changed) reconciled = true;
     }
     if (reconciled) await save(true);
   }
@@ -165,6 +163,16 @@ export async function loadLessons() {
   } else {
     const cachedIndex = await db.get(STORES.CONTENT_CACHE, 'content_index');
     CONTENT_INDEX = cachedIndex?.chapters || fallbackContentIndex();
+  }
+
+  // Runtime backfill reconciliation for prior knowledge chapters
+  if (Array.isArray(state.priorKnowledgeChapterIds) && state.priorKnowledgeChapterIds.length > 0) {
+    try {
+      const pkResult = await reconcilePriorKnowledgeVocabulary(state, ensureLesson);
+      if (pkResult.addedCards > 0) await save(true);
+    } catch (e) {
+      console.warn('[loadLessons] Prior knowledge backfill reconciliation error:', e);
+    }
   }
 
   const previousActiveChapterId = state.activeChapterId;
@@ -281,12 +289,9 @@ export async function ensureLesson(id) {
 
   const newEntry = { lesson: normalized, story: story || null };
   loadedChapters.set(id, newEntry);
-  if (state.chapters[id]?.started) {
-    const changed = normalized.words.reduce(
-      (result, word) => ensureVocabularySkillCards(word) || result,
-      false
-    );
-    if (changed) await save(true);
+  if (shouldChapterHaveVocabularyCards(state, id)) {
+    const res = ensureChapterVocabularyCardsImpl(state, normalized);
+    if (res.changed) await save(true);
   }
   return newEntry;
 }
@@ -301,47 +306,19 @@ export async function ensureLessonsForSrs() {
   await Promise.all([...ids].map((id) => ensureLesson(id).catch(() => null)));
   let added = false;
   for (const lesson of LESSONS) {
-    if (!state.chapters[lesson.id]?.started) continue;
-    lesson.words.forEach((word) => {
-      added = ensureVocabularySkillCards(word) || added;
-    });
+    if (!shouldChapterHaveVocabularyCards(state, lesson.id)) continue;
+    const res = ensureChapterVocabularyCardsImpl(state, lesson);
+    if (res.changed) added = true;
   }
   if (added) await save(true);
 }
 
-function ensureVocabularySkillCards(word) {
-  let changed = false;
-  const applicable = new Set(vocabularySkills(word));
-  const ready = new Set(
-    vocabularySkillsReadyForIntroduction(
-      word,
-      state.reviewEvents || [],
-      state.masteryArchive?.[word.id]
-    )
-  );
+export function ensureVocabularySkillCards(word) {
+  return ensureVocabularySkillCardsImpl(state, word);
+}
 
-  for (const skill of Object.values(SKILLS)) {
-    const cardId = makeCardId(word.id, skill);
-    const existing = state.srs[cardId];
-    if (existing) {
-      const shouldSuspend = !applicable.has(skill) || !ready.has(skill);
-      if (existing.suspended !== shouldSuspend) {
-        existing.suspended = shouldSuspend;
-        changed = true;
-      }
-      continue;
-    }
-
-    if (ready.has(skill)) {
-      state.srs[cardId] = SRS.newCard(cardId, {
-        itemId: word.id,
-        skill,
-        knowledgeType: KNOWLEDGE_TYPES.VOCABULARY,
-      });
-      changed = true;
-    }
-  }
-  return changed;
+export function ensureChapterVocabularyCards(lesson) {
+  return ensureChapterVocabularyCardsImpl(state, lesson);
 }
 
 export function getLesson(id) {
@@ -460,9 +437,7 @@ export function startChapter(id, toastFn = null) {
   cs.started = true;
   cs.startedAt ||= Date.now();
   if (!state.activeChapterId) state.activeChapterId = Number(id);
-  lesson.words.forEach((w) => {
-    ensureVocabularySkillCards(w);
-  });
+  ensureChapterVocabularyCardsImpl(state, lesson);
   save();
   markActivity(toastFn);
   if (toastFn) toastFn('Глава начата! Слова добавлены в SRS 🎴');
@@ -685,8 +660,8 @@ export function renderHomeTodayCard(appState, activeChapter, progress) {
     return c.lapses > 0 || c.difficulty >= 6.5 || (retrievability > 0 && retrievability < 0.85);
   });
 
-  const startedLessons = Object.keys(appState.chapters || {}).filter(
-    (id) => appState.chapters[id].started === true
+  const startedLessons = Object.keys(appState.chapters || {}).filter((id) =>
+    shouldChapterHaveVocabularyCards(appState, id)
   ).length;
   const crosswordUnlocked = startedLessons >= 3;
 

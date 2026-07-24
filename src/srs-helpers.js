@@ -1,6 +1,7 @@
 /* src/srs-helpers.js — pure queries over SRS records */
 import { SRS } from '../srs.js';
 import { parseCardIdentity } from './knowledge-model.js';
+import { isPriorKnowledge, shouldChapterHaveVocabularyCards } from './chapter-progress.js';
 
 export function cardChapter(cardId) {
   const { itemId } = parseCardIdentity(cardId);
@@ -26,14 +27,25 @@ export function wordById(wordId, lessons) {
   return null;
 }
 
-export function isWordUnlocked(wordId, chapters) {
+export function isWordUnlocked(wordId, chaptersOrAppState, maybeAppState = null) {
   const chapterId = cardChapter(wordId);
   if (!chapterId) return true;
-  const chapter = chapters[chapterId];
-  if (!chapter) return false;
 
-  // Слова разблокированы, если глава начата
-  return chapter.started === true;
+  const appState =
+    maybeAppState ||
+    (chaptersOrAppState &&
+    typeof chaptersOrAppState === 'object' &&
+    ('chapters' in chaptersOrAppState || 'priorKnowledgeChapterIds' in chaptersOrAppState)
+      ? chaptersOrAppState
+      : null);
+
+  const chapters = appState ? appState.chapters : chaptersOrAppState || {};
+  const chapter = chapters?.[chapterId];
+  if (chapter?.started === true) return true;
+
+  if (appState && isPriorKnowledge(appState, chapterId)) return true;
+
+  return false;
 }
 
 export function dueCards(srsRecords, chapterId, now = Date.now()) {
@@ -42,7 +54,6 @@ export function dueCards(srsRecords, chapterId, now = Date.now()) {
     if (c.suspended === true) return false;
     if (chapterId && cardChapter(c.id) !== chapterId) return false;
     if (seen.has(c.id)) return false;
-    seen.add(c.id);
     return SRS.isDue(c, now);
   });
 }
@@ -51,16 +62,25 @@ export function allCards(srsRecords, chapterId) {
   return Object.values(srsRecords).filter((c) => !chapterId || cardChapter(c.id) === chapterId);
 }
 
-export function getUnlockedParticles(chapters, lessons) {
+export function getUnlockedParticles(chaptersOrAppState, lessons, maybeAppState = null) {
   const particles = new Set();
+  const appState =
+    maybeAppState ||
+    (chaptersOrAppState &&
+    typeof chaptersOrAppState === 'object' &&
+    ('chapters' in chaptersOrAppState || 'priorKnowledgeChapterIds' in chaptersOrAppState)
+      ? chaptersOrAppState
+      : null);
+
+  const chapters = appState ? appState.chapters : chaptersOrAppState || {};
 
   lessons.forEach((lesson, idx) => {
-    const chapterId = idx + 1;
-    const chapter = chapters[chapterId];
+    const chapterId = lesson.id || idx + 1;
+    const isUnlocked = appState
+      ? shouldChapterHaveVocabularyCards(appState, chapterId)
+      : Boolean(chapters[chapterId]?.started);
 
-    // Частицы разблокированы, если глава начата
-    if (chapter && chapter.started) {
-      // Поддерживаем оба формата: particles в корне урока или в lesson
+    if (isUnlocked) {
       const particleList = lesson.particles || (lesson.lesson && lesson.lesson.particles) || [];
       if (particleList.length > 0) {
         particleList.forEach((p) => particles.add(p));

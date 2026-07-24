@@ -2,7 +2,7 @@
 
 import { StudyPlan } from '../studyplan.js';
 import { $ } from '../src/utils.js';
-import { CONTENT_INDEX } from './home.js';
+import { CONTENT_INDEX, ensureLesson } from './home.js';
 import { nav } from './router.js';
 import { getTodayDateKey, parseDateKey } from '../src/local-date.js';
 import {
@@ -11,6 +11,7 @@ import {
   getChapterProgress,
   getCompletedChapterIds,
 } from '../src/chapter-progress.js';
+import { reconcilePriorKnowledgeVocabulary } from '../src/chapter-vocabulary.js';
 
 let planCalendarMonth = new Date();
 
@@ -29,14 +30,35 @@ export function renderPlan(state, dependencies) {
 
   const generateButton = $('#plan-generate-btn');
   if (generateButton) {
-    generateButton.onclick = () => {
+    generateButton.onclick = async () => {
       const plan = collectPlanParams(state);
       if (!plan) return;
       state.studyPlan = plan;
       ensureActiveChapterId(state, CONTENT_INDEX);
+
+      let reconcileResult = null;
+      if (
+        Array.isArray(state.priorKnowledgeChapterIds) &&
+        state.priorKnowledgeChapterIds.length > 0
+      ) {
+        reconcileResult = await reconcilePriorKnowledgeVocabulary(state, ensureLesson);
+      }
+
       save();
       renderPlanView(state);
-      toast('План обучения создан');
+
+      if (reconcileResult && !reconcileResult.success) {
+        showPlanWarning(
+          `План создан, но не удалось подгрузить слова из глав: ${reconcileResult.failedChapters.join(
+            ', '
+          )}. Они будут добавлены при загрузке.`
+        );
+        toast('План создан с предупреждениями');
+      } else if (reconcileResult && reconcileResult.addedCards > 0) {
+        toast('План создан. Слова из ранее изученных глав добавлены в SRS');
+      } else {
+        toast('План обучения создан');
+      }
     };
   }
 

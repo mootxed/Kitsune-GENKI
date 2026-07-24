@@ -54,10 +54,21 @@ export async function renderChapter(id, state, dependencies) {
          <button class="btn-study-sm" id="ch-study" ${due === 0 ? 'disabled' : ''} data-testid="chapter-study-btn">Учить →</button>
        </div>`;
   } else if (isPriorKnowledge) {
+    const studyBtnText = due > 0 ? 'Повторять слова →' : 'Учить слова →';
+    const hasCards = total > 0;
     startBlock = `<div class="card srs-mini prior-knowledge-banner">
-         <div class="row-between" style="width:100%">
+         <div class="row-between" style="width:100%;margin-bottom:12px">
            <span class="badge prior-knowledge-badge" data-testid="prior-knowledge-badge" style="background:var(--accent-light, #e0e7ff);color:var(--accent-dark, #3730a3);padding:4px 8px;border-radius:6px;font-weight:600;font-size:13px">📚 Изучено ранее</span>
            <small class="muted">Вы отметили эту главу как изученную ранее</small>
+         </div>
+         <div class="row-between" style="width:100%;align-items:center">
+           <div class="m"><b>${total}</b><span>карточек</span></div>
+           <div class="m due"><b>${due}</b><span>доступно сейчас</span></div>
+           ${
+             hasCards
+               ? `<button class="btn-study-sm" id="ch-study" data-testid="chapter-study-btn">${studyBtnText}</button>`
+               : `<button class="btn-study-sm" id="ch-reconcile-srs" data-testid="reconcile-srs-btn">Добавить слова в SRS</button>`
+           }
          </div>
        </div>`;
   } else {
@@ -104,16 +115,36 @@ export async function renderChapter(id, state, dependencies) {
 
   if ($('#ch-study')) {
     $('#ch-study').onclick = () => {
-      const chapterDue = dueCards(state.srs, id);
-      if (chapterDue.length === 0) {
+      let chapterCards = dueCards(state.srs, id);
+      if (chapterCards.length === 0) {
+        chapterCards = allCards(state.srs, id);
+      }
+      if (chapterCards.length === 0) {
         toast('Нет карточек к повторению');
         return;
       }
       if (dependencies?.startChapterFlashcards) {
-        dependencies.startChapterFlashcards(id, chapterDue);
+        dependencies.startChapterFlashcards(id, chapterCards);
       } else if (window.nav) {
         window.nav('srs');
       }
+    };
+  }
+
+  if ($('#ch-reconcile-srs')) {
+    $('#ch-reconcile-srs').onclick = async () => {
+      try {
+        const { ensureChapterVocabularyCards } = await import('../src/chapter-vocabulary.js');
+        const entry = await ensureLesson(id);
+        if (entry && entry.lesson) {
+          ensureChapterVocabularyCards(state, entry.lesson);
+          await save(true);
+          toast('Слова главы добавлены в SRS');
+        }
+      } catch (err) {
+        toast('Ошибка при загрузке карточек главы');
+      }
+      await renderChapter(id, state, dependencies);
     };
   }
 
@@ -129,6 +160,8 @@ export async function renderChapter(id, state, dependencies) {
     el.onclick = async (e) => {
       e.preventDefault();
       e.stopPropagation();
+
+      if (isPriorKnowledge) return;
 
       if (!cs.started) {
         startChapter(id, toast);

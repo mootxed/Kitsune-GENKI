@@ -58,6 +58,15 @@ export function isPriorKnowledge(appState, chapterId) {
   return appState.priorKnowledgeChapterIds.includes(id);
 }
 
+export function shouldChapterHaveVocabularyCards(appState, chapterId) {
+  const id = normalizedChapterId(chapterId);
+  if (!id) return false;
+  const chapter = appState?.chapters?.[id];
+  if (chapter?.started === true || Boolean(chapter?.completedAt)) return true;
+  if (isPriorKnowledge(appState, id)) return true;
+  return false;
+}
+
 export function isEffectivelyCompleted(appState, chapterOrId) {
   if (!chapterOrId) return false;
   const chapterId = typeof chapterOrId === 'object' ? chapterOrId.id : chapterOrId;
