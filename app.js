@@ -15,6 +15,8 @@ import { State } from 'ts-fsrs';
 // IndexedDB модули
 import { initializeDB } from './src/db.js';
 import { migrateFromLocalStorage } from './src/migration.js';
+import { localDateKey } from './src/local-date.js';
+import { getDailyStudyDigest } from './src/daily-study-digest.js';
 
 // Утилиты
 import {
@@ -292,33 +294,170 @@ function applyTheme() {
 }
 
 // ===== УВЕДОМЛЕНИЯ =====
-function showNotification(title, body) {
-  if (!('Notification' in window)) {
+let activeNotifyTimer = null;
+let oneHourRemindTimer = null;
+
+function showNotification(title, body, options = {}) {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
     console.warn('Браузер не поддерживает уведомления');
-    toast('⚠️ Уведомления не поддерживаются браузером');
-    return;
+    if (options.isTest) {
+      toast('⚠️ Уведомления не поддерживаются браузером');
+    }
+    return false;
   }
 
   if (Notification.permission === 'granted') {
     new Notification(title, { body, icon: '/icon.svg' });
-  } else if (Notification.permission !== 'denied') {
+    return true;
+  } else if (Notification.permission !== 'denied' && options.requestPermission !== false) {
     Notification.requestPermission().then((permission) => {
       if (permission === 'granted') {
         new Notification(title, { body, icon: '/icon.svg' });
       }
     });
   }
+  return false;
+}
+
+function calculateNextNotificationDate(notifyTimeStr, notifyDays, now = new Date()) {
+  if (!notifyTimeStr || !Array.isArray(notifyDays) || notifyDays.length === 0) {
+    return null;
+  }
+
+  const [hoursStr, minutesStr] = notifyTimeStr.split(':');
+  const targetHours = parseInt(hoursStr, 10) || 12;
+  const targetMinutes = parseInt(minutesStr, 10) || 0;
+
+  for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+    const candidate = new Date(now.getTime());
+    candidate.setDate(candidate.getDate() + dayOffset);
+    candidate.setHours(targetHours, targetMinutes, 0, 0);
+
+    const dayOfWeek = candidate.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    if (notifyDays.includes(dayOfWeek)) {
+      if (candidate.getTime() > now.getTime()) {
+        return candidate;
+      }
+    }
+  }
+
+  return null;
 }
 
 function scheduleNotify() {
-  // Заглушка для планировщика уведомлений
-  // В будущем здесь можно реализовать логику напоминаний
+  if (activeNotifyTimer) {
+    clearTimeout(activeNotifyTimer);
+    activeNotifyTimer = null;
+  }
+
+  const s = state?.settings;
+  if (!s || !s.notifyEnabled) return;
+  if (
+    typeof window !== 'undefined' &&
+    'Notification' in window &&
+    Notification.permission !== 'granted'
+  ) {
+    return;
+  }
+
+  const targetDate = calculateNextNotificationDate(s.notifyTime, s.notifyDays, new Date());
+  if (!targetDate) return;
+
+  const msUntilTrigger = targetDate.getTime() - Date.now();
+  if (msUntilTrigger <= 0) return;
+
+  activeNotifyTimer = setTimeout(() => {
+    activeNotifyTimer = null;
+    triggerScheduledNotification();
+  }, msUntilTrigger);
+}
+
+function triggerScheduledNotification() {
+  const s = state?.settings;
+  if (!s || !s.notifyEnabled) return;
+  if (
+    typeof window !== 'undefined' &&
+    'Notification' in window &&
+    Notification.permission !== 'granted'
+  ) {
+    return;
+  }
+
+  const digest = getDailyStudyDigest(state);
+  if (digest.isComplete) {
+    scheduleNotify();
+    return;
+  }
+
+  const todayKey = localDateKey();
+  const notifState = s.notificationState || {};
+
+  if (
+    notifState.lastDailyDigestDate === todayKey &&
+    notifState.lastDailyDigestSlot === s.notifyTime
+  ) {
+    scheduleNotify();
+    return;
+  }
+
+  let notifBody = '';
+  if (digest.dueReviewCards > 0 && digest.availableNewItems > 0) {
+    notifBody = `${digest.dueReviewCards} повторения и ${digest.availableNewItems} новых слов — примерно ${digest.estimatedMinutes} минут.`;
+  } else if (digest.dueReviewCards > 0) {
+    notifBody = `На сегодня ${digest.dueReviewCards} повторений — ${digest.durationText}.`;
+  } else if (digest.availableNewItems > 0) {
+    notifBody = `На сегодня доступно ${digest.availableNewItems} новых слов — ${digest.durationText}.`;
+  }
+
+  if (digest.cardsToDailyGoal > 0) {
+    notifBody += ` До цели осталось ${digest.cardsToDailyGoal} карточки.`;
+  }
+
+  const sent = showNotification('Kitsune Genki 🦊', notifBody, { requestPermission: false });
+  if (sent) {
+    s.notificationState = {
+      lastDailyDigestDate: todayKey,
+      lastDailyDigestSlot: s.notifyTime,
+    };
+    save();
+  }
+
+  scheduleNotify();
+}
+
+function scheduleOneHourReminder() {
+  if (oneHourRemindTimer) {
+    clearTimeout(oneHourRemindTimer);
+    oneHourRemindTimer = null;
+  }
+
+  const ONE_HOUR_MS = 60 * 60 * 1000;
+  oneHourRemindTimer = setTimeout(() => {
+    oneHourRemindTimer = null;
+    const digest = getDailyStudyDigest(state);
+    const body = digest.isComplete
+      ? 'На сегодня всё выполнено 🎉'
+      : `${digest.summaryText} — ${digest.durationText}.`;
+    showNotification('Kitsune Genki 🦊', `Напоминание: ${body}`);
+  }, ONE_HOUR_MS);
+
+  toast('⏰ Напоминание установлено через 1 час');
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && state?.settings?.notifyEnabled) {
+      scheduleNotify();
+    }
+  });
 }
 
 // Экспортируем в глобальную область для обратной совместимости
 window.toast = toast;
 window.applyTheme = applyTheme;
 window.showNotification = showNotification;
+window.scheduleNotify = scheduleNotify;
+window.scheduleOneHourReminder = scheduleOneHourReminder;
 
 // ===== ROUTER SETUP =====
 let router = null;
@@ -504,30 +643,24 @@ function setupRouter() {
     // Подгружаем уроки для всех карточек в SRS (ленивая загрузка)
     await ensureLessonsForSrs();
 
-    const due = dueCards(state.srs);
-    const sessionCards = limitNewCardsForSession(due, state.srs);
-    const availableCount = sessionCards.length;
-
-    const reviewsCount = due.filter((card) => card.state !== State.New).length;
-    const availableNewCount = sessionCards.filter((card) => card.state === State.New).length;
-    const totalCount = allCards(state.srs).length;
+    const digest = getDailyStudyDigest(state);
 
     // ВСЕГДА показываем dashboard с кнопкой, даже если есть карточки к повтору
     body.innerHTML = `
       <div class="stat-row" data-testid="srs-stat-row">
-        <div class="stat-box" data-testid="stat-reviews"><div class="stat-num accent">${reviewsCount}</div><div class="stat-cap">Повторения</div></div>
-        <div class="stat-box" data-testid="stat-new"><div class="stat-num" style="color:var(--primary, #ff8a2b)">${availableNewCount}</div><div class="stat-cap">Новые слова</div></div>
-        <div class="stat-box" data-testid="stat-total"><div class="stat-num">${totalCount}</div><div class="stat-cap">Всего</div></div>
+        <div class="stat-box" data-testid="stat-reviews"><div class="stat-num accent">${digest.dueReviewCards}</div><div class="stat-cap">Повторения</div></div>
+        <div class="stat-box" data-testid="stat-new"><div class="stat-num" style="color:var(--primary, #ff8a2b)">${digest.availableNewItems}</div><div class="stat-cap">Новые слова</div></div>
+        <div class="stat-box" data-testid="stat-total"><div class="stat-num">${digest.durationText}</div><div class="stat-cap">Примерное время</div></div>
       </div>
-      <button class="btn-primary" id="srs-start-session" data-testid="srs-start-btn" ${availableCount === 0 ? 'disabled' : ''}>
-        ${availableCount === 0 ? 'Всё повторено на сегодня!' : `▶️ Начать повторение (${availableCount})`}
+      <button class="btn-primary" id="srs-start-session" data-testid="srs-start-btn" ${digest.availableCardCount === 0 ? 'disabled' : ''}>
+        ${digest.availableCardCount === 0 ? 'Всё повторено на сегодня!' : `▶️ Начать SRS (${digest.availableCardCount})`}
       </button>
       <button class="btn-extra-review" id="srs-extra-review">➕ Практика без изменения расписания</button>
     `;
 
     // Привязываем обработчики к кнопкам
     const startBtn = $('#srs-start-session');
-    if (startBtn && availableCount > 0) {
+    if (startBtn && digest.availableCardCount > 0) {
       startBtn.onclick = () => startSrsSession();
     }
 

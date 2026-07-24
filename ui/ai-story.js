@@ -2,6 +2,7 @@
 import { $ } from '../src/utils.js';
 import { API } from '../services.js';
 import { wordById } from '../src/srs-helpers.js';
+import { parseAndValidateAIStory } from '../src/ai-story-parser.js';
 
 function escapeHtml(str) {
   if (typeof str !== 'string') return '';
@@ -171,51 +172,50 @@ export function renderAIStory(state, dependencies) {
     `;
 
     try {
-      const rawResponse = await API.generateAIStory(fullPrompt, weakWords, st.settings);
+      const rawOrObject = await API.generateAIStory(fullPrompt, weakWords, st.settings);
 
-      // Strip markdown fences safely
-      const cleaned = rawResponse
-        .replace(/```json\s*/gi, '')
-        .replace(/```\s*/gi, '')
-        .trim();
-
-      let storyData;
-      try {
-        storyData = JSON.parse(cleaned);
-      } catch (parseErr) {
-        console.error('[AIStory] JSON parse error:', parseErr, rawResponse);
-        throw new Error('API вернул невалидный JSON. Попробуйте ещё раз.');
-      }
-
-      if (!storyData || !Array.isArray(storyData.story) || storyData.story.length === 0) {
-        throw new Error('Неверная структура данных в ответе API (отсутствует массив story).');
-      }
-
-      // Validate each sentence
-      for (const item of storyData.story) {
-        if (!item || typeof item !== 'object') {
-          throw new Error('Невалидный элемент предложения в ответе ИИ');
+      let storySentences = [];
+      if (typeof rawOrObject === 'string') {
+        const parsed = parseAndValidateAIStory(rawOrObject);
+        if (!parsed.success) {
+          const err = new Error(parsed.message);
+          err.errorType = parsed.errorType;
+          throw err;
         }
-        if (
-          typeof item.speaker !== 'string' ||
-          !Array.isArray(item.tokens) ||
-          typeof item.translation !== 'string'
-        ) {
-          throw new Error(
-            'Отсутствуют обязательные поля в предложении (speaker, tokens, translation)'
+        storySentences = parsed.data.story;
+      } else if (rawOrObject && Array.isArray(rawOrObject.story)) {
+        storySentences = rawOrObject.story;
+        if (rawOrObject.meta?.repaired) {
+          console.log(
+            '[AIStory] Отображаем историю, автоматически исправленную через repair-retry'
           );
         }
+      } else if (Array.isArray(rawOrObject)) {
+        storySentences = rawOrObject;
+      } else {
+        throw new Error('Некорректная структура данных в ответе ИИ.');
       }
 
-      // Render valid story
-      renderStoryContent(storyData.story, resultContainer, st, deps);
+      // Render valid story directly
+      renderStoryContent(storySentences, resultContainer, st, deps);
       toast('✅ История успешно сгенерирована!');
     } catch (err) {
       console.error('[AIStory] Generation error:', err);
+
+      let userMsg = err.message || 'Ошибка генерации истории.';
+      if (err.errorType === 'EMPTY') {
+        userMsg = 'Пустой ответ от ИИ. Попробуйте изменить запрос.';
+      } else if (err.errorType === 'JSON_PARSE') {
+        userMsg = 'ИИ вернул повреждённый JSON. Нажмите «Попробовать снова».';
+      } else if (err.errorType === 'SCHEMA_VALIDATION') {
+        userMsg =
+          'Структура ответа ИИ не совпадает со схемой истории. Нажмите «Попробовать снова».';
+      }
+
       resultContainer.innerHTML = `
         <div class="card" style="border-left: 4px solid var(--danger, #ef4444); padding: 16px;" data-testid="ai-story-error">
           <h3 style="margin: 0 0 8px; color: var(--danger, #ef4444);">⚠️ Ошибка генерации</h3>
-          <p style="font-size: 14px; margin-bottom: 12px;">${escapeHtml(err.message)}</p>
+          <p style="font-size: 14px; margin-bottom: 12px;">${escapeHtml(userMsg)}</p>
           <button class="btn-primary" id="ai-story-retry-btn" data-testid="ai-story-retry-btn" style="padding: 8px 16px; font-size: 13px;">
             🔄 Попробовать снова
           </button>

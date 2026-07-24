@@ -294,7 +294,22 @@ function getRetrievability(card, now = Date.now()) {
 }
 
 function isDue(card, ref) {
-  return card.due <= (ref || Date.now());
+  if (!card || !card.due) return false;
+  const dueMs =
+    card.due instanceof Date
+      ? card.due.getTime()
+      : typeof card.due === 'number'
+        ? card.due
+        : new Date(card.due).getTime();
+  const refMs =
+    ref instanceof Date
+      ? ref.getTime()
+      : typeof ref === 'number'
+        ? ref
+        : ref
+          ? new Date(ref).getTime()
+          : Date.now();
+  return Number.isFinite(dueMs) && Number.isFinite(refMs) ? dueMs <= refMs : false;
 }
 
 /*

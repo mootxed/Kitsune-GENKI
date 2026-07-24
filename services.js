@@ -1,4 +1,5 @@
-/* services.js — OpenRouter chat (Google Drive удалён, используется Web Share API) */
+/* services.js — OpenRouter chat & AI Story Generator with Zod Validation & Repair */
+import { parseAndValidateAIStory } from './src/ai-story-parser.js';
 
 const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
 function getSystemPrompt(userLevel) {
@@ -66,13 +67,16 @@ async function askSensei(history, settings) {
 
 // ---- AI Story Generator ----
 async function generateAIStory(userPrompt, weakWords, settings) {
-  if (!settings.openrouterKey) {
+  if (!settings?.openrouterKey) {
     throw new Error('Не задан API-ключ OpenRouter. Откройте Настройки.');
   }
 
   const key = settings.openrouterKey.trim();
   if (!key.startsWith('sk-or-v1-')) {
     throw new Error("Неверный формат API-ключа. Должен начинаться с 'sk-or-v1-'");
+  }
+  if (key.length < 40) {
+    throw new Error('API-ключ слишком короткий. Проверьте правильность ключа.');
   }
 
   const systemPrompt = `Ты — профессиональный генератор интерактивных историй для изучения японского языка уровня N5.
@@ -125,6 +129,8 @@ ${
 
 Ответь ТОЛЬКО JSON объектом, без дополнительного текста!`;
 
+  const model = settings.model || 'deepseek/deepseek-v4-flash';
+
   const res = await fetch(OR_URL, {
     method: 'POST',
     headers: {
@@ -133,7 +139,7 @@ ${
       'HTTP-Referer': location.origin,
     },
     body: JSON.stringify({
-      model: settings.model || 'deepseek/deepseek-v4-flash',
+      model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -147,13 +153,99 @@ ${
   }
 
   const data = await res.json();
-  const content = data.choices?.[0]?.message?.content;
+  const rawContent = data.choices?.[0]?.message?.content;
 
-  if (!content || content.trim() === '') {
-    throw new Error('API вернул пустой ответ. Попробуйте переформулировать запрос.');
+  const firstAttemptResult = parseAndValidateAIStory(rawContent);
+
+  if (firstAttemptResult.success) {
+    return {
+      story: firstAttemptResult.data.story,
+      meta: {
+        repaired: false,
+        attempts: 1,
+      },
+    };
   }
 
-  return content;
+  // --- Automatic Repair Retry (Exactly 1 retry attempt) ---
+  console.warn(
+    '[AIStory] Первый ответ не прошёл валидацию:',
+    firstAttemptResult.errorType,
+    firstAttemptResult.issues
+  );
+
+  const repairSystemPrompt = `Ты — экспертный помощник по исправлению JSON. Твоя задача — исправить переданный ответ так, чтобы он строго соответствовал указанной JSON-схеме истории.
+Не меняй сюжет и японский текст без необходимости. Верни ТОЛЬКО чистый валидный JSON без markdown (без \`\`\`json).`;
+
+  const errorDetails = (firstAttemptResult.issues || [])
+    .map((issue) => `${issue.path ? issue.path + ': ' : ''}${issue.message}`)
+    .join('; ');
+
+  const repairUserPrompt = `Исходный ответ для исправления:
+${(rawContent || '').slice(0, 2000)}
+
+Ошибки валидации:
+${errorDetails || firstAttemptResult.message}
+
+Пожалуйста, исправь формат и обязательные поля, вернув строго валидный JSON вида:
+{
+  "story": [
+    {
+      "sentence_id": 1,
+      "speaker": "...",
+      "tokens": [
+        { "kanji": "...", "writing": "...", "translation": "...", "type": "..." }
+      ],
+      "translation": "..."
+    }
+  ]
+}`;
+
+  const repairRes = await fetch(OR_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': location.origin,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: repairSystemPrompt },
+        { role: 'user', content: repairUserPrompt },
+      ],
+    }),
+  });
+
+  if (!repairRes.ok) {
+    const t = await repairRes.text();
+    throw new Error('OpenRouter repair error ' + repairRes.status + ': ' + t.slice(0, 160));
+  }
+
+  const repairData = await repairRes.json();
+  const repairRawContent = repairData.choices?.[0]?.message?.content;
+
+  const repairResult = parseAndValidateAIStory(repairRawContent);
+
+  if (repairResult.success) {
+    console.log('[AIStory] История успешно исправлена при повторном repair-запросе');
+    return {
+      story: repairResult.data.story,
+      meta: {
+        repaired: true,
+        attempts: 2,
+      },
+    };
+  }
+
+  const finalError = new Error(
+    repairResult.errorType === 'JSON_PARSE'
+      ? 'Невалидный JSON от ИИ после попытки исправления.'
+      : 'Нарушение структуры схемы ответа ИИ после попытки исправления.'
+  );
+  finalError.errorType = repairResult.errorType;
+  finalError.issues = repairResult.issues;
+  throw finalError;
 }
 
 export const API = { askSensei, generateAIStory, SYSTEM_PROMPT, getSystemPrompt };

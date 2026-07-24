@@ -110,6 +110,18 @@ describe('AI-Story UI Renderer', () => {
           ],
           translation: 'Добро пожаловать!',
         },
+        {
+          sentence_id: 2,
+          speaker: '私',
+          tokens: [{ kanji: 'お茶', writing: 'おちゃ', translation: 'чай', type: 'Noun' }],
+          translation: 'Чай, пожалуйста.',
+        },
+        {
+          sentence_id: 3,
+          speaker: '店員',
+          tokens: [{ kanji: 'はい', writing: 'はい', translation: 'да', type: 'Interjection' }],
+          translation: 'Вот, пожалуйста.',
+        },
       ],
     });
 
@@ -140,6 +152,18 @@ describe('AI-Story UI Renderer', () => {
           "speaker": "私",
           "tokens": [{"kanji": "こんにちは", "writing": "こんにちは", "translation": "Здравствуйте"}],
           "translation": "Здравствуйте!"
+        },
+        {
+          "sentence_id": 2,
+          "speaker": "店員",
+          "tokens": [{"kanji": "いらっしゃいませ", "writing": "いらっしゃいませ", "translation": "Добро пожаловать"}],
+          "translation": "Добро пожаловать!"
+        },
+        {
+          "sentence_id": 3,
+          "speaker": "私",
+          "tokens": [{"kanji": "ありがとう", "writing": "ありがとう", "translation": "Спасибо"}],
+          "translation": "Спасибо!"
         }
       ]
     }

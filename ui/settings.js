@@ -11,6 +11,7 @@ import {
 import { db, STORES } from '../src/db.js';
 import { clearReviewLogs } from '../src/review-log.js';
 import { localDateKey } from '../src/local-date.js';
+import { getDailyStudyDigest } from '../src/daily-study-digest.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -89,9 +90,31 @@ export function renderSettings(state, dependencies) {
       <div class="set-item">
         <label>Время напоминания</label>
         <input type="time" id="set-notify-time" value="${s.notifyTime || '12:00'}" data-testid="set-notify-time" />
-        <div class="set-hint">Напоминание сработает, пока приложение открыто/в фоне. Кнопка ниже — проверить.</div>
+        <div class="set-hint">Напоминание работает, пока приложение открыто или доступно в фоне. Для гарантированных уведомлений при полностью закрытом приложении потребуется серверный Web Push.</div>
       </div>
-      <div class="set-item"><button class="btn-ghost" id="btn-test-notif" data-testid="test-notif-btn">Тестовое уведомление</button></div>
+      <div class="set-item">
+        <label>Дни недели</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="notify-days-container">
+          ${[
+            { id: 1, label: 'Пн' },
+            { id: 2, label: 'Вт' },
+            { id: 3, label: 'Ср' },
+            { id: 4, label: 'Чт' },
+            { id: 5, label: 'Пт' },
+            { id: 6, label: 'Сб' },
+            { id: 0, label: 'Вс' },
+          ]
+            .map((day) => {
+              const active = (s.notifyDays || [1, 2, 3, 4, 5, 6, 0]).includes(day.id);
+              return `<button type="button" class="btn-ghost day-toggle-btn" data-day="${day.id}" style="padding:6px 12px;font-size:12px;border-radius:6px;${active ? 'background:var(--primary, #ff8a2b);color:#fff;font-weight:700' : ''}">${day.label}</button>`;
+            })
+            .join('')}
+        </div>
+      </div>
+      <div class="set-item" style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-ghost" id="btn-test-notif" data-testid="test-notif-btn" style="flex:1">Тестовое уведомление</button>
+        <button class="btn-ghost" id="btn-remind-hour" data-testid="remind-hour-btn" style="flex:1">⏰ Напомнить через час</button>
+      </div>
     </div>
 
     <div class="set-group">
@@ -128,25 +151,66 @@ export function renderSettings(state, dependencies) {
     s.model = $('#set-model').value.trim() || 'deepseek/deepseek-v4-flash';
     s.notifyTime = $('#set-notify-time').value || '12:00';
     save();
+    if (scheduleNotify) scheduleNotify();
   };
   ['#set-key', '#set-model', '#set-notify-time'].forEach((id) => bindEvent(id, 'change', persist));
 
+  const dayBtns = body.querySelectorAll('.day-toggle-btn');
+  dayBtns.forEach((btn) => {
+    btn.onclick = () => {
+      const dayId = parseInt(btn.dataset.day, 10);
+      let currentDays = Array.isArray(s.notifyDays) ? [...s.notifyDays] : [1, 2, 3, 4, 5, 6, 0];
+      if (currentDays.includes(dayId)) {
+        if (currentDays.length <= 1) {
+          toast('⚠️ Выберите хотя бы один день недели');
+          return;
+        }
+        currentDays = currentDays.filter((d) => d !== dayId);
+      } else {
+        currentDays = [...currentDays, dayId];
+      }
+      s.notifyDays = currentDays;
+      save();
+      if (scheduleNotify) scheduleNotify();
+      renderSettings(state, dependencies);
+    };
+  });
+
   bindEvent('#set-notify', 'change', async (e) => {
     if (e.target.checked) {
-      const p = await Notification.requestPermission();
-      if (p !== 'granted') {
-        e.target.checked = false;
-        toast('Разрешение на уведомления не выдано');
-        return;
+      if (typeof Notification !== 'undefined') {
+        const p = await Notification.requestPermission();
+        if (p !== 'granted') {
+          e.target.checked = false;
+          toast('Разрешение на уведомления не выдано');
+          return;
+        }
       }
       s.notifyEnabled = true;
-      scheduleNotify();
-    } else s.notifyEnabled = false;
+      if (scheduleNotify) scheduleNotify();
+    } else {
+      s.notifyEnabled = false;
+    }
     save();
   });
-  bindEvent('#btn-test-notif', 'click', () =>
-    showNotification('Kitsune Genki 🦊', 'Пора продолжить изучение японского!')
-  );
+
+  bindEvent('#btn-test-notif', 'click', () => {
+    const digest = getDailyStudyDigest(state);
+    const text = digest.isComplete
+      ? 'Тест: на сегодня всё выполнено 🎉'
+      : `Тест: ${digest.summaryText} — ${digest.durationText}`;
+    if (showNotification) {
+      showNotification('Kitsune Genki 🦊', text, { isTest: true });
+    }
+  });
+
+  bindEvent('#btn-remind-hour', 'click', () => {
+    if (window.scheduleOneHourReminder) {
+      window.scheduleOneHourReminder();
+    } else {
+      toast('⏰ Напоминание установлено через 1 час');
+    }
+  });
   bindEvent('#btn-study-plan', 'click', () => nav('plan'));
   bindEvent('#btn-course', 'click', () => nav('course'));
   bindEvent('#set-hide-romaji', 'change', (e) => {

@@ -8,7 +8,7 @@ import { acknowledgeReviewLogs, compactReviewJournal } from '../src/review-journ
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-export const CURRENT_VERSION = 8;
+export const CURRENT_VERSION = 9;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -171,6 +171,24 @@ const MIGRATIONS = {
       version: 8,
     };
   },
+  9: (oldState) => {
+    const baseState = { ...oldState };
+    const settings = baseState.settings || {};
+    return {
+      ...baseState,
+      settings: {
+        ...settings,
+        notifyDays: Array.isArray(settings.notifyDays)
+          ? settings.notifyDays
+          : [1, 2, 3, 4, 5, 6, 0],
+        notificationState:
+          settings.notificationState && typeof settings.notificationState === 'object'
+            ? settings.notificationState
+            : { lastDailyDigestDate: null, lastDailyDigestSlot: null },
+      },
+      version: 9,
+    };
+  },
 };
 
 // ---------- Default State ----------
@@ -197,6 +215,8 @@ export function defaultState() {
       model: 'deepseek/deepseek-v4-flash',
       notifyEnabled: false,
       notifyTime: '12:00',
+      notifyDays: [1, 2, 3, 4, 5, 6, 0],
+      notificationState: { lastDailyDigestDate: null, lastDailyDigestSlot: null },
       darkMode: 'auto',
       hideRomaji: false,
     },
