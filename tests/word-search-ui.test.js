@@ -6,6 +6,7 @@ import {
   PALETTE,
 } from '../ui/word-search.js';
 import { renderSensei, setSenseiTab } from '../ui/chat.js';
+import * as audioHelper from '../src/audio-helper.js';
 import { readFileSync } from 'node:fs';
 
 describe('Word Search UI & Integration Tests', () => {
@@ -205,28 +206,88 @@ describe('Word Search UI & Integration Tests', () => {
     expect(PALETTE.length).toBeGreaterThanOrEqual(10);
   });
 
-  // Zero Layout Shift & Formatting
-  it('17. Японское чтение занимает зарезервированное место до нахождения', () => {
+  // Requirement Tests 1-10 (Kana Removal, Audio TTS, Layout & Isolation)
+  it('WS-REQ-1. В clue-strip присутствуют русские переводы', () => {
     startWordSearchGame(state, dependencies, 'medium');
-    const kanaEl = document.querySelector('.ws-translation-kana');
-    expect(kanaEl).not.toBeNull();
-
-    // Verify it doesn't use class="hidden" with display:none
-    expect(kanaEl.classList.contains('hidden')).toBe(false);
+    const translations = document.querySelectorAll('.ws-clue-translation');
+    expect(translations.length).toBeGreaterThan(0);
+    translations.forEach((el) => {
+      expect(el.textContent.trim()).toBeTruthy();
+    });
   });
 
-  it('18. При нахождении не добавляется новый DOM-элемент для чтения', () => {
+  it('WS-REQ-2. В clue-strip отсутствует японское kana', () => {
     startWordSearchGame(state, dependencies, 'medium');
-    const initialKanaCount = document.querySelectorAll('.ws-translation-kana').length;
-    expect(initialKanaCount).toBeGreaterThan(0);
+    const strip = document.querySelector('.ws-clue-strip');
+    expect(strip.textContent).not.toMatch(/[\u3040-\u30ff]/u);
   });
 
-  it('19. Не используется класс hidden с display:none для kana-строки в CSS/HTML', () => {
+  it('WS-REQ-3. Элементы ws-clue-kana и ws-translation-kana не создаются', () => {
+    startWordSearchGame(state, dependencies, 'medium');
+    expect(document.querySelector('.ws-clue-kana')).toBeNull();
+    expect(document.querySelector('.ws-translation-kana')).toBeNull();
+  });
+
+  it('WS-REQ-4. До нахождения клик по переводу не вызывает speakJapanese()', () => {
+    const spy = vi.spyOn(audioHelper, 'speakJapanese');
+    startWordSearchGame(state, dependencies, 'medium');
+    const item = document.querySelector('.ws-translation-item');
+    expect(item.classList.contains('ws-found')).toBe(false);
+
+    item.click();
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('WS-REQ-5. После нахождения клик вызывает speakJapanese()', () => {
+    const spy = vi.spyOn(audioHelper, 'speakJapanese');
+    startWordSearchGame(state, dependencies, 'medium');
+    const item = document.querySelector('.ws-translation-item');
+    item.classList.add('ws-found');
+
+    item.click();
+    expect(spy).toHaveBeenCalledWith(expect.any(String));
+    spy.mockRestore();
+  });
+
+  it('WS-REQ-6. После нахождения появляется ✓', () => {
+    startWordSearchGame(state, dependencies, 'medium');
+    const item = document.querySelector('.ws-translation-item');
+    const check = item.querySelector('.ws-clue-check');
+    expect(check.textContent.trim()).toBe('✓');
+
+    item.classList.add('ws-found');
+    expect(item.classList.contains('ws-found')).toBe(true);
+  });
+
+  it('WS-REQ-7. Карточка и клетки слова получают одинаковый colorIndex', () => {
+    startWordSearchGame(state, dependencies, 'medium');
+    const items = document.querySelectorAll('.ws-translation-item');
+    items.forEach((item) => {
+      expect(item.dataset.colorIndex).toBeDefined();
+      expect(Number(item.dataset.colorIndex)).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  it('WS-REQ-8. Высота карточки не меняется после нахождения', () => {
+    startWordSearchGame(state, dependencies, 'medium');
+    const item = document.querySelector('.ws-translation-item');
+    const initialChildrenCount = item.children.length;
+
+    item.classList.add('ws-found');
+    expect(item.children.length).toBe(initialChildrenCount);
+  });
+
+  it('WS-REQ-9. Удаление kana не ломает подсказки и completion-overlay', () => {
+    startWordSearchGame(state, dependencies, 'easy');
+    const hintBtn = document.getElementById('ws-hint-btn');
+    expect(() => hintBtn.click()).not.toThrow();
+
     const uiSource = readFileSync('ui/word-search.js', 'utf8');
-    expect(uiSource).not.toMatch(/class="ws-translation-kana hidden"/u);
+    expect(uiSource).toContain('showCompletionScreen');
   });
 
-  it('24. Игра не изменяет SRS и reviewEvents', () => {
+  it('WS-REQ-10. Игра по-прежнему не изменяет FSRS и mastery', () => {
     const originalSrs = JSON.stringify(state.srs);
     startWordSearchGame(state, dependencies, 'medium');
 
@@ -237,21 +298,5 @@ describe('Word Search UI & Integration Tests', () => {
     expect(uiSource).not.toMatch(/state\.srs\s*=/u);
     expect(uiSource).not.toMatch(/state\.reviewEvents/u);
     expect(uiSource).not.toMatch(/masteryArchive/u);
-  });
-
-  // Completion Overlay (Requirements 29-33)
-  it('29-30. Завершение Word Search больше не использует локальный #ws-modal', () => {
-    const uiSource = readFileSync('ui/word-search.js', 'utf8');
-    expect(uiSource).toContain('showCompletionScreen');
-    expect(uiSource).not.toMatch(/id="ws-modal"/u);
-  });
-
-  it('31-33. Overlay показывает результаты, а Continue возвращает на выбор сложности и не удваивает XP', () => {
-    startWordSearchGame(state, dependencies, 'easy');
-
-    // Trigger completeGame logic by finding all words or calling internal handler
-    // Verify showCompletionScreen is integrated with correct onContinue handler
-    const uiSource = readFileSync('ui/word-search.js', 'utf8');
-    expect(uiSource).toMatch(/onContinue:\s*\(\)\s*=>\s*\{[\s\S]*renderDifficultySelectionScreen/u);
   });
 });

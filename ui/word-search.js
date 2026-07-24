@@ -252,12 +252,9 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
         ${placedWords
           .map(
             (w) => `
-          <div class="ws-clue-card ws-translation-item" data-word-id="${escapeHtml(w.id)}" data-color-index="${w.colorIndex}" data-testid="ws-translation-${escapeHtml(w.id)}" title="${escapeHtml(w.translation)}" aria-label="${escapeHtml(w.translation)}">
-            <div class="ws-clue-header">
-              <span class="ws-clue-check ws-status-icon">✓</span>
-              <span class="ws-clue-translation ws-translation-text">${escapeHtml(w.translation)}</span>
-            </div>
-            <div class="ws-clue-kana ws-translation-kana">${escapeHtml(w.kana)}</div>
+          <div class="ws-clue-card ws-translation-item" data-word-id="${escapeHtml(w.id)}" data-color-index="${w.colorIndex}" data-testid="ws-translation-${escapeHtml(w.id)}" title="${escapeHtml(w.translation)}">
+            <span class="ws-clue-check ws-status-icon">✓</span>
+            <span class="ws-clue-translation ws-translation-text">${escapeHtml(w.translation)}</span>
           </div>
         `
           )
@@ -493,6 +490,10 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
         transItem.style.borderColor = colorItem.border;
         transItem.style.backgroundColor = colorItem.softBg;
         transItem.style.color = colorItem.ink;
+        transItem.setAttribute(
+          'aria-label',
+          `Прослушать найденное слово: ${matchedWord.translation}`
+        );
       }
 
       // Voice audio
@@ -559,6 +560,7 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
   const translationItems = body.querySelectorAll('.ws-translation-item');
   translationItems.forEach((item) => {
     item.onclick = () => {
+      if (!item.classList.contains('ws-found')) return;
       const wordId = item.dataset.wordId;
       const word = placedWords.find((w) => w.id === wordId);
       if (word && word.kana) {

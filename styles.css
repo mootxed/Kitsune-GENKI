@@ -11174,7 +11174,7 @@ body.ws-focus-mode .tabbar {
 .ws-clue-strip {
   display: grid;
   grid-auto-flow: column;
-  grid-template-rows: repeat(2, 40px);
+  grid-template-rows: repeat(2, 32px);
   grid-auto-columns: minmax(110px, max-content);
   gap: 6px;
   overflow-x: auto;
@@ -11186,20 +11186,21 @@ body.ws-focus-mode .tabbar {
 }
 
 .ws-container[data-difficulty='easy'] .ws-clue-strip {
-  grid-template-rows: repeat(1, 44px);
+  grid-template-rows: repeat(1, 32px);
 }
 
 .ws-clue-card {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
   padding: 4px 8px;
-  height: 40px;
+  height: 32px;
   background: var(--bg-card, #ffffff);
   border: 1px solid var(--border, #dddddd);
   border-radius: 8px;
   font-size: 12px;
-  cursor: pointer;
+  cursor: default;
   transition:
     border-color 0.2s ease,
     background-color 0.2s ease,
@@ -11208,22 +11209,23 @@ body.ws-focus-mode .tabbar {
   overflow: hidden;
 }
 
-.ws-clue-header {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
+.ws-clue-card.ws-found {
+  cursor: pointer;
 }
 
 .ws-clue-check {
   font-size: 11px;
   font-weight: 800;
-  opacity: 0.3;
+  visibility: hidden;
+  opacity: 0;
   flex-shrink: 0;
-  transition: opacity 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
 }
 
 .ws-clue-card.ws-found .ws-clue-check {
+  visibility: visible;
   opacity: 1;
 }
 
@@ -11243,26 +11245,6 @@ body.ws-focus-mode .tabbar {
   opacity: 0.9;
 }
 
-.ws-clue-kana {
-  font-size: 11px;
-  font-weight: 700;
-  height: 13px;
-  line-height: 13px;
-  visibility: hidden;
-  opacity: 0;
-  transition:
-    opacity 0.2s ease,
-    visibility 0.2s ease;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ws-clue-card.ws-found .ws-clue-kana {
-  visibility: visible;
-  opacity: 1;
-}
-
 /* Grid Wrapper & Max Grid Sizing */
 .ws-grid-wrapper {
   display: flex;
@@ -11274,8 +11256,8 @@ body.ws-focus-mode .tabbar {
 .ws-grid {
   display: grid;
   width: 100%;
-  max-width: min(92vw, calc(100vh - 160px));
-  max-height: min(92vw, calc(100vh - 160px));
+  max-width: min(92vw, calc(100vh - 140px));
+  max-height: min(92vw, calc(100vh - 140px));
   aspect-ratio: 1 / 1;
   gap: 4px;
   padding: 6px;

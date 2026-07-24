@@ -7,6 +7,15 @@ import { showCompletionScreen } from './shared.js';
 import { getAvailableMiniGameCandidates } from '../src/minigame-word-selectors.js';
 import { selectMiniGameWords, recordGameSession } from '../src/minigame-word-rotation.js';
 
+let activeCleanup = null;
+
+export function cleanupCrossword() {
+  if (typeof activeCleanup === 'function') {
+    activeCleanup();
+    activeCleanup = null;
+  }
+}
+
 // Конвертер Хирагана → Катакана
 const HIRAGANA_TO_KATAKANA = {
   あ: 'ア',
@@ -107,10 +116,12 @@ function shuffleArray(array) {
  * Рендер экрана кроссворда
  */
 export function renderCrossword(state, dependencies) {
+  cleanupCrossword();
+
   const body = $('#crossword-body');
 
   // Генерируем кроссворд
-  const crosswordData = generateCrossword(11, state);
+  const crosswordData = generateCrossword(11, state, dependencies?.lessons || LESSONS);
 
   if (!crosswordData || crosswordData.placedWords.length < 3) {
     body.innerHTML = `
@@ -295,6 +306,11 @@ function initCrosswordHandlers(crosswordData, userAnswers, state, dependencies) 
   };
   document.addEventListener('click', handleOutsideClick);
 
+  activeCleanup = () => {
+    document.removeEventListener('keydown', handleKeydown);
+    document.removeEventListener('click', handleOutsideClick);
+  };
+
   // Выбрать первое слово автоматически
   if (placedWords.length > 0) {
     selectWord(placedWords[0], crosswordData, userAnswers);
@@ -331,7 +347,7 @@ function selectWord(wordData, crosswordData, userAnswers) {
 
   // Центруем viewport на первую ячейку активного слова
   const firstCell = $(`.grid-cell[data-row="${wordData.row}"][data-col="${wordData.col}"]`);
-  if (firstCell) {
+  if (firstCell && typeof firstCell.scrollIntoView === 'function') {
     firstCell.scrollIntoView({
       behavior: 'smooth',
       block: 'center',
@@ -727,7 +743,7 @@ function insertLetterIntoWord(letter, wordData, userAnswers, grid, placedWords, 
 
   // Центрируем только что заполненную ячейку для плавного следования камеры
   const filledCell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
-  if (filledCell) {
+  if (filledCell && typeof filledCell.scrollIntoView === 'function') {
     filledCell.scrollIntoView({
       behavior: 'smooth',
       block: 'center',
@@ -848,7 +864,7 @@ function completeCrossword(totalWords, userAnswers) {
   });
 }
 
-function refreshGridCellClasses(placedWords, userAnswers, currentWordId) {
+export function refreshGridCellClasses(placedWords, userAnswers, currentWordId) {
   document.querySelectorAll('.grid-cell').forEach((cell) => {
     const r = parseInt(cell.dataset.row);
     const c = parseInt(cell.dataset.col);
@@ -1014,7 +1030,7 @@ function handleBackspaceDelete(userAnswers, grid, placedWords) {
 
   // Центрируем только что очищенную ячейку (новая позиция курсора)
   const clearedCell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
-  if (clearedCell) {
+  if (clearedCell && typeof clearedCell.scrollIntoView === 'function') {
     clearedCell.scrollIntoView({
       behavior: 'smooth',
       block: 'center',

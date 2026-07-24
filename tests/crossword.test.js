@@ -1,7 +1,8 @@
 /* crossword.test.js — Тесты для логики кроссворда */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { renderCrossword, cleanupCrossword, refreshGridCellClasses } from '../ui/crossword.js';
 
 describe('Crossword System', () => {
   it('не читает и не изменяет legacy progress карточек', () => {
@@ -229,6 +230,179 @@ describe('Crossword System', () => {
       const source = readFileSync('ui/crossword.js', 'utf8');
       expect(source).toContain('if (window.crosswordFinishedState?.awarded) return;');
       expect(source).toContain('window.crosswordFinishedState = { awarded: true };');
+    });
+  });
+
+  describe('Crossword UI & Handler Regression Tests', () => {
+    let mockState;
+    let mockDeps;
+
+    beforeEach(() => {
+      document.body.innerHTML = `
+        <div id="crossword-body"></div>
+        <div id="completion-overlay" class="hidden">
+          <div id="completion-title"></div>
+          <div id="completion-subtitle"></div>
+          <div id="completion-desc"></div>
+          <div id="completion-rewards"></div>
+          <button id="btn-completion-continue"></button>
+        </div>
+      `;
+
+      mockState = {
+        chapters: {
+          1: { started: true },
+          2: { started: true },
+          3: { started: true },
+          4: { started: true },
+          5: { started: true },
+        },
+        priorKnowledgeChapterIds: [1, 2, 3, 4, 5],
+        srs: {},
+      };
+
+      mockDeps = {
+        save: vi.fn(),
+        addXP: vi.fn(),
+        lessons: [
+          {
+            id: 1,
+            words: [
+              { id: 'L1_V001', writing: 'だいがく', translation: 'университет' },
+              { id: 'L1_V002', writing: 'がくせい', kanji: '学生', translation: 'студент' },
+              { id: 'L1_V003', writing: 'せんせい', kanji: '先生', translation: 'учитель' },
+              { id: 'L1_V004', writing: 'さかな', kanji: '魚', translation: 'рыба' },
+              { id: 'L1_V005', writing: 'かさ', kanji: '傘', translation: 'зонт' },
+              { id: 'L1_V006', writing: 'あさ', kanji: '朝', translation: 'утро' },
+              { id: 'L1_V007', writing: 'あき', kanji: '秋', translation: 'осень' },
+              { id: 'L1_V008', writing: 'あお', kanji: '青', translation: 'синий' },
+            ],
+          },
+        ],
+      };
+
+      delete window.currentCrosswordWord;
+      delete window.cwState;
+      cleanupCrossword();
+    });
+
+    it('1-3. Модуль импортируется, renderCrossword() и initCrosswordHandlers() выбирают слово без ReferenceError', async () => {
+      const crosswordModule = await import('../ui/crossword.js');
+      expect(crosswordModule.renderCrossword).toBeDefined();
+      expect(typeof crosswordModule.renderCrossword).toBe('function');
+
+      expect(() => {
+        crosswordModule.renderCrossword(mockState, mockDeps);
+      }).not.toThrow();
+
+      const body = document.getElementById('crossword-body');
+      expect(body.children.length).toBeGreaterThan(0);
+      expect(window.currentCrosswordWord).toBeDefined();
+    });
+
+    it('4. Первое автоматически выбранное слово получает highlighted-клетки', () => {
+      renderCrossword(mockState, mockDeps);
+      const highlightedCells = document.querySelectorAll('.grid-cell.highlighted');
+      expect(highlightedCells.length).toBeGreaterThan(0);
+    });
+
+    it('5. Клик по другой активной ячейке переключает подсветку без ReferenceError', () => {
+      renderCrossword(mockState, mockDeps);
+      const firstWordId = window.currentCrosswordWord?.word?.id;
+      const { placedWords } = window.cwState;
+      const firstWord = placedWords.find((p) => p.word.id === firstWordId);
+
+      let targetCell = null;
+      let targetWordId = null;
+
+      for (const pw of placedWords) {
+        if (pw.word.id === firstWordId) continue;
+        for (let i = 0; i < pw.word.length; i++) {
+          const r = pw.direction === 'across' ? pw.row : pw.row + i;
+          const c = pw.direction === 'across' ? pw.col + i : pw.col;
+          const isIntersectionWithFirst =
+            firstWord &&
+            (firstWord.direction === 'across'
+              ? r === firstWord.row &&
+                c >= firstWord.col &&
+                c < firstWord.col + firstWord.word.length
+              : c === firstWord.col &&
+                r >= firstWord.row &&
+                r < firstWord.row + firstWord.word.length);
+
+          if (!isIntersectionWithFirst) {
+            const cellDom = document.querySelector(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+            if (cellDom) {
+              targetCell = cellDom;
+              targetWordId = pw.word.id;
+              break;
+            }
+          }
+        }
+        if (targetCell) break;
+      }
+
+      if (targetCell) {
+        expect(() => {
+          targetCell.click();
+        }).not.toThrow();
+        expect(window.currentCrosswordWord.word.id).toBe(targetWordId);
+      }
+    });
+
+    it('6. Правильное слово сохраняет статус correct после переключения активного слова', () => {
+      renderCrossword(mockState, mockDeps);
+      const { placedWords, userAnswers } = window.cwState;
+      expect(placedWords.length).toBeGreaterThan(0);
+
+      const firstWord = placedWords[0];
+      userAnswers[firstWord.word.id].correct = true;
+      refreshGridCellClasses(placedWords, userAnswers, firstWord.word.id);
+
+      let targetCell = null;
+      for (const pw of placedWords) {
+        if (pw.word.id === firstWord.word.id) continue;
+        for (let i = 0; i < pw.word.length; i++) {
+          const r = pw.direction === 'across' ? pw.row : pw.row + i;
+          const c = pw.direction === 'across' ? pw.col + i : pw.col;
+          const isIntersectionWithFirst =
+            firstWord.direction === 'across'
+              ? r === firstWord.row &&
+                c >= firstWord.col &&
+                c < firstWord.col + firstWord.word.length
+              : c === firstWord.col &&
+                r >= firstWord.row &&
+                r < firstWord.row + firstWord.word.length;
+
+          if (!isIntersectionWithFirst) {
+            const cellDom = document.querySelector(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+            if (cellDom) {
+              targetCell = cellDom;
+              break;
+            }
+          }
+        }
+        if (targetCell) break;
+      }
+
+      if (targetCell) {
+        targetCell.click();
+
+        const firstCell = document.querySelector(
+          `.grid-cell[data-row="${firstWord.row}"][data-col="${firstWord.col}"]`
+        );
+        expect(firstCell.classList.contains('correct')).toBe(true);
+      }
+    });
+
+    it('8. Повторное открытие кроссворда удаляет предыдущие обработчики (cleanup)', () => {
+      const spyRemove = vi.spyOn(document, 'removeEventListener');
+      renderCrossword(mockState, mockDeps);
+      renderCrossword(mockState, mockDeps);
+
+      expect(spyRemove).toHaveBeenCalledWith('keydown', expect.any(Function));
+      expect(spyRemove).toHaveBeenCalledWith('click', expect.any(Function));
+      spyRemove.mockRestore();
     });
   });
 });
