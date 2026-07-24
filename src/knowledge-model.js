@@ -43,8 +43,9 @@ export function parseCardIdentity(cardOrId) {
 
   const separatorIndex = cardId.lastIndexOf(CARD_SEPARATOR);
   const suffix = separatorIndex >= 0 ? cardId.slice(separatorIndex + CARD_SEPARATOR.length) : '';
-  const skill = KNOWN_SKILLS.has(suffix) ? suffix : SKILLS.RECOGNITION;
-  const itemId = skill === SKILLS.RECOGNITION ? cardId : cardId.slice(0, separatorIndex);
+  const hasKnownSkill = separatorIndex >= 0 && KNOWN_SKILLS.has(suffix);
+  const skill = hasKnownSkill ? suffix : SKILLS.RECOGNITION;
+  const itemId = hasKnownSkill ? cardId.slice(0, separatorIndex) : cardId;
   return { cardId, itemId, skill, knowledgeType: KNOWLEDGE_TYPES.VOCABULARY };
 }
 

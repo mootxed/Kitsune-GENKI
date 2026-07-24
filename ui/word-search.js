@@ -2,7 +2,10 @@
 
 import { $ } from '../src/utils.js';
 import { WORD_SEARCH_DIFFICULTIES, generateWordSearchGrid } from '../src/word-search-generator.js';
-import { getAvailableWordSearchCandidates } from '../src/word-search-selectors.js';
+import {
+  getAvailableWordSearchCandidates,
+  getWeakWordSearchCandidates,
+} from '../src/minigame-word-selectors.js';
 import { selectMiniGameWords, recordGameSession } from '../src/minigame-word-rotation.js';
 import { speakJapanese, stopSpeaking } from '../src/audio-helper.js';
 import { showCompletionScreen } from './shared.js';
@@ -71,7 +74,7 @@ export function cleanupWordSearch() {
 
 /**
  * Main entry point for Word Search route.
- * Shows Difficulty Selection screen on initial enter.
+ * Shows Mode & Difficulty Selection screen on initial enter.
  */
 export function renderWordSearch(state, dependencies = {}) {
   cleanupWordSearch();
@@ -79,9 +82,13 @@ export function renderWordSearch(state, dependencies = {}) {
 }
 
 /**
- * Renders the Difficulty Selection screen.
+ * Renders the Mode & Difficulty Selection screen.
+ *
+ * @param {Object} state
+ * @param {Object} dependencies
+ * @param {string} [mode='normal'] - 'normal' | 'weak'
  */
-export function renderDifficultySelectionScreen(state, dependencies = {}) {
+export function renderDifficultySelectionScreen(state, dependencies = {}, mode = 'normal') {
   cleanupWordSearch();
 
   const body = $('#word-search-body');
@@ -90,14 +97,79 @@ export function renderDifficultySelectionScreen(state, dependencies = {}) {
   const tabbar = document.querySelector('.tabbar');
   if (tabbar) tabbar.style.display = '';
 
+  const lessons = dependencies.lessons || LESSONS || [];
+  const normalCandidates = getAvailableWordSearchCandidates(state, lessons);
+  const weakCandidates = getWeakWordSearchCandidates(state, lessons);
+
+  const isWeakMode = mode === 'weak';
+  const availableCount = isWeakMode ? weakCandidates.length : normalCandidates.length;
+
   const difficulties = [
     WORD_SEARCH_DIFFICULTIES.easy,
     WORD_SEARCH_DIFFICULTIES.medium,
     WORD_SEARCH_DIFFICULTIES.hard,
   ];
 
+  // If weak mode has insufficient words for even easy mode (< 4), show empty state
+  if (isWeakMode && availableCount < 4) {
+    const isTotalEmpty = normalCandidates.length === 0;
+
+    body.innerHTML = `
+      <div class="ws-difficulty-container" data-testid="ws-difficulty-screen">
+        <div class="ws-mode-switcher" data-testid="ws-mode-switcher">
+          <button class="ws-mode-btn ${!isWeakMode ? 'active' : ''}" data-mode="normal" aria-pressed="${!isWeakMode}">
+            Все слова
+          </button>
+          <button class="ws-mode-btn ${isWeakMode ? 'active' : ''}" data-mode="weak" aria-pressed="${isWeakMode}">
+            🩹 Слабые слова
+          </button>
+        </div>
+
+        <div class="empty-state" data-testid="word-search-weak-empty" style="margin-top:24px;">
+          <span style="font-size:60px">🩹</span>
+          <h3>${isTotalEmpty ? 'Откройте больше глав' : 'Слабых слов пока недостаточно'}</h3>
+          <p>${
+            isTotalEmpty
+              ? 'Откройте или отметьте изученными больше глав'
+              : 'Продолжайте занятия в SRS — слова с ошибками появятся здесь автоматически'
+          }</p>
+          <button class="ws-btn ws-btn-primary" id="ws-switch-to-normal-btn" style="margin-top:16px;">
+            Играть со всеми словами
+          </button>
+        </div>
+      </div>
+    `;
+
+    const normalModeBtn = body.querySelector('.ws-mode-btn[data-mode="normal"]');
+    if (normalModeBtn) {
+      normalModeBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies, 'normal');
+    }
+    const switchToNormalBtn = $('#ws-switch-to-normal-btn');
+    if (switchToNormalBtn) {
+      switchToNormalBtn.onclick = () =>
+        renderDifficultySelectionScreen(state, dependencies, 'normal');
+    }
+    return;
+  }
+
   body.innerHTML = `
     <div class="ws-difficulty-container" data-testid="ws-difficulty-screen">
+      <div class="ws-mode-switcher" data-testid="ws-mode-switcher">
+        <button class="ws-mode-btn ${!isWeakMode ? 'active' : ''}" data-mode="normal" aria-pressed="${!isWeakMode}">
+          Все слова
+        </button>
+        <button class="ws-mode-btn ${isWeakMode ? 'active' : ''}" data-mode="weak" aria-pressed="${isWeakMode}">
+          🩹 Слабые слова
+        </button>
+      </div>
+      <p class="ws-mode-description">
+        ${
+          isWeakMode
+            ? `Слова, в которых были ошибки или низкая уверенность • Доступно слабых слов: ${availableCount}`
+            : 'Слова из доступных вам глав'
+        }
+      </p>
+
       <div class="ws-difficulty-header">
         <h2>Выберите сложность</h2>
         <p>Найдите японские слова в сетке по их русскому переводу</p>
@@ -105,43 +177,78 @@ export function renderDifficultySelectionScreen(state, dependencies = {}) {
 
       <div class="ws-difficulty-cards">
         ${difficulties
-          .map(
-            (d) => `
-          <div class="ws-difficulty-card ${d.recommended ? 'recommended' : ''}" data-difficulty-id="${d.id}" data-testid="ws-diff-card-${d.id}">
-            ${d.recommended ? '<span class="ws-badge-recommended">★ Рекомендуется</span>' : ''}
+          .map((d) => {
+            const minRequired = d.minCount || d.targetCount;
+            const isInsufficient = isWeakMode && availableCount < minRequired;
+            const missing = minRequired - availableCount;
+
+            return `
+          <div class="ws-difficulty-card ${d.recommended && !isInsufficient ? 'recommended' : ''} ${
+            isInsufficient ? 'disabled' : ''
+          }" data-difficulty-id="${d.id}" data-testid="ws-diff-card-${d.id}">
+            ${
+              d.recommended && !isInsufficient
+                ? '<span class="ws-badge-recommended">★ Рекомендуется</span>'
+                : ''
+            }
             <div class="ws-diff-icon">${d.icon}</div>
             <div class="ws-diff-info">
               <h3>${escapeHtml(d.label)}</h3>
               <div class="ws-diff-meta">Сетка ${d.gridSize}×${d.gridSize} • ${d.targetCount} слов</div>
               <p>${escapeHtml(d.description)}</p>
+              ${
+                isInsufficient
+                  ? `<div class="ws-diff-warning">Нужно ещё ${missing} слабых слов</div>`
+                  : ''
+              }
             </div>
-            <button class="ws-btn ws-btn-primary ws-diff-select-btn">Начать игра</button>
+            <button class="ws-btn ws-btn-primary ws-diff-select-btn" ${
+              isInsufficient ? 'disabled aria-disabled="true"' : ''
+            }>
+              ${isInsufficient ? `Недостаточно слов` : 'Начать игру'}
+            </button>
           </div>
-        `
-          )
+        `;
+          })
           .join('')}
       </div>
     </div>
   `;
 
-  const cards = body.querySelectorAll('.ws-difficulty-card');
+  // Mode switcher listeners
+  const modeBtns = body.querySelectorAll('.ws-mode-btn');
+  modeBtns.forEach((btn) => {
+    btn.onclick = () => {
+      const selectedMode = btn.dataset.mode;
+      renderDifficultySelectionScreen(state, dependencies, selectedMode);
+    };
+  });
+
+  // Difficulty selection listeners
+  const cards = body.querySelectorAll('.ws-difficulty-card:not(.disabled)');
   cards.forEach((card) => {
     card.onclick = () => {
       const diffId = card.dataset.difficultyId;
-      startWordSearchGame(state, dependencies, diffId);
+      startWordSearchGame(state, dependencies, diffId, mode);
     };
   });
 }
 
 /**
- * Starts a Word Search game batch with specified difficulty.
+ * Starts a Word Search game batch with specified difficulty and mode.
  */
-export function startWordSearchGame(state, dependencies = {}, difficultyId = 'medium') {
+export function startWordSearchGame(
+  state,
+  dependencies = {},
+  difficultyId = 'medium',
+  mode = 'normal'
+) {
   cleanupWordSearch();
 
   const body = $('#word-search-body');
   if (!body) return;
 
+  const isWeakMode = mode === 'weak';
   const diffConfig = WORD_SEARCH_DIFFICULTIES[difficultyId] || WORD_SEARCH_DIFFICULTIES.medium;
   const lessons = dependencies.lessons || LESSONS || [];
   const toast = dependencies.toast || window.toast || (() => {});
@@ -152,11 +259,15 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
   if (tabbar) tabbar.style.display = 'none';
   document.body.classList.add('ws-focus-mode');
 
-  // 1. Retrieve candidate pool using shared rotation selector
-  const candidates = getAvailableWordSearchCandidates(state, lessons);
+  // 1. Retrieve candidate pool based on mode using shared rotation selector
+  const candidates = isWeakMode
+    ? getWeakWordSearchCandidates(state, lessons)
+    : getAvailableWordSearchCandidates(state, lessons);
+
   const selectedPool = selectMiniGameWords(candidates, {
     gameId: 'wordSearch',
     count: diffConfig.targetCount + 4,
+    mode,
     history: state,
   });
 
@@ -175,33 +286,40 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
   ) {
     body.innerHTML = `
       <div class="empty-state" data-testid="word-search-empty">
-        <span style="font-size:60px">🔍</span>
-        <h3>Недостаточно подходящих слов</h3>
-        <p>Для сложности «${escapeHtml(diffConfig.label)}» требуется больше слов. Начните больше глав или добавьте слова в SRS.</p>
+        <span style="font-size:60px">${isWeakMode ? '🩹' : '🔍'}</span>
+        <h3>${isWeakMode ? 'Не удалось составить игру' : 'Недостаточно подходящих слов'}</h3>
+        <p>${
+          isWeakMode
+            ? 'Не удалось составить игру из текущего набора слабых слов.'
+            : `Для сложности «${escapeHtml(diffConfig.label)}» требуется больше слов. Начните больше глав или добавьте слова в SRS.`
+        }</p>
         <button class="ws-btn ws-btn-secondary" id="ws-change-diff-empty-btn" style="margin-top:16px;">
-          ⚙️ Сменить сложность
+          ${isWeakMode ? 'Перейти в обычный режим' : '⚙️ Сменить сложность'}
         </button>
       </div>
     `;
 
     const changeDiffBtn = $('#ws-change-diff-empty-btn');
     if (changeDiffBtn) {
-      changeDiffBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies);
+      changeDiffBtn.onclick = () =>
+        renderDifficultySelectionScreen(state, dependencies, isWeakMode ? 'normal' : mode);
     }
     return;
   }
 
   const { grid, placedWords, gridSize } = gameData;
 
-  // Record placed words into rotation history
+  // Record placed words into rotation history for active mode
   recordGameSession(
     state,
     'wordSearch',
-    placedWords.map((pw) => pw.id)
+    placedWords.map((pw) => pw.id),
+    mode
   );
 
   // Local Game State
   const gameState = {
+    mode,
     difficultyId,
     diffConfig,
     grid,
@@ -221,14 +339,18 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
     hintTimeout: null,
   };
 
+  const badgeText = isWeakMode
+    ? `🩹 Слабые слова · ${escapeHtml(diffConfig.label)}`
+    : `Все слова · ${escapeHtml(diffConfig.label)}`;
+
   // Build Game UI Markup (Compact HUD + Clue Strip + Grid)
   body.innerHTML = `
-    <div class="ws-container" data-difficulty="${escapeHtml(difficultyId)}" data-testid="word-search-game">
+    <div class="ws-container" data-difficulty="${escapeHtml(difficultyId)}" data-mode="${escapeHtml(mode)}" data-testid="word-search-game">
       <!-- Header Info Bar (Single Line Compact HUD) -->
       <div class="ws-info-bar">
         <div class="ws-info-left">
           <button class="ws-icon-btn ws-btn-back" id="ws-back-btn" data-testid="ws-back-btn" aria-label="К выбору сложности" title="К выбору сложности">←</button>
-          <span class="ws-diff-badge" data-testid="ws-diff-badge">${diffConfig.icon} ${escapeHtml(diffConfig.label)}</span>
+          <span class="ws-diff-badge" data-testid="ws-diff-badge">${badgeText}</span>
           <div class="ws-counter" data-testid="ws-counter" aria-label="Прогресс">
             <span id="ws-found-count">0</span> / ${placedWords.length}
           </div>
@@ -248,33 +370,32 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
       </div>
 
       <!-- Translations Strip (Compact Fixed Height Panel, 2 Rows Grid) -->
-      <div class="ws-clue-strip ws-translations-list" id="ws-translations-list" data-testid="ws-translations-list">
-        ${placedWords
-          .map(
-            (w) => `
-          <div class="ws-clue-card ws-translation-item" data-word-id="${escapeHtml(w.id)}" data-color-index="${w.colorIndex}" data-testid="ws-translation-${escapeHtml(w.id)}" title="${escapeHtml(w.translation)}">
-            <span class="ws-clue-check ws-status-icon">✓</span>
-            <span class="ws-clue-translation ws-translation-text">${escapeHtml(w.translation)}</span>
-          </div>
-        `
-          )
-          .join('')}
+      <div class="ws-clues-panel" data-testid="ws-clues-panel">
+        <div class="ws-clues-grid">
+          ${placedWords
+            .map(
+              (pw) => `
+            <div class="ws-translation-item" data-word-id="${pw.id}" aria-label="${escapeHtml(pw.translation)}">
+              ${escapeHtml(pw.translation)}
+            </div>
+          `
+            )
+            .join('')}
+        </div>
       </div>
 
-      <!-- Word Search Grid Container -->
+      <!-- Letter Grid Container -->
       <div class="ws-grid-wrapper">
-        <div class="ws-grid" id="ws-grid" data-testid="ws-grid" style="grid-template-columns: repeat(${gridSize}, 1fr);">
+        <div class="ws-grid" id="ws-grid" style="--grid-size: ${gridSize};" data-testid="ws-grid" tabIndex="0" role="grid" aria-label="Сетка поиска слов">
           ${grid
-            .map((row, r) =>
-              row
-                .map(
-                  (cell, c) => `
-              <div class="ws-cell" data-row="${r}" data-col="${c}" data-testid="ws-cell-${r}-${c}">
-                ${escapeHtml(cell.char)}
+            .flatMap((row, rIdx) =>
+              row.map(
+                (cell, cIdx) => `
+              <div class="ws-cell" data-row="${rIdx}" data-col="${cIdx}" data-testid="ws-cell-${rIdx}-${cIdx}" role="gridcell">
+                <span class="ws-char">${cell.char}</span>
               </div>
             `
-                )
-                .join('')
+              )
             )
             .join('')}
         </div>
@@ -282,171 +403,130 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
     </div>
   `;
 
+  // UI Element References
   const gridEl = $('#ws-grid');
   const foundCountEl = $('#ws-found-count');
-  const hintsLeftEl = $('#ws-hints-left');
   const hintBtn = $('#ws-hint-btn');
+  const hintsLeftEl = $('#ws-hints-left');
   const newGameBtn = $('#ws-new-game-btn');
   const changeDiffBtn = $('#ws-change-diff-btn');
   const backBtn = $('#ws-back-btn');
 
-  // Cell DOM helper
-  function getCellEl(r, c) {
-    return gridEl.querySelector(`.ws-cell[data-row="${r}"][data-col="${c}"]`);
+  function getCellEl(row, col) {
+    return gridEl?.querySelector(`.ws-cell[data-row="${row}"][data-col="${col}"]`);
   }
 
-  // Clear active selection path highlight
+  function getCellFromPoint(x, y) {
+    const el = document.elementFromPoint(x, y);
+    const cellEl = el?.closest('.ws-cell');
+    if (!cellEl) return null;
+    const r = parseInt(cellEl.dataset.row, 10);
+    const c = parseInt(cellEl.dataset.col, 10);
+    if (Number.isInteger(r) && Number.isInteger(c)) {
+      return { row: r, col: c };
+    }
+    return null;
+  }
+
+  function isValidDirection(r1, c1, r2, c2) {
+    const dr = r2 - r1;
+    const dc = c2 - c1;
+    return dr === 0 || dc === 0 || Math.abs(dr) === Math.abs(dc);
+  }
+
+  function getLineCells(r1, c1, r2, c2) {
+    const dr = Math.sign(r2 - r1);
+    const dc = Math.sign(c2 - c1);
+    const steps = Math.max(Math.abs(r2 - r1), Math.abs(c2 - c1));
+    const cells = [];
+    for (let i = 0; i <= steps; i++) {
+      cells.push({ row: r1 + dr * i, col: c1 + dc * i });
+    }
+    return cells;
+  }
+
+  function updateCellFoundVisual(row, col) {
+    const cellEl = getCellEl(row, col);
+    if (!cellEl) return;
+    const indexes = Array.from(grid[row][col].foundColorIndexes);
+    if (indexes.length === 0) {
+      cellEl.classList.remove('ws-cell-found');
+      cellEl.style.background = '';
+      cellEl.style.borderColor = '';
+      cellEl.style.color = '';
+      return;
+    }
+
+    cellEl.classList.add('ws-cell-found');
+    const firstColor = PALETTE[indexes[0] % PALETTE.length];
+
+    if (indexes.length === 1) {
+      cellEl.style.background = firstColor.bg;
+      cellEl.style.borderColor = firstColor.border;
+      cellEl.style.color = firstColor.ink;
+    } else {
+      // Split background gradient for overlapping words
+      const colors = indexes.map((i) => PALETTE[i % PALETTE.length].bg);
+      const step = 100 / colors.length;
+      const gradientParts = colors.map(
+        (c, idx) => `${c} ${idx * step}%, ${c} ${(idx + 1) * step}%`
+      );
+      cellEl.style.background = `linear-gradient(135deg, ${gradientParts.join(', ')})`;
+      cellEl.style.borderColor = firstColor.border;
+      cellEl.style.color = firstColor.ink;
+    }
+  }
+
   function clearActiveSelection() {
-    gridEl.querySelectorAll('.ws-cell-active').forEach((el) => {
+    gridEl?.querySelectorAll('.ws-cell-active').forEach((el) => {
       el.classList.remove('ws-cell-active');
     });
   }
 
-  // Render active selection path
-  function renderActivePath(path) {
+  function renderActiveSelection(path) {
     clearActiveSelection();
     path.forEach(({ row, col }) => {
-      const el = getCellEl(row, col);
-      if (el) el.classList.add('ws-cell-active');
+      const cellEl = getCellEl(row, col);
+      if (cellEl) {
+        cellEl.classList.add('ws-cell-active');
+      }
     });
   }
 
-  // Re-apply cell styles considering multi-color intersections
-  function updateCellFoundVisual(r, c) {
-    const cellObj = grid[r][c];
-    const cellEl = getCellEl(r, c);
-    if (!cellEl || !cellObj || cellObj.foundColorIndexes.size === 0) return;
-
-    cellEl.classList.remove('ws-cell-active');
-    cellEl.classList.add('ws-cell-found');
-
-    const colorIndexes = Array.from(cellObj.foundColorIndexes);
-
-    if (colorIndexes.length === 1) {
-      const paletteItem = PALETTE[colorIndexes[0] % PALETTE.length];
-      cellEl.style.backgroundColor = paletteItem.bg;
-      cellEl.style.color = paletteItem.ink;
-      cellEl.style.backgroundImage = 'none';
-    } else {
-      const color1 = PALETTE[colorIndexes[0] % PALETTE.length].bg;
-      const color2 = PALETTE[colorIndexes[1] % PALETTE.length].bg;
-      cellEl.style.backgroundImage = `linear-gradient(135deg, ${color1} 50%, ${color2} 50%)`;
-      cellEl.style.backgroundColor = color1;
-      cellEl.style.color = '#111';
-    }
-  }
-
-  // Compute valid straight line path along 4 directions
-  function computeStraightPath(startRow, startCol, targetRow, targetCol) {
-    const dRow = targetRow - startRow;
-    const dCol = targetCol - startCol;
-
-    if (dRow === 0 && dCol >= 0) {
-      const path = [];
-      for (let c = startCol; c <= targetCol; c++) {
-        path.push({ row: startRow, col: c });
-      }
-      return path;
-    }
-
-    if (dCol === 0 && dRow >= 0) {
-      const path = [];
-      for (let r = startRow; r <= targetRow; r++) {
-        path.push({ row: r, col: startCol });
-      }
-      return path;
-    }
-
-    if (dRow > 0 && dRow === dCol) {
-      const path = [];
-      for (let i = 0; i <= dRow; i++) {
-        path.push({ row: startRow + i, col: startCol + i });
-      }
-      return path;
-    }
-
-    if (dRow > 0 && dRow === -dCol) {
-      const path = [];
-      for (let i = 0; i <= dRow; i++) {
-        path.push({ row: startRow + i, col: startCol - i });
-      }
-      return path;
-    }
-
-    if (dRow < 0 && dCol < 0) return [{ row: startRow, col: startCol }];
-
-    const candidatesList = [];
-    if (dCol > 0) {
-      candidatesList.push({ row: startRow, col: targetCol, distance: Math.abs(dRow) });
-    }
-    if (dRow > 0) {
-      candidatesList.push({ row: targetRow, col: startCol, distance: Math.abs(dCol) });
-    }
-    if (dRow > 0 && dCol > 0) {
-      const steps = Math.min(dRow, dCol);
-      candidatesList.push({
-        row: startRow + steps,
-        col: startCol + steps,
-        distance: Math.abs(dRow - dCol),
-      });
-    }
-    if (dRow > 0 && dCol < 0) {
-      const steps = Math.min(dRow, Math.abs(dCol));
-      candidatesList.push({
-        row: startRow + steps,
-        col: startCol - steps,
-        distance: Math.abs(dRow - Math.abs(dCol)),
-      });
-    }
-
-    if (candidatesList.length > 0) {
-      candidatesList.sort((a, b) => a.distance - b.distance);
-      const best = candidatesList[0];
-      return computeStraightPath(startRow, startCol, best.row, best.col);
-    }
-
-    return [{ row: startRow, col: startCol }];
-  }
-
-  // Pointer Handlers
+  // Grid Pointer Selection Handlers
   function onPointerDown(e) {
     if (gameState.completed) return;
-    const targetCell = e.target.closest('.ws-cell');
-    if (!targetCell) return;
-
-    e.preventDefault();
-    const r = parseInt(targetCell.dataset.row, 10);
-    const c = parseInt(targetCell.dataset.col, 10);
-
-    gameState.startCell = { row: r, col: c };
-    gameState.activePath = [{ row: r, col: c }];
-    gameState.pointerId = e.pointerId;
+    const cell = getCellFromPoint(e.clientX, e.clientY);
+    if (!cell) return;
 
     try {
       gridEl.setPointerCapture(e.pointerId);
     } catch {
-      // Ignore capture errors on unsupported test environments
+      // Ignore pointer capture fallback
     }
 
-    renderActivePath(gameState.activePath);
+    gameState.pointerId = e.pointerId;
+    gameState.startCell = cell;
+    gameState.activePath = [cell];
+    renderActiveSelection(gameState.activePath);
   }
 
   function onPointerMove(e) {
-    if (!gameState.startCell || gameState.completed) return;
+    if (gameState.pointerId === null || !gameState.startCell) return;
+    const currentCell = getCellFromPoint(e.clientX, e.clientY);
+    if (!currentCell) return;
 
-    const hoveredCell = document.elementFromPoint(e.clientX, e.clientY)?.closest('.ws-cell');
-    if (!hoveredCell) return;
+    const { row: r1, col: c1 } = gameState.startCell;
+    const { row: r2, col: c2 } = currentCell;
 
-    const r = parseInt(hoveredCell.dataset.row, 10);
-    const c = parseInt(hoveredCell.dataset.col, 10);
-
-    const path = computeStraightPath(gameState.startCell.row, gameState.startCell.col, r, c);
-    gameState.activePath = path;
-    renderActivePath(path);
+    if (isValidDirection(r1, c1, r2, c2)) {
+      gameState.activePath = getLineCells(r1, c1, r2, c2);
+      renderActiveSelection(gameState.activePath);
+    }
   }
 
   function onPointerUp() {
-    if (!gameState.startCell || gameState.completed) return;
+    if (gameState.pointerId === null || gameState.activePath.length === 0) return;
 
     if (gameState.pointerId !== null) {
       try {
@@ -608,10 +688,10 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
   };
 
   // Header controls
-  newGameBtn.onclick = () => startWordSearchGame(state, dependencies, difficultyId);
-  changeDiffBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies);
+  newGameBtn.onclick = () => startWordSearchGame(state, dependencies, difficultyId, mode);
+  changeDiffBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies, mode);
   if (backBtn) {
-    backBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies);
+    backBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies, mode);
   }
 
   // Completion
@@ -629,11 +709,15 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
       save();
     }
 
+    const completionDesc = isWeakMode
+      ? `Режим: Слабые слова · Сложность: ${diffConfig.label}`
+      : `Режим: Все слова · Сложность: ${diffConfig.label}`;
+
     // Call global completion screen from ui/shared.js
     showCompletionScreen({
       title: 'みつけた！',
       subtitle: 'Все слова найдены',
-      desc: `Сложность: ${diffConfig.label}`,
+      desc: completionDesc,
       theme: 'success',
       rewards: [
         { icon: '🔍', label: `${placedWords.length} слов` },
@@ -644,7 +728,7 @@ export function startWordSearchGame(state, dependencies = {}, difficultyId = 'me
       ],
       onContinue: () => {
         cleanupWordSearch();
-        renderDifficultySelectionScreen(state, dependencies);
+        renderDifficultySelectionScreen(state, dependencies, mode);
       },
     });
   }

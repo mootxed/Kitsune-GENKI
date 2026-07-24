@@ -108,7 +108,6 @@ describe('Minigame Word Rotation Tests', () => {
     });
     const prevIds = new Set(batch1.map((w) => w.id));
     const freshWords = batch2.filter((w) => !prevIds.has(w.id));
-    // 70% of 10 = 7
     expect(freshWords.length).toBeGreaterThanOrEqual(7);
   });
 
@@ -136,15 +135,21 @@ describe('Minigame Word Rotation Tests', () => {
     expect(batch2.length).toBe(4);
   });
 
-  it('13. История ограничивается пятью партиями', () => {
+  it('13. История ограничивается пятью партиями на режим', () => {
     const state = defaultState();
     for (let i = 0; i < 10; i++) {
-      recordGameSession(state, 'wordSearch', [`W_${i}`]);
+      recordGameSession(state, 'wordSearch', [`W_${i}`], 'normal');
+      recordGameSession(state, 'wordSearch', [`W_weak_${i}`], 'weak');
     }
 
     const recent = state.miniGameWordHistory.wordSearch.recentSessions;
-    expect(recent.length).toBe(5);
-    expect(recent[4].wordIds).toEqual(['W_9']);
+    const normalSessions = recent.filter((s) => (s.mode || 'normal') === 'normal');
+    const weakSessions = recent.filter((s) => s.mode === 'weak');
+
+    expect(normalSessions.length).toBe(5);
+    expect(weakSessions.length).toBe(5);
+    expect(normalSessions[4].wordIds).toEqual(['W_9']);
+    expect(weakSessions[4].wordIds).toEqual(['W_weak_9']);
   });
 
   it('14. История Word Search и Crossword независима', () => {
@@ -167,7 +172,6 @@ describe('Minigame Word Rotation Tests', () => {
       history: state,
     });
 
-    // Only record actually placed words (e.g. 4 placed out of 6 candidates)
     const placedWords = candidatePool.slice(0, 4);
     recordGameSession(
       state,
@@ -178,5 +182,69 @@ describe('Minigame Word Rotation Tests', () => {
     const recorded = state.miniGameWordHistory.wordSearch.recentSessions[0].wordIds;
     expect(recorded.length).toBe(4);
     expect(recorded).toEqual(placedWords.map((w) => w.id));
+  });
+
+  it('16. Normal и weak history независимы', () => {
+    const state = defaultState();
+    recordGameSession(state, 'wordSearch', ['W_normal1'], 'normal');
+    recordGameSession(state, 'wordSearch', ['W_weak1'], 'weak');
+
+    const selectedNormal = selectMiniGameWords(candidates, {
+      gameId: 'wordSearch',
+      count: 5,
+      mode: 'normal',
+      history: state,
+    });
+
+    const selectedWeak = selectMiniGameWords(candidates, {
+      gameId: 'wordSearch',
+      count: 5,
+      mode: 'weak',
+      history: state,
+    });
+
+    // The normal selection considers W_normal1 as prev session, not W_weak1
+    expect(selectedNormal.map((w) => w.id)).not.toContain('W_weak1');
+    expect(selectedWeak.map((w) => w.id)).not.toContain('W_normal1');
+  });
+
+  it('17. Старая запись без mode считается normal', () => {
+    const state = defaultState();
+    state.miniGameWordHistory = {
+      wordSearch: {
+        recentSessions: [{ startedAt: 1000, wordIds: ['W_1', 'W_2'] }],
+      },
+    };
+
+    const selectedNormal = selectMiniGameWords(candidates, {
+      gameId: 'wordSearch',
+      count: 5,
+      mode: 'normal',
+      history: state,
+    });
+
+    // W_1 is in previous normal session penalty
+    const w1 = selectedNormal.find((w) => w.id === 'W_1');
+    expect(w1).toBeUndefined(); // Fresh words are picked over previous session words
+  });
+
+  it('18. Weakness score не отменяет штраф недавней партии полностью', () => {
+    const state = defaultState();
+    recordGameSession(state, 'wordSearch', ['W_1'], 'weak');
+
+    const pool = [
+      { id: 'W_1', kana: 'みず', translation: 'вода', priorityScore: 100 },
+      { id: 'W_2', kana: 'ほん', translation: 'книга', priorityScore: 80 },
+    ];
+
+    const selected = selectMiniGameWords(pool, {
+      gameId: 'wordSearch',
+      count: 1,
+      mode: 'weak',
+      history: state,
+    });
+
+    // W_2 is fresh so it should be picked first despite slightly lower priorityScore
+    expect(selected[0].id).toBe('W_2');
   });
 });

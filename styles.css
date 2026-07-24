@@ -11402,3 +11402,194 @@ body.ws-focus-mode .tabbar {
   justify-content: center;
   flex-wrap: wrap;
 }
+
+/* Minigame Weak Words Mode Switcher & UI */
+.ws-mode-switcher {
+  display: flex;
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border, #e0e0e0);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  justify-content: center;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.ws-mode-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main, #333);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ws-mode-btn.active {
+  background: var(--orange, #ff9800);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.ws-mode-description {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-sub, #666);
+  margin: 0;
+}
+
+.ws-difficulty-card.disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  border-color: var(--border, #e0e0e0);
+  background: var(--bg-main, #f9f9f9);
+}
+
+.ws-difficulty-card.disabled:hover {
+  transform: none;
+  border-color: var(--border, #e0e0e0);
+  box-shadow: none;
+}
+
+.ws-diff-warning {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #d32f2f;
+}
+
+/* Crossword Mode Screen & HUD */
+.cw-mode-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.cw-mode-header {
+  text-align: center;
+}
+
+.cw-mode-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--text-main, #333);
+}
+
+.cw-mode-header p {
+  font-size: 14px;
+  opacity: 0.75;
+  margin: 0;
+}
+
+.cw-mode-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cw-mode-card {
+  position: relative;
+  background: var(--bg-card, #ffffff);
+  border: 2px solid var(--border, #e0e0e0);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cw-mode-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--orange, #ff9800);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.cw-mode-card.recommended {
+  border-color: var(--orange, #ff9800);
+  background: rgba(255, 152, 0, 0.04);
+}
+
+.cw-badge-recommended {
+  position: absolute;
+  top: -11px;
+  right: 16px;
+  background: var(--orange, #ff9800);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cw-mode-icon {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.cw-mode-info {
+  flex: 1;
+}
+
+.cw-mode-info h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.cw-mode-info p {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.cw-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: var(--bg-card, #fff);
+  border-bottom: 1px solid var(--border, #e0e0e0);
+}
+
+.cw-mode-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main, #333);
+  background: var(--bg-main, #f0f0f0);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.cw-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.cw-btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border, #ccc);
+  background: var(--bg-card, #fff);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cw-btn-sm:hover {
+  background: var(--bg-main, #f5f5f5);
+  border-color: var(--orange, #ff9800);
+}

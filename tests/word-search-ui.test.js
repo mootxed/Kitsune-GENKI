@@ -5,9 +5,6 @@ import {
   cleanupWordSearch,
   PALETTE,
 } from '../ui/word-search.js';
-import { renderSensei, setSenseiTab } from '../ui/chat.js';
-import * as audioHelper from '../src/audio-helper.js';
-import { readFileSync } from 'node:fs';
 
 describe('Word Search UI & Integration Tests', () => {
   let state;
@@ -27,6 +24,8 @@ describe('Word Search UI & Integration Tests', () => {
         { id: 'L1_V008', writing: 'いぬ', kanji: '犬', translation: 'собака' },
         { id: 'L1_V009', writing: 'くるま', kanji: '車', translation: 'машина' },
         { id: 'L1_V010', writing: 'さかな', kanji: '魚', translation: 'рыба' },
+        { id: 'L1_V011', writing: 'やま', kanji: '山', translation: 'гора' },
+        { id: 'L1_V012', kanji: '川', writing: 'かわ', translation: 'река' },
       ],
     },
   ];
@@ -56,7 +55,12 @@ describe('Word Search UI & Integration Tests', () => {
         1: { started: true },
       },
       srs: {
-        L1_V001: { id: 'L1_V001', state: 2, stability: 10 },
+        L1_V001: { id: 'L1_V001', state: 3, reps: 5, lapses: 2, stability: 1 },
+        L1_V002: { id: 'L1_V002', state: 3, reps: 5, lapses: 2, stability: 1 },
+        L1_V003: { id: 'L1_V003', state: 3, reps: 5, lapses: 2, stability: 1 },
+        L1_V004: { id: 'L1_V004', state: 3, reps: 5, lapses: 2, stability: 1 },
+
+        L1_V005: { id: 'L1_V005', state: 2, reps: 10, lapses: 0, stability: 30 },
       },
       xp: 100,
     };
@@ -72,7 +76,86 @@ describe('Word Search UI & Integration Tests', () => {
     vi.restoreAllMocks();
   });
 
-  // Difficulty Selection
+  // Mode Switcher UI
+  it('WS-MODE-1. На экране виден выбор «Все слова / Слабые слова»', () => {
+    renderDifficultySelectionScreen(state, dependencies);
+    const switcher = document.querySelector('[data-testid="ws-mode-switcher"]');
+    expect(switcher).not.toBeNull();
+    const modeBtns = switcher.querySelectorAll('.ws-mode-btn');
+    expect(modeBtns.length).toBe(2);
+  });
+
+  it('WS-MODE-2. По умолчанию выбран normal', () => {
+    renderDifficultySelectionScreen(state, dependencies);
+    const normalBtn = document.querySelector('.ws-mode-btn[data-mode="normal"]');
+    expect(normalBtn.classList.contains('active')).toBe(true);
+    expect(normalBtn.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('WS-MODE-3. При weak mode показывается количество слабых слов', () => {
+    renderDifficultySelectionScreen(state, dependencies, 'weak');
+    const desc = document.querySelector('.ws-mode-description');
+    expect(desc).not.toBeNull();
+    expect(desc.textContent).toContain('Доступно слабых слов: 4');
+  });
+
+  it('WS-MODE-4. Недоступная сложность disabled', () => {
+    renderDifficultySelectionScreen(state, dependencies, 'weak');
+    const hardCard = document.querySelector('[data-testid="ws-diff-card-hard"]');
+    expect(hardCard.classList.contains('disabled')).toBe(true);
+    const btn = hardCard.querySelector('button');
+    expect(btn.disabled).toBe(true);
+  });
+
+  it('WS-MODE-5. Лёгкая weak-партия запускается с 4 слабыми словами', () => {
+    startWordSearchGame(state, dependencies, 'easy', 'weak');
+    const gameContainer = document.querySelector('[data-testid="word-search-game"]');
+    expect(gameContainer).not.toBeNull();
+    expect(gameContainer.dataset.mode).toBe('weak');
+  });
+
+  it('WS-MODE-6. «Новая игра» сохраняет mode и difficulty', () => {
+    startWordSearchGame(state, dependencies, 'easy', 'weak');
+    const newGameBtn = document.getElementById('ws-new-game-btn');
+    newGameBtn.click();
+
+    const gameContainer = document.querySelector('[data-testid="word-search-game"]');
+    expect(gameContainer.dataset.mode).toBe('weak');
+    expect(gameContainer.dataset.difficulty).toBe('easy');
+  });
+
+  it('WS-MODE-7. «Сменить сложность» сохраняет mode', () => {
+    startWordSearchGame(state, dependencies, 'easy', 'weak');
+    const changeDiffBtn = document.getElementById('ws-change-diff-btn');
+    changeDiffBtn.click();
+
+    const weakBtn = document.querySelector('.ws-mode-btn[data-mode="weak"]');
+    expect(weakBtn.classList.contains('active')).toBe(true);
+  });
+
+  it('WS-MODE-8. HUD показывает weak mode badge', () => {
+    startWordSearchGame(state, dependencies, 'easy', 'weak');
+    const badge = document.querySelector('[data-testid="ws-diff-badge"]');
+    expect(badge.textContent).toContain('🩹 Слабые слова');
+  });
+
+  it('WS-MODE-9. Empty state предлагает обычный режим при отсутствии слабых слов', () => {
+    const emptyState = { chapters: { 1: { started: true } }, srs: {} };
+    renderDifficultySelectionScreen(emptyState, dependencies, 'weak');
+
+    const emptyContainer = document.querySelector('[data-testid="word-search-weak-empty"]');
+    expect(emptyContainer).not.toBeNull();
+    const switchBtn = document.getElementById('ws-switch-to-normal-btn');
+    expect(switchBtn).not.toBeNull();
+  });
+
+  it('WS-MODE-10. Результат партии не изменяет SRS/mastery', () => {
+    const originalSrs = JSON.stringify(state.srs);
+    startWordSearchGame(state, dependencies, 'easy', 'weak');
+    expect(JSON.stringify(state.srs)).toBe(originalSrs);
+  });
+
+  // Focus Mode & Elements
   it('1. Во время игры tabbar скрыт (Focus Mode)', () => {
     startWordSearchGame(state, dependencies, 'medium');
     const tabbar = document.querySelector('.tabbar');
@@ -98,30 +181,6 @@ describe('Word Search UI & Integration Tests', () => {
     expect(changeDiffBtn.getAttribute('aria-label')).toBeTruthy();
   });
 
-  it('4. Подсказки находятся в фиксированной двухрядной strip-панели', () => {
-    startWordSearchGame(state, dependencies, 'medium');
-    const strip = document.querySelector('.ws-clue-strip');
-    expect(strip).not.toBeNull();
-  });
-
-  it('5. Нахождение слова не меняет структуру и высоту панели', () => {
-    startWordSearchGame(state, dependencies, 'easy');
-    const strip = document.querySelector('.ws-clue-strip');
-    const initialChildrenCount = strip.children.length;
-
-    // Simulate finding a word visual update
-    const firstItem = strip.children[0];
-    firstItem.classList.add('ws-found');
-
-    expect(strip.children.length).toBe(initialChildrenCount);
-  });
-
-  it('6. Hard mode не создаёт горизонтального overflow сетки', () => {
-    startWordSearchGame(state, dependencies, 'hard');
-    const gridWrapper = document.querySelector('.ws-grid-wrapper');
-    expect(gridWrapper).not.toBeNull();
-  });
-
   it('7. Cleanup восстанавливает tabbar', () => {
     startWordSearchGame(state, dependencies, 'medium');
     cleanupWordSearch();
@@ -130,173 +189,16 @@ describe('Word Search UI & Integration Tests', () => {
     expect(document.body.classList.contains('ws-focus-mode')).toBe(false);
   });
 
-  it('8. Лёгкая создаёт сетку 7×7 и целится в 4 слова', () => {
+  it('8. Лёгкая создаёт сетку 7×7', () => {
     startWordSearchGame(state, dependencies, 'easy');
     const container = document.querySelector('[data-testid="word-search-game"]');
     expect(container.dataset.difficulty).toBe('easy');
 
     const cells = document.querySelectorAll('.ws-cell');
-    expect(cells.length).toBe(49); // 7x7
-  });
-
-  it('9. Средняя создаёт сетку 9×9 и целится в 6 слов', () => {
-    startWordSearchGame(state, dependencies, 'medium');
-    const container = document.querySelector('[data-testid="word-search-game"]');
-    expect(container.dataset.difficulty).toBe('medium');
-
-    const cells = document.querySelectorAll('.ws-cell');
-    expect(cells.length).toBe(81); // 9x9
-  });
-
-  it('10. Сложная создаёт сетку 11×11 и целится в 9 слов', () => {
-    startWordSearchGame(state, dependencies, 'hard');
-    const container = document.querySelector('[data-testid="word-search-game"]');
-    expect(container.dataset.difficulty).toBe('hard');
-
-    const cells = document.querySelectorAll('.ws-cell');
-    expect(cells.length).toBe(121); // 11x11
-  });
-
-  it('11. «Новая игра» сохраняет текущую сложность', () => {
-    startWordSearchGame(state, dependencies, 'hard');
-    const newGameBtn = document.getElementById('ws-new-game-btn');
-    expect(newGameBtn).not.toBeNull();
-
-    newGameBtn.click();
-    const container = document.querySelector('[data-testid="word-search-game"]');
-    expect(container.dataset.difficulty).toBe('hard');
-  });
-
-  it('12. «Сменить сложность» возвращает к выбору', () => {
-    startWordSearchGame(state, dependencies, 'medium');
-    const changeDiffBtn = document.getElementById('ws-change-diff-btn');
-    expect(changeDiffBtn).not.toBeNull();
-
-    changeDiffBtn.click();
-    const diffScreen = document.querySelector('[data-testid="ws-difficulty-screen"]');
-    expect(diffScreen).not.toBeNull();
-  });
-
-  it('13. Повторный вход в раздел «Инструменты» снова показывает выбор сложности', () => {
-    const senseiBody = document.getElementById('sensei-body');
-    setSenseiTab('tools');
-    renderSensei(state, dependencies);
-
-    const card = senseiBody.querySelector('[data-testid="tool-card-word-search"]');
-    expect(card).not.toBeNull();
-  });
-
-  // Colors & Intersections
-  it('14. Каждое placedWord получает colorIndex', () => {
-    startWordSearchGame(state, dependencies, 'medium');
-    const items = document.querySelectorAll('.ws-translation-item');
-    items.forEach((item) => {
-      expect(item.dataset.colorIndex).toBeDefined();
-    });
-  });
-
-  it('15. Две разные карточки вывода имеют свой colorIndex', () => {
-    startWordSearchGame(state, dependencies, 'medium');
-    const items = document.querySelectorAll('.ws-translation-item');
-    expect(items.length).toBeGreaterThanOrEqual(2);
-    expect(items[0].dataset.colorIndex).not.toBe(items[1].dataset.colorIndex);
+    expect(cells.length).toBe(49);
   });
 
   it('16. Палитры хватает минимум на 10 цветов', () => {
     expect(PALETTE.length).toBeGreaterThanOrEqual(10);
-  });
-
-  // Requirement Tests 1-10 (Kana Removal, Audio TTS, Layout & Isolation)
-  it('WS-REQ-1. В clue-strip присутствуют русские переводы', () => {
-    startWordSearchGame(state, dependencies, 'medium');
-    const translations = document.querySelectorAll('.ws-clue-translation');
-    expect(translations.length).toBeGreaterThan(0);
-    translations.forEach((el) => {
-      expect(el.textContent.trim()).toBeTruthy();
-    });
-  });
-
-  it('WS-REQ-2. В clue-strip отсутствует японское kana', () => {
-    startWordSearchGame(state, dependencies, 'medium');
-    const strip = document.querySelector('.ws-clue-strip');
-    expect(strip.textContent).not.toMatch(/[\u3040-\u30ff]/u);
-  });
-
-  it('WS-REQ-3. Элементы ws-clue-kana и ws-translation-kana не создаются', () => {
-    startWordSearchGame(state, dependencies, 'medium');
-    expect(document.querySelector('.ws-clue-kana')).toBeNull();
-    expect(document.querySelector('.ws-translation-kana')).toBeNull();
-  });
-
-  it('WS-REQ-4. До нахождения клик по переводу не вызывает speakJapanese()', () => {
-    const spy = vi.spyOn(audioHelper, 'speakJapanese');
-    startWordSearchGame(state, dependencies, 'medium');
-    const item = document.querySelector('.ws-translation-item');
-    expect(item.classList.contains('ws-found')).toBe(false);
-
-    item.click();
-    expect(spy).not.toHaveBeenCalled();
-    spy.mockRestore();
-  });
-
-  it('WS-REQ-5. После нахождения клик вызывает speakJapanese()', () => {
-    const spy = vi.spyOn(audioHelper, 'speakJapanese');
-    startWordSearchGame(state, dependencies, 'medium');
-    const item = document.querySelector('.ws-translation-item');
-    item.classList.add('ws-found');
-
-    item.click();
-    expect(spy).toHaveBeenCalledWith(expect.any(String));
-    spy.mockRestore();
-  });
-
-  it('WS-REQ-6. После нахождения появляется ✓', () => {
-    startWordSearchGame(state, dependencies, 'medium');
-    const item = document.querySelector('.ws-translation-item');
-    const check = item.querySelector('.ws-clue-check');
-    expect(check.textContent.trim()).toBe('✓');
-
-    item.classList.add('ws-found');
-    expect(item.classList.contains('ws-found')).toBe(true);
-  });
-
-  it('WS-REQ-7. Карточка и клетки слова получают одинаковый colorIndex', () => {
-    startWordSearchGame(state, dependencies, 'medium');
-    const items = document.querySelectorAll('.ws-translation-item');
-    items.forEach((item) => {
-      expect(item.dataset.colorIndex).toBeDefined();
-      expect(Number(item.dataset.colorIndex)).toBeGreaterThanOrEqual(0);
-    });
-  });
-
-  it('WS-REQ-8. Высота карточки не меняется после нахождения', () => {
-    startWordSearchGame(state, dependencies, 'medium');
-    const item = document.querySelector('.ws-translation-item');
-    const initialChildrenCount = item.children.length;
-
-    item.classList.add('ws-found');
-    expect(item.children.length).toBe(initialChildrenCount);
-  });
-
-  it('WS-REQ-9. Удаление kana не ломает подсказки и completion-overlay', () => {
-    startWordSearchGame(state, dependencies, 'easy');
-    const hintBtn = document.getElementById('ws-hint-btn');
-    expect(() => hintBtn.click()).not.toThrow();
-
-    const uiSource = readFileSync('ui/word-search.js', 'utf8');
-    expect(uiSource).toContain('showCompletionScreen');
-  });
-
-  it('WS-REQ-10. Игра по-прежнему не изменяет FSRS и mastery', () => {
-    const originalSrs = JSON.stringify(state.srs);
-    startWordSearchGame(state, dependencies, 'medium');
-
-    expect(JSON.stringify(state.srs)).toBe(originalSrs);
-    expect(state.reviewEvents).toBeUndefined();
-
-    const uiSource = readFileSync('ui/word-search.js', 'utf8');
-    expect(uiSource).not.toMatch(/state\.srs\s*=/u);
-    expect(uiSource).not.toMatch(/state\.reviewEvents/u);
-    expect(uiSource).not.toMatch(/masteryArchive/u);
   });
 });

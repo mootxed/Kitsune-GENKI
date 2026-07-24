@@ -13,14 +13,18 @@ export function getWordKey(word) {
 }
 
 /**
- * Gets candidate history list for a game from state or history option.
+ * Gets candidate history list for a game from state or history option, filtered by mode.
+ * Legacy entries without mode are treated as 'normal'.
  */
-function getRecentSessions(historyOrState, gameId) {
+function getRecentSessions(historyOrState, gameId, mode = 'normal') {
   if (!historyOrState) return [];
   const source = historyOrState.miniGameWordHistory || historyOrState;
   const gameHist = source[gameId] || source.miniGameWordHistory?.[gameId];
   const sessions = gameHist?.recentSessions || [];
-  return Array.isArray(sessions) ? sessions : [];
+  if (!Array.isArray(sessions)) return [];
+
+  const targetMode = mode || 'normal';
+  return sessions.filter((s) => (s?.mode || 'normal') === targetMode).slice(-5);
 }
 
 /**
@@ -30,12 +34,19 @@ function getRecentSessions(historyOrState, gameId) {
  * @param {Object} options
  * @param {string} options.gameId - 'wordSearch' or 'crossword'
  * @param {number} options.count - Target number of words
+ * @param {string} [options.mode='normal'] - 'normal' or 'weak'
  * @param {Object} [options.history] - State or history object containing miniGameWordHistory
  * @param {Function} [options.randomFn] - Random number generator (defaults to Math.random)
  * @returns {Array} Selected candidate words
  */
 export function selectMiniGameWords(candidates, options = {}) {
-  const { gameId = 'wordSearch', count = 6, history = null, randomFn = Math.random } = options;
+  const {
+    gameId = 'wordSearch',
+    count = 6,
+    mode = 'normal',
+    history = null,
+    randomFn = Math.random,
+  } = options;
 
   if (!Array.isArray(candidates) || candidates.length === 0) {
     return [];
@@ -55,12 +66,12 @@ export function selectMiniGameWords(candidates, options = {}) {
     return uniqueCandidates;
   }
 
-  // 2. Extract recent session history (up to 5)
-  const recentSessions = getRecentSessions(history, gameId);
+  // 2. Extract recent session history for the specified mode (up to 5)
+  const recentSessions = getRecentSessions(history, gameId, mode);
   const lastSession = recentSessions.length > 0 ? recentSessions[recentSessions.length - 1] : null;
   const lastSessionWordIds = new Set(lastSession?.wordIds || []);
 
-  // Words in recent 3 sessions
+  // Words in recent 3 sessions of this mode
   const recent3Sessions = recentSessions.slice(-3);
   const recent3WordCounts = new Map();
   recent3Sessions.forEach((sess) => {
@@ -93,7 +104,7 @@ export function selectMiniGameWords(candidates, options = {}) {
 
     let boost = 0;
     if (!lastSeenIndex.has(wId)) {
-      boost += 50; // Never seen in recent history
+      boost += 50; // Never seen in recent mode history
     } else {
       const sessIdx = lastSeenIndex.get(wId);
       // Older session -> higher boost
@@ -148,12 +159,14 @@ export function selectMiniGameWords(candidates, options = {}) {
 
 /**
  * Idempotently records a completed/placed minigame session history.
+ * Caps history to at most 5 sessions per mode for each game.
  *
  * @param {Object} state - App global state
  * @param {string} gameId - 'wordSearch' or 'crossword'
  * @param {Array<string>} wordIds - Array of placed word IDs
+ * @param {string} [mode='normal'] - 'normal' or 'weak'
  */
-export function recordGameSession(state, gameId, wordIds) {
+export function recordGameSession(state, gameId, wordIds, mode = 'normal') {
   if (!state || !gameId || !Array.isArray(wordIds) || wordIds.length === 0) {
     return;
   }
@@ -170,16 +183,24 @@ export function recordGameSession(state, gameId, wordIds) {
   }
 
   const sessions = state.miniGameWordHistory[gameId].recentSessions || [];
+  const targetMode = mode || 'normal';
 
   const newEntry = {
     startedAt: Date.now(),
+    mode: targetMode,
     wordIds: [...wordIds],
   };
 
   sessions.push(newEntry);
-  if (sessions.length > 5) {
-    state.miniGameWordHistory[gameId].recentSessions = sessions.slice(-5);
-  } else {
-    state.miniGameWordHistory[gameId].recentSessions = sessions;
-  }
+
+  // Maintain max 5 sessions per mode
+  const normalSessions = sessions.filter((s) => (s?.mode || 'normal') === 'normal').slice(-5);
+  const weakSessions = sessions.filter((s) => s?.mode === 'weak').slice(-5);
+
+  state.miniGameWordHistory[gameId].recentSessions = sessions.filter((s) => {
+    const m = s?.mode || 'normal';
+    if (m === 'normal') return normalSessions.includes(s);
+    if (m === 'weak') return weakSessions.includes(s);
+    return true;
+  });
 }

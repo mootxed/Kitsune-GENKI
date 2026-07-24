@@ -4,7 +4,10 @@ import { $ } from '../src/utils.js';
 import { LESSONS } from './home.js';
 import { speakJapanese } from '../src/audio-helper.js';
 import { showCompletionScreen } from './shared.js';
-import { getAvailableMiniGameCandidates } from '../src/minigame-word-selectors.js';
+import {
+  getAvailableMiniGameCandidates,
+  getWeakCrosswordCandidates,
+} from '../src/minigame-word-selectors.js';
 import { selectMiniGameWords, recordGameSession } from '../src/minigame-word-rotation.js';
 
 let activeCleanup = null;
@@ -113,36 +116,150 @@ function shuffleArray(array) {
 }
 
 /**
- * Рендер экрана кроссворда
+ * Main entry point for Crossword route.
+ * Shows Mode Selection screen before grid generation.
  */
-export function renderCrossword(state, dependencies) {
+export function renderCrossword(state, dependencies = {}) {
+  cleanupCrossword();
+  renderCrosswordModeSelection(state, dependencies);
+}
+
+/**
+ * Renders the Mode Selection screen for Crossword.
+ */
+export function renderCrosswordModeSelection(state, dependencies = {}) {
   cleanupCrossword();
 
   const body = $('#crossword-body');
+  if (!body) return;
 
-  // Генерируем кроссворд
-  const crosswordData = generateCrossword(11, state, dependencies?.lessons || LESSONS);
+  body.innerHTML = `
+    <div class="cw-mode-container" data-testid="cw-mode-screen">
+      <div class="cw-mode-header">
+        <h2>Выберите режим кроссворда</h2>
+        <p>Решайте кроссворд из всех доступных слов или оттачивайте сложные слова</p>
+      </div>
 
-  if (!crosswordData || crosswordData.placedWords.length < 3) {
+      <div class="cw-mode-cards">
+        <div class="cw-mode-card recommended" data-mode="normal" data-testid="cw-mode-card-normal" tabindex="0" role="button" aria-label="Все слова">
+          <span class="cw-badge-recommended">★ Рекомендуется</span>
+          <div class="cw-mode-icon">🧩</div>
+          <div class="cw-mode-info">
+            <h3>Все слова</h3>
+            <p>Кроссворд из доступных вам слов</p>
+          </div>
+          <button class="cw-btn cw-btn-primary">Начать кроссворд</button>
+        </div>
+
+        <div class="cw-mode-card" data-mode="weak" data-testid="cw-mode-card-weak" tabindex="0" role="button" aria-label="Слабые слова">
+          <div class="cw-mode-icon">🩹</div>
+          <div class="cw-mode-info">
+            <h3>Слабые слова</h3>
+            <p>Повторите слова, в которых раньше ошибались</p>
+          </div>
+          <button class="cw-btn cw-btn-primary">Начать кроссворд</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const cards = body.querySelectorAll('.cw-mode-card');
+  cards.forEach((card) => {
+    const handleSelect = () => {
+      const selectedMode = card.dataset.mode || 'normal';
+      startCrosswordGame(state, dependencies, selectedMode);
+    };
+
+    card.onclick = handleSelect;
+    card.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleSelect();
+      }
+    };
+  });
+}
+
+/**
+ * Starts a Crossword game batch in specified mode ('normal' | 'weak').
+ */
+export function startCrosswordGame(state, dependencies = {}, mode = 'normal') {
+  cleanupCrossword();
+
+  const body = $('#crossword-body');
+  if (!body) return;
+
+  const lessons = dependencies?.lessons || LESSONS;
+  const isWeakMode = mode === 'weak';
+
+  // Generate crossword data for specified mode
+  const crosswordData = generateCrossword(11, state, lessons, mode);
+
+  if (!crosswordData || !crosswordData.placedWords || crosswordData.placedWords.length < 3) {
+    let emptyIcon = '🧩';
+    let emptyTitle = 'Недостаточно слов';
+    let emptyDesc = 'Откройте больше глав, чтобы играть в кроссворд';
+    let showSwitchBtn = false;
+
+    if (isWeakMode) {
+      emptyIcon = '🩹';
+      const weakCandidates = getWeakCrosswordCandidates(state, lessons);
+      if (weakCandidates.length === 0) {
+        emptyTitle = 'Слабых слов пока нет';
+        emptyDesc =
+          'Слабых слов пока нет. Продолжайте занятия в SRS — слова с ошибками появятся здесь автоматически.';
+      } else {
+        emptyTitle = 'Не удалось составить кроссворд';
+        emptyDesc =
+          'Не удалось составить кроссворд из доступных слабых слов. Попробуйте позже или выберите обычный режим.';
+      }
+      showSwitchBtn = true;
+    }
+
     body.innerHTML = `
-      <div class="empty-state">
-        <span style="font-size:60px">🧩</span>
-        <h3>Недостаточно слов</h3>
-        <p>Откройте больше глав, чтобы играть в кроссворд</p>
+      <div class="empty-state" data-testid="crossword-empty">
+        <span style="font-size:60px">${emptyIcon}</span>
+        <h3>${emptyTitle}</h3>
+        <p>${emptyDesc}</p>
+        ${
+          showSwitchBtn
+            ? `<button class="cw-btn cw-btn-primary" id="cw-switch-normal-btn" style="margin-top:16px;">Перейти в обычный режим</button>`
+            : `<button class="cw-btn cw-btn-secondary" id="cw-back-mode-btn" style="margin-top:16px;">⚙️ Сменить режим</button>`
+        }
       </div>
     `;
+
+    const switchBtn = $('#cw-switch-normal-btn');
+    if (switchBtn) {
+      switchBtn.onclick = () => startCrosswordGame(state, dependencies, 'normal');
+    }
+    const backBtn = $('#cw-back-mode-btn');
+    if (backBtn) {
+      backBtn.onclick = () => renderCrosswordModeSelection(state, dependencies);
+    }
     return;
   }
 
   const { grid, placedWords, clues, gridSize } = crosswordData;
 
-  // Инициализируем ответы
+  // Initialize answers
   const userAnswers = {};
   placedWords.forEach((pw) => {
     userAnswers[pw.word.id] = { filled: Array(pw.word.length).fill(''), correct: false };
   });
 
+  const modeBadgeText = isWeakMode ? '🩹 Слабые слова' : '🧩 Все слова';
+
   body.innerHTML = `
+    <!-- HUD Header & Controls -->
+    <div class="cw-header-bar" data-testid="cw-header-bar">
+      <span class="cw-mode-badge" data-testid="cw-mode-badge">${modeBadgeText}</span>
+      <div class="cw-header-actions">
+        <button class="cw-btn-sm" id="cw-new-game-btn" data-testid="cw-new-game-btn" title="Новый кроссворд">🔄 Новый</button>
+        <button class="cw-btn-sm" id="cw-change-mode-btn" data-testid="cw-change-mode-btn" title="Сменить режим">⚙️ Режим</button>
+      </div>
+    </div>
+
     <!-- Кнопки зума -->
     <div class="cw-zoom-controls">
       <button class="cw-zoom-btn" id="cw-zoom-in">+</button>
@@ -197,10 +314,19 @@ export function renderCrossword(state, dependencies) {
     </div>
   `;
 
-  // Инициализация обработчиков
-  initCrosswordHandlers(crosswordData, userAnswers, state, dependencies);
+  // Attach Header Controls
+  const newGameBtn = $('#cw-new-game-btn');
+  if (newGameBtn) {
+    newGameBtn.onclick = () => startCrosswordGame(state, dependencies, mode);
+  }
+  const changeModeBtn = $('#cw-change-mode-btn');
+  if (changeModeBtn) {
+    changeModeBtn.onclick = () => renderCrosswordModeSelection(state, dependencies);
+  }
 
-  // Позиционирование ячеек в CSS Grid
+  // Initialize handlers & zoom
+  initCrosswordHandlers(crosswordData, userAnswers, state, dependencies, mode);
+
   document.querySelectorAll('.grid-cell').forEach((cell) => {
     const r = cell.dataset.row;
     const c = cell.dataset.col;
@@ -210,7 +336,6 @@ export function renderCrossword(state, dependencies) {
     }
   });
 
-  // Инициализация зума
   initCrosswordZoom();
 }
 
@@ -241,410 +366,306 @@ function renderGridCells(grid, gridSize) {
   return html;
 }
 
-function initCrosswordHandlers(crosswordData, userAnswers, state, dependencies) {
+function initCrosswordHandlers(crosswordData, userAnswers, state, dependencies, mode = 'normal') {
   const { placedWords, grid } = crosswordData;
 
-  // Сохраняем в глобальное состояние
+  // Reset finished state for new party
+  window.crosswordFinishedState = null;
+
+  // Save to global state
   window.cwState = {
     userAnswers,
     placedWords,
     grid,
+    selectedCell: null,
+    direction: 'across',
+    currentWordId: null,
     state,
     dependencies,
+    mode,
   };
 
-  // Обработчик клика по ячейке
-  document.querySelectorAll('.grid-cell.active').forEach((cell) => {
-    cell.onclick = () => {
-      const row = parseInt(cell.dataset.row);
-      const col = parseInt(cell.dataset.col);
-
-      // Находим и выбираем слово
-      const word = findWordAtCell(row, col, placedWords);
-      if (word) {
-        selectWord(word, crosswordData, userAnswers);
-      }
-    };
-  });
-
-  // Глобальный обработчик Backspace/Delete
-  const handleKeydown = (e) => {
-    if (e.key === 'Backspace' || e.key === 'Delete') {
-      e.preventDefault();
-      handleBackspaceDelete(userAnswers, grid, placedWords);
-    }
-  };
-  document.addEventListener('keydown', handleKeydown);
-
-  // Глобальный обработчик для закрытия панели при клике вне
-  const handleOutsideClick = (e) => {
-    const bottomPanel = $('.crossword-bottom-panel');
-
-    if (!bottomPanel || !bottomPanel.classList.contains('active')) return;
-
-    // Проверяем, был ли клик по играбельной ячейке или по панели
-    const isClickOnPlayableCell = e.target.closest('.grid-cell.active');
-    const isClickOnPanel = bottomPanel.contains(e.target);
-
-    // Закрываем панель только если клик НЕ на играбельной ячейке И НЕ на панели
-    if (!isClickOnPlayableCell && !isClickOnPanel) {
-      bottomPanel.classList.remove('active');
-
-      const cluePanel = $('#clue-panel');
-      const keyboard = $('#crossword-keyboard');
-
-      if (cluePanel) cluePanel.classList.add('hidden');
-      if (keyboard) keyboard.classList.add('hidden');
-
-      window.currentCrosswordWord = null;
-
-      // Убираем подсветку со всех ячеек
-      document.querySelectorAll('.grid-cell.highlighted').forEach((cell) => {
-        cell.classList.remove('highlighted');
-      });
-    }
-  };
-  document.addEventListener('click', handleOutsideClick);
-
-  activeCleanup = () => {
-    document.removeEventListener('keydown', handleKeydown);
-    document.removeEventListener('click', handleOutsideClick);
-  };
-
-  // Выбрать первое слово автоматически
-  if (placedWords.length > 0) {
-    selectWord(placedWords[0], crosswordData, userAnswers);
-  }
-}
-
-function selectWord(wordData, crosswordData, userAnswers) {
-  const { grid, placedWords } = crosswordData;
-
-  // GUARD: Абсолютная блокировка при повторном клике на уже активное слово
-  if (window.currentCrosswordWord && window.currentCrosswordWord.word.id === wordData.word.id) {
-    return; // Полная заморозка клавиатуры — никаких изменений
-  }
-
-  // Очищаем сохраненный layout при смене слова
-  delete wordData.keyboardLayout;
-  delete wordData.keyboardLetterFrequency;
-
-  // Сохраняем текущее слово
-  window.currentCrosswordWord = wordData;
-
-  // Обновляем классы ячеек
-  refreshGridCellClasses(placedWords, userAnswers, wordData.word.id);
-
-  // Обновляем Clue Panel
-  updateCluePanel(wordData.word, userAnswers, grid, placedWords);
-
-  // Генерируем клавиатуру
-  generateKeyboard(wordData, userAnswers, grid, placedWords);
-
-  // Показываем панель
-  const bottomPanel = $('.crossword-bottom-panel');
-  if (bottomPanel) bottomPanel.classList.add('active');
-
-  // Центруем viewport на первую ячейку активного слова
-  const firstCell = $(`.grid-cell[data-row="${wordData.row}"][data-col="${wordData.col}"]`);
-  if (firstCell && typeof firstCell.scrollIntoView === 'function') {
-    firstCell.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-      inline: 'center',
-    });
-  }
-}
-
-function updateCluePanel(word, userAnswers, grid, placedWords) {
-  const panel = $('#clue-panel');
-  const translationEl = $('#clue-translation');
-  const speakBtn = $('#clue-speak');
-
-  if (panel && translationEl) {
-    panel.classList.remove('hidden');
-    translationEl.textContent = word.translation;
-
-    if (speakBtn) {
-      speakBtn.onclick = () => speakJapanese(word.kana);
-    }
-
-    // Кнопка "Очистить слово"
-    const clearBtn = $('#clue-clear');
-    if (clearBtn) {
-      clearBtn.onclick = () => {
-        const wordData = window.currentCrosswordWord;
-        if (!wordData) return;
-
-        const wordAnswer = userAnswers[wordData.word.id];
-        if (!wordAnswer) return;
-
-        // Блокируем очистку полностью правильных слов
-        if (wordAnswer.correct) return;
-
-        // Очищаем все буквы с учетом пересечений и защиты
-        for (let i = 0; i < wordData.word.length; i++) {
-          // НОВАЯ ПРОВЕРКА: Не очищаем зафиксированные буквы
-          if (wordAnswer.lockedIndices && wordAnswer.lockedIndices.has(i)) {
-            continue;
-          }
-
-          const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
-          const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
-
-          // Проверяем, защищена ли ячейка другим правильным словом
-          const cellData = grid[r][c];
-          let isProtected = false;
-
-          if (cellData && cellData.wordIds) {
-            isProtected = cellData.wordIds.some((wId) => {
-              // Пропускаем текущее активное слово
-              if (wId === wordData.word.id) return false;
-              // Проверяем, правильно ли другое слово
-              return userAnswers[wId] && userAnswers[wId].correct;
-            });
-          }
-
-          // Если ячейка защищена, пропускаем её
-          if (isProtected) continue;
-
-          // Очищаем эту ячейку во ВСЕХ пересекающихся словах (кроме защищённых)
-          if (cellData && cellData.wordIds) {
-            cellData.wordIds.forEach((wId) => {
-              const pw = placedWords.find((p) => p.word.id === wId);
-              if (pw && userAnswers[wId]) {
-                // Не трогаем правильные слова
-                if (userAnswers[wId].correct) return;
-
-                const cellIdx = getCellIndexInWord(r, c, pw);
-                if (cellIdx !== -1) {
-                  userAnswers[wId].filled[cellIdx] = '';
-                }
-              }
-            });
-          }
-
-          // Очищаем DOM
-          const cellDom = $(`.grid-cell[data-row="${r}"][data-col="${c}"] .kana-hira`);
-          if (cellDom) {
-            cellDom.textContent = '';
-            cellDom.dataset.answer = '';
-          }
-          const kataDom = $(`.grid-cell[data-row="${r}"][data-col="${c}"] .kana-kata`);
-          if (kataDom) {
-            kataDom.textContent = '';
-          }
-        }
-
-        // Перегенерируем клавиатуру
-        generateKeyboard(wordData, userAnswers, grid, placedWords);
-      };
-    }
-
-    // Кнопка подсказки
-    const hintBtn = $('#clue-hint');
-    if (hintBtn) {
-      hintBtn.onclick = () => {
-        const wordData = window.currentCrosswordWord;
-        if (!wordData) return;
-
-        const wordAnswer = userAnswers[wordData.word.id];
-        if (!wordAnswer) return;
-
-        // Помечаем флаг подсказки
-        wordAnswer.usedHint = true;
-
-        // Если слово уже разгадано, не даём подсказку
-        if (wordAnswer.correct) return;
-
-        // Находим пустые индексы
-        const emptyIndices = [];
-        for (let i = 0; i < wordData.word.length; i++) {
-          if (wordAnswer.filled[i] === '') {
-            emptyIndices.push(i);
-          }
-        }
-
-        if (emptyIndices.length === 0) return;
-
-        // Подсказка влияет только на локальную попытку кроссворда. Legacy progress
-        // и FSRS-расписание здесь намеренно не изменяются.
-        const saveFn = window.cwState?.dependencies?.save;
-        if (typeof saveFn === 'function') saveFn();
-
-        // Выбираем случайный пустой индекс
-        const randomIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-        const correctLetter = wordData.word.kana[randomIndex];
-
-        // Записываем букву
-        wordAnswer.filled[randomIndex] = correctLetter;
-
-        // НОВАЯ ЛОГИКА: Помечаем hint-букву как зафиксированную и защищённую
-        if (!wordAnswer.lockedIndices) {
-          wordAnswer.lockedIndices = new Set();
-        }
-        wordAnswer.lockedIndices.add(randomIndex);
-
-        // Вычисляем координаты
-        const r = wordData.direction === 'across' ? wordData.row : wordData.row + randomIndex;
-        const c = wordData.direction === 'across' ? wordData.col + randomIndex : wordData.col;
-
-        const cellData = grid[r][c];
-
-        // Синхронизируем с пересекающимися словами
-        if (cellData && cellData.wordIds) {
-          cellData.wordIds.forEach((wId) => {
-            const pw = placedWords.find((p) => p.word.id === wId);
-            if (pw) {
-              const cellIdx = getCellIndexInWord(r, c, pw);
-              if (cellIdx !== -1 && userAnswers[wId]) {
-                userAnswers[wId].filled[cellIdx] = correctLetter;
-              }
-            }
-          });
-        }
-
-        // Обновляем ячейку в DOM с классом hint
-        const cell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
-        if (cell) {
-          const hiraSpan = cell.querySelector('.kana-hira');
-          const kataSpan = cell.querySelector('.kana-kata');
-
-          if (hiraSpan) {
-            hiraSpan.dataset.answer = correctLetter;
-            hiraSpan.textContent = correctLetter;
-
-            if (kataSpan) {
-              kataSpan.textContent = hiraganaToKatakana(correctLetter);
-            }
-          }
-
-          // Применяем жёлтую подсветку для hint-буквы
-          cell.classList.add('grid-cell-letter-hint');
-        }
-
-        // ИСПРАВЛЕНО: Перегенерируем клавиатуру вместо глобального отключения кнопок.
-        // Это позволяет корректно учесть использование подсказки и оставить возможность
-        // ввода оставшихся дубликатов той же буквы, если они есть в слове
-        generateKeyboard(wordData, userAnswers, grid, placedWords);
-
-        // Проверяем заполненность слова
-        checkWordCompletion(wordData, userAnswers, grid, placedWords);
-      };
-    }
-  }
-}
-
-function generateKeyboard(wordData, userAnswers, grid, placedWords) {
+  const viewport = $('#crossword-viewport');
   const keyboard = $('#crossword-keyboard');
-  if (!keyboard) return;
+  const clearBtn = $('#clue-clear');
+  const hintBtn = $('#clue-hint');
+  const speakBtn = $('#clue-speak');
 
   // Показываем клавиатуру
   keyboard.classList.remove('hidden');
+  renderKeyboard(keyboard, userAnswers, placedWords, grid);
 
-  const wordAnswer = userAnswers[wordData.word.id];
+  // Клики по ячейкам
+  const cellClickListener = (e) => {
+    const cell = e.target.closest('.grid-cell.active');
+    if (!cell) return;
 
-  // Проверяем, нужно ли генерировать новый layout
-  const needsNewLayout = !wordData.keyboardLayout || !wordData.keyboardLetterFrequency;
+    const row = parseInt(cell.dataset.row);
+    const col = parseInt(cell.dataset.col);
 
-  if (needsNewLayout) {
-    // Учитываем предзаполненные пересечения и подсчитываем частоту нужных букв
-    const neededLetters = [];
-    for (let i = 0; i < wordData.word.length; i++) {
-      const letter = wordData.word.kana[i];
-      const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
-      const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
+    if (
+      window.cwState.selectedCell &&
+      window.cwState.selectedCell.row === row &&
+      window.cwState.selectedCell.col === col
+    ) {
+      window.cwState.direction = window.cwState.direction === 'across' ? 'down' : 'across';
+    }
 
-      // Проверяем, заполнена ли ячейка
-      const cellDom = $(`.grid-cell[data-row="${r}"][data-col="${c}"] .kana-hira`);
-      const isActuallyEmpty = !cellDom || !cellDom.dataset.answer;
+    window.cwState.selectedCell = { row, col };
+    selectCell(row, col, placedWords, userAnswers, grid);
+  };
 
-      if (isActuallyEmpty) {
-        neededLetters.push(letter);
+  viewport.addEventListener('click', cellClickListener);
+
+  // Кнопка очистки
+  clearBtn.onclick = () => {
+    if (!window.cwState.currentWordId) return;
+    const pw = placedWords.find((p) => p.word.id === window.cwState.currentWordId);
+    if (!pw) return;
+
+    const wordAns = userAnswers[pw.word.id];
+    if (wordAns.correct) return;
+
+    // Сбрасываем только незаблокированные ячейки
+    for (let i = 0; i < pw.word.length; i++) {
+      if (wordAns.lockedIndices && wordAns.lockedIndices.has(i)) {
+        continue;
+      }
+      wordAns.filled[i] = '';
+
+      const r = pw.direction === 'across' ? pw.row : pw.row + i;
+      const c = pw.direction === 'across' ? pw.col + i : pw.col;
+
+      const cellDom = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+      if (cellDom) {
+        const hiraSpan = cellDom.querySelector('.kana-hira');
+        const kataSpan = cellDom.querySelector('.kana-kata');
+        if (hiraSpan) {
+          hiraSpan.dataset.answer = '';
+          hiraSpan.textContent = '';
+        }
+        if (kataSpan) {
+          kataSpan.textContent = '';
+        }
+        cellDom.classList.remove(
+          'grid-cell-letter-manual',
+          'grid-cell-letter-hint',
+          'grid-cell-letter-correct'
+        );
       }
     }
 
-    // Подсчитываем частоту каждой буквы (для поддержки повторяющихся символов)
-    const letterFrequency = {};
-    neededLetters.forEach((letter) => {
-      letterFrequency[letter] = (letterFrequency[letter] || 0) + 1;
-    });
+    renderKeyboard(keyboard, userAnswers, placedWords, grid);
+  };
 
-    // Создаем массив с повторяющимися буквами согласно их частоте
-    const neededWithDuplicates = [];
-    Object.entries(letterFrequency).forEach(([letter, count]) => {
-      for (let i = 0; i < count; i++) {
-        neededWithDuplicates.push(letter);
-      }
-    });
+  // Кнопка подсказки (открывает 1 случайную неразгаданную букву)
+  hintBtn.onclick = () => {
+    if (!window.cwState.currentWordId) return;
 
-    // Ограничиваем до максимум 8 символов
-    const limitedNeeded = neededWithDuplicates.slice(0, 8);
+    const pw = placedWords.find((p) => p.word.id === window.cwState.currentWordId);
+    if (!pw) return;
 
-    // Добавляем distractors до ровно 8 символов
-    const allKana = Object.keys(HIRAGANA_TO_KATAKANA);
-    const distractors = [];
-    const targetTotal = 8;
-    const distractorCount = targetTotal - limitedNeeded.length;
+    const wordAns = userAnswers[pw.word.id];
+    if (wordAns.correct) return;
 
-    while (distractors.length < distractorCount) {
-      const randomKana = allKana[Math.floor(Math.random() * allKana.length)];
-      if (!wordData.word.kana.includes(randomKana) && !distractors.includes(randomKana)) {
-        distractors.push(randomKana);
+    // Ищем незаполненные или неверные индексы
+    const unrevealedIndices = [];
+    for (let i = 0; i < pw.word.length; i++) {
+      const isLocked = wordAns.lockedIndices && wordAns.lockedIndices.has(i);
+      if (!isLocked && wordAns.filled[i] !== pw.word.kana[i]) {
+        unrevealedIndices.push(i);
       }
     }
 
-    // Перемешиваем и гарантируем ровно 8 символов
-    const keyboardLetters = shuffleArray([...limitedNeeded, ...distractors]).slice(0, 8);
+    if (unrevealedIndices.length === 0) return;
 
-    // Сохраняем layout и частоту для последующих использований
-    wordData.keyboardLayout = keyboardLetters;
-    wordData.keyboardLetterFrequency = letterFrequency;
+    // Выбираем случайный индекс для подсказки
+    const randomIndex = unrevealedIndices[Math.floor(Math.random() * unrevealedIndices.length)];
+    const correctLetter = pw.word.kana[randomIndex];
+
+    // Вписываем правильную букву
+    wordAns.filled[randomIndex] = correctLetter;
+    wordAns.usedHint = true;
+
+    if (!wordAns.lockedIndices) {
+      wordAns.lockedIndices = new Set();
+    }
+    wordAns.lockedIndices.add(randomIndex);
+
+    const r = pw.direction === 'across' ? pw.row : pw.row + randomIndex;
+    const c = pw.direction === 'across' ? pw.col + randomIndex : pw.col;
+    const cellDom = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+
+    if (cellDom) {
+      const hiraSpan = cellDom.querySelector('.kana-hira');
+      const kataSpan = cellDom.querySelector('.kana-kata');
+      if (hiraSpan) {
+        hiraSpan.dataset.answer = correctLetter;
+        hiraSpan.textContent = correctLetter;
+      }
+      if (kataSpan) {
+        kataSpan.textContent = hiraganaToKatakana(correctLetter);
+      }
+      cellDom.classList.add('grid-cell-letter-hint');
+    }
+
+    // Синхронизируем пересечения
+    const cellData = grid[r][c];
+    if (cellData && cellData.wordIds) {
+      cellData.wordIds.forEach((wId) => {
+        const intersectingPw = placedWords.find((p) => p.word.id === wId);
+        if (intersectingPw) {
+          const idx = getCellIndexInWord(r, c, intersectingPw);
+          if (idx !== -1 && userAnswers[wId]) {
+            userAnswers[wId].filled[idx] = correctLetter;
+          }
+        }
+      });
+    }
+
+    renderKeyboard(keyboard, userAnswers, placedWords, grid);
+    checkWordCompletion(pw, userAnswers, grid, placedWords);
+  };
+
+  // Кнопка озвучки
+  speakBtn.onclick = () => {
+    if (!window.cwState.currentWordId) return;
+    const pw = placedWords.find((p) => p.word.id === window.cwState.currentWordId);
+    if (pw && pw.word.kana) {
+      speakJapanese(pw.word.kana);
+    }
+  };
+
+  activeCleanup = () => {
+    viewport.removeEventListener('click', cellClickListener);
+  };
+}
+
+function selectCell(row, col, placedWords, userAnswers, grid) {
+  const wordsAtCell = placedWords.filter((pw) => {
+    if (pw.direction === 'across') {
+      return pw.row === row && col >= pw.col && col < pw.col + pw.word.length;
+    } else {
+      return pw.col === col && row >= pw.row && row < pw.row + pw.word.length;
+    }
+  });
+
+  if (wordsAtCell.length === 0) return;
+
+  let activeWord = wordsAtCell.find((w) => w.direction === window.cwState.direction);
+  if (!activeWord) {
+    activeWord = wordsAtCell[0];
+    window.cwState.direction = activeWord.direction;
   }
 
-  // Рендерим UI с существующим или новым layout
-  keyboard.innerHTML = wordData.keyboardLayout
-    .map(
-      (letter) => `
-    <button class="kana-key" data-letter="${letter}">
-      <span class="key-hira">${letter}</span>
-      <span class="key-kata">${hiraganaToKatakana(letter)}</span>
-    </button>
-  `
-    )
-    .join('');
+  window.cwState.currentWordId = activeWord.word.id;
 
-  // Обработчики кнопок
-  document.querySelectorAll('.kana-key').forEach((btn) => {
-    const letter = btn.dataset.letter;
+  // Обновляем визуальное выделение
+  refreshGridCellClasses(placedWords, userAnswers, activeWord.word.id);
 
-    // Проверяем, сколько раз эта буква нужна в слове
-    const neededCount = wordData.keyboardLetterFrequency[letter] || 0;
+  // Покажем подсказку
+  const cluePanel = $('#clue-panel');
+  const clueTranslation = $('#clue-translation');
+  if (cluePanel && clueTranslation) {
+    clueTranslation.textContent = activeWord.word.translation;
+    cluePanel.classList.remove('hidden');
+  }
 
-    // Подсчитываем, сколько раз уже использована корректно и зафиксирована
-    let usedCount = 0;
-    for (let i = 0; i < wordData.word.length; i++) {
-      // Считаем только правильно размещённые И зафиксированные буквы
-      if (
-        wordData.word.kana[i] === letter &&
-        wordAnswer.filled[i] === letter &&
-        wordAnswer.lockedIndices &&
-        wordAnswer.lockedIndices.has(i)
-      ) {
-        usedCount++;
-      }
-    }
+  // Обновим клавиатуру
+  const keyboard = $('#crossword-keyboard');
+  if (keyboard) {
+    renderKeyboard(keyboard, userAnswers, placedWords, grid);
+  }
+}
 
-    // Если буква использована полностью, визуально приглушаем
-    if (usedCount >= neededCount && neededCount > 0) {
-      btn.style.opacity = '0.3';
-      btn.disabled = true;
-    }
+function renderKeyboard(container, userAnswers, placedWords, grid) {
+  if (!window.cwState.currentWordId) {
+    container.innerHTML = '';
+    return;
+  }
 
+  const currentWord = placedWords.find((pw) => pw.word.id === window.cwState.currentWordId);
+  if (!currentWord) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const correctKana = currentWord.word.kana.split('');
+  const allKana = [
+    'あ',
+    'い',
+    'う',
+    'え',
+    'お',
+    'か',
+    'き',
+    'く',
+    'け',
+    'こ',
+    'さ',
+    'し',
+    'す',
+    'せ',
+    'そ',
+    'た',
+    'ち',
+    'つ',
+    'て',
+    'と',
+    'な',
+    'に',
+    'ぬ',
+    'ね',
+    'の',
+    'は',
+    'ひ',
+    'ふ',
+    'へ',
+    'ほ',
+    'ま',
+    'み',
+    'む',
+    'め',
+    'も',
+    'や',
+    'ゆ',
+    'よ',
+    'ら',
+    'り',
+    'る',
+    'れ',
+    'ろ',
+    'わ',
+    'を',
+    'ん',
+  ];
+
+  // Создаем динамический набор клавиш (буквы слова + 5 случайных дистракторов)
+  const distractorPool = allKana.filter((k) => !correctKana.includes(k));
+  const selectedDistractors = shuffleArray(distractorPool).slice(
+    0,
+    Math.max(3, 8 - correctKana.length)
+  );
+  const keyboardLetters = shuffleArray([...new Set([...correctKana, ...selectedDistractors])]);
+
+  container.innerHTML = `
+    <div class="cw-keyboard-grid">
+      ${keyboardLetters
+        .map(
+          (char) => `
+        <button class="cw-key" data-char="${char}">${char}</button>
+      `
+        )
+        .join('')}
+    </div>
+  `;
+
+  // Навешиваем слушатели на клавиши
+  container.querySelectorAll('.cw-key').forEach((btn) => {
     btn.onclick = (e) => {
-      const clickedButton = e.currentTarget;
-      const letterToInsert = clickedButton.dataset.letter;
-      insertLetterIntoWord(letterToInsert, wordData, userAnswers, grid, placedWords, clickedButton);
+      e.stopPropagation();
+      const letter = btn.dataset.char;
+      insertLetterIntoWord(letter, currentWord, userAnswers, grid, placedWords, btn);
     };
   });
 }
@@ -701,17 +722,14 @@ function insertLetterIntoWord(letter, wordData, userAnswers, grid, placedWords, 
     }
   }
 
-  // НОВАЯ ЛОГИКА: Немедленная валидация вставленной буквы
   const correctLetter = wordData.word.kana[emptyIndex];
   const isCorrect = letter === correctLetter;
 
   if (isCorrect) {
-    // Добавляем класс для зеленой подсветки (ручной ввод)
     if (cell) {
       cell.classList.add('grid-cell-letter-manual');
     }
 
-    // Помечаем букву как зафиксированную в userAnswers
     if (!wordAnswer.lockedIndices) {
       wordAnswer.lockedIndices = new Set();
     }
@@ -732,16 +750,13 @@ function insertLetterIntoWord(letter, wordData, userAnswers, grid, placedWords, 
     });
   }
 
-  // Отключаем только конкретную нажатую кнопку
   if (clickedButton) {
     clickedButton.style.opacity = '0.3';
     clickedButton.disabled = true;
   }
 
-  // Проверяем заполненность
   checkWordCompletion(wordData, userAnswers, grid, placedWords);
 
-  // Центрируем только что заполненную ячейку для плавного следования камеры
   const filledCell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
   if (filledCell && typeof filledCell.scrollIntoView === 'function') {
     filledCell.scrollIntoView({
@@ -752,77 +767,93 @@ function insertLetterIntoWord(letter, wordData, userAnswers, grid, placedWords, 
   }
 }
 
+function getCellIndexInWord(row, col, placedWord) {
+  if (placedWord.direction === 'across') {
+    if (
+      row === placedWord.row &&
+      col >= placedWord.col &&
+      col < placedWord.col + placedWord.word.length
+    ) {
+      return col - placedWord.col;
+    }
+  } else {
+    if (
+      col === placedWord.col &&
+      row >= placedWord.row &&
+      row < placedWord.row + placedWord.word.length
+    ) {
+      return row - placedWord.row;
+    }
+  }
+  return -1;
+}
+
 function checkWordCompletion(wordData, userAnswers, grid, placedWords) {
-  // Проверяем ВСЕ слова
-  placedWords.forEach((pw) => {
-    const wordAnswer = userAnswers[pw.word.id];
-    if (!wordAnswer) return;
+  const wordAns = userAnswers[wordData.word.id];
+  const targetKana = wordData.word.kana;
+  const userKana = wordAns.filled.join('');
 
-    const allFilled = wordAnswer.filled.every((l) => l !== '');
-    if (!allFilled) return;
+  if (userKana === targetKana) {
+    wordAns.correct = true;
 
-    const userWord = wordAnswer.filled.join('');
-    const correctWord = pw.word.kana;
+    // Подсвечиваем слово как угаданное
+    for (let i = 0; i < wordData.word.length; i++) {
+      const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
+      const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
 
-    if (userWord === correctWord && !wordAnswer.correct) {
-      wordAnswer.correct = true;
-
-      // Подсвечиваем зеленым
-      for (let i = 0; i < pw.word.length; i++) {
-        const r = pw.direction === 'across' ? pw.row : pw.row + i;
-        const c = pw.direction === 'across' ? pw.col + i : pw.col;
-        const cell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
-        if (cell) {
-          cell.classList.add('correct');
-          cell.classList.remove('highlighted');
-        }
-      }
-
-      // Обновляем классы всех ячеек
-      refreshGridCellClasses(placedWords, userAnswers, wordData.word.id);
-
-      // Переходим к следующему слову или завершаем кроссворд
-      if (pw.word.id === wordData.word.id) {
-        setTimeout(() => {
-          const nextWord = findNextIncompleteWord(placedWords, userAnswers, wordData.word.id);
-          if (nextWord) {
-            selectWord(nextWord, { grid, placedWords, gridSize: grid.length }, userAnswers);
-          } else {
-            completeCrossword(placedWords.length, userAnswers);
-          }
-        }, 1000);
+      const cellDom = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+      if (cellDom) {
+        cellDom.classList.remove('grid-cell-letter-manual');
+        cellDom.classList.add('grid-cell-correct');
       }
     }
-  });
 
-  // Проверка завершения
-  const allCompleted = placedWords.every(
-    (pw) => userAnswers[pw.word.id] && userAnswers[pw.word.id].correct
-  );
-  if (allCompleted && !window.crosswordFinished) {
-    window.crosswordFinished = true;
-    setTimeout(() => {
+    // Озвучка при угадывании
+    speakJapanese(targetKana);
+
+    // Автоматическое переключение на следующее нерешенное слово
+    const nextWord = findNextIncompleteWord(placedWords, userAnswers, wordData.word.id);
+    if (nextWord) {
+      setTimeout(() => {
+        window.cwState.currentWordId = nextWord.word.id;
+        window.cwState.direction = nextWord.direction;
+        window.cwState.selectedCell = { row: nextWord.row, col: nextWord.col };
+
+        selectCell(nextWord.row, nextWord.col, placedWords, userAnswers, grid);
+
+        const firstCellDom = $(
+          `.grid-cell[data-row="${nextWord.row}"][data-col="${nextWord.col}"]`
+        );
+        if (firstCellDom && typeof firstCellDom.scrollIntoView === 'function') {
+          firstCellDom.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'center',
+          });
+        }
+      }, 400);
+    }
+
+    // Проверяем завершение всего кроссворда
+    const allCorrect = Object.values(userAnswers).every((ans) => ans.correct);
+    if (allCorrect) {
       completeCrossword(placedWords.length, userAnswers);
-    }, 1000);
+    }
   }
 }
 
 function findNextIncompleteWord(placedWords, userAnswers, currentWordId) {
-  // 1. Отфильтровать все нерешённые слова
   const unsolvedWords = placedWords.filter(
     (pw) => userAnswers[pw.word.id] && !userAnswers[pw.word.id].correct
   );
 
-  // 2. Исключить текущее слово из пула
   const availableWords = unsolvedWords.filter((pw) => pw.word.id !== currentWordId);
 
-  // 3. Если есть доступные слова, выбрать случайное
   if (availableWords.length > 0) {
     const randomIndex = Math.floor(Math.random() * availableWords.length);
     return availableWords[randomIndex];
   }
 
-  // 4. Если остались только решённые слова, вернуть null
   return null;
 }
 
@@ -830,8 +861,8 @@ function completeCrossword(totalWords, userAnswers) {
   if (window.crosswordFinishedState?.awarded) return;
   window.crosswordFinishedState = { awarded: true };
 
-  const { state, dependencies } = window.cwState;
-  const { save, addXP } = dependencies;
+  const { state, dependencies, mode = 'normal' } = window.cwState;
+  const { save, addXP } = dependencies || {};
 
   // Подсчитываем слова
   const wordsWithHint = Object.values(userAnswers).filter((a) => a.correct && a.usedHint).length;
@@ -844,14 +875,18 @@ function completeCrossword(totalWords, userAnswers) {
   const coinsReward = Math.floor(xpReward / 10);
 
   if (addXP) addXP(xpReward);
-  state.coins = (state.coins || 0) + coinsReward;
-  save();
+  if (state) {
+    state.coins = (state.coins || 0) + coinsReward;
+  }
+  if (save) save();
 
-  // Показываем полноэкранный модал успеха
+  const isWeak = mode === 'weak';
+  const subtitleDesc = isWeak ? 'Режим: Слабые слова' : 'Режим: Все слова';
+
   showCompletionScreen({
     title: 'おめでとう！',
     subtitle: 'Congratulations!',
-    desc: 'Вы успешно завершили кроссворд и получили награды!',
+    desc: `Вы успешно завершили кроссворд! ${subtitleDesc}`,
     theme: 'success',
     rewards: [
       { icon: '📖', label: `${wordsWithoutHint} отгадано, ${wordsWithHint} с подсказкой` },
@@ -859,7 +894,8 @@ function completeCrossword(totalWords, userAnswers) {
       { icon: '🪙', label: `+${coinsReward} монет` },
     ],
     onContinue: () => {
-      if (window.nav) window.nav('sensei');
+      cleanupCrossword();
+      renderCrosswordModeSelection(state, dependencies);
     },
   });
 }
@@ -881,246 +917,59 @@ export function refreshGridCellClasses(placedWords, userAnswers, currentWordId) 
       (pw) => userAnswers[pw.word.id] && userAnswers[pw.word.id].correct
     );
 
-    const isCorrect = correctWords.length > 0;
-    const hasCleanCorrect = correctWords.some((pw) => !userAnswers[pw.word.id].usedHint);
-    const isActiveWord = currentWordId && wordsAtCell.some((pw) => pw.word.id === currentWordId);
+    cell.classList.remove('active-word', 'selected');
 
-    cell.classList.remove('highlighted', 'correct', 'correct-hint');
-    if (isCorrect) {
-      if (hasCleanCorrect) {
-        cell.classList.add('correct');
-      } else {
-        cell.classList.add('correct-hint');
+    if (correctWords.length > 0 && correctWords.length === wordsAtCell.length) {
+      cell.classList.add('grid-cell-correct');
+    }
+
+    if (currentWordId) {
+      const isCurrentWord = wordsAtCell.some((pw) => pw.word.id === currentWordId);
+      if (isCurrentWord) {
+        cell.classList.add('active-word');
       }
-    } else if (isActiveWord) {
-      cell.classList.add('highlighted');
+    }
+
+    if (
+      window.cwState.selectedCell &&
+      window.cwState.selectedCell.row === r &&
+      window.cwState.selectedCell.col === c
+    ) {
+      cell.classList.add('selected');
     }
   });
 }
 
-function findWordAtCell(row, col, placedWords) {
-  for (const pw of placedWords) {
-    if (pw.direction === 'across') {
-      if (pw.row === row && col >= pw.col && col < pw.col + pw.word.length) {
-        return pw;
-      }
-    } else {
-      if (pw.col === col && row >= pw.row && row < pw.row + pw.word.length) {
-        return pw;
-      }
-    }
-  }
-  return null;
-}
-
-function getCellIndexInWord(row, col, wordData) {
-  if (wordData.direction === 'across') {
-    return col - wordData.col;
-  } else {
-    return row - wordData.row;
-  }
-}
-
-function handleBackspaceDelete(userAnswers, grid, placedWords) {
-  const wordData = window.currentCrosswordWord;
-  if (!wordData) return;
-
-  const wordAnswer = userAnswers[wordData.word.id];
-  if (!wordAnswer) return;
-
-  // Блокируем удаление из полностью правильных слов
-  if (wordAnswer.correct) return;
-
-  // Находим последнюю заполненную ячейку в текущем слове, пропуская защищённые и зафиксированные
-  let targetIndex = -1;
-  for (let i = wordData.word.length - 1; i >= 0; i--) {
-    if (wordAnswer.filled[i] !== '') {
-      // НОВАЯ ПРОВЕРКА: Блокируем удаление зафиксированных правильных букв
-      if (wordAnswer.lockedIndices && wordAnswer.lockedIndices.has(i)) {
-        continue; // Пропускаем зафиксированную букву
-      }
-
-      // Вычисляем координаты ячейки
-      const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
-      const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
-
-      // Проверяем, защищена ли ячейка другим правильным словом
-      const cellData = grid[r][c];
-      let isProtected = false;
-
-      if (cellData && cellData.wordIds) {
-        isProtected = cellData.wordIds.some((wId) => {
-          // Пропускаем текущее активное слово
-          if (wId === wordData.word.id) return false;
-          // Проверяем, правильно ли другое слово
-          return userAnswers[wId] && userAnswers[wId].correct;
-        });
-      }
-
-      // Если ячейка не защищена, используем её
-      if (!isProtected) {
-        targetIndex = i;
-        break;
-      }
-    }
-  }
-
-  if (targetIndex === -1) return;
-
-  // Вычисляем координаты ячейки для удаления
-  const r = wordData.direction === 'across' ? wordData.row : wordData.row + targetIndex;
-  const c = wordData.direction === 'across' ? wordData.col + targetIndex : wordData.col;
-
-  // Получаем все слова, проходящие через эту ячейку
-  const cellData = grid[r][c];
-  if (cellData && cellData.wordIds) {
-    // Очищаем эту ячейку во ВСЕХ пересекающихся словах (кроме защищённых)
-    cellData.wordIds.forEach((wId) => {
-      const pw = placedWords.find((p) => p.word.id === wId);
-      if (pw && userAnswers[wId]) {
-        // Не трогаем правильные слова
-        if (userAnswers[wId].correct) return;
-
-        const cellIdx = getCellIndexInWord(r, c, pw);
-        if (cellIdx !== -1) {
-          userAnswers[wId].filled[cellIdx] = '';
-          userAnswers[wId].correct = false;
-        }
-      }
-    });
-  }
-
-  // Очищаем DOM
-  const cellDom = $(`.grid-cell[data-row="${r}"][data-col="${c}"] .kana-hira`);
-  if (cellDom) {
-    cellDom.textContent = '';
-    cellDom.dataset.answer = '';
-  }
-  const kataDom = $(`.grid-cell[data-row="${r}"][data-col="${c}"] .kana-kata`);
-  if (kataDom) {
-    kataDom.textContent = '';
-  }
-
-  // Убираем все классы подсветки с ячейки
-  const cell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
-  if (cell) {
-    cell.classList.remove(
-      'correct',
-      'correct-hint',
-      'grid-cell-letter-manual',
-      'grid-cell-letter-hint'
-    );
-  }
-
-  // Ревалидация всех затронутых слов
-  if (cellData && cellData.wordIds) {
-    cellData.wordIds.forEach((wId) => {
-      const pw = placedWords.find((p) => p.word.id === wId);
-      if (pw && userAnswers[wId]) {
-        revalidateWord(pw, userAnswers, grid);
-      }
-    });
-  }
-
-  // Обновляем классы всех ячеек
-  refreshGridCellClasses(placedWords, userAnswers, wordData.word.id);
-
-  // Перегенерируем клавиатуру
-  generateKeyboard(wordData, userAnswers, grid, placedWords);
-
-  // Центрируем только что очищенную ячейку (новая позиция курсора)
-  const clearedCell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
-  if (clearedCell && typeof clearedCell.scrollIntoView === 'function') {
-    clearedCell.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-      inline: 'center',
-    });
-  }
-}
-
-function revalidateWord(wordData, userAnswers, _grid) {
-  const wordAnswer = userAnswers[wordData.word.id];
-  if (!wordAnswer) return;
-
-  const allFilled = wordAnswer.filled.every((l) => l !== '');
-  if (!allFilled) {
-    wordAnswer.correct = false;
-    // Убираем подсветку со всех ячеек этого слова
-    for (let i = 0; i < wordData.word.length; i++) {
-      const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
-      const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
-      const cell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
-      if (cell) {
-        cell.classList.remove('correct', 'correct-hint');
-      }
-    }
-    return;
-  }
-
-  const userWord = wordAnswer.filled.join('');
-  const correctWord = wordData.word.kana;
-
-  if (userWord === correctWord && !wordAnswer.correct) {
-    wordAnswer.correct = true;
-    // Подсвечиваем заново
-    for (let i = 0; i < wordData.word.length; i++) {
-      const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
-      const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
-      const cell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
-      if (cell) {
-        if (wordAnswer.usedHint) {
-          cell.classList.add('correct-hint');
-        } else {
-          cell.classList.add('correct');
-        }
-      }
-    }
-  } else if (userWord !== correctWord) {
-    wordAnswer.correct = false;
-    // Убираем подсветку
-    for (let i = 0; i < wordData.word.length; i++) {
-      const r = wordData.direction === 'across' ? wordData.row : wordData.row + i;
-      const c = wordData.direction === 'across' ? wordData.col + i : wordData.col;
-      const cell = $(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
-      if (cell) {
-        cell.classList.remove('correct', 'correct-hint');
-      }
-    }
-  }
-}
-
 function initCrosswordZoom() {
-  let currentScale = 1.0;
-  const gridEl = $('#crossword-grid');
-  const viewport = $('#crossword-viewport');
-
-  const updateZoom = (delta) => {
-    currentScale = Math.max(0.6, Math.min(2.0, currentScale + delta));
-    if (gridEl) {
-      gridEl.style.transform = `scale(${currentScale})`;
-    }
-  };
-
-  // Центрируем сетку при загрузке
-  if (viewport && gridEl) {
-    setTimeout(() => {
-      const scrollLeft = (viewport.scrollWidth - viewport.clientWidth) / 2;
-      const scrollTop = (viewport.scrollHeight - viewport.clientHeight) / 2;
-      viewport.scrollLeft = scrollLeft;
-      viewport.scrollTop = scrollTop;
-    }, 100);
-  }
-
+  let scale = 1;
+  const canvas = $('.crossword-canvas');
   const zoomInBtn = $('#cw-zoom-in');
   const zoomOutBtn = $('#cw-zoom-out');
-  if (zoomInBtn) zoomInBtn.onclick = () => updateZoom(0.2);
-  if (zoomOutBtn) zoomOutBtn.onclick = () => updateZoom(-0.2);
+
+  if (!canvas || !zoomInBtn || !zoomOutBtn) return;
+
+  function updateZoom() {
+    canvas.style.transform = `scale(${scale})`;
+  }
+
+  zoomInBtn.onclick = () => {
+    scale = Math.min(scale + 0.2, 1.8);
+    updateZoom();
+  };
+
+  zoomOutBtn.onclick = () => {
+    scale = Math.max(scale - 0.2, 0.6);
+    updateZoom();
+  };
 }
 
 // Генератор кроссворда
-function generateCrossword(gridSize, state, lessons = LESSONS) {
-  const allCandidates = getAvailableMiniGameCandidates(state, lessons);
+function generateCrossword(gridSize, state, lessons = LESSONS, mode = 'normal') {
+  const isWeakMode = mode === 'weak';
+  const allCandidates = isWeakMode
+    ? getWeakCrosswordCandidates(state, lessons)
+    : getAvailableMiniGameCandidates(state, lessons);
+
   const validCandidates = allCandidates.filter(
     (c) => c.kana && c.kana.length >= 2 && c.kana.length <= 8
   );
@@ -1135,6 +984,7 @@ function generateCrossword(gridSize, state, lessons = LESSONS) {
     const selectedPool = selectMiniGameWords(validCandidates, {
       gameId: 'crossword',
       count: 15,
+      mode,
       history: state,
     });
 
@@ -1152,7 +1002,8 @@ function generateCrossword(gridSize, state, lessons = LESSONS) {
     recordGameSession(
       state,
       'crossword',
-      bestResult.placedWords.map((pw) => pw.word.id)
+      bestResult.placedWords.map((pw) => pw.word.id),
+      mode
     );
   }
 
@@ -1219,245 +1070,115 @@ function tryGenerateCrosswordWithPool(gridSize, candidatePool) {
     for (const placedWord of placedWords) {
       if (foundIntersection) break;
 
-      for (let k = 0; k < placedWord.word.length; k++) {
+      for (let i = 0; i < placedWord.word.length; i++) {
         if (foundIntersection) break;
-        const placedLetter = placedWord.word.kana[k];
 
-        for (let wordIdx = 0; wordIdx < availableWords.length; wordIdx++) {
-          const word = availableWords[wordIdx];
+        const letter = placedWord.word.kana[i];
+        const row = placedWord.direction === 'across' ? placedWord.row : placedWord.row + i;
+        const col = placedWord.direction === 'across' ? placedWord.col + i : placedWord.col;
 
-          for (let j = 0; j < word.length; j++) {
-            const wordLetter = word.kana[j];
+        // Попробуем разместить непересеченное слово через эту букву
+        for (let j = 0; j < availableWords.length; j++) {
+          const candidate = availableWords[j];
+          const matchIndex = candidate.kana.indexOf(letter);
 
-            if (wordLetter === placedLetter) {
-              const newDirection = placedWord.direction === 'across' ? 'down' : 'across';
-              let newRow, newCol;
+          if (matchIndex !== -1) {
+            const newDirection = placedWord.direction === 'across' ? 'down' : 'across';
+            const newRow = newDirection === 'down' ? row - matchIndex : row;
+            const newCol = newDirection === 'across' ? col - matchIndex : col;
 
-              if (newDirection === 'down') {
-                newRow = placedWord.row - j;
-                newCol = placedWord.col + k;
-              } else {
-                newRow = placedWord.row + k;
-                newCol = placedWord.col - j;
-              }
+            if (canPlaceWord(grid, gridSize, candidate, newRow, newCol, newDirection)) {
+              placeWordOnGrid(grid, candidate, newRow, newCol, newDirection);
 
-              if (canPlaceWord(grid, word, newRow, newCol, newDirection, gridSize)) {
-                // Создаем временную копию для проверки
-                const tempGrid = JSON.parse(JSON.stringify(grid));
-                const tempPlacedWords = [...placedWords];
+              placedWords.push({
+                word: candidate,
+                row: newRow,
+                col: newCol,
+                direction: newDirection,
+                number: wordNumber++,
+              });
 
-                placeWord(tempGrid, word, newRow, newCol, newDirection, wordNumber);
-                tempPlacedWords.push({
-                  word,
-                  row: newRow,
-                  col: newCol,
-                  direction: newDirection,
-                  number: wordNumber,
-                });
-
-                // Постпроверка валидности сетки
-                if (validateGridIntegrity(tempGrid, tempPlacedWords, gridSize)) {
-                  // Все в порядке, применяем изменения к реальной сетке
-                  placeWord(grid, word, newRow, newCol, newDirection, wordNumber);
-                  placedWords.push({
-                    word,
-                    row: newRow,
-                    col: newCol,
-                    direction: newDirection,
-                    number: wordNumber,
-                  });
-                  wordNumber++;
-
-                  availableWords.splice(wordIdx, 1);
-                  foundIntersection = true;
-                  break;
-                }
-                // Если валидация не прошла, продолжаем поиск другого места
-              }
+              availableWords.splice(j, 1);
+              foundIntersection = true;
+              break;
             }
           }
-
-          if (foundIntersection) break;
         }
       }
     }
 
-    if (!foundIntersection) break;
-  }
-
-  // Перенумерация
-  for (let r = 0; r < gridSize; r++) {
-    for (let c = 0; c < gridSize; c++) {
-      if (grid[r][c]) {
-        grid[r][c].number = null;
-      }
+    if (!foundIntersection) {
+      break;
     }
   }
 
-  let currentNumber = 1;
+  // Сбор клик-структуры clue list
+  const clues = { across: [], down: [] };
+  placedWords.forEach((pw) => {
+    const list = pw.direction === 'across' ? clues.across : clues.down;
+    list.push({
+      number: pw.number,
+      clue: pw.word.translation,
+      wordId: pw.word.id,
+    });
+  });
 
-  for (let r = 0; r < gridSize; r++) {
-    for (let c = 0; c < gridSize; c++) {
-      const cell = grid[r][c];
-      if (!cell || cell.letter === null) continue;
+  clues.across.sort((a, b) => a.number - b.number);
+  clues.down.sort((a, b) => a.number - b.number);
 
-      const startingWords = placedWords.filter((pw) => pw.row === r && pw.col === c);
-
-      if (startingWords.length > 0) {
-        cell.number = currentNumber;
-        startingWords.forEach((pw) => {
-          pw.number = currentNumber;
-        });
-        currentNumber++;
-      }
-    }
-  }
-
-  const clues = {
-    across: placedWords
-      .filter((p) => p.direction === 'across')
-      .map((p) => ({
-        number: p.number,
-        clue: `${p.word.kanji} — ${p.word.translation}`,
-      })),
-    down: placedWords
-      .filter((p) => p.direction === 'down')
-      .map((p) => ({
-        number: p.number,
-        clue: `${p.word.kanji} — ${p.word.translation}`,
-      })),
+  return {
+    grid,
+    placedWords,
+    clues,
+    gridSize,
   };
-
-  return { grid, placedWords, clues, gridSize };
 }
 
-function canPlaceWord(grid, word, row, col, direction, gridSize) {
-  // Строгая валидация: используем реальную длину kana
-  if (!word.kana || word.kana.length === 0) {
-    return false;
-  }
-
-  const actualLength = word.kana.length;
-
-  // Проверка границ сетки с реальной длиной
+function canPlaceWord(grid, gridSize, word, row, col, direction) {
   if (direction === 'across') {
-    if (col < 0 || col + actualLength > gridSize || row < 0 || row >= gridSize) return false;
+    if (col < 0 || col + word.length > gridSize || row < 0 || row >= gridSize) return false;
   } else {
-    if (row < 0 || row + actualLength > gridSize || col < 0 || col >= gridSize) return false;
+    if (row < 0 || row + word.length > gridSize || col < 0 || col >= gridSize) return false;
   }
 
-  // Проверка пустоты перед началом и после конца слова
-  if (direction === 'across') {
-    if (col > 0 && grid[row][col - 1].letter !== null) return false;
-    if (col + actualLength < gridSize && grid[row][col + actualLength].letter !== null)
-      return false;
-  } else {
-    if (row > 0 && grid[row - 1][col].letter !== null) return false;
-    if (row + actualLength < gridSize && grid[row + actualLength][col].letter !== null)
-      return false;
-  }
-
-  let intersectionCount = 0;
-
-  for (let i = 0; i < actualLength; i++) {
+  for (let i = 0; i < word.length; i++) {
     const r = direction === 'across' ? row : row + i;
     const c = direction === 'across' ? col + i : col;
-    const cell = grid[r][c];
-    const wordLetter = word.kana[i];
+    const currentLetter = grid[r][c].letter;
 
-    if (cell.letter !== null) {
-      // Ячейка занята — проверяем совпадение буквы
-      if (cell.letter !== wordLetter) {
-        return false;
-      }
-      intersectionCount++;
-    } else {
-      // Ячейка пустая — проверяем соседние ячейки
-      // (но разрешаем пересечения перпендикулярных слов)
+    if (currentLetter !== null && currentLetter !== word.kana[i]) {
+      return false;
+    }
+
+    // Соседние ячейки (чтобы слова не шли параллельно вплотную)
+    if (currentLetter === null) {
       if (direction === 'across') {
-        // Проверяем верх и низ
-        if (r > 0 && grid[r - 1][c].letter !== null) {
-          return false;
-        }
-        if (r < gridSize - 1 && grid[r + 1][c].letter !== null) {
-          return false;
-        }
+        if (r > 0 && grid[r - 1][c].letter !== null) return false;
+        if (r < gridSize - 1 && grid[r + 1][c].letter !== null) return false;
       } else {
-        // Проверяем лево и право
-        if (c > 0 && grid[r][c - 1].letter !== null) {
-          return false;
-        }
-        if (c < gridSize - 1 && grid[r][c + 1].letter !== null) {
-          return false;
-        }
+        if (c > 0 && grid[r][c - 1].letter !== null) return false;
+        if (c < gridSize - 1 && grid[r][c + 1].letter !== null) return false;
       }
     }
   }
 
-  // Требование: минимум одно пересечение (кроме первого слова)
-  // Это условие проверяется на уровне алгоритма размещения
-  return intersectionCount >= 1;
+  // Ячейки прямо до и после слова
+  if (direction === 'across') {
+    if (col > 0 && grid[row][col - 1].letter !== null) return false;
+    if (col + word.length < gridSize && grid[row][col + word.length].letter !== null) return false;
+  } else {
+    if (row > 0 && grid[row - 1][col].letter !== null) return false;
+    if (row + word.length < gridSize && grid[row + word.length][col].letter !== null) return false;
+  }
+
+  return true;
 }
 
-function placeWord(grid, word, row, col, direction, number) {
-  const actualLength = word.kana.length;
-
-  for (let i = 0; i < actualLength; i++) {
+function placeWordOnGrid(grid, word, row, col, direction) {
+  for (let i = 0; i < word.length; i++) {
     const r = direction === 'across' ? row : row + i;
     const c = direction === 'across' ? col + i : col;
     grid[r][c].letter = word.kana[i];
     grid[r][c].wordIds.push(word.id);
-    if (i === 0) grid[r][c].number = number;
   }
-}
-
-/**
- * Валидация целостности сетки после размещения слова
- * Проверяет, что все размещенные слова соответствуют своим координатам и длинам
- */
-function validateGridIntegrity(grid, placedWords, gridSize) {
-  for (const pw of placedWords) {
-    const { word, row, col, direction } = pw;
-    const actualLength = word.kana.length;
-
-    // Проверка границ
-    if (direction === 'across') {
-      if (col < 0 || col + actualLength > gridSize || row < 0 || row >= gridSize) {
-        return false;
-      }
-    } else {
-      if (row < 0 || row + actualLength > gridSize || col < 0 || col >= gridSize) {
-        return false;
-      }
-    }
-
-    // Проверка соответствия букв
-    for (let i = 0; i < actualLength; i++) {
-      const r = direction === 'across' ? row : row + i;
-      const c = direction === 'across' ? col + i : col;
-      const cell = grid[r][c];
-
-      if (!cell || cell.letter !== word.kana[i]) {
-        return false;
-      }
-
-      // Проверка, что wordId присутствует в ячейке
-      if (!cell.wordIds.includes(word.id)) {
-        return false;
-      }
-    }
-
-    // Проверка, что в ячейке не более 2 слов (одно горизонтальное, одно вертикальное)
-    for (let i = 0; i < actualLength; i++) {
-      const r = direction === 'across' ? row : row + i;
-      const c = direction === 'across' ? col + i : col;
-      const cell = grid[r][c];
-
-      if (cell.wordIds.length > 2) {
-        return false;
-      }
-    }
-  }
-
-  return true;
 }

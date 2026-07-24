@@ -3,6 +3,7 @@
 import { isPriorKnowledge, isChapterCompleted } from './chapter-progress.js';
 import { isValidWordForSearch } from './word-search-generator.js';
 import { parseCardIdentity } from './knowledge-model.js';
+import { getWeakMiniGameCandidates } from './minigame-weakness.js';
 
 /**
  * Calculates the number of unique chapters available to minigames.
@@ -174,4 +175,28 @@ export function getAvailableMiniGameCandidates(state, lessons = []) {
 export function getAvailableWordSearchCandidates(state, lessons = []) {
   const candidates = getAvailableMiniGameCandidates(state, lessons);
   return candidates.filter(isValidWordForSearch);
+}
+
+/**
+ * Retrieves candidate words filtered for Weak Words mode in Word Search.
+ *
+ * @param {Object} state - App state
+ * @param {Array} lessons - Array of lesson objects
+ * @returns {Array} Weak candidate words for Word Search
+ */
+export function getWeakWordSearchCandidates(state, lessons = []) {
+  const candidates = getAvailableWordSearchCandidates(state, lessons);
+  return getWeakMiniGameCandidates(candidates, state, { gameId: 'wordSearch' });
+}
+
+/**
+ * Retrieves candidate words filtered for Weak Words mode in Crossword.
+ *
+ * @param {Object} state - App state
+ * @param {Array} lessons - Array of lesson objects
+ * @returns {Array} Weak candidate words for Crossword
+ */
+export function getWeakCrosswordCandidates(state, lessons = []) {
+  const candidates = getAvailableMiniGameCandidates(state, lessons);
+  return getWeakMiniGameCandidates(candidates, state, { gameId: 'crossword' });
 }
