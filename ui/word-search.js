@@ -1,12 +1,25 @@
 /* ui/word-search.js — Word Search mini-game UI module */
 
 import { $ } from '../src/utils.js';
-import { generateWordSearchGrid } from '../src/word-search-generator.js';
+import { WORD_SEARCH_DIFFICULTIES, generateWordSearchGrid } from '../src/word-search-generator.js';
 import { getAvailableWordSearchCandidates } from '../src/word-search-selectors.js';
 import { speakJapanese } from '../src/audio-helper.js';
 import { LESSONS } from './home.js';
 
 let activeCleanup = null;
+
+export const PALETTE = Object.freeze([
+  { id: 0, bg: '#c8e6c9', ink: '#1b5e20', border: '#4caf50', softBg: 'rgba(76, 175, 80, 0.15)' },
+  { id: 1, bg: '#bbdefb', ink: '#0d47a1', border: '#2196f3', softBg: 'rgba(33, 150, 243, 0.15)' },
+  { id: 2, bg: '#ffe0b2', ink: '#e65100', border: '#ff9800', softBg: 'rgba(255, 152, 0, 0.15)' },
+  { id: 3, bg: '#e1bee7', ink: '#4a148c', border: '#9c27b0', softBg: 'rgba(156, 39, 176, 0.15)' },
+  { id: 4, bg: '#f8bbd0', ink: '#880e4f', border: '#e91e63', softBg: 'rgba(233, 30, 99, 0.15)' },
+  { id: 5, bg: '#b2dfdb', ink: '#004d40', border: '#009688', softBg: 'rgba(0, 150, 136, 0.15)' },
+  { id: 6, bg: '#fff9c4', ink: '#f57f17', border: '#fbc02d', softBg: 'rgba(251, 192, 45, 0.18)' },
+  { id: 7, bg: '#c5cae9', ink: '#1a237e', border: '#3f51b5', softBg: 'rgba(63, 81, 181, 0.15)' },
+  { id: 8, bg: '#ffccbc', ink: '#bf360c', border: '#ff5722', softBg: 'rgba(255, 87, 34, 0.15)' },
+  { id: 9, bg: '#dbedc6', ink: '#33691e', border: '#8bc34a', softBg: 'rgba(139, 195, 74, 0.15)' },
+]);
 
 function escapeHtml(str) {
   if (typeof str !== 'string') return '';
@@ -41,13 +54,77 @@ export function cleanupWordSearch() {
   }
 }
 
+/**
+ * Main entry point for Word Search route.
+ * Shows Difficulty Selection screen on initial enter.
+ */
 export function renderWordSearch(state, dependencies = {}) {
-  // Always clean up handlers from previous render
+  cleanupWordSearch();
+  renderDifficultySelectionScreen(state, dependencies);
+}
+
+/**
+ * Renders the Difficulty Selection screen.
+ */
+export function renderDifficultySelectionScreen(state, dependencies = {}) {
   cleanupWordSearch();
 
   const body = $('#word-search-body');
   if (!body) return;
 
+  const difficulties = [
+    WORD_SEARCH_DIFFICULTIES.easy,
+    WORD_SEARCH_DIFFICULTIES.medium,
+    WORD_SEARCH_DIFFICULTIES.hard,
+  ];
+
+  body.innerHTML = `
+    <div class="ws-difficulty-container" data-testid="ws-difficulty-screen">
+      <div class="ws-difficulty-header">
+        <h2>Выберите сложность</h2>
+        <p>Найдите японские слова в сетке по их русскому переводу</p>
+      </div>
+
+      <div class="ws-difficulty-cards">
+        ${difficulties
+          .map(
+            (d) => `
+          <div class="ws-difficulty-card ${d.recommended ? 'recommended' : ''}" data-difficulty-id="${d.id}" data-testid="ws-diff-card-${d.id}">
+            ${d.recommended ? '<span class="ws-badge-recommended">★ Рекомендуется</span>' : ''}
+            <div class="ws-diff-icon">${d.icon}</div>
+            <div class="ws-diff-info">
+              <h3>${escapeHtml(d.label)}</h3>
+              <div class="ws-diff-meta">Сетка ${d.gridSize}×${d.gridSize} • ${d.targetCount} слов</div>
+              <p>${escapeHtml(d.description)}</p>
+            </div>
+            <button class="ws-btn ws-btn-primary ws-diff-select-btn">Начать игра</button>
+          </div>
+        `
+          )
+          .join('')}
+      </div>
+    </div>
+  `;
+
+  const cards = body.querySelectorAll('.ws-difficulty-card');
+  cards.forEach((card) => {
+    card.onclick = () => {
+      const diffId = card.dataset.difficultyId;
+      startWordSearchGame(state, dependencies, diffId);
+    };
+  });
+}
+
+/**
+ * Starts a Word Search game batch with specified difficulty.
+ */
+export function startWordSearchGame(state, dependencies = {}, difficultyId = 'medium') {
+  cleanupWordSearch();
+
+  const body = $('#word-search-body');
+  if (!body) return;
+
+  const diffConfig = WORD_SEARCH_DIFFICULTIES[difficultyId] || WORD_SEARCH_DIFFICULTIES.medium;
   const lessons = dependencies.lessons || LESSONS || [];
   const nav = dependencies.nav || window.nav || (() => {});
   const toast = dependencies.toast || window.toast || (() => {});
@@ -56,23 +133,34 @@ export function renderWordSearch(state, dependencies = {}) {
   // 1. Retrieve available candidates
   const candidates = getAvailableWordSearchCandidates(state, lessons);
 
-  // 2. Generate word search grid
+  // 2. Generate word search grid for exact difficulty
   const gameData = generateWordSearchGrid(candidates, {
-    baseSize: 9,
-    maxSize: 10,
-    targetCount: 6,
-    minCount: 4,
+    gridSize: diffConfig.gridSize,
+    targetCount: diffConfig.targetCount,
+    minCount: diffConfig.minCount,
   });
 
-  // Check if grid generation succeeded with at least 4 words
-  if (!gameData.success || !gameData.placedWords || gameData.placedWords.length < 4) {
+  // Check if grid generation succeeded
+  if (
+    !gameData.success ||
+    !gameData.placedWords ||
+    gameData.placedWords.length < diffConfig.minCount
+  ) {
     body.innerHTML = `
       <div class="empty-state" data-testid="word-search-empty">
         <span style="font-size:60px">🔍</span>
-        <h3>Недостаточно доступных слов</h3>
-        <p>Начните больше глав или добавьте слова в SRS</p>
+        <h3>Недостаточно подходящих слов</h3>
+        <p>Для сложности «${escapeHtml(diffConfig.label)}» требуется больше слов. Начните больше глав или добавьте слова в SRS.</p>
+        <button class="ws-btn ws-btn-secondary" id="ws-change-diff-empty-btn" style="margin-top:16px;">
+          ⚙️ Сменить сложность
+        </button>
       </div>
     `;
+
+    const changeDiffBtn = $('#ws-change-diff-empty-btn');
+    if (changeDiffBtn) {
+      changeDiffBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies);
+    }
     return;
   }
 
@@ -80,6 +168,8 @@ export function renderWordSearch(state, dependencies = {}) {
 
   // Local Game State
   const gameState = {
+    difficultyId,
+    diffConfig,
     grid,
     placedWords,
     gridSize,
@@ -97,14 +187,18 @@ export function renderWordSearch(state, dependencies = {}) {
     hintTimeout: null,
   };
 
-  // Build UI Markup
+  // Build Game UI Markup
   body.innerHTML = `
-    <div class="ws-container" data-testid="word-search-game">
-      <!-- Top Info Bar -->
+    <div class="ws-container" data-difficulty="${escapeHtml(difficultyId)}" data-testid="word-search-game">
+      <!-- Header Info Bar -->
       <div class="ws-info-bar">
-        <div class="ws-counter" data-testid="ws-counter">
-          Найдено: <span id="ws-found-count">0</span> / ${placedWords.length}
+        <div class="ws-info-left">
+          <span class="ws-diff-badge" data-testid="ws-diff-badge">${diffConfig.icon} ${escapeHtml(diffConfig.label)} (${gridSize}×${gridSize})</span>
+          <div class="ws-counter" data-testid="ws-counter">
+            Найдено: <span id="ws-found-count">0</span> / ${placedWords.length}
+          </div>
         </div>
+
         <div class="ws-controls">
           <button class="ws-btn ws-btn-hint" id="ws-hint-btn" data-testid="ws-hint-btn">
             💡 Подсказка (<span id="ws-hints-left">${gameState.maxHints}</span>)
@@ -112,19 +206,25 @@ export function renderWordSearch(state, dependencies = {}) {
           <button class="ws-btn ws-btn-secondary" id="ws-new-game-btn" data-testid="ws-new-game-btn">
             🔄 Новая игра
           </button>
+          <button class="ws-btn ws-btn-secondary" id="ws-change-diff-btn" data-testid="ws-change-diff-btn">
+            ⚙️ Сменить сложность
+          </button>
         </div>
       </div>
 
-      <!-- Translations List (Top) -->
+      <!-- Translations List (Top, 2-Column Grid with Pre-reserved Space) -->
       <div class="ws-translations-section">
         <div class="ws-translations-label">Ищите слова:</div>
         <div class="ws-translations-list" id="ws-translations-list" data-testid="ws-translations-list">
           ${placedWords
             .map(
               (w) => `
-            <div class="ws-translation-item" data-word-id="${escapeHtml(w.id)}" data-testid="ws-translation-${escapeHtml(w.id)}">
-              <span class="ws-translation-text">${escapeHtml(w.translation)}</span>
-              <span class="ws-translation-kana hidden">${escapeHtml(w.kana)}</span>
+            <div class="ws-translation-item" data-word-id="${escapeHtml(w.id)}" data-color-index="${w.colorIndex}" data-testid="ws-translation-${escapeHtml(w.id)}">
+              <div class="ws-translation-header">
+                <span class="ws-status-icon">✓</span>
+                <span class="ws-translation-text">${escapeHtml(w.translation)}</span>
+              </div>
+              <div class="ws-translation-kana">${escapeHtml(w.kana)}</div>
             </div>
           `
             )
@@ -151,19 +251,21 @@ export function renderWordSearch(state, dependencies = {}) {
         </div>
       </div>
 
-      <!-- Completion Modal / Screen (Hidden by default) -->
+      <!-- Completion Modal -->
       <div class="ws-modal-overlay hidden" id="ws-modal" data-testid="ws-modal">
         <div class="ws-modal-card">
           <span class="ws-modal-icon">🎉</span>
           <h2>Партия завершена!</h2>
           <div class="ws-modal-stats">
+            <div class="ws-stat-row"><span>Сложность:</span> <strong>${escapeHtml(diffConfig.label)}</strong></div>
             <div class="ws-stat-row"><span>Найдено слов:</span> <strong>${placedWords.length} / ${placedWords.length}</strong></div>
             <div class="ws-stat-row"><span>Время:</span> <strong id="ws-completion-time">00:00</strong></div>
-            <div class="ws-stat-row"><span>Ошибочных попыток:</span> <strong id="ws-wrong-attempts">0</strong></div>
-            <div class="ws-stat-row"><span>Использовано подсказок:</span> <strong id="ws-hints-used">0</strong></div>
+            <div class="ws-stat-row"><span>Ошибок:</span> <strong id="ws-wrong-attempts">0</strong></div>
+            <div class="ws-stat-row"><span>Подсказок:</span> <strong id="ws-hints-used">0</strong></div>
           </div>
           <div class="ws-modal-actions">
             <button class="ws-btn ws-btn-primary" id="ws-restart-btn">Сыграть ещё</button>
+            <button class="ws-btn ws-btn-secondary" id="ws-modal-change-diff-btn">Сменить сложность</button>
             <button class="ws-btn ws-btn-secondary" id="ws-exit-btn">В инструменты</button>
           </div>
         </div>
@@ -176,21 +278,22 @@ export function renderWordSearch(state, dependencies = {}) {
   const hintsLeftEl = $('#ws-hints-left');
   const hintBtn = $('#ws-hint-btn');
   const newGameBtn = $('#ws-new-game-btn');
+  const changeDiffBtn = $('#ws-change-diff-btn');
   const modalEl = $('#ws-modal');
 
-  // Cell helper
+  // Cell DOM helper
   function getCellEl(r, c) {
     return gridEl.querySelector(`.ws-cell[data-row="${r}"][data-col="${c}"]`);
   }
 
-  // Clear active path highlights
+  // Clear active selection path highlight
   function clearActiveSelection() {
     gridEl.querySelectorAll('.ws-cell-active').forEach((el) => {
       el.classList.remove('ws-cell-active');
     });
   }
 
-  // Update DOM selection based on current activePath
+  // Render active selection path
   function renderActivePath(path) {
     clearActiveSelection();
     path.forEach(({ row, col }) => {
@@ -199,7 +302,33 @@ export function renderWordSearch(state, dependencies = {}) {
     });
   }
 
-  // Validate and compute path vector along the 4 allowed directions
+  // Re-apply cell styles considering multi-color intersections
+  function updateCellFoundVisual(r, c) {
+    const cellObj = grid[r][c];
+    const cellEl = getCellEl(r, c);
+    if (!cellEl || !cellObj || cellObj.foundColorIndexes.size === 0) return;
+
+    cellEl.classList.remove('ws-cell-active');
+    cellEl.classList.add('ws-cell-found');
+
+    const colorIndexes = Array.from(cellObj.foundColorIndexes);
+
+    if (colorIndexes.length === 1) {
+      const paletteItem = PALETTE[colorIndexes[0] % PALETTE.length];
+      cellEl.style.backgroundColor = paletteItem.bg;
+      cellEl.style.color = paletteItem.ink;
+      cellEl.style.backgroundImage = 'none';
+    } else {
+      // Linear gradient combining 2 (or more) word colors for intersections
+      const color1 = PALETTE[colorIndexes[0] % PALETTE.length].bg;
+      const color2 = PALETTE[colorIndexes[1] % PALETTE.length].bg;
+      cellEl.style.backgroundImage = `linear-gradient(135deg, ${color1} 50%, ${color2} 50%)`;
+      cellEl.style.backgroundColor = color1;
+      cellEl.style.color = '#111';
+    }
+  }
+
+  // Compute valid straight line path along 4 directions
   function computeStraightPath(startRow, startCol, targetRow, targetCol) {
     const dRow = targetRow - startRow;
     const dCol = targetCol - startCol;
@@ -222,7 +351,7 @@ export function renderWordSearch(state, dependencies = {}) {
       return path;
     }
 
-    // 3. Diagonal Down-Right (dx=1, dy=1)
+    // 3. Diagonal Down-Right
     if (dRow > 0 && dRow === dCol) {
       const path = [];
       for (let i = 0; i <= dRow; i++) {
@@ -231,7 +360,7 @@ export function renderWordSearch(state, dependencies = {}) {
       return path;
     }
 
-    // 4. Diagonal Down-Left (dx=-1, dy=1)
+    // 4. Diagonal Down-Left
     if (dRow > 0 && dRow === -dCol) {
       const path = [];
       for (let i = 0; i <= dRow; i++) {
@@ -240,53 +369,42 @@ export function renderWordSearch(state, dependencies = {}) {
       return path;
     }
 
-    // If pointer is moving in non-straight direction, project to nearest cell along direction rays
-    // Find closest ray among the 4 valid directions:
-    // Ray 0: dx=1, dy=0
-    // Ray 1: dx=0, dy=1
-    // Ray 2: dx=1, dy=1
-    // Ray 3: dx=-1, dy=1
     if (dRow < 0 && dCol < 0) return [{ row: startRow, col: startCol }];
 
-    const candidates = [];
-
-    // Check Horizontal projection
+    const candidatesList = [];
     if (dCol > 0) {
-      candidates.push({ row: startRow, col: targetCol, distance: Math.abs(dRow) });
+      candidatesList.push({ row: startRow, col: targetCol, distance: Math.abs(dRow) });
     }
-    // Check Vertical projection
     if (dRow > 0) {
-      candidates.push({ row: targetRow, col: startCol, distance: Math.abs(dCol) });
+      candidatesList.push({ row: targetRow, col: startCol, distance: Math.abs(dCol) });
     }
-    // Check Diag Down-Right projection
     if (dRow > 0 && dCol > 0) {
       const steps = Math.min(dRow, dCol);
-      candidates.push({
+      candidatesList.push({
         row: startRow + steps,
         col: startCol + steps,
         distance: Math.abs(dRow - dCol),
       });
     }
-    // Check Diag Down-Left projection
     if (dRow > 0 && dCol < 0) {
       const steps = Math.min(dRow, Math.abs(dCol));
-      candidates.push({
+      candidatesList.push({
         row: startRow + steps,
         col: startCol - steps,
         distance: Math.abs(dRow - Math.abs(dCol)),
       });
     }
 
-    if (candidates.length > 0) {
-      candidates.sort((a, b) => a.distance - b.distance);
-      const best = candidates[0];
+    if (candidatesList.length > 0) {
+      candidatesList.sort((a, b) => a.distance - b.distance);
+      const best = candidatesList[0];
       return computeStraightPath(startRow, startCol, best.row, best.col);
     }
 
     return [{ row: startRow, col: startCol }];
   }
 
-  // Pointer Event Handlers
+  // Pointer Handlers
   function onPointerDown(e) {
     if (gameState.completed) return;
     const targetCell = e.target.closest('.ws-cell');
@@ -303,7 +421,7 @@ export function renderWordSearch(state, dependencies = {}) {
     try {
       gridEl.setPointerCapture(e.pointerId);
     } catch {
-      // Ignore capture errors on unsupported synthetic test environments
+      // Ignore capture errors on unsupported test environments
     }
 
     renderActivePath(gameState.activePath);
@@ -337,13 +455,12 @@ export function renderWordSearch(state, dependencies = {}) {
     const currentPath = [...gameState.activePath];
     const selectedKana = currentPath.map(({ row, col }) => grid[row][col].char).join('');
 
-    // Check if path matches any un-found placed word
+    // Find matching un-found placed word
     const matchedWord = placedWords.find((pw) => {
       if (gameState.foundWordIds.has(pw.id)) return false;
       if (pw.kana !== selectedKana) return false;
       if (pw.cells.length !== currentPath.length) return false;
 
-      // Verify cell coordinates sequence match
       return pw.cells.every(
         (cell, idx) => cell.row === currentPath[idx].row && cell.col === currentPath[idx].col
       );
@@ -352,37 +469,36 @@ export function renderWordSearch(state, dependencies = {}) {
     if (matchedWord) {
       // Correct answer!
       gameState.foundWordIds.add(matchedWord.id);
+      const colorItem = PALETTE[matchedWord.colorIndex % PALETTE.length];
 
-      // Permanently mark cells
+      // Mark cells and update multi-color sets
       matchedWord.cells.forEach(({ row, col }) => {
-        const cellEl = getCellEl(row, col);
-        if (cellEl) {
-          cellEl.classList.remove('ws-cell-active');
-          cellEl.classList.add('ws-cell-found');
-        }
+        grid[row][col].foundColorIndexes.add(matchedWord.colorIndex);
+        updateCellFoundVisual(row, col);
       });
 
-      // Strike through translation item
+      // Update translation card with matching word color & status checkmark
       const transItem = body.querySelector(
         `.ws-translation-item[data-word-id="${matchedWord.id}"]`
       );
       if (transItem) {
         transItem.classList.add('ws-found');
-        const kanaText = transItem.querySelector('.ws-translation-kana');
-        if (kanaText) kanaText.classList.remove('hidden');
+        transItem.style.borderColor = colorItem.border;
+        transItem.style.backgroundColor = colorItem.softBg;
+        transItem.style.color = colorItem.ink;
       }
 
-      // Play voice audio
+      // Voice audio
       speakJapanese(matchedWord.kana);
 
-      // Update counter
+      // Counter
       if (foundCountEl) {
         foundCountEl.textContent = String(gameState.foundWordIds.size);
       }
 
       toast(`✨ Найдено: ${matchedWord.translation}`);
 
-      // Check if all words found
+      // Check completion
       if (gameState.foundWordIds.size === placedWords.length) {
         completeGame();
       }
@@ -391,7 +507,7 @@ export function renderWordSearch(state, dependencies = {}) {
       gameState.wrongAttempts++;
       currentPath.forEach(({ row, col }) => {
         const cellEl = getCellEl(row, col);
-        if (cellEl) {
+        if (cellEl && !grid[row][col].foundColorIndexes.size) {
           cellEl.classList.add('ws-cell-wrong');
         }
       });
@@ -417,7 +533,7 @@ export function renderWordSearch(state, dependencies = {}) {
       try {
         gridEl.releasePointerCapture(gameState.pointerId);
       } catch {
-        // Ignore release capture errors
+        // Ignore capture release errors
       }
     }
     clearActiveSelection();
@@ -432,7 +548,7 @@ export function renderWordSearch(state, dependencies = {}) {
   gridEl.addEventListener('pointerup', onPointerUp);
   gridEl.addEventListener('pointercancel', onPointerCancel);
 
-  // Click on translation to listen to audio
+  // Click translation item to listen to voice
   const translationItems = body.querySelectorAll('.ws-translation-item');
   translationItems.forEach((item) => {
     item.onclick = () => {
@@ -444,7 +560,7 @@ export function renderWordSearch(state, dependencies = {}) {
     };
   });
 
-  // Hint Button handler
+  // Hint button
   hintBtn.onclick = () => {
     if (gameState.completed) return;
     if (gameState.hintsUsed >= gameState.maxHints) {
@@ -452,7 +568,6 @@ export function renderWordSearch(state, dependencies = {}) {
       return;
     }
 
-    // Pick a random un-found word
     const unfoundWords = placedWords.filter((w) => !gameState.foundWordIds.has(w.id));
     if (unfoundWords.length === 0) return;
 
@@ -463,7 +578,7 @@ export function renderWordSearch(state, dependencies = {}) {
       hintsLeftEl.textContent = String(gameState.maxHints - gameState.hintsUsed);
     }
 
-    // Highlight starting cell for 1.5 seconds
+    // Highlight starting cell for 1.5s
     const firstCellEl = getCellEl(pickedWord.startRow, pickedWord.startCol);
     if (firstCellEl) {
       firstCellEl.classList.add('ws-cell-hint');
@@ -474,15 +589,15 @@ export function renderWordSearch(state, dependencies = {}) {
     }
   };
 
-  // Restart / New Game buttons
-  newGameBtn.onclick = () => renderWordSearch(state, dependencies);
+  // Header controls
+  newGameBtn.onclick = () => startWordSearchGame(state, dependencies, difficultyId);
+  changeDiffBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies);
 
-  // Complete game
+  // Completion
   function completeGame() {
     gameState.completed = true;
     const durationSec = Math.floor((Date.now() - gameState.startedAt) / 1000);
 
-    // Award +10 XP once per batch without altering FSRS
     if (!gameState.xpAwarded) {
       gameState.xpAwarded = true;
       if (typeof state.xp === 'number') {
@@ -493,7 +608,6 @@ export function renderWordSearch(state, dependencies = {}) {
       save();
     }
 
-    // Show completion modal
     if (modalEl) {
       const timeEl = modalEl.querySelector('#ws-completion-time');
       const wrongEl = modalEl.querySelector('#ws-wrong-attempts');
@@ -506,10 +620,14 @@ export function renderWordSearch(state, dependencies = {}) {
       modalEl.classList.remove('hidden');
 
       const restartBtn = modalEl.querySelector('#ws-restart-btn');
+      const modalChangeDiffBtn = modalEl.querySelector('#ws-modal-change-diff-btn');
       const exitBtn = modalEl.querySelector('#ws-exit-btn');
 
       if (restartBtn) {
-        restartBtn.onclick = () => renderWordSearch(state, dependencies);
+        restartBtn.onclick = () => startWordSearchGame(state, dependencies, difficultyId);
+      }
+      if (modalChangeDiffBtn) {
+        modalChangeDiffBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies);
       }
       if (exitBtn) {
         exitBtn.onclick = () => nav('sensei');
@@ -517,7 +635,7 @@ export function renderWordSearch(state, dependencies = {}) {
     }
   }
 
-  // Cleanup handler for route switching
+  // Cleanup handler
   activeCleanup = () => {
     gridEl.removeEventListener('pointerdown', onPointerDown);
     gridEl.removeEventListener('pointermove', onPointerMove);

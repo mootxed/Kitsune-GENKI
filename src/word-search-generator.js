@@ -1,5 +1,36 @@
 /* src/word-search-generator.js — Pure generator module for Word Search game */
 
+export const WORD_SEARCH_DIFFICULTIES = Object.freeze({
+  easy: {
+    id: 'easy',
+    label: 'Лёгкая',
+    gridSize: 7,
+    targetCount: 4,
+    minCount: 4,
+    description: 'Небольшая сетка для быстрой разминки',
+    icon: '🌱',
+  },
+  medium: {
+    id: 'medium',
+    label: 'Средняя',
+    gridSize: 9,
+    targetCount: 6,
+    minCount: 4,
+    description: 'Сбалансированная обычная партия',
+    recommended: true,
+    icon: '⚡',
+  },
+  hard: {
+    id: 'hard',
+    label: 'Сложная',
+    gridSize: 11,
+    targetCount: 9,
+    minCount: 6,
+    description: 'Большая сетка и больше скрытых слов',
+    icon: '🔥',
+  },
+});
+
 export const DIRECTIONS = Object.freeze([
   { name: 'horizontal', dx: 1, dy: 0 },
   { name: 'vertical', dx: 0, dy: 1 },
@@ -123,14 +154,12 @@ export function deduplicateCandidates(candidates) {
  * Attempts to generate a word search grid.
  */
 export function generateWordSearchGrid(candidateWords, options = {}) {
-  const {
-    baseSize = 9,
-    maxSize = 10,
-    targetCount = 6,
-    minCount = 4,
-    randomFn = Math.random,
-    maxRetries = 20,
-  } = options;
+  const baseSize = options.gridSize || options.baseSize || 9;
+  const maxSize = options.gridSize || options.maxSize || baseSize;
+  const targetCount = options.targetCount || 6;
+  const minCount = options.minCount || 4;
+  const randomFn = options.randomFn || Math.random;
+  const maxRetries = options.maxRetries || 25;
 
   // 1. Filter valid candidates
   const validCandidates = (candidateWords || []).filter(isValidWordForSearch);
@@ -148,9 +177,12 @@ export function generateWordSearchGrid(candidateWords, options = {}) {
     };
   }
 
-  // Pick target words (up to targetCount)
-  const pool = [...uniqueCandidates];
-  const selectedWords = pool.slice(0, targetCount);
+  // 3. Shuffle top candidate pool to ensure variety across games while prioritizing weak words
+  const topPoolSize = Math.min(uniqueCandidates.length, targetCount + 4);
+  const topPool = uniqueCandidates.slice(0, topPoolSize);
+  topPool.sort(() => randomFn() - 0.5);
+
+  const selectedWords = topPool.slice(0, Math.min(topPool.length, targetCount));
 
   // Determine script mix for filler characters
   const scriptMix = determineScriptMix(selectedWords);
@@ -158,8 +190,8 @@ export function generateWordSearchGrid(candidateWords, options = {}) {
   // Sort selected words from longest to shortest
   const sortedWords = [...selectedWords].sort((a, b) => b.kana.length - a.kana.length);
 
-  // Try placing words in grid, increasing grid size if needed
-  const sizesToTry = [baseSize, maxSize];
+  // Try placing words in grid
+  const sizesToTry = baseSize === maxSize ? [baseSize] : [baseSize, maxSize];
 
   for (const gridSize of sizesToTry) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -172,6 +204,7 @@ export function generateWordSearchGrid(candidateWords, options = {}) {
             .map((_, c) => ({
               char: null,
               wordIds: [],
+              foundColorIndexes: new Set(),
               row: r,
               col: c,
             }))
@@ -179,7 +212,8 @@ export function generateWordSearchGrid(candidateWords, options = {}) {
 
       const placedWords = [];
 
-      for (const word of sortedWords) {
+      for (let wordIdx = 0; wordIdx < sortedWords.length; wordIdx++) {
+        const word = sortedWords[wordIdx];
         const kana = word.kana;
         const len = kana.length;
 
@@ -224,7 +258,9 @@ export function generateWordSearchGrid(candidateWords, options = {}) {
           }
 
           if (canPlace) {
+            const colorIndex = placedWords.length % 10;
             const cells = [];
+
             for (let i = 0; i < len; i++) {
               const r = startRow + dir.dy * i;
               const c = startCol + dir.dx * i;
@@ -239,6 +275,7 @@ export function generateWordSearchGrid(candidateWords, options = {}) {
               kana: word.kana,
               kanji: word.kanji || word.kana,
               translation: word.translation,
+              colorIndex,
               originalWord: word,
               startRow,
               startCol,

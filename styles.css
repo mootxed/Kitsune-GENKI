@@ -10969,6 +10969,114 @@ mark.ex-highlight {
   box-sizing: border-box;
 }
 
+/* Difficulty Selection Screen */
+.ws-difficulty-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.ws-difficulty-header {
+  text-align: center;
+}
+
+.ws-difficulty-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--text-main, #333);
+}
+
+.ws-difficulty-header p {
+  font-size: 14px;
+  opacity: 0.75;
+  margin: 0;
+  color: var(--text-main, #333);
+}
+
+.ws-difficulty-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ws-difficulty-card {
+  position: relative;
+  background: var(--bg-card, #ffffff);
+  border: 2px solid var(--border, #e0e0e0);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ws-difficulty-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--orange, #ff9800);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.ws-difficulty-card.recommended {
+  border-color: var(--orange, #ff9800);
+  background: rgba(255, 152, 0, 0.04);
+}
+
+.ws-badge-recommended {
+  position: absolute;
+  top: -11px;
+  right: 16px;
+  background: var(--orange, #ff9800);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ws-diff-icon {
+  font-size: 38px;
+  flex-shrink: 0;
+}
+
+.ws-diff-info {
+  flex: 1;
+}
+
+.ws-diff-info h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--text-main, #333);
+}
+
+.ws-diff-meta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--orange, #ff9800);
+  margin-bottom: 6px;
+}
+
+.ws-diff-info p {
+  font-size: 13px;
+  opacity: 0.75;
+  margin: 0;
+  color: var(--text-main, #333);
+}
+
+.ws-diff-select-btn {
+  flex-shrink: 0;
+}
+
+/* Header & Controls */
 .ws-info-bar {
   display: flex;
   align-items: center;
@@ -10977,8 +11085,28 @@ mark.ex-highlight {
   flex-wrap: wrap;
 }
 
+.ws-info-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ws-diff-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(255, 152, 0, 0.12);
+  border: 1px solid var(--orange, #ff9800);
+  color: var(--orange, #ff9800);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .ws-counter {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-main, #333);
 }
@@ -10986,6 +11114,7 @@ mark.ex-highlight {
 .ws-controls {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .ws-btn {
@@ -11015,6 +11144,7 @@ mark.ex-highlight {
   border: none;
 }
 
+/* Translations Grid (Zero Layout Shift Architecture) */
 .ws-translations-section {
   display: flex;
   flex-direction: column;
@@ -11024,41 +11154,76 @@ mark.ex-highlight {
 .ws-translations-label {
   font-size: 14px;
   font-weight: 600;
-  opacity: 0.7;
+  opacity: 0.75;
 }
 
 .ws-translations-list {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+  width: 100%;
 }
 
 .ws-translation-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: var(--bg-card, #fff);
-  border: 1px solid var(--border, #ddd);
-  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border, #dddddd);
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
-.ws-translation-item.ws-found {
-  background: rgba(76, 175, 80, 0.15);
-  border-color: #4caf50;
-  color: #2e7d32;
+.ws-translation-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ws-status-icon {
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.ws-translation-item.ws-found .ws-status-icon {
+  opacity: 1;
+}
+
+.ws-translation-text {
+  font-weight: 500;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+.ws-translation-item.ws-found .ws-translation-text {
   text-decoration: line-through;
+  opacity: 0.9;
 }
 
 .ws-translation-kana {
   font-size: 12px;
-  opacity: 0.8;
-  font-weight: 600;
+  font-weight: 700;
+  min-height: 1.3em;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
+.ws-translation-item.ws-found .ws-translation-kana {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Grid Wrapper & Cells */
 .ws-grid-wrapper {
   display: flex;
   justify-content: center;
@@ -11087,6 +11252,7 @@ mark.ex-highlight {
   font-size: clamp(14px, 4.5vw, 22px);
   font-weight: 600;
   background: var(--bg-main, #f8f9fa);
+  color: var(--text-main, #333);
   border-radius: 6px;
   cursor: pointer;
   user-select: none;
@@ -11101,8 +11267,6 @@ mark.ex-highlight {
 }
 
 .ws-cell-found {
-  background: #c8e6c9 !important;
-  color: #1b5e20 !important;
   font-weight: 700;
 }
 
@@ -11123,6 +11287,42 @@ mark.ex-highlight {
   100% { transform: scale(1.15); }
 }
 
+/* Difficulty Adaptive Sizing */
+.ws-container[data-difficulty='easy'] .ws-grid {
+  gap: 6px;
+  padding: 10px;
+}
+
+.ws-container[data-difficulty='easy'] .ws-cell {
+  font-size: clamp(16px, 5.5vw, 26px);
+}
+
+.ws-container[data-difficulty='medium'] .ws-grid {
+  gap: 4px;
+  padding: 8px;
+}
+
+.ws-container[data-difficulty='medium'] .ws-cell {
+  font-size: clamp(14px, 4.5vw, 22px);
+}
+
+.ws-container[data-difficulty='hard'] .ws-grid {
+  gap: 2px;
+  padding: 6px;
+}
+
+.ws-container[data-difficulty='hard'] .ws-cell {
+  font-size: clamp(11px, 3.5vw, 17px);
+  border-radius: 4px;
+}
+
+@media (max-width: 380px) {
+  .ws-translations-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Modal */
 .ws-modal-overlay {
   position: fixed;
   inset: 0;
@@ -11138,7 +11338,7 @@ mark.ex-highlight {
   background: var(--bg-card, #fff);
   border-radius: 16px;
   padding: 24px;
-  max-width: 360px;
+  max-width: 380px;
   width: 100%;
   text-align: center;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -11171,4 +11371,5 @@ mark.ex-highlight {
   display: flex;
   gap: 8px;
   justify-content: center;
+  flex-wrap: wrap;
 }

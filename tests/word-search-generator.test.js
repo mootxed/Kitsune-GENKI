@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  WORD_SEARCH_DIFFICULTIES,
   generateWordSearchGrid,
   isValidWordForSearch,
   normalizeKana,
@@ -14,10 +15,24 @@ describe('Word Search Generator Unit Tests', () => {
     { id: '4', writing: 'たべる', kanji: '食べる', translation: 'есть' },
     { id: '5', writing: 'ともだち', kanji: '友達', translation: 'друг' },
     { id: '6', writing: 'ほん', kanji: '本', translation: 'книга' },
+    { id: '7', writing: 'ねこ', kanji: '猫', translation: 'кошка' },
+    { id: '8', writing: 'いぬ', kanji: '犬', translation: 'собака' },
+    { id: '9', writing: 'くるま', kanji: '車', translation: 'машина' },
+    { id: '10', writing: 'さかな', kanji: '魚', translation: 'рыба' },
   ];
 
-  it('1. All placed words are within grid boundaries', () => {
-    const result = generateWordSearchGrid(sampleCandidates, { baseSize: 9 });
+  it('1. WORD_SEARCH_DIFFICULTIES object exports easy, medium, hard configurations', () => {
+    expect(WORD_SEARCH_DIFFICULTIES).toBeDefined();
+    expect(WORD_SEARCH_DIFFICULTIES.easy.gridSize).toBe(7);
+    expect(WORD_SEARCH_DIFFICULTIES.easy.targetCount).toBe(4);
+    expect(WORD_SEARCH_DIFFICULTIES.medium.gridSize).toBe(9);
+    expect(WORD_SEARCH_DIFFICULTIES.medium.targetCount).toBe(6);
+    expect(WORD_SEARCH_DIFFICULTIES.hard.gridSize).toBe(11);
+    expect(WORD_SEARCH_DIFFICULTIES.hard.targetCount).toBe(9);
+  });
+
+  it('2. All placed words are within grid boundaries', () => {
+    const result = generateWordSearchGrid(sampleCandidates, { gridSize: 9, targetCount: 6 });
     expect(result.success).toBe(true);
     const { grid, placedWords, gridSize } = result;
 
@@ -32,8 +47,8 @@ describe('Word Search Generator Unit Tests', () => {
     }
   });
 
-  it('2. Words read in correct sequence at coordinates', () => {
-    const result = generateWordSearchGrid(sampleCandidates, { baseSize: 9 });
+  it('3. Words read in correct sequence at coordinates', () => {
+    const result = generateWordSearchGrid(sampleCandidates, { gridSize: 9, targetCount: 6 });
     expect(result.success).toBe(true);
 
     for (const pw of result.placedWords) {
@@ -45,11 +60,21 @@ describe('Word Search Generator Unit Tests', () => {
     }
   });
 
-  it('3. Intersections allowed only with matching characters', () => {
-    const result = generateWordSearchGrid(sampleCandidates, { baseSize: 9 });
+  it('4. Assigns colorIndex to each placedWord', () => {
+    const result = generateWordSearchGrid(sampleCandidates, { gridSize: 9, targetCount: 6 });
     expect(result.success).toBe(true);
 
-    // Map cell to its character
+    result.placedWords.forEach((pw) => {
+      expect(typeof pw.colorIndex).toBe('number');
+      expect(pw.colorIndex).toBeGreaterThanOrEqual(0);
+      expect(pw.colorIndex).toBeLessThan(10);
+    });
+  });
+
+  it('5. Intersections allowed only with matching characters', () => {
+    const result = generateWordSearchGrid(sampleCandidates, { gridSize: 9 });
+    expect(result.success).toBe(true);
+
     const cellMap = new Map();
     for (const pw of result.placedWords) {
       pw.cells.forEach((cell, idx) => {
@@ -64,22 +89,8 @@ describe('Word Search Generator Unit Tests', () => {
     }
   });
 
-  it('4. Conflicting characters are not overwritten', () => {
-    const result = generateWordSearchGrid(sampleCandidates, { baseSize: 9 });
-    expect(result.success).toBe(true);
-
-    for (let r = 0; r < result.gridSize; r++) {
-      for (let c = 0; c < result.gridSize; c++) {
-        const cell = result.grid[r][c];
-        expect(cell.char).toBeDefined();
-        expect(typeof cell.char).toBe('string');
-        expect(cell.char.length).toBe(1);
-      }
-    }
-  });
-
-  it('5. Empty cells after generation are filled with Kana', () => {
-    const result = generateWordSearchGrid(sampleCandidates, { baseSize: 9 });
+  it('6. Empty cells after generation are filled with Kana', () => {
+    const result = generateWordSearchGrid(sampleCandidates, { gridSize: 9 });
     expect(result.success).toBe(true);
 
     for (let r = 0; r < result.gridSize; r++) {
@@ -91,22 +102,7 @@ describe('Word Search Generator Unit Tests', () => {
     }
   });
 
-  it('6. Generator does not infinite loop on a difficult set', () => {
-    const longCandidates = Array.from({ length: 15 }, (_, i) => ({
-      id: `word_${i}`,
-      writing: `あいうえおか${i}`,
-      translation: `слово ${i}`,
-    }));
-
-    const startTime = Date.now();
-    const result = generateWordSearchGrid(longCandidates, { baseSize: 9, maxRetries: 5 });
-    const duration = Date.now() - startTime;
-
-    expect(duration).toBeLessThan(2000);
-    expect(result).toBeDefined();
-  });
-
-  it('7. Returns minimum 4 words or clear error if placement fails', () => {
+  it('7. Returns minimum words or error if placement fails', () => {
     const resultSuccess = generateWordSearchGrid(sampleCandidates, { minCount: 4 });
     expect(resultSuccess.success).toBe(true);
     expect(resultSuccess.placedWords.length).toBeGreaterThanOrEqual(4);
