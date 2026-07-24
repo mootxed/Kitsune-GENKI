@@ -273,3 +273,53 @@ export function completeChapter(
   const activeChapterId = ensureActiveChapterId(appState, chapters, dateKey);
   return { changed: true, rewardGranted, activeChapterId, completedAt: now };
 }
+
+/**
+ * Вычислить канонический максимальный открытый урок на основе state.chapters
+ * @param {object} appState
+ * @param {Array|object} [contentIndex]
+ * @returns {number} Номер максимального открытого урока (минимум 1)
+ */
+export function getCanonicalMaxUnlockedLesson(appState, contentIndex = null) {
+  if (!appState) return 1;
+
+  const chaptersList = Array.isArray(contentIndex)
+    ? contentIndex
+    : Array.isArray(contentIndex?.chapters)
+      ? contentIndex.chapters
+      : null;
+
+  let maxUnlocked = 1;
+
+  if (chaptersList && chaptersList.length > 0) {
+    for (const ch of chaptersList) {
+      const chId = Number(ch.id || ch.lesson_id);
+      if (chId && isChapterAvailable(appState, chaptersList, chId)) {
+        if (chId > maxUnlocked) maxUnlocked = chId;
+      }
+    }
+  } else if (appState.chapters && typeof appState.chapters === 'object') {
+    for (const key of Object.keys(appState.chapters)) {
+      const chId = Number(key);
+      if (Number.isInteger(chId) && chId > 0) {
+        const chState = appState.chapters[key];
+        if (chState && (chState.started || chState.completedAt || hasCompletedChecklist(chState))) {
+          if (chId > maxUnlocked) maxUnlocked = chId;
+        }
+      }
+    }
+  }
+
+  if (Number.isInteger(appState.activeChapterId) && appState.activeChapterId > maxUnlocked) {
+    const actId = appState.activeChapterId;
+    if (
+      chaptersList
+        ? isChapterAvailable(appState, chaptersList, actId)
+        : Boolean(appState.chapters?.[actId])
+    ) {
+      maxUnlocked = actId;
+    }
+  }
+
+  return Math.max(1, maxUnlocked);
+}

@@ -32,6 +32,7 @@ import {
 } from '../src/particle-templates.js';
 import { conjugateVerb } from '../src/verb-conjugator.js';
 import { ExamplesDB } from '../src/examples-db.js';
+import { getCanonicalMaxUnlockedLesson } from '../src/chapter-progress.js';
 import {
   generateExample,
   getExampleCandidates,
@@ -2262,6 +2263,14 @@ export function renderFlash(state, dependencies) {
 }
 
 // Состояние фильтрации словаря
+export const dictionaryViewState = {
+  search: '',
+  partOfSpeech: 'all',
+  topic: 'all',
+  adjectiveClass: 'all',
+  expandedLessons: new Set(),
+};
+
 let dictSearchQuery = '';
 let dictFilter = 'all';
 let dictTopicFilter = 'all';
@@ -2367,10 +2376,6 @@ export async function renderDictionary(state, dependencies) {
     await Promise.all(CONTENT_INDEX.map((ch) => ensureLesson(ch.id).catch(() => null)));
   }
 
-  dictSearchQuery = '';
-  dictFilter = 'all';
-  dictTopicFilter = 'all';
-
   // Собираем все реально присутствующие топики
   const presentTopics = new Set();
   if (dependencies.LESSONS) {
@@ -2385,8 +2390,13 @@ export async function renderDictionary(state, dependencies) {
 
   const topicOptionsHtml = Array.from(presentTopics)
     .sort()
-    .map((topic) => `<option value="${topic}">${getTopicLabel(topic)}</option>`)
+    .map(
+      (t) =>
+        `<option value="${t}" ${dictionaryViewState.topic === t ? 'selected' : ''}>${getTopicLabel(t)}</option>`
+    )
     .join('');
+
+  const isAdjActive = dictionaryViewState.partOfSpeech === 'adjective';
 
   content.innerHTML = `
     <div class="dict-header-container">
@@ -2397,20 +2407,20 @@ export async function renderDictionary(state, dependencies) {
           class="dict-search-input" 
           placeholder="🔍 Поиск слов..."
           autocomplete="off"
-          value=""
+          value="${dictionaryViewState.search || ''}"
         />
       </div>
       <div class="dict-filters-wrap">
-        <button class="dict-filter-btn active" data-filter="all">Все</button>
-        <button class="dict-filter-btn" data-filter="verb">Глаголы</button>
-        <button class="dict-filter-btn" data-filter="noun">Сущ.</button>
-        <button class="dict-filter-btn" data-filter="adjective">Прилаг.</button>
-        <button class="dict-filter-btn" data-filter="other">Ост.</button>
+        <button class="dict-filter-btn ${dictionaryViewState.partOfSpeech === 'all' ? 'active' : ''}" data-filter="all">Все</button>
+        <button class="dict-filter-btn ${dictionaryViewState.partOfSpeech === 'verb' ? 'active' : ''}" data-filter="verb">Глаголы</button>
+        <button class="dict-filter-btn ${dictionaryViewState.partOfSpeech === 'noun' ? 'active' : ''}" data-filter="noun">Сущ.</button>
+        <button class="dict-filter-btn ${dictionaryViewState.partOfSpeech === 'adjective' ? 'active' : ''}" data-filter="adjective">Прилаг.</button>
+        <button class="dict-filter-btn ${dictionaryViewState.partOfSpeech === 'other' ? 'active' : ''}" data-filter="other">Ост.</button>
       </div>
-      <div class="dict-adjective-subfilter" id="dict-adjective-subfilter" style="display: none; margin-top: 8px; gap: 6px;">
-        <button class="dict-adj-class-btn active" data-adj-class="all">Все</button>
-        <button class="dict-adj-class-btn" data-adj-class="i">い-прилаг.</button>
-        <button class="dict-adj-class-btn" data-adj-class="na">な-прилаг.</button>
+      <div class="dict-adjective-subfilter" id="dict-adjective-subfilter" style="display: ${isAdjActive ? 'flex' : 'none'}; margin-top: 8px; gap: 6px;">
+        <button class="dict-adj-class-btn ${dictionaryViewState.adjectiveClass === 'all' ? 'active' : ''}" data-adj-class="all">Все</button>
+        <button class="dict-adj-class-btn ${dictionaryViewState.adjectiveClass === 'i' ? 'active' : ''}" data-adj-class="i">い-прилаг.</button>
+        <button class="dict-adj-class-btn ${dictionaryViewState.adjectiveClass === 'na' ? 'active' : ''}" data-adj-class="na">な-прилаг.</button>
       </div>
       ${
         presentTopics.size > 0
@@ -2434,7 +2444,7 @@ export async function renderDictionary(state, dependencies) {
     <div id="dict-lessons-container"></div>
   `;
 
-  renderDictionaryLessons(state, dependencies, dictSearchQuery, dictFilter);
+  renderDictionaryLessons(state, dependencies, dictionaryViewState);
 
   const searchInput = $('#dict-search');
   let searchTimeout;
@@ -2442,8 +2452,9 @@ export async function renderDictionary(state, dependencies) {
     searchInput.addEventListener('input', (e) => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
+        dictionaryViewState.search = e.target.value;
         dictSearchQuery = e.target.value;
-        renderDictionaryLessons(state, dependencies, dictSearchQuery, dictFilter);
+        renderDictionaryLessons(state, dependencies, dictionaryViewState);
       }, 300);
     });
   }
@@ -2452,52 +2463,40 @@ export async function renderDictionary(state, dependencies) {
     btn.onclick = () => {
       $$('.dict-filter-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
+      dictionaryViewState.partOfSpeech = btn.dataset.filter;
       dictFilter = btn.dataset.filter;
 
-      // Показать/скрыть подфильтр прилагательных
       const adjSubfilter = $('#dict-adjective-subfilter');
       if (adjSubfilter) {
-        if (dictFilter === 'adjective') {
+        if (dictionaryViewState.partOfSpeech === 'adjective') {
           adjSubfilter.style.display = 'flex';
         } else {
           adjSubfilter.style.display = 'none';
+          dictionaryViewState.adjectiveClass = 'all';
           dictAdjectiveClassFilter = 'all';
         }
       }
 
-      renderDictionaryLessons(
-        state,
-        dependencies,
-        dictSearchQuery,
-        dictFilter,
-        dictTopicFilter,
-        dictAdjectiveClassFilter
-      );
+      renderDictionaryLessons(state, dependencies, dictionaryViewState);
     };
   });
 
-  // Обработчики подфильтра типов прилагательных
   $$('.dict-adj-class-btn').forEach((btn) => {
     btn.onclick = () => {
       $$('.dict-adj-class-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
+      dictionaryViewState.adjectiveClass = btn.dataset.adjClass;
       dictAdjectiveClassFilter = btn.dataset.adjClass;
-      renderDictionaryLessons(
-        state,
-        dependencies,
-        dictSearchQuery,
-        dictFilter,
-        dictTopicFilter,
-        dictAdjectiveClassFilter
-      );
+      renderDictionaryLessons(state, dependencies, dictionaryViewState);
     };
   });
 
   const topicSelect = $('#dict-topic-select');
   if (topicSelect) {
     topicSelect.addEventListener('change', (e) => {
+      dictionaryViewState.topic = e.target.value;
       dictTopicFilter = e.target.value;
-      renderDictionaryLessons(state, dependencies, dictSearchQuery, dictFilter, dictTopicFilter);
+      renderDictionaryLessons(state, dependencies, dictionaryViewState);
     });
   }
 }
@@ -2506,17 +2505,40 @@ export async function renderDictionary(state, dependencies) {
 function renderDictionaryLessons(
   state,
   dependencies,
-  searchQuery = '',
+  arg3 = dictionaryViewState,
   filterQuery = 'all',
   topicQuery = 'all',
   adjectiveClassQuery = 'all'
 ) {
+  let viewState = dictionaryViewState;
+  if (typeof arg3 === 'object' && arg3 !== null) {
+    viewState = arg3;
+  } else if (typeof arg3 === 'string') {
+    viewState = {
+      search: arg3,
+      partOfSpeech: filterQuery,
+      topic: topicQuery,
+      adjectiveClass: adjectiveClassQuery,
+      expandedLessons: dictionaryViewState.expandedLessons || new Set(),
+    };
+  }
+
+  const {
+    search = '',
+    partOfSpeech = 'all',
+    topic = 'all',
+    adjectiveClass = 'all',
+    expandedLessons = new Set(),
+  } = viewState;
+
   const { LESSONS } = dependencies;
 
   const container = $('#dict-lessons-container');
   if (!container) return;
 
-  const query = searchQuery.toLowerCase().trim();
+  const query = String(search || '')
+    .toLowerCase()
+    .trim();
   const activeLessonId = state.activeChapterId || 1;
 
   // 1. Calculate overall mastery score (avoiding duplicate lexemeIds)
@@ -2577,32 +2599,32 @@ function renderDictionaryLessons(
 
       // Apply category/POS filter
       let matchesFilter = true;
-      if (filterQuery === 'verb') {
+      if (partOfSpeech === 'verb') {
         matchesFilter = word.partOfSpeech === 'verb';
-      } else if (filterQuery === 'noun') {
+      } else if (partOfSpeech === 'noun') {
         matchesFilter = word.partOfSpeech === 'noun';
-      } else if (filterQuery === 'adjective') {
+      } else if (partOfSpeech === 'adjective') {
         matchesFilter = word.partOfSpeech === 'adjective';
-      } else if (filterQuery === 'other') {
+      } else if (partOfSpeech === 'other') {
         matchesFilter = !['verb', 'noun', 'adjective'].includes(word.partOfSpeech);
       }
 
       // Apply adjective class sub-filter
       let matchesAdjectiveClass = true;
-      if (filterQuery === 'adjective' && adjectiveClassQuery !== 'all') {
-        matchesAdjectiveClass = word.adjectiveClass === adjectiveClassQuery;
+      if (partOfSpeech === 'adjective' && adjectiveClass !== 'all') {
+        matchesAdjectiveClass = word.adjectiveClass === adjectiveClass;
       }
 
       // Apply topic filter
       let matchesTopic = true;
-      if (topicQuery !== 'all') {
-        matchesTopic = word.topic === topicQuery;
+      if (topic !== 'all') {
+        matchesTopic = word.topic === topic;
       }
 
       return matchesSearch && matchesFilter && matchesAdjectiveClass && matchesTopic;
     });
 
-    if (filteredWords.length === 0 && (query || filterQuery !== 'all')) {
+    if (filteredWords.length === 0 && (query || partOfSpeech !== 'all' || topic !== 'all')) {
       return '';
     }
 
@@ -2680,11 +2702,11 @@ function renderDictionaryLessons(
     `;
   }).join('');
 
-  if ((query || filterQuery !== 'all') && totalVisible === 0) {
+  if ((query || partOfSpeech !== 'all' || topic !== 'all') && totalVisible === 0) {
     container.innerHTML = emptyState(
       '🔍',
       'Ничего не найдено',
-      `По запросу "${searchQuery}" слова не найдены.`
+      `По запросу "${search || query}" слова не найдены.`
     );
     return;
   }
@@ -3388,27 +3410,37 @@ export function openDictionaryModal(word, state, dependencies) {
       }
     }
 
-    // Генерация контекстного примера через гибридный движок (corpus-first → template → null).
-    // Просмотр примера НЕ записывает production evidence и НЕ меняет mastery/FSRS.
-    const generatedExample = exampleCandidates.length > 0 ? exampleCandidates[exampleIndex] : null;
-
-    // Строим HTML блока «Примеры» с подсветкой слова и кнопками
+    // Строим HTML блока «Примеры» с динамическим расчетом текущего примера по exampleIndex
     function buildExampleBlockHtml() {
-      if (!generatedExample) {
+      const currentExample = exampleCandidates.length > 0 ? exampleCandidates[exampleIndex] : null;
+
+      if (!currentExample) {
         return `<div class="dict-empty-state">Примеры предложений пока отсутствуют</div>`;
       }
-      const sourceBadge =
-        generatedExample.source === EXAMPLE_SOURCES.CORPUS
-          ? `<span class="dict-example-badge badge-corpus">Корпус</span>`
-          : `<span class="dict-example-badge badge-template">Шаблон</span>`;
-      const readingHtml = generatedExample.reading
-        ? `<div class="dict-example-reading">${generatedExample.reading}</div>`
+
+      const isCurated = ['curated-word', 'curated', 'contextProduction'].includes(
+        currentExample.source
+      );
+      const sourceLabel = isCurated ? 'Проверенный' : 'Из урока';
+      const sourceBadgeClass = isCurated ? 'badge-curated' : 'badge-lesson';
+      const sourceBadge = `<span class="dict-example-badge ${sourceBadgeClass}">${sourceLabel}</span>`;
+
+      const readingHtml = currentExample.reading
+        ? `<div class="dict-example-reading">${currentExample.reading}</div>`
         : '';
 
-      const nextBtnHtml =
+      const navHtml =
         exampleCandidates.length > 1
-          ? `<button class="dict-example-next btn-secondary-sm" id="dict-example-next">🔄 Другой пример (${exampleIndex + 1}/${exampleCandidates.length})</button>`
-          : `<span class="dict-example-hint">Других примеров пока нет</span>`;
+          ? `
+        <div class="dict-example-footer">
+          <div class="dict-example-nav">
+            <button class="dict-example-prev btn-secondary-sm" id="dict-example-prev" aria-label="Предыдущий пример">←</button>
+            <span class="dict-example-counter">${exampleIndex + 1} из ${exampleCandidates.length}</span>
+            <button class="dict-example-next btn-secondary-sm" id="dict-example-next" aria-label="Следующий пример">→</button>
+          </div>
+        </div>
+      `
+          : '';
 
       return `
         <div class="dict-example-card" id="dict-example-card">
@@ -3417,12 +3449,10 @@ export function openDictionaryModal(word, state, dependencies) {
             <button class="dict-example-speak btn-ghost-sm" id="dict-example-speak"
               aria-label="Озвучить пример">🔊</button>
           </div>
-          <div class="dict-example-jp" id="dict-example-jp">${generatedExample.japaneseHighlighted}</div>
+          <div class="dict-example-jp" id="dict-example-jp">${currentExample.japaneseHighlighted}</div>
           ${readingHtml}
-          <div class="dict-example-ru">${generatedExample.translation}</div>
-          <div class="dict-example-footer">
-            ${nextBtnHtml}
-          </div>
+          <div class="dict-example-ru">${currentExample.translation}</div>
+          ${navHtml}
         </div>
       `;
     }
@@ -3568,43 +3598,31 @@ export function openDictionaryModal(word, state, dependencies) {
       };
     }
 
-    // «Другой пример» — циклично перебирает кандидатов; не затрагивает FSRS/mastery
-    const nextExBtn = $('#dict-example-next');
-    if (nextExBtn) {
-      nextExBtn.onclick = (e) => {
-        e.stopPropagation();
-        exampleIndex = (exampleIndex + 1) % exampleCandidates.length;
-        const examplesBody = $('#dict-examples-body');
-        if (examplesBody) {
-          examplesBody.innerHTML = buildExampleBlockHtml();
+    // Делегированный обработчик для контейнера примеров
+    const examplesBody = $('#dict-examples-body');
+    if (examplesBody) {
+      examplesBody.onclick = (e) => {
+        const prevBtn = e.target.closest('#dict-example-prev');
+        const nextBtn = e.target.closest('#dict-example-next');
+        const speakBtn = e.target.closest('#dict-example-speak');
 
-          // Re-bind speak button since we replaced the HTML
-          const newExSpeakBtn = $('#dict-example-speak');
-          if (newExSpeakBtn) {
-            newExSpeakBtn.onclick = (e2) => {
-              e2.stopPropagation();
-              const currEx = exampleCandidates[exampleIndex];
-              if (currEx) speakJapanese(currEx.japanese);
-            };
+        if (prevBtn) {
+          e.stopPropagation();
+          if (exampleCandidates.length > 1) {
+            exampleIndex = (exampleIndex - 1 + exampleCandidates.length) % exampleCandidates.length;
+            examplesBody.innerHTML = buildExampleBlockHtml();
           }
-
-          // Re-bind next button since we replaced the HTML
-          const newNextExBtn = $('#dict-example-next');
-          if (newNextExBtn) {
-            newNextExBtn.onclick = nextExBtn.onclick;
+        } else if (nextBtn) {
+          e.stopPropagation();
+          if (exampleCandidates.length > 1) {
+            exampleIndex = (exampleIndex + 1) % exampleCandidates.length;
+            examplesBody.innerHTML = buildExampleBlockHtml();
           }
+        } else if (speakBtn) {
+          e.stopPropagation();
+          const currEx = exampleCandidates[exampleIndex];
+          if (currEx) speakJapanese(currEx.japanese);
         }
-      };
-    }
-
-    // Озвучить пример
-    const exSpeakBtn = $('#dict-example-speak');
-    if (exSpeakBtn && generatedExample) {
-      exSpeakBtn.onclick = (e) => {
-        e.stopPropagation();
-        // Произносим чистый японский текст без HTML-разметки
-        const cleanJp = generatedExample.japanese;
-        speakJapanese(cleanJp);
       };
     }
 

@@ -1,6 +1,11 @@
 /* global Event */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { renderDictionary, getWordStatus, openDictionaryModal } from '../ui/flashcards.js';
+import {
+  renderDictionary,
+  getWordStatus,
+  openDictionaryModal,
+  dictionaryViewState,
+} from '../ui/flashcards.js';
 import { calculateMastery } from '../src/mastery.js';
 
 // Mock getRetrievability and calculateMastery
@@ -42,6 +47,12 @@ describe('Dictionary UI System', () => {
   let dependencies;
 
   beforeEach(() => {
+    dictionaryViewState.search = '';
+    dictionaryViewState.partOfSpeech = 'all';
+    dictionaryViewState.topic = 'all';
+    dictionaryViewState.adjectiveClass = 'all';
+    dictionaryViewState.expandedLessons.clear();
+
     // Set up a clean DOM container
     document.body.innerHTML = '<div id="srs-body"></div>';
 

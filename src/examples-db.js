@@ -64,11 +64,23 @@ export class ExamplesDBClass {
     source = 'unknown',
     acceptedAnswers = null,
     requiredForm = null,
+    targetLexemeIds = null,
+    id = null,
   }) {
     if (!japanese || !japanese.trim()) return;
     const trimmedJp = japanese.trim();
-    if (this.rawSentences.some((s) => s.japanese === trimmedJp)) return;
+    const existing = this.rawSentences.find((s) => s.japanese === trimmedJp);
+    if (existing) {
+      if (targetLexemeIds && targetLexemeIds.length > 0) {
+        existing.targetLexemeIds = Array.from(
+          new Set([...(existing.targetLexemeIds || []), ...targetLexemeIds])
+        );
+      }
+      if (id && !existing.id) existing.id = id;
+      return;
+    }
     this.rawSentences.push({
+      id: id || null,
       japanese: trimmedJp,
       reading: reading.trim(),
       translation: translation.trim(),
@@ -76,6 +88,7 @@ export class ExamplesDBClass {
       source,
       acceptedAnswers,
       requiredForm,
+      targetLexemeIds: Array.isArray(targetLexemeIds) ? targetLexemeIds : null,
     });
   }
 
@@ -114,6 +127,7 @@ export class ExamplesDBClass {
               source: 'contextProduction',
               acceptedAnswers: accepted,
               requiredForm: cp.requiredForm,
+              targetLexemeIds: [word.lexemeId || word.id],
             });
           }
         }
@@ -159,6 +173,7 @@ export class ExamplesDBClass {
       const japanese = item.tokens.map((t) => t.kanji || t.writing || '').join('');
       const reading = item.tokens.map((t) => t.writing || t.kanji || '').join('');
       const translation = item.translation || '';
+      const tokenLexemes = item.tokens.map((t) => t.lexemeId || t.wordId).filter(Boolean);
 
       this.addRawSentence({
         japanese,
@@ -166,6 +181,7 @@ export class ExamplesDBClass {
         translation,
         sourceLessonId: lessonId,
         source: 'story',
+        targetLexemeIds: tokenLexemes.length > 0 ? tokenLexemes : null,
       });
     }
   }
@@ -219,19 +235,47 @@ export class ExamplesDBClass {
    * Зарегистрировать curated примеры слов из отдельного JSON-файла
    */
   registerCuratedWordExamples(curatedData) {
-    if (!curatedData || !curatedData.examples) return;
+    if (!curatedData) return;
+    const list = Array.isArray(curatedData)
+      ? curatedData
+      : Array.isArray(curatedData.examples)
+        ? curatedData.examples
+        : [];
 
-    for (const ex of curatedData.examples) {
-      if (!ex.lexemeId || !ex.japanese) continue;
+    for (const ex of list) {
+      if (!ex || !ex.japanese) continue;
+      const targetId = ex.targetWordId || ex.targetLexemeId || ex.lexemeId || ex.wordId;
+      if (!targetId) continue;
+
+      let resolvedLexemeId = targetId;
+      const vocabWord = this.vocabulary.get(targetId);
+      if (vocabWord) {
+        resolvedLexemeId = vocabWord.lexemeId || vocabWord.id;
+      } else {
+        const found = Array.from(this.vocabulary.values()).find(
+          (w) => w.lexemeId === targetId || w.id === targetId
+        );
+        if (found) {
+          resolvedLexemeId = found.lexemeId || found.id;
+        } else {
+          console.warn(
+            `[ExamplesDB] Warning: Unknown targetWordId/targetLexemeId in curated examples: ${targetId}`
+          );
+        }
+      }
 
       this.addRawSentence({
+        id: ex.id || null,
         japanese: ex.japanese,
         reading: ex.reading || '',
         translation: ex.translation || '',
-        sourceLessonId: ex.minLesson || 1,
+        sourceLessonId: ex.minLesson || ex.lessonRequired || 1,
         source: 'curated-word',
+        targetLexemeIds: [resolvedLexemeId],
       });
     }
+
+    this.rebuildIndex();
   }
 
   /**
@@ -353,8 +397,12 @@ export class ExamplesDBClass {
     let idCounter = 1;
 
     for (const raw of this.rawSentences) {
-      // Ищем все подходящие слова в предложении
-      const matchedWords = allVocab.filter((w) => isWordInSentence(w, raw.japanese));
+      let matchedWords = [];
+      if (raw.targetLexemeIds && raw.targetLexemeIds.length > 0) {
+        matchedWords = allVocab.filter((w) => raw.targetLexemeIds.includes(w.lexemeId || w.id));
+      } else {
+        matchedWords = allVocab.filter((w) => isWordInSentence(w, raw.japanese));
+      }
 
       // Ищем частицы в предложении
       const matchedParticles = [];
@@ -376,7 +424,7 @@ export class ExamplesDBClass {
 
       // Для каждого подходящего слова создаем нормализованную модель примера
       for (const word of matchedWords) {
-        const lexemeId = word.lexemeId;
+        const lexemeId = word.lexemeId || word.id;
         if (!lexemeId) continue;
 
         // Дедупликация: целевое слово + текст предложения
@@ -385,7 +433,7 @@ export class ExamplesDBClass {
         seen.add(dupKey);
 
         const example = {
-          id: `ex-${idCounter++}`,
+          id: raw.id || `ex-${idCounter++}`,
           targetLexemeId: lexemeId,
           japanese: raw.japanese,
           reading: raw.reading,
@@ -455,6 +503,35 @@ export class ExamplesDBClass {
 }
 
 /**
+ * Проверка границ кана-формы для исключения ложных совпадений типа いく → いくら, 暖かいくなる
+ */
+function hasCleanKanaBoundary(sentence, form, idx) {
+  const prev = idx > 0 ? sentence[idx - 1] : '';
+  const next = idx + form.length < sentence.length ? sentence[idx + form.length] : '';
+
+  if (form === 'いく') {
+    if (['ら', 'つ', 'く', 'ち', 'じ', '分'].includes(next)) return false;
+    if (['暖か', '寒'].some((p) => sentence.slice(Math.max(0, idx - 2), idx).includes(p))) {
+      return false;
+    }
+  }
+
+  if (form.length <= 2) {
+    if (
+      prev &&
+      /[\u3040-\u309F]/.test(prev) &&
+      !['て', 'で', 'に', 'を', 'は', 'が', 'と'].includes(prev)
+    ) {
+      if (!['です', 'ます'].includes(form)) {
+        // если перед короткой каной стоит другая кана не частица
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
  * Проверка вхождения слова в японское предложение (с учетом спряжений глаголов/прилагательных)
  */
 export function isWordInSentence(word, sentenceJp) {
@@ -462,88 +539,102 @@ export function isWordInSentence(word, sentenceJp) {
 
   const kanji = (word.kanji || '').replace(/～/g, '').trim();
   const writing = (word.writing || '').replace(/～/g, '').trim();
+  const hasKanji = kanji && kanji !== writing && /[\u4E00-\u9FAF]/.test(kanji);
 
-  // Не искать по слишком коротким частям, чтобы избежать ложных срабатываний (особенно частиц и окончаний)
-  const isShortKanji = kanji.length <= 1;
-  const isShortWriting = writing.length <= 1;
-  const isTooShort = !kanji ? isShortWriting : isShortKanji && isShortWriting;
+  const pos =
+    word.partOfSpeech ||
+    (writing.endsWith('る') ||
+    kanji.endsWith('む') ||
+    kanji.endsWith('く') ||
+    kanji.endsWith('つ') ||
+    kanji.endsWith('う')
+      ? 'verb'
+      : writing.endsWith('い')
+        ? 'adjective'
+        : 'noun');
 
-  // Функция для безопасного поиска (только если не слишком короткое, либо совпадение с границами)
-  const safeIncludes = (text, query) => {
-    if (!query) return false;
-    if (text.includes(query)) {
-      // Для коротких слов (1 символ каны) мы не можем просто использовать includes
-      if (query.length === 1 && /^[\u3040-\u309F\u30A0-\u30FF]$/.test(query)) {
-        // Это слишком рискованно для частиц типа は, に, へ, で
-        // Нам нужен полноценный токенизатор для точного ответа, но здесь мы используем эвристику.
-        // Если это глагол, прилагательное или существительное с 1 символом каны (без кандзи),
-        // мы пока игнорируем это для защиты от ложных срабатываний.
-        if (!kanji) {
-          // Если мы здесь, значит это слово только из 1 символа каны.
-          // Временно отключаем поиск таких коротких слов без кандзи внутри предложений,
-          // если это не точное совпадение
-          if (text === query) return true;
+  // 1. Поиск по кандзи и его спряжениям (наиболее надежно)
+  if (hasKanji) {
+    if (sentenceJp.includes(kanji)) return true;
 
-          // Проверка на 歯 (ha), 二 (ni) и т.д.
-          // Если у нас есть кандзи, мы до этого не дойдем.
-          return false;
+    if (pos === 'verb') {
+      try {
+        const forms = conjugateVerb(word);
+        for (const f of forms) {
+          if (f && f.kanji && f.kanji.length > 1 && sentenceJp.includes(f.kanji)) {
+            return true;
+          }
         }
+      } catch {
+        // ignore
       }
-
-      // Проверка, что это не часть другого слова (эвристика)
-      // Например, "した" в "しました" не должно считаться "下"
-      if (query === 'した' || query === 'する') {
-        // Игнорируем вхождения как суффиксы
-        const idx = text.indexOf(query);
-        if (idx > 0 && /[\u3040-\u309F\u4E00-\u9FAF]/.test(text[idx - 1])) {
-          return false;
-        }
-      }
-
-      return true;
     }
-    return false;
-  };
 
-  // 1. Прямое совпадение кандзи (если оно есть)
-  if (kanji && kanji.length > 0 && safeIncludes(sentenceJp, kanji)) {
-    return true;
+    if (pos === 'adjective' && (writing.endsWith('い') || kanji.endsWith('い'))) {
+      const kanjiStem = kanji.replace(/い$/, '');
+      const writingStem = writing.replace(/い$/, '');
+      if (kanjiStem && kanjiStem.length > 0 && sentenceJp.includes(kanjiStem)) return true;
+      if (writingStem && writingStem.length >= 2 && sentenceJp.includes(writingStem)) return true;
+    }
+
+    // Если у слова есть кандзи, кана-поиск выполняется для точных спряжённых кана-форм с проверкой границ
+    if (pos === 'verb') {
+      try {
+        const forms = conjugateVerb(word);
+        for (const f of forms) {
+          if (f && f.kana && f.kana.length >= 2) {
+            let idx = sentenceJp.indexOf(f.kana);
+            while (idx !== -1) {
+              if (hasCleanKanaBoundary(sentenceJp, f.kana, idx)) {
+                return true;
+              }
+              idx = sentenceJp.indexOf(f.kana, idx + 1);
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    return false;
   }
 
-  // 2. Прямое совпадение каны
-  // Ищем по кане только если кандзи нет, ИЛИ если это не короткое слово-частица
+  // 2. Для слов без кандзи (кана-слово, напр. いくら, そこ)
   if (writing && writing.length > 0) {
-    if (!kanji || (kanji && writing.length > 1)) {
-      if (safeIncludes(sentenceJp, writing)) {
+    if (pos === 'adjective' && writing.endsWith('い')) {
+      const writingStem = writing.replace(/い$/, '');
+      if (writingStem && writingStem.length >= 2 && sentenceJp.includes(writingStem)) {
         return true;
       }
     }
-  }
 
-  // 3. Проверка спряжений глаголов
-  if (word.partOfSpeech === 'verb') {
-    try {
-      const forms = conjugateVerb(word);
-      for (const form of forms) {
-        if (form.kanji && form.kanji.length > 1 && safeIncludes(sentenceJp, form.kanji)) {
-          return true;
+    if (pos === 'verb') {
+      try {
+        const forms = conjugateVerb(word);
+        for (const f of forms) {
+          if (f && f.kana && f.kana.length >= 2) {
+            let idx = sentenceJp.indexOf(f.kana);
+            while (idx !== -1) {
+              if (hasCleanKanaBoundary(sentenceJp, f.kana, idx)) {
+                return true;
+              }
+              idx = sentenceJp.indexOf(f.kana, idx + 1);
+            }
+          }
         }
-        if (form.kana && form.kana.length > 1 && safeIncludes(sentenceJp, form.kana)) {
-          return true;
-        }
+      } catch {
+        // ignore
       }
-    } catch (e) {
-      // Игнорируем ошибки спряжения для некорректно заполненных mock-слов
     }
-  }
 
-  // 4. Проверка основ i-прилагательных
-  if (word.partOfSpeech === 'adjective' && writing.endsWith('い')) {
-    const kanjiStem = kanji.endsWith('い') ? kanji.slice(0, -1) : kanji;
-    const writingStem = writing.slice(0, -1);
-
-    if (kanjiStem && kanjiStem.length > 0 && safeIncludes(sentenceJp, kanjiStem)) return true;
-    if (writingStem && writingStem.length > 1 && safeIncludes(sentenceJp, writingStem)) return true;
+    let idx = sentenceJp.indexOf(writing);
+    while (idx !== -1) {
+      if (hasCleanKanaBoundary(sentenceJp, writing, idx)) {
+        return true;
+      }
+      idx = sentenceJp.indexOf(writing, idx + 1);
+    }
   }
 
   return false;
