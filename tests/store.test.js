@@ -14,9 +14,9 @@ describe('Store - Версионирование и миграции', () => {
   });
 
   describe('defaultState', () => {
-    it('должен содержать поле version со значением 6', () => {
+    it('должен содержать поле version со значением 7', () => {
       const state = defaultState();
-      expect(state.version).toBe(6);
+      expect(state.version).toBe(7);
     });
 
     it('должен содержать все необходимые поля', () => {
@@ -25,6 +25,7 @@ describe('Store - Версионирование и миграции', () => {
       expect(state).toHaveProperty('version');
       expect(state).toHaveProperty('initialized');
       expect(state).toHaveProperty('chapters');
+      expect(state).toHaveProperty('priorKnowledgeChapterIds');
       expect(state).toHaveProperty('activeChapterId', null);
       expect(state).toHaveProperty('learningEvents');
       expect(state).toHaveProperty('srs');
@@ -40,12 +41,12 @@ describe('Store - Версионирование и миграции', () => {
   });
 
   describe('Миграции', () => {
-    it('должен создать новое состояние с версией 6 при первой загрузке', async () => {
+    it('должен создать новое состояние с версией 7 при первой загрузке', async () => {
       await loadState();
-      expect(state.version).toBe(6);
+      expect(state.version).toBe(7);
     });
 
-    it('должен мигрировать старое состояние без версии → версия 6', async () => {
+    it('должен мигрировать старое состояние без версии → версия 7', async () => {
       const oldState = {
         initialized: true,
         xp: 500,
@@ -58,7 +59,7 @@ describe('Store - Версионирование и миграции', () => {
       await loadState();
 
       // Проверяем что версия проставлена
-      expect(state.version).toBe(6);
+      expect(state.version).toBe(7);
 
       // Проверяем что старые данные сохранились
       expect(state.xp).toBe(500);
@@ -73,13 +74,38 @@ describe('Store - Версионирование и миграции', () => {
       expect(state.quests).toBeNull();
     });
 
-    it('без смены schema v6 безопасно дополняет старое состояние полями обучения', () => {
+    it('без смены schema v7 безопасно дополняет старое состояние полями обучения', () => {
       const normalized = runMigrations({
-        version: 6,
+        version: 7,
         chapters: {},
         studyPlan: null,
       });
-      expect(normalized.version).toBe(6);
+      expect(normalized.version).toBe(7);
+    });
+
+    it('миграция v6 -> v7 переносит legacy studyPlan.completedChapters в priorKnowledgeChapterIds идемпотентно', () => {
+      const migrated = runMigrations({
+        version: 6,
+        chapters: {
+          1: {
+            started: true,
+            completedAt: 1000,
+            checklist: { vocab: true, grammar: true, dialog: true, listening: true, reading: true },
+          },
+        },
+        studyPlan: {
+          completedChapters: [1, 2, 3, 4],
+        },
+      });
+
+      expect(migrated.version).toBe(7);
+      // Глава 1 завершена в приложении, поэтому НЕ должна попадать в priorKnowledgeChapterIds
+      // Главы 2, 3, 4 не завершены реально, поэтому должны попасть в priorKnowledgeChapterIds
+      expect(migrated.priorKnowledgeChapterIds).toEqual([2, 3, 4]);
+
+      // Повторный запуск идемпотентен
+      const reMigrated = runMigrations(migrated);
+      expect(reMigrated.priorKnowledgeChapterIds).toEqual([2, 3, 4]);
     });
 
     it('должен сохранять существующие достижения при миграции', async () => {
@@ -92,7 +118,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       await loadState();
 
-      expect(state.version).toBe(6);
+      expect(state.version).toBe(7);
       expect(state.unlockedAchievements).toEqual(['first_steps', 'quick_learner']);
       expect(state.claimedAchievements).toEqual(['first_steps']);
     });
@@ -108,7 +134,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       await loadState();
 
-      expect(state.version).toBe(6);
+      expect(state.version).toBe(7);
       expect(state.settings.openrouterKey).toBe('test_key');
       expect(state.settings.darkMode).toBe('dark');
       // Проверяем что дефолтные настройки добавлены
@@ -127,7 +153,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(currentState));
       await loadState();
 
-      expect(state.version).toBe(6);
+      expect(state.version).toBe(7);
       expect(state.xp).toBe(1000);
       expect(state.level).toBe(10);
       expect(state.unlockedAchievements).toEqual(['achievement1', 'achievement2']);
@@ -160,7 +186,7 @@ describe('Store - Версионирование и миграции', () => {
       localStorage.setItem(LS_STATE, JSON.stringify(oldState));
       await loadState();
 
-      expect(state.version).toBe(6);
+      expect(state.version).toBe(7);
 
       const card = state.srs.L1_w1;
       // FSRS-схема
@@ -202,7 +228,7 @@ describe('Store - Версионирование и миграции', () => {
         },
       });
 
-      expect(migrated.version).toBe(6);
+      expect(migrated.version).toBe(7);
       expect(migrated.reviewEvents).toEqual([]);
       expect(migrated.srs.L1_w9).toMatchObject({
         learning_steps: 0,
@@ -229,7 +255,7 @@ describe('Store - Версионирование и миграции', () => {
 
       const migrated = runMigrations({ version: 4, srs: {}, reviewEvents });
 
-      expect(migrated.version).toBe(6);
+      expect(migrated.version).toBe(7);
       expect(migrated.pendingReviewLogs).toEqual([]);
       expect(migrated.reviewEvents).toHaveLength(20);
       expect(migrated.masteryArchive.L1_V001).toMatchObject({
@@ -339,7 +365,7 @@ describe('Store - Версионирование и миграции', () => {
       await loadState();
 
       // Должен вернуться к defaultState
-      expect(state.version).toBe(6);
+      expect(state.version).toBe(7);
       expect(state.xp).toBe(0);
       expect(state.level).toBe(1);
     });
@@ -356,7 +382,7 @@ describe('Store - Версионирование и миграции', () => {
       await save(true);
 
       await loadState();
-      expect(state.version).toBe(6);
+      expect(state.version).toBe(7);
       expect(state.xp).toBe(999);
       expect(state.level).toBe(15);
       expect(state.coins).toBe(500);

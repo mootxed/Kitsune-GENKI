@@ -8,7 +8,7 @@ import { acknowledgeReviewLogs, compactReviewJournal } from '../src/review-journ
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-export const CURRENT_VERSION = 6;
+export const CURRENT_VERSION = 7;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -113,6 +113,41 @@ const MIGRATIONS = {
     pendingReviewLogs: Array.isArray(oldState.pendingReviewLogs) ? oldState.pendingReviewLogs : [],
     version: 6,
   }),
+  7: (oldState) => {
+    const baseState = { ...oldState };
+    const existingPrior = Array.isArray(baseState.priorKnowledgeChapterIds)
+      ? baseState.priorKnowledgeChapterIds
+      : [];
+    const legacyCompleted = Array.isArray(baseState.studyPlan?.completedChapters)
+      ? baseState.studyPlan.completedChapters
+      : [];
+    const appChapters = baseState.chapters || {};
+
+    const newPrior = new Set(
+      existingPrior.map(Number).filter((id) => Number.isInteger(id) && id > 0)
+    );
+
+    for (const id of legacyCompleted) {
+      const chId = Number(id);
+      if (!Number.isInteger(chId) || chId <= 0) continue;
+      const chState = appChapters[chId];
+      const isActuallyCompleted = Boolean(
+        chState?.completedAt ||
+        (chState?.checklist &&
+          Object.keys(chState.checklist).length > 0 &&
+          Object.values(chState.checklist).every((val) => val === true))
+      );
+      if (!isActuallyCompleted) {
+        newPrior.add(chId);
+      }
+    }
+
+    return {
+      ...baseState,
+      priorKnowledgeChapterIds: [...newPrior].sort((a, b) => a - b),
+      version: 7,
+    };
+  },
 };
 
 // ---------- Default State ----------
@@ -121,6 +156,7 @@ export function defaultState() {
     version: CURRENT_VERSION,
     initialized: false,
     chapters: {}, // id -> {started, checklist:{}}
+    priorKnowledgeChapterIds: [], // главы, изученные пользователем вне приложения
     activeChapterId: null, // единый указатель на главу для «Продолжить обучение»
     learningEvents: [], // фактические события разделов/глав для плана, отдельно от dailyCards
     srs: {}, // cardId -> SRS record
@@ -185,6 +221,11 @@ function normalizeRuntimeShape(loadedState) {
   const base = defaultState();
   const normalized = { ...base, ...loadedState };
   normalized.settings = { ...base.settings, ...(loadedState.settings || {}) };
+  normalized.priorKnowledgeChapterIds = Array.isArray(loadedState.priorKnowledgeChapterIds)
+    ? [...new Set(loadedState.priorKnowledgeChapterIds.map(Number))]
+        .filter((id) => Number.isInteger(id) && id > 0)
+        .sort((a, b) => a - b)
+    : [];
   normalized.chapters =
     loadedState.chapters && typeof loadedState.chapters === 'object' ? loadedState.chapters : {};
   for (const chapter of Object.values(normalized.chapters)) {
@@ -400,6 +441,8 @@ export const loadedChapters = new Map(); // chapterId -> { lesson, story }
 
 // ---------- Chapter State Helper ----------
 export function chState(id) {
+  if (!state) state = defaultState();
+  if (!state.chapters) state.chapters = {};
   if (!state.chapters[id]) state.chapters[id] = { started: false, checklist: {} };
   return state.chapters[id];
 }

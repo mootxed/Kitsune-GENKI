@@ -7,6 +7,7 @@ import { nav } from './router.js';
 import { getTodayDateKey, parseDateKey } from '../src/local-date.js';
 import {
   ensureActiveChapterId,
+  getActualCompletedChapterIds,
   getChapterProgress,
   getCompletedChapterIds,
 } from '../src/chapter-progress.js';
@@ -42,7 +43,7 @@ export function renderPlan(state, dependencies) {
   const editButton = $('#plan-edit-btn');
   if (editButton) {
     editButton.onclick = () => {
-      populateForm(state.studyPlan);
+      populateForm(state.studyPlan, state);
       $('#plan-form-container')?.classList.toggle('hidden');
     };
   }
@@ -121,18 +122,40 @@ function renderCompletedChaptersList(state) {
     container.innerHTML = '<p class="muted">Каталог глав загружается…</p>';
     return;
   }
-  const completed = new Set(getCompletedChapterIds(state, CONTENT_INDEX));
-  container.innerHTML = CONTENT_INDEX.map(
-    (chapter) => `
-      <label class="chapter-checkbox-item">
-        <input type="checkbox" class="chapter-checkbox" data-chapter-id="${chapter.id}" ${completed.has(chapter.id) ? 'checked' : ''}>
-        <span class="chapter-checkbox-label">Глава ${chapter.id}: ${chapter.title}</span>
-      </label>`
-  ).join('');
+  const actualCompleted = new Set(getActualCompletedChapterIds(state, CONTENT_INDEX));
+  const effectiveCompleted = new Set(getCompletedChapterIds(state, CONTENT_INDEX));
+
+  container.innerHTML = CONTENT_INDEX.map((chapter) => {
+    const isActual = actualCompleted.has(chapter.id);
+    const isEffective = effectiveCompleted.has(chapter.id);
+    const checkedAttr = isEffective ? 'checked' : '';
+    const disabledAttr = isActual ? 'disabled' : '';
+    const tag = isActual ? ' (пройдена в приложении)' : isEffective ? ' (изучена ранее)' : '';
+
+    return `
+      <label class="chapter-checkbox-item ${isActual ? 'disabled-item' : ''}">
+        <input type="checkbox" class="chapter-checkbox" data-chapter-id="${chapter.id}" ${checkedAttr} ${disabledAttr}>
+        <span class="chapter-checkbox-label">Глава ${chapter.id}: ${chapter.title}${tag}</span>
+      </label>`;
+  }).join('');
   updateManualProgress();
-  container.querySelectorAll('.chapter-checkbox').forEach((checkbox) => {
-    checkbox.addEventListener('change', updateManualProgress);
+  container.querySelectorAll('.chapter-checkbox:not([disabled])').forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+      syncPriorKnowledgeFromForm(state);
+      updateManualProgress();
+    });
   });
+}
+
+function syncPriorKnowledgeFromForm(state) {
+  const actualCompleted = new Set(getActualCompletedChapterIds(state, CONTENT_INDEX));
+  const checked = [...document.querySelectorAll('.chapter-checkbox:checked')]
+    .map((checkbox) => Number(checkbox.dataset.chapterId))
+    .filter((id) => Number.isInteger(id) && id > 0);
+
+  state.priorKnowledgeChapterIds = checked
+    .filter((id) => !actualCompleted.has(id))
+    .sort((a, b) => a - b);
 }
 
 function updateManualProgress() {
@@ -146,11 +169,8 @@ function updateManualProgress() {
 }
 
 function selectedCompletedChapters(state) {
-  const automatic = getCompletedChapterIds(state, CONTENT_INDEX);
-  const manual = [...document.querySelectorAll('.chapter-checkbox:checked')].map((checkbox) =>
-    Number(checkbox.dataset.chapterId)
-  );
-  return [...new Set([...automatic, ...manual])].sort((a, b) => a - b);
+  syncPriorKnowledgeFromForm(state);
+  return getCompletedChapterIds(state, CONTENT_INDEX);
 }
 
 function collectPlanParams(state) {
@@ -179,7 +199,10 @@ function collectPlanParams(state) {
   return plan;
 }
 
-function populateForm(plan) {
+function populateForm(plan, state) {
+  if (state) {
+    renderCompletedChaptersList(state);
+  }
   if (!plan) return;
   const start = $('#plan-start-date');
   const deadline = $('#plan-deadline-date');

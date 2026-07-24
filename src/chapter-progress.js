@@ -52,37 +52,107 @@ export function isChapterCompleted(chapterState, chapterMeta = null) {
   return hasCompletedChecklist(chapterState, getRequiredChapterSections(chapterMeta));
 }
 
+export function isPriorKnowledge(appState, chapterId) {
+  const id = normalizedChapterId(chapterId);
+  if (!id || !Array.isArray(appState?.priorKnowledgeChapterIds)) return false;
+  return appState.priorKnowledgeChapterIds.includes(id);
+}
+
+export function isEffectivelyCompleted(appState, chapterOrId) {
+  if (!chapterOrId) return false;
+  const chapterId = typeof chapterOrId === 'object' ? chapterOrId.id : chapterOrId;
+  const meta = typeof chapterOrId === 'object' ? chapterOrId : null;
+  const id = normalizedChapterId(chapterId);
+  if (!id) return false;
+  if (isChapterCompleted(appState?.chapters?.[id], meta)) return true;
+  if (isPriorKnowledge(appState, id)) return true;
+  if (appState?.studyPlan?.completedChapters?.includes(id)) return true;
+  return false;
+}
+
 export function getChapterProgress(appState, chapterId, chapterMeta = null) {
-  const chapter = appState?.chapters?.[chapterId] || { started: false, checklist: {} };
+  const id = normalizedChapterId(chapterId);
+  const chapter = appState?.chapters?.[id] || { started: false, checklist: {} };
   const sections = getRequiredChapterSections(chapterMeta);
-  const completedSections = sections.filter((section) => chapter.checklist?.[section.id] === true);
-  const nextSection = sections.find((section) => chapter.checklist?.[section.id] !== true) || null;
+
+  const actualCompleted = isChapterCompleted(chapter, chapterMeta);
+  const prior = isPriorKnowledge(appState, id);
+
+  let completionSource = null;
+  if (actualCompleted) {
+    completionSource = 'app';
+  } else if (prior) {
+    completionSource = 'prior-knowledge';
+  }
+
+  const previouslyStudied = completionSource === 'prior-knowledge';
+  const isCompleted = completionSource !== null;
+
+  const completedSections = isCompleted
+    ? sections
+    : sections.filter((section) => chapter.checklist?.[section.id] === true);
+
+  const nextSection = isCompleted
+    ? null
+    : sections.find((section) => chapter.checklist?.[section.id] !== true) || null;
+
+  const completedCount = isCompleted ? sections.length : completedSections.length;
+  const ratio = sections.length > 0 ? completedCount / sections.length : 0;
+
   return {
-    chapterId: normalizedChapterId(chapterId),
-    started: chapter.started === true,
-    completed: isChapterCompleted(chapter, chapterMeta),
+    chapterId: id,
+    started: chapter.started === true || isCompleted,
+    completed: isCompleted,
     completedAt: chapter.completedAt || null,
+    completionSource,
+    previouslyStudied,
     sections,
     completedSections,
-    completedCount: completedSections.length,
+    completedCount,
     totalCount: sections.length,
     nextSection,
-    ratio: sections.length > 0 ? completedSections.length / sections.length : 0,
+    ratio,
   };
 }
 
 export function getCompletedChapterIds(appState, chapters = []) {
-  return chapters
-    .filter((chapter) => isChapterCompleted(appState?.chapters?.[chapter.id], chapter))
-    .map((chapter) => chapter.id);
+  if (Array.isArray(chapters) && chapters.length > 0) {
+    return chapters
+      .filter((chapter) => isEffectivelyCompleted(appState, chapter))
+      .map((chapter) => chapter.id)
+      .sort((a, b) => a - b);
+  }
+  const actual = Object.entries(appState?.chapters || {})
+    .filter(([, chState]) => isChapterCompleted(chState))
+    .map(([id]) => Number(id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  const prior = Array.isArray(appState?.priorKnowledgeChapterIds)
+    ? appState.priorKnowledgeChapterIds
+    : [];
+  const planCompleted = Array.isArray(appState?.studyPlan?.completedChapters)
+    ? appState.studyPlan.completedChapters
+    : [];
+  return [...new Set([...actual, ...prior, ...planCompleted])].sort((a, b) => a - b);
 }
 
-function isEffectivelyCompleted(appState, chapter) {
-  if (!chapter) return false;
-  return Boolean(
-    isChapterCompleted(appState?.chapters?.[chapter.id], chapter) ||
-    appState?.studyPlan?.completedChapters?.includes(chapter.id)
-  );
+export function getActualCompletedChapterIds(appState, chapters = []) {
+  if (Array.isArray(chapters) && chapters.length > 0) {
+    return chapters
+      .filter((chapter) => isChapterCompleted(appState?.chapters?.[chapter.id], chapter))
+      .map((chapter) => chapter.id)
+      .sort((a, b) => a - b);
+  }
+  return Object.entries(appState?.chapters || {})
+    .filter(([, chState]) => isChapterCompleted(chState))
+    .map(([id]) => Number(id))
+    .filter((id) => Number.isInteger(id) && id > 0)
+    .sort((a, b) => a - b);
+}
+
+export function getPriorKnowledgeChapterIds(appState) {
+  return Array.isArray(appState?.priorKnowledgeChapterIds)
+    ? [...appState.priorKnowledgeChapterIds].sort((a, b) => a - b)
+    : [];
 }
 
 export function isChapterAvailable(appState, chapters, chapterId) {
@@ -298,12 +368,15 @@ export function getCanonicalMaxUnlockedLesson(appState, contentIndex = null) {
         if (chId > maxUnlocked) maxUnlocked = chId;
       }
     }
-  } else if (appState.chapters && typeof appState.chapters === 'object') {
-    for (const key of Object.keys(appState.chapters)) {
+  } else {
+    const ids = [
+      ...Object.keys(appState.chapters || {}),
+      ...(appState.priorKnowledgeChapterIds || []),
+    ];
+    for (const key of ids) {
       const chId = Number(key);
       if (Number.isInteger(chId) && chId > 0) {
-        const chState = appState.chapters[key];
-        if (chState && (chState.started || chState.completedAt || hasCompletedChecklist(chState))) {
+        if (isEffectivelyCompleted(appState, chId) || appState.chapters?.[chId]?.started) {
           if (chId > maxUnlocked) maxUnlocked = chId;
         }
       }
