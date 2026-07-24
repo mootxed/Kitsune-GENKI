@@ -1,0 +1,18 @@
+[
+  {
+    "wordId": "L2_V024",
+    "lexeme": "はやい",
+    "japanese": "朝は早いです",
+    "reading": "あさははやいです",
+    "translation": "Утро раннее",
+    "lessonRequired": 2
+  },
+  {
+    "wordId": "L2_V024",
+    "lexeme": "はやい",
+    "japanese": "朝ごはんは七時です。早いですね。",
+    "reading": "あさごはんはしちじです。はやいですね。",
+    "translation": "Завтрак в семь часов. Это рано, не так ли?",
+    "lessonRequired": 2
+  }
+]

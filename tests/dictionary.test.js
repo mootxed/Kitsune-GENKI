@@ -22,6 +22,16 @@ vi.mock('../src/example-generator.js', () => ({
     source: 'corpus',
     grammar: null,
   })),
+  getExampleCandidates: vi.fn(() => [
+    {
+      japanese: '寿司を食べる。',
+      japaneseHighlighted: '<mark class="ex-highlight">食べる</mark>。寿司を食べる。',
+      reading: 'すしをたべる。',
+      translation: 'Есть суши.',
+      source: 'corpus',
+      grammar: null,
+    },
+  ]),
   nextSeed: vi.fn((s) => s + 1),
   highlightWord: vi.fn((s) => s),
   EXAMPLE_SOURCES: { CORPUS: 'corpus', TEMPLATE: 'template' },
@@ -611,61 +621,70 @@ describe('Dictionary UI System', () => {
       expect(plainPanel.style.display).toBe('flex');
     });
 
-    it('должен скрывать японский ответ и раскрывать его по клику на Показать', () => {
+    it('должен показывать изученные спряжения глагола сразу без кнопок', () => {
       state.activeChapterId = 8;
       openDictionaryModal(mockWordVerb, state, dependencies);
 
-      // Ищем строку "ます" (первая в Polite)
-      const valueDiv = document.querySelector('#dict-conj-panel-polite .dict-conj-value');
-      expect(valueDiv).not.toBeNull();
-      expect(valueDiv.getAttribute('data-revealed')).toBe('false');
+      // Ищем строку "ます" (первая в Polite, урок 3)
+      const masuRow = document.querySelector('#dict-conj-panel-polite .dict-conj-row:nth-child(1)');
+      expect(masuRow).not.toBeNull();
+      expect(masuRow.classList.contains('locked')).toBe(false);
 
-      const trigger = valueDiv.querySelector('.dict-conj-reveal-trigger');
-      expect(trigger).not.toBeNull();
+      // Изученная форма должна отображаться сразу
+      const actualForm = masuRow.querySelector('.dict-conj-actual-form');
+      expect(actualForm).not.toBeNull();
+      expect(actualForm.textContent).toContain('ます');
 
-      // Кликаем по кнопке «Показать»
-      trigger.click();
-      expect(valueDiv.getAttribute('data-revealed')).toBe('true');
+      // Кнопки "Показать" не должно быть
+      const trigger = masuRow.querySelector('.dict-conj-reveal-trigger');
+      expect(trigger).toBeNull();
+
+      // data-revealed не должно быть
+      const valueDiv = masuRow.querySelector('.dict-conj-value');
+      expect(valueDiv.hasAttribute('data-revealed')).toBe(false);
     });
 
-    it('должен блокировать формы будущих уроков и открывать текущие/прошлые', () => {
+    it('должен блокировать формы будущих уроков и показывать текущие/прошлые сразу', () => {
       // Устанавливаем текущий урок = 5
       state.activeChapterId = 5;
       openDictionaryModal(mockWordVerb, state, dependencies);
 
-      // ます-форма (урок 3) - должна быть доступна (есть кнопка "Показать")
-      const masuValue = document.querySelector(
-        '#dict-conj-panel-polite .dict-conj-row:nth-child(1) .dict-conj-value'
-      );
-      expect(masuValue.querySelector('.dict-conj-reveal-trigger')).not.toBeNull();
+      // ます-форма (урок 3) - должна быть видна сразу
+      const masuRow = document.querySelector('#dict-conj-panel-polite .dict-conj-row:nth-child(1)');
+      expect(masuRow.classList.contains('locked')).toBe(false);
+      expect(masuRow.querySelector('.dict-conj-actual-form')).not.toBeNull();
+      expect(masuRow.querySelector('.dict-conj-actual-form').textContent).toContain('ます');
+      expect(masuRow.querySelector('.dict-conj-reveal-trigger')).toBeNull();
 
-      // ました-форма (урок 4) - должна быть доступна
-      const mashitaValue = document.querySelector(
-        '#dict-conj-panel-polite .dict-conj-row:nth-child(4) .dict-conj-value'
+      // ました-форма (урок 4) - должна быть видна сразу
+      const mashitaRow = document.querySelector(
+        '#dict-conj-panel-polite .dict-conj-row:nth-child(4)'
       );
-      expect(mashitaValue.querySelector('.dict-conj-reveal-trigger')).not.toBeNull();
+      expect(mashitaRow.classList.contains('locked')).toBe(false);
+      expect(mashitaRow.querySelector('.dict-conj-actual-form')).not.toBeNull();
+      expect(mashitaRow.querySelector('.dict-conj-reveal-trigger')).toBeNull();
 
-      // ましょう-форма (урок 5) - должна быть доступна
-      const mashouValue = document.querySelector(
-        '#dict-conj-panel-polite .dict-conj-row:nth-child(6) .dict-conj-value'
+      // ましょう-форма (урок 5) - должна быть видна сразу
+      const mashouRow = document.querySelector(
+        '#dict-conj-panel-polite .dict-conj-row:nth-child(6)'
       );
-      expect(mashouValue.querySelector('.dict-conj-reveal-trigger')).not.toBeNull();
+      expect(mashouRow.classList.contains('locked')).toBe(false);
+      expect(mashouRow.querySelector('.dict-conj-actual-form')).not.toBeNull();
+      expect(mashouRow.querySelector('.dict-conj-reveal-trigger')).toBeNull();
 
       // て-форма (урок 6) - должна быть заблокирована
-      const teValue = document.querySelector(
-        '#dict-conj-panel-te .dict-conj-row:nth-child(1) .dict-conj-value'
-      );
-      expect(teValue.querySelector('.dict-conj-reveal-trigger')).toBeNull();
-      expect(teValue.querySelector('.dict-conj-locked-text').textContent).toContain(
+      const teRow = document.querySelector('#dict-conj-panel-te .dict-conj-row:nth-child(1)');
+      expect(teRow.classList.contains('locked')).toBe(true);
+      expect(teRow.querySelector('.dict-conj-actual-form')).toBeNull();
+      expect(teRow.querySelector('.dict-conj-locked-text').textContent).toContain(
         'Откроется в уроке 6'
       );
 
       // Простые формы (уроки 8-9) - должны быть заблокированы
-      const dictValue = document.querySelector(
-        '#dict-conj-panel-plain .dict-conj-row:nth-child(1) .dict-conj-value'
-      );
-      expect(dictValue.querySelector('.dict-conj-reveal-trigger')).toBeNull();
-      expect(dictValue.querySelector('.dict-conj-locked-text').textContent).toContain(
+      const dictRow = document.querySelector('#dict-conj-panel-plain .dict-conj-row:nth-child(1)');
+      expect(dictRow.classList.contains('locked')).toBe(true);
+      expect(dictRow.querySelector('.dict-conj-actual-form')).toBeNull();
+      expect(dictRow.querySelector('.dict-conj-locked-text').textContent).toContain(
         'Откроется в уроке 8'
       );
     });

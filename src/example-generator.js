@@ -44,18 +44,14 @@ function makeLCG(seed) {
 }
 
 /**
- * Возвращает следующий seed для кнопки «Другой пример».
- * @param {number} seed
- * @returns {number}
+ * Получить следующий seed для LCG (для совместимости с тестами).
+ * @param {number} seed - Текущий seed
+ * @returns {number} Следующий seed
  */
 export function nextSeed(seed) {
-  return ((seed >>> 0) + 2654435761) >>> 0;
-}
-
-function pickSeeded(arr, rng) {
-  if (!arr || arr.length === 0) return null;
-  const idx = Math.floor(rng.next() * arr.length);
-  return arr[idx];
+  const A = 1664525;
+  const C = 1013904223;
+  return (A * (seed >>> 0 || 1) + C) >>> 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -272,10 +268,12 @@ export const SEMANTIC_TEMPLATES = [
     role: 'topic-verb',
     particle: 'が',
     companionTags: [],
-    build(word, _companion, _rng, _activeLessonId) {
+    build(word, _companion, _rng, activeLessonId) {
+      // Конструкция のが好きです вводится в уроке 8
+      if (activeLessonId < 8) return null;
       return {
-        japanese: `${word.kanji || word.writing}が好きです`,
-        reading: `${word.writing}がすきです`,
+        japanese: `${word.kanji || word.writing}のが好きです`,
+        reading: `${word.writing}のがすきです`,
         translation: `нравится ${shortT(word)}`,
       };
     },
@@ -381,6 +379,12 @@ export function highlightWord(sentence, word) {
 // Шаблонный движок
 // ---------------------------------------------------------------------------
 
+function pickSeeded(arr, rng) {
+  if (!arr || arr.length === 0) return null;
+  const idx = Math.floor(rng.next() * arr.length);
+  return arr[idx];
+}
+
 function templateEngine(word, seed, userMaxLesson) {
   const rng = makeLCG(seed);
 
@@ -438,58 +442,77 @@ function templateEngine(word, seed, userMaxLesson) {
 // ---------------------------------------------------------------------------
 
 /**
- * Сгенерировать контекстное предложение для слова.
+ * Получить стабильный дедуплицированный список кандидатов-примеров для слова.
  *
- * Просмотр примера НЕ записывает production evidence и НЕ меняет mastery/FSRS.
+ * Требования:
+ * - дедупликация по нормализованному японскому тексту
+ * - сохранение приоритета проверенного корпуса
+ * - стабильный порядок
+ * - исключение примеров из будущих уроков
+ * - без небезопасных случайных шаблонов (отключены)
  *
- * @param {object} word - нормализованный объект слова
+ * @param {object} word
  * @param {object} [options]
- * @param {number} [options.seed=0] - детерминированный seed
- * @param {number} [options.userMaxLesson=12] - максимальный урок пользователя
- * @returns {{
- *   japanese: string,
- *   japaneseHighlighted: string,
- *   reading: string,
- *   translation: string,
- *   source: string,
- *   grammar: object | null,
- * } | null}
+ * @param {number} [options.userMaxLesson=12]
+ * @returns {Array} Список кандидатов
  */
-export function generateExample(word, { seed = 0, userMaxLesson = 12 } = {}) {
-  if (!word || !word.writing) return null;
+export function getExampleCandidates(word, { userMaxLesson = 12 } = {}) {
+  if (!word || !word.writing) return [];
 
-  const rng = makeLCG(seed + 1);
+  const candidates = [];
+  const seenJapanese = new Set();
+
+  const normalizeSentence = (str) => {
+    if (!str) return '';
+    return str.normalize('NFKC').replace(/[\s\p{P}\p{S}]+/gu, '');
+  };
+
+  const addCandidate = (ex, source) => {
+    if (!ex || !ex.japanese) return;
+    const norm = normalizeSentence(ex.japanese);
+    if (seenJapanese.has(norm)) return;
+    seenJapanese.add(norm);
+
+    candidates.push({
+      japanese: ex.japanese,
+      japaneseHighlighted: highlightWord(ex.japanese, word),
+      reading: ex.reading || '',
+      translation: ex.translation || '',
+      source: source,
+      grammar: ex.grammarIds ? { particles: ex.grammarIds } : ex.grammar || null,
+    });
+  };
 
   // ── 1. Corpus-first ──────────────────────────────────────────────────────
   if (word.lexemeId) {
     const corpusExamples = ExamplesDB.getExamplesForLexeme(word.lexemeId, userMaxLesson);
-    if (corpusExamples.length > 0) {
-      const idx = Math.floor(rng.next() * corpusExamples.length);
-      const ex = corpusExamples[idx];
-      return {
-        japanese: ex.japanese,
-        japaneseHighlighted: highlightWord(ex.japanese, word),
-        reading: ex.reading || '',
-        translation: ex.translation || '',
-        source: EXAMPLE_SOURCES.CORPUS,
-        grammar: ex.grammarIds ? { particles: ex.grammarIds } : null,
-      };
+    // Сортируем по id или japanese для стабильного порядка
+    corpusExamples.sort((a, b) => {
+      const aVal = a.id || a.japanese || '';
+      const bVal = b.id || b.japanese || '';
+      return aVal.localeCompare(bVal);
+    });
+
+    for (const ex of corpusExamples) {
+      addCandidate(ex, EXAMPLE_SOURCES.CORPUS);
     }
   }
 
-  // ── 2. Template-fallback ─────────────────────────────────────────────────
-  const tplResult = templateEngine(word, seed, userMaxLesson);
-  if (tplResult) {
-    return {
-      japanese: tplResult.japanese,
-      japaneseHighlighted: highlightWord(tplResult.japanese, word),
-      reading: tplResult.reading || '',
-      translation: tplResult.translation || '',
-      source: EXAMPLE_SOURCES.TEMPLATE,
-      grammar: tplResult.grammar || null,
-    };
-  }
+  // ── 2. Template-fallback (отключён до появления semanticTags) ────────────
+  // Пока не вернутся нормальные семантические теги из словаря, шаблоны
+  // вроде noun-wa-desu генерируют бессмыслицу (напр. "寺ははやいです").
+  // Мы полагаемся только на проверенные curated примеры.
 
-  // ── 3. Нет безопасного варианта ──────────────────────────────────────────
-  return null;
+  return candidates;
+}
+
+/**
+ * Старая сигнатура для совместимости, но теперь опирается на getExampleCandidates.
+ * Для UI рекомендуется использовать getExampleCandidates напрямую.
+ */
+export function generateExample(word, { exampleIndex = 0, userMaxLesson = 12 } = {}) {
+  const candidates = getExampleCandidates(word, { userMaxLesson });
+  if (candidates.length === 0) return null;
+  const idx = exampleIndex % candidates.length;
+  return candidates[idx >= 0 ? idx : 0];
 }

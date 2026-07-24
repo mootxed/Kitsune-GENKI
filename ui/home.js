@@ -86,7 +86,7 @@ export let LESSONS = [];
 // Лёгкий индекс глав (метаданные без полного контента)
 export let CONTENT_INDEX = [];
 
-const NORMALIZED_WORD_SCHEMA_VERSION = 1;
+const NORMALIZED_WORD_SCHEMA_VERSION = 3;
 
 // ---------- Load Lessons ----------
 // На старте грузим только лёгкий content-index; полные уроки подгружаются
@@ -180,6 +180,18 @@ export async function loadLessons() {
     }
   } catch (e) {
     console.warn('Не удалось загрузить словарь частиц для ExamplesDB:', e);
+  }
+
+  // Загрузка curated примеров слов
+  try {
+    const res = await fetch('data/curated-word-examples.json');
+    if (res.ok) {
+      const data = await res.json();
+      ExamplesDB.registerCuratedWordExamples(data);
+      ExamplesDB.rebuildIndex();
+    }
+  } catch (e) {
+    console.warn('Не удалось загрузить curated примеры для ExamplesDB:', e);
   }
 
   // Принудительно обновляем отображение глав после загрузки данных

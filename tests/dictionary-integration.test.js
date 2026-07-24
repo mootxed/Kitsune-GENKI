@@ -107,9 +107,9 @@ describe('Dictionary Integration', () => {
     expect(nomu.particlePatterns).toEqual(['を']);
     expect(nomu.topic).toBe(null); // Because category is 'u-verbs'
 
-    // Check schema version updated
+    // Check schema version updated to current version (3)
     const schemaVersion = await db.get(STORES.CONTENT_CACHE, 'schema_version');
-    expect(schemaVersion).toBe(1);
+    expect(schemaVersion).toBe(3);
   });
 
   it('keeps FSRS state after migration', async () => {
@@ -129,26 +129,37 @@ describe('Dictionary Integration', () => {
     expect(state.masteryArchive['L3_V035']).toBeDefined();
   });
 
-  it('repeated migration does nothing', async () => {
-    // Set schema_version to 1 directly with an old lesson, but content version matches
-    const oldLesson3 = {
+  it('repeated migration does nothing when schema version matches', async () => {
+    // Set schema_version to 3 (current) with already normalized lesson
+    const normalizedLesson3 = {
       id: 3,
-      words: [{ id: 'L3_V035', kanji: '飲む', translation: 'пить', _flag: 'old' }],
+      words: [
+        {
+          id: 'L3_V035',
+          kanji: '飲む',
+          writing: 'のむ',
+          translation: 'пить',
+          partOfSpeech: 'verb',
+          verbClass: 'godan',
+          lessonIds: [3],
+          _testFlag: 'already-normalized',
+        },
+      ],
     };
-    await db.set(STORES.CONTENT_CACHE, 'lessons', [oldLesson3]);
+    await db.set(STORES.CONTENT_CACHE, 'lessons', [normalizedLesson3]);
     // Mock loadContentIndex to return version 1
     global.fetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ version: 1, chapters: [] }),
     });
     await db.set(STORES.CONTENT_CACHE, 'lesson_version', '1');
-    await db.set(STORES.CONTENT_CACHE, 'schema_version', 1);
+    await db.set(STORES.CONTENT_CACHE, 'schema_version', 3);
 
     await loadLessons();
 
-    // Since version is 1 and schema is 1, it should NOT migrate, so it should keep the old object
+    // Since version is 1 and schema is 3, it should NOT migrate, so it should keep the normalized object
     const word = getLesson(3)?.words.find((w) => w.id === 'L3_V035');
-    expect(word._flag).toBe('old');
+    expect(word._testFlag).toBe('already-normalized');
   });
 
   it('loads all 12 lessons and registers 674 words', async () => {

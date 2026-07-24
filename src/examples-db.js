@@ -216,6 +216,25 @@ export class ExamplesDBClass {
   }
 
   /**
+   * Зарегистрировать curated примеры слов из отдельного JSON-файла
+   */
+  registerCuratedWordExamples(curatedData) {
+    if (!curatedData || !curatedData.examples) return;
+
+    for (const ex of curatedData.examples) {
+      if (!ex.lexemeId || !ex.japanese) continue;
+
+      this.addRawSentence({
+        japanese: ex.japanese,
+        reading: ex.reading || '',
+        translation: ex.translation || '',
+        sourceLessonId: ex.minLesson || 1,
+        source: 'curated-word',
+      });
+    }
+  }
+
+  /**
    * Зарегистрировать готовые задания (CURATED_PARTICLE_SENTENCES)
    */
   registerCuratedParticleSentences(curatedData) {

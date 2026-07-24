@@ -146,6 +146,25 @@ export function normalizeWord(raw, lessonId) {
   const writing = raw.writing || '';
   const kanji = raw.kanji || writing;
 
+  // 4a. Извлечение типа прилагательного
+  let adjectiveClass = raw.adjectiveClass || null;
+  if (partOfSpeech === 'adjective' && !adjectiveClass) {
+    if (cat === 'i-adjectives') adjectiveClass = 'i';
+    else if (cat === 'na-adjectives') adjectiveClass = 'na';
+    else {
+      // Явное сопоставление для слов из общих категорий
+      const w = raw.writing || raw.kanji || '';
+      if (w === 'いい' || w === 'はやい' || w === '新しい') {
+        adjectiveClass = 'i';
+      } else if (w.includes('きれい') || w.includes('げんき') || w.includes('しずか')) {
+        adjectiveClass = 'na';
+      }
+    }
+  }
+  if (partOfSpeech !== 'adjective') {
+    adjectiveClass = null;
+  }
+
   // 5. Генерация устойчивого lexemeId
   let lexemeId = raw.lexemeId || raw.lexeme_id;
   if (!lexemeId) {
@@ -168,6 +187,7 @@ export function normalizeWord(raw, lessonId) {
     topic,
     partOfSpeech,
     verbClass,
+    adjectiveClass,
     lexemeId,
     lessonIds,
     semanticTags,

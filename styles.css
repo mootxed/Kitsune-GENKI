@@ -1,4 +1,4 @@
-npmm/* ===== CSS Variables & Themes ===== */
+npmm /* ===== CSS Variables & Themes ===== */
 :root,
 [data-theme='light'] {
   --orange: #ff4b2b;
@@ -6431,6 +6431,36 @@ rt {
   border-color: var(--orange);
 }
 
+/* Подфильтр типов прилагательных */
+.dict-adjective-subfilter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dict-adj-class-btn {
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dict-adj-class-btn:hover {
+  color: var(--text);
+  border-color: var(--orange-soft);
+}
+
+.dict-adj-class-btn.active {
+  background: var(--orange-soft);
+  color: var(--text);
+  border-color: var(--orange-soft);
+}
+
 /* Общая шкала мастерства */
 .dict-overall-mastery {
   background: var(--card-bg);
@@ -10523,41 +10553,11 @@ button.segment-card {
   min-height: 44px;
 }
 
-.dict-conj-reveal-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: var(--bg, #f1f5f9);
-  border: 1px dashed var(--text-secondary, #94a3b8);
-  color: var(--text-secondary, #475569);
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.dict-conj-reveal-trigger:hover {
-  background: var(--orange-soft, rgba(255, 122, 26, 0.1));
-  color: var(--orange, #ff7a1a);
-  border-color: var(--orange, #ff7a1a);
-}
-
 .dict-conj-actual-form {
-  display: none;
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--text, #0f172a);
   font-family: 'Noto Sans JP', sans-serif;
-}
-
-.dict-conj-value[data-revealed='true'] .dict-conj-reveal-trigger {
-  display: none;
-}
-
-.dict-conj-value[data-revealed='true'] .dict-conj-actual-form {
-  display: inline-block;
 }
 
 .dict-conj-locked-text {

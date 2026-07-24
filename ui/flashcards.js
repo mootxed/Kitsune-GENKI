@@ -34,7 +34,7 @@ import { conjugateVerb } from '../src/verb-conjugator.js';
 import { ExamplesDB } from '../src/examples-db.js';
 import {
   generateExample,
-  nextSeed,
+  getExampleCandidates,
   highlightWord,
   EXAMPLE_SOURCES,
 } from '../src/example-generator.js';
@@ -2265,6 +2265,7 @@ export function renderFlash(state, dependencies) {
 let dictSearchQuery = '';
 let dictFilter = 'all';
 let dictTopicFilter = 'all';
+let dictAdjectiveClassFilter = 'all';
 
 // Функция для генерации разметки пустого состояния
 function emptyState(icon, title, desc) {
@@ -2406,6 +2407,11 @@ export async function renderDictionary(state, dependencies) {
         <button class="dict-filter-btn" data-filter="adjective">Прилаг.</button>
         <button class="dict-filter-btn" data-filter="other">Ост.</button>
       </div>
+      <div class="dict-adjective-subfilter" id="dict-adjective-subfilter" style="display: none; margin-top: 8px; gap: 6px;">
+        <button class="dict-adj-class-btn active" data-adj-class="all">Все</button>
+        <button class="dict-adj-class-btn" data-adj-class="i">い-прилаг.</button>
+        <button class="dict-adj-class-btn" data-adj-class="na">な-прилаг.</button>
+      </div>
       ${
         presentTopics.size > 0
           ? `
@@ -2447,7 +2453,43 @@ export async function renderDictionary(state, dependencies) {
       $$('.dict-filter-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       dictFilter = btn.dataset.filter;
-      renderDictionaryLessons(state, dependencies, dictSearchQuery, dictFilter, dictTopicFilter);
+
+      // Показать/скрыть подфильтр прилагательных
+      const adjSubfilter = $('#dict-adjective-subfilter');
+      if (adjSubfilter) {
+        if (dictFilter === 'adjective') {
+          adjSubfilter.style.display = 'flex';
+        } else {
+          adjSubfilter.style.display = 'none';
+          dictAdjectiveClassFilter = 'all';
+        }
+      }
+
+      renderDictionaryLessons(
+        state,
+        dependencies,
+        dictSearchQuery,
+        dictFilter,
+        dictTopicFilter,
+        dictAdjectiveClassFilter
+      );
+    };
+  });
+
+  // Обработчики подфильтра типов прилагательных
+  $$('.dict-adj-class-btn').forEach((btn) => {
+    btn.onclick = () => {
+      $$('.dict-adj-class-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      dictAdjectiveClassFilter = btn.dataset.adjClass;
+      renderDictionaryLessons(
+        state,
+        dependencies,
+        dictSearchQuery,
+        dictFilter,
+        dictTopicFilter,
+        dictAdjectiveClassFilter
+      );
     };
   });
 
@@ -2466,7 +2508,8 @@ function renderDictionaryLessons(
   dependencies,
   searchQuery = '',
   filterQuery = 'all',
-  topicQuery = 'all'
+  topicQuery = 'all',
+  adjectiveClassQuery = 'all'
 ) {
   const { LESSONS } = dependencies;
 
@@ -2544,13 +2587,19 @@ function renderDictionaryLessons(
         matchesFilter = !['verb', 'noun', 'adjective'].includes(word.partOfSpeech);
       }
 
+      // Apply adjective class sub-filter
+      let matchesAdjectiveClass = true;
+      if (filterQuery === 'adjective' && adjectiveClassQuery !== 'all') {
+        matchesAdjectiveClass = word.adjectiveClass === adjectiveClassQuery;
+      }
+
       // Apply topic filter
       let matchesTopic = true;
       if (topicQuery !== 'all') {
         matchesTopic = word.topic === topicQuery;
       }
 
-      return matchesSearch && matchesFilter && matchesTopic;
+      return matchesSearch && matchesFilter && matchesAdjectiveClass && matchesTopic;
     });
 
     if (filteredWords.length === 0 && (query || filterQuery !== 'all')) {
@@ -2866,9 +2915,12 @@ export function openDictionaryModal(word, state, dependencies) {
   let currentKanjiIdx = 0;
   let isKanjiOpen = false;
   let isProgressOpen = false;
-  // Seed для генератора примеров. Живёт в замыкании — перерисовка не меняет пример.
-  // «Другой пример» вызывает nextSeed() и renderModalContent().
-  let exampleSeed = 0;
+
+  // Получаем список дедуплицированных кандидатов для примеров
+  const exampleCandidates = getExampleCandidates(word, {
+    userMaxLesson: state.maxUnlockedLesson || 12,
+  });
+  let exampleIndex = 0;
 
   const renderModalContent = () => {
     const selectedKanji = hasKanji ? kanjiChars[currentKanjiIdx] : null;
@@ -3278,15 +3330,14 @@ export function openDictionaryModal(word, state, dependencies) {
                 <span class="dict-conj-lesson-badge">Урок ${item.lesson}</span>
               </div>
               <div class="dict-conj-cell cell-value">
-                <div class="dict-conj-value" ${locked ? '' : 'data-revealed="false"'}>
+                <div class="dict-conj-value">
                   ${
                     locked
                       ? `
                     <span class="dict-conj-locked-text">Откроется в уроке ${item.lesson}</span>
                   `
                       : `
-                    <button class="dict-conj-reveal-trigger">👁️ Показать</button>
-                    <span class="dict-conj-actual-form">${formattedJp}</span>
+                    <span class="dict-conj-actual-form" style="opacity: 1; visibility: visible; filter: none; display: inline;">${formattedJp}</span>
                   `
                   }
                 </div>
@@ -3339,8 +3390,7 @@ export function openDictionaryModal(word, state, dependencies) {
 
     // Генерация контекстного примера через гибридный движок (corpus-first → template → null).
     // Просмотр примера НЕ записывает production evidence и НЕ меняет mastery/FSRS.
-    const userMaxLesson = activeLessonId;
-    const generatedExample = generateExample(word, { seed: exampleSeed, userMaxLesson });
+    const generatedExample = exampleCandidates.length > 0 ? exampleCandidates[exampleIndex] : null;
 
     // Строим HTML блока «Примеры» с подсветкой слова и кнопками
     function buildExampleBlockHtml() {
@@ -3354,6 +3404,12 @@ export function openDictionaryModal(word, state, dependencies) {
       const readingHtml = generatedExample.reading
         ? `<div class="dict-example-reading">${generatedExample.reading}</div>`
         : '';
+
+      const nextBtnHtml =
+        exampleCandidates.length > 1
+          ? `<button class="dict-example-next btn-secondary-sm" id="dict-example-next">🔄 Другой пример (${exampleIndex + 1}/${exampleCandidates.length})</button>`
+          : `<span class="dict-example-hint">Других примеров пока нет</span>`;
+
       return `
         <div class="dict-example-card" id="dict-example-card">
           <div class="dict-example-header">
@@ -3365,9 +3421,7 @@ export function openDictionaryModal(word, state, dependencies) {
           ${readingHtml}
           <div class="dict-example-ru">${generatedExample.translation}</div>
           <div class="dict-example-footer">
-            <button class="dict-example-next btn-secondary-sm" id="dict-example-next">
-              🔄 Другой пример
-            </button>
+            ${nextBtnHtml}
           </div>
         </div>
       `;
@@ -3514,13 +3568,32 @@ export function openDictionaryModal(word, state, dependencies) {
       };
     }
 
-    // «Другой пример» — переключает seed; не затрагивает FSRS/mastery
+    // «Другой пример» — циклично перебирает кандидатов; не затрагивает FSRS/mastery
     const nextExBtn = $('#dict-example-next');
     if (nextExBtn) {
       nextExBtn.onclick = (e) => {
         e.stopPropagation();
-        exampleSeed = nextSeed(exampleSeed);
-        renderModalContent();
+        exampleIndex = (exampleIndex + 1) % exampleCandidates.length;
+        const examplesBody = $('#dict-examples-body');
+        if (examplesBody) {
+          examplesBody.innerHTML = buildExampleBlockHtml();
+
+          // Re-bind speak button since we replaced the HTML
+          const newExSpeakBtn = $('#dict-example-speak');
+          if (newExSpeakBtn) {
+            newExSpeakBtn.onclick = (e2) => {
+              e2.stopPropagation();
+              const currEx = exampleCandidates[exampleIndex];
+              if (currEx) speakJapanese(currEx.japanese);
+            };
+          }
+
+          // Re-bind next button since we replaced the HTML
+          const newNextExBtn = $('#dict-example-next');
+          if (newNextExBtn) {
+            newNextExBtn.onclick = nextExBtn.onclick;
+          }
+        }
       };
     }
 
@@ -3551,18 +3624,6 @@ export function openDictionaryModal(word, state, dependencies) {
           });
         };
       });
-
-      // Делегирование кликов для раскрытия японской формы
-      conjSection.onclick = (e) => {
-        const trigger = e.target.closest('.dict-conj-reveal-trigger');
-        if (trigger) {
-          e.stopPropagation();
-          const valDiv = trigger.closest('.dict-conj-value');
-          if (valDiv) {
-            valDiv.dataset.revealed = 'true';
-          }
-        }
-      };
     }
 
     if (kanjiChars.length > 1) {

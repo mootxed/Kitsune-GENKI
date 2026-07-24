@@ -165,24 +165,22 @@ describe('Детерминизм', () => {
     expect(r1.translation).toBe(r2.translation);
   });
 
-  it('разные seeds → могут давать разные результаты при большом корпусе', () => {
-    // Наполняем корпус 20 разными вариантами
-    const corpus = Array.from({ length: 20 }, (_, i) =>
-      makeCorpusExample({ japanese: `文報${i}。`, translation: `предложение ${i}` })
+  it('разные exampleIndex → возвращают разные примеры при большом корпусе', () => {
+    // Наполняем корпус 3 разными вариантами
+    const corpus = Array.from({ length: 3 }, (_, i) =>
+      makeCorpusExample({ japanese: `文${i}。`, translation: `предложение ${i}` })
     );
     ExamplesDB.getExamplesForLexeme.mockReturnValue(corpus);
 
     const word = makeNoun();
     const results = new Set();
-    // Используем nextSeed-цепочку — даёт хорошо разбросанные значения
-    let s = 0;
-    for (let i = 0; i < 20; i++) {
-      const r = generateExample(word, { seed: s });
+    // Используем разные exampleIndex для получения разных примеров
+    for (let i = 0; i < 3; i++) {
+      const r = generateExample(word, { exampleIndex: i });
       if (r) results.add(r.japanese);
-      s = nextSeed(s);
     }
-    // Хотя бы два разных результата для 20 хорошо разбросанных seeds
-    expect(results.size).toBeGreaterThanOrEqual(2);
+    // Должны получить 3 разных примера
+    expect(results.size).toBe(3);
   });
 
   it('nextSeed детерминирован', () => {
@@ -217,14 +215,17 @@ describe('Ограничения по урокам', () => {
     expect(ExamplesDB.getExamplesForLexeme).toHaveBeenCalledWith(word.lexemeId, 3);
   });
 
-  it('template: getCompatibleVocab вызывается с правильным userMaxLesson', () => {
+  it('template: шаблонный движок отключён до появления semanticTags', () => {
+    // Шаблоны временно отключены, так как генерируют бессмыслицу
+    // без полноценных semanticTags в словаре
     ExamplesDB.getExamplesForLexeme.mockReturnValue([]);
     ExamplesDB.getCompatibleVocab.mockReturnValue([makeVerb()]);
 
     const word = makePlace();
-    generateExample(word, { seed: 0, userMaxLesson: 5 });
+    const result = generateExample(word, { exampleIndex: 0, userMaxLesson: 5 });
 
-    expect(ExamplesDB.getCompatibleVocab).toHaveBeenCalledWith([], 5);
+    // Без корпусных примеров должен вернуть null
+    expect(result).toBeNull();
   });
 
   it('возвращает null при userMaxLesson=0 (нет открытых уроков)', () => {
