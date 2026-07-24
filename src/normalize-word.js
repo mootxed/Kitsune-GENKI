@@ -46,40 +46,66 @@ export function normalizeWord(raw, lessonId) {
   const cat = (raw.category || '').toLowerCase();
   let topic = raw.topic || null;
 
+  const TOPIC_MAP = {
+    food: 'food',
+    time: 'time',
+    numbers: 'numbers',
+    things: 'things',
+    places: 'places',
+    people: 'people',
+    person: 'people',
+    family: 'family',
+    greetings: 'greetings',
+    pointing_words: 'pointing_words',
+    location_words: 'location_words',
+    entertainment: 'entertainment',
+    countries: 'countries',
+    majors: 'majors',
+    occupation: 'occupation',
+    money: 'money',
+    activities: 'activities',
+    phone: 'phone',
+  };
+
+  const POS_MAP = {
+    nouns: 'noun',
+    noun: 'noun',
+    verbs_u: 'verb',
+    'u-verbs': 'verb',
+    'u-verb': 'verb',
+    verbs_ru: 'verb',
+    'ru-verbs': 'verb',
+    'ru-verb': 'verb',
+    verbs_irr: 'verb',
+    'irregular-verbs': 'verb',
+    irregular: 'verb',
+    verb: 'verb',
+    verbs: 'verb',
+    'i-adjectives': 'adjective',
+    'na-adjectives': 'adjective',
+    adjectives: 'adjective',
+    adjective: 'adjective',
+    adj: 'adjective',
+    adverbs: 'adverb',
+    adverb: 'adverb',
+    adv: 'adverb',
+    particles: 'particle',
+    particle: 'particle',
+    expressions: 'expression',
+    expression: 'expression',
+  };
+
+  if (TOPIC_MAP[cat] && !topic) {
+    topic = TOPIC_MAP[cat];
+  }
+
   if (!partOfSpeech) {
-    if (cat === 'adverbs' || cat === 'adverb' || cat === 'adv') {
-      partOfSpeech = 'adverb';
-    } else if (
-      cat === 'verbs_u' ||
-      cat === 'u-verbs' ||
-      cat === 'u-verb' ||
-      cat === 'verbs_ru' ||
-      cat === 'ru-verbs' ||
-      cat === 'ru-verb' ||
-      cat === 'verbs_irr' ||
-      cat === 'irregular-verbs' ||
-      cat === 'irregular' ||
-      cat === 'verb' ||
-      cat === 'verbs'
-    ) {
-      partOfSpeech = 'verb';
-    } else if (cat === 'nouns' || cat === 'noun') {
-      partOfSpeech = 'noun';
-    } else if (
-      cat === 'i-adjectives' ||
-      cat === 'na-adjectives' ||
-      cat === 'adjectives' ||
-      cat === 'adjective' ||
-      cat === 'adj'
-    ) {
-      partOfSpeech = 'adjective';
-    } else if (cat === 'particles' || cat === 'particle') {
-      partOfSpeech = 'particle';
-    } else if (cat === 'expressions' || cat === 'expression') {
-      partOfSpeech = 'expression';
+    if (POS_MAP[cat]) {
+      partOfSpeech = POS_MAP[cat];
+    } else if (TOPIC_MAP[cat]) {
+      partOfSpeech = 'noun'; // By default, topic categories like 'food', 'time' consist of nouns
     } else if (cat) {
       partOfSpeech = 'other';
-      topic = cat; // Если это не часть речи, то это тема
     }
   }
 
@@ -97,6 +123,24 @@ export function normalizeWord(raw, lessonId) {
   if (partOfSpeech !== 'verb') {
     verbClass = null;
   }
+
+  // Извлечение частиц из перевода
+  let particlePatterns = Array.isArray(raw.particlePatterns) ? [...raw.particlePatterns] : [];
+  translation = translation
+    .replace(
+      /\(?[〜~～]([はのをにでへとがもか](?:\/[はのをにでへとがもか])*)\)?/g,
+      (match, particlesStr) => {
+        const parts = particlesStr.split('/');
+        parts.forEach((p) => {
+          if (!particlePatterns.includes(p)) particlePatterns.push(p);
+        });
+        return '';
+      }
+    )
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  if (particlePatterns.length === 0) particlePatterns = null;
 
   // 4. Формирование базовых полей
   const writing = raw.writing || '';
@@ -127,7 +171,7 @@ export function normalizeWord(raw, lessonId) {
     lexemeId,
     lessonIds,
     semanticTags,
-    particlePatterns: raw.particlePatterns || raw.particle_patterns || null,
+    particlePatterns,
     transitivity,
     note,
     examples,

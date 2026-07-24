@@ -2264,6 +2264,7 @@ export function renderFlash(state, dependencies) {
 // Состояние фильтрации словаря
 let dictSearchQuery = '';
 let dictFilter = 'all';
+let dictTopicFilter = 'all';
 
 // Функция для генерации разметки пустого состояния
 function emptyState(icon, title, desc) {
@@ -2367,6 +2368,24 @@ export async function renderDictionary(state, dependencies) {
 
   dictSearchQuery = '';
   dictFilter = 'all';
+  dictTopicFilter = 'all';
+
+  // Собираем все реально присутствующие топики
+  const presentTopics = new Set();
+  if (dependencies.LESSONS) {
+    dependencies.LESSONS.forEach((l) => {
+      if (l.words) {
+        l.words.forEach((w) => {
+          if (w.topic) presentTopics.add(w.topic);
+        });
+      }
+    });
+  }
+
+  const topicOptionsHtml = Array.from(presentTopics)
+    .sort()
+    .map((topic) => `<option value="${topic}">${getTopicLabel(topic)}</option>`)
+    .join('');
 
   content.innerHTML = `
     <div class="dict-header-container">
@@ -2383,9 +2402,22 @@ export async function renderDictionary(state, dependencies) {
       <div class="dict-filters-wrap">
         <button class="dict-filter-btn active" data-filter="all">Все</button>
         <button class="dict-filter-btn" data-filter="verb">Глаголы</button>
-        <button class="dict-filter-btn" data-filter="adjective">Прилагательные</button>
-        <button class="dict-filter-btn" data-filter="other">Остальное</button>
+        <button class="dict-filter-btn" data-filter="noun">Сущ.</button>
+        <button class="dict-filter-btn" data-filter="adjective">Прилаг.</button>
+        <button class="dict-filter-btn" data-filter="other">Ост.</button>
       </div>
+      ${
+        presentTopics.size > 0
+          ? `
+      <div class="dict-topic-filter-wrap" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+        <label for="dict-topic-select" style="font-size: 14px; font-weight: 600; color: var(--text-muted);">Тема:</label>
+        <select id="dict-topic-select" style="padding: 6px 12px; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 14px; outline: none; flex: 1;">
+          <option value="all">Все темы</option>
+          ${topicOptionsHtml}
+        </select>
+      </div>`
+          : ''
+      }
       <div class="dict-overall-mastery">
         <div class="dict-overall-label">Общий прогресс словаря: <span id="dict-overall-percent">0%</span></div>
         <div class="dict-overall-bar">
@@ -2415,13 +2447,27 @@ export async function renderDictionary(state, dependencies) {
       $$('.dict-filter-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       dictFilter = btn.dataset.filter;
-      renderDictionaryLessons(state, dependencies, dictSearchQuery, dictFilter);
+      renderDictionaryLessons(state, dependencies, dictSearchQuery, dictFilter, dictTopicFilter);
     };
   });
+
+  const topicSelect = $('#dict-topic-select');
+  if (topicSelect) {
+    topicSelect.addEventListener('change', (e) => {
+      dictTopicFilter = e.target.value;
+      renderDictionaryLessons(state, dependencies, dictSearchQuery, dictFilter, dictTopicFilter);
+    });
+  }
 }
 
 // Функция рендеринга списка уроков и слов
-function renderDictionaryLessons(state, dependencies, searchQuery = '', filterQuery = 'all') {
+function renderDictionaryLessons(
+  state,
+  dependencies,
+  searchQuery = '',
+  filterQuery = 'all',
+  topicQuery = 'all'
+) {
   const { LESSONS } = dependencies;
 
   const container = $('#dict-lessons-container');
@@ -2475,24 +2521,36 @@ function renderDictionaryLessons(state, dependencies, searchQuery = '', filterQu
     // Filter words based on search query and category filter
     const filteredWords = words.filter((word) => {
       // Apply search query
+      const topicLabel = word.topic ? getTopicLabel(word.topic).toLowerCase() : '';
+      const topicCode = word.topic ? word.topic.toLowerCase() : '';
       const matchesSearch =
         !query ||
         (word.kanji && word.kanji.toLowerCase().includes(query)) ||
         (word.writing && word.writing.toLowerCase().includes(query)) ||
         (word.romaji && word.romaji.toLowerCase().includes(query)) ||
-        (word.translation && word.translation.toLowerCase().includes(query));
+        (word.translation && word.translation.toLowerCase().includes(query)) ||
+        topicCode.includes(query) ||
+        topicLabel.includes(query);
 
       // Apply category/POS filter
       let matchesFilter = true;
       if (filterQuery === 'verb') {
         matchesFilter = word.partOfSpeech === 'verb';
+      } else if (filterQuery === 'noun') {
+        matchesFilter = word.partOfSpeech === 'noun';
       } else if (filterQuery === 'adjective') {
         matchesFilter = word.partOfSpeech === 'adjective';
       } else if (filterQuery === 'other') {
-        matchesFilter = word.partOfSpeech !== 'verb' && word.partOfSpeech !== 'adjective';
+        matchesFilter = !['verb', 'noun', 'adjective'].includes(word.partOfSpeech);
       }
 
-      return matchesSearch && matchesFilter;
+      // Apply topic filter
+      let matchesTopic = true;
+      if (topicQuery !== 'all') {
+        matchesTopic = word.topic === topicQuery;
+      }
+
+      return matchesSearch && matchesFilter && matchesTopic;
     });
 
     if (filteredWords.length === 0 && (query || filterQuery !== 'all')) {

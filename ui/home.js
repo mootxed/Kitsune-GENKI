@@ -86,56 +86,90 @@ export let LESSONS = [];
 // Лёгкий индекс глав (метаданные без полного контента)
 export let CONTENT_INDEX = [];
 
+const NORMALIZED_WORD_SCHEMA_VERSION = 1;
+
 // ---------- Load Lessons ----------
 // На старте грузим только лёгкий content-index; полные уроки подгружаются
 // по требованию через ensureLesson()
 export async function loadLessons() {
-  // Восстанавливаем ранее загруженные уроки из IndexedDB (оффлайн-доступ)
+  let fileVersion = 0;
+  let indexData = null;
+  try {
+    indexData = await loadContentIndex();
+    fileVersion = indexData.version || 0;
+  } catch (e) {
+    console.error('Не удалось загрузить content-index.json:', e);
+  }
+
+  const cachedVersion = await db.get(STORES.CONTENT_CACHE, 'lesson_version');
+  const cachedSchemaVersion = (await db.get(STORES.CONTENT_CACHE, 'schema_version')) || 0;
+
+  const contentVersionMatches = String(cachedVersion) === String(fileVersion);
+  const schemaVersionMatches = cachedSchemaVersion === NORMALIZED_WORD_SCHEMA_VERSION;
+
   const raw = await db.get(STORES.CONTENT_CACHE, 'lessons');
+  let cachedLessons = [];
   if (raw) {
     try {
-      LESSONS = Array.isArray(raw) ? raw : JSON.parse(raw);
-      reconcileLessonIds();
-      LESSONS.forEach((l) => {
-        loadedChapters.set(l.id, { lesson: l, story: undefined });
-        ExamplesDB.registerLesson(l);
-      });
-      ExamplesDB.rebuildIndex();
-      let reconciled = false;
-      for (const lesson of LESSONS) {
-        if (!state.chapters[lesson.id]?.started) continue;
-        for (const word of lesson.words || []) {
-          reconciled = ensureVocabularySkillCards(word) || reconciled;
-        }
-      }
-      if (reconciled) await save(true);
+      cachedLessons = Array.isArray(raw) ? raw : JSON.parse(raw);
     } catch {
-      LESSONS = [];
+      cachedLessons = [];
     }
   }
 
-  try {
-    const data = await loadContentIndex();
-    const fileVersion = data.version || 0;
-    const cachedVersion = await db.get(STORES.CONTENT_CACHE, 'lesson_version');
-    if (String(cachedVersion) !== String(fileVersion)) {
-      // Версия контента изменилась — сбрасываем устаревший кэш уроков
-      LESSONS = [];
-      loadedChapters.clear();
-      await db.delete(STORES.CONTENT_CACHE, 'lessons');
-      await db.set(STORES.CONTENT_CACHE, 'lesson_version', String(fileVersion));
+  if (cachedLessons.length > 0 && (!contentVersionMatches || !schemaVersionMatches)) {
+    // Migration: reconstruct safely from actual lesson JSON
+    const migratedLessons = [];
+    for (const oldLesson of cachedLessons) {
+      try {
+        const { lesson } = await loadChapterData(oldLesson.id);
+        migratedLessons.push(normalizeLesson(lesson));
+      } catch (e) {
+        // Fallback to old lesson if offline
+        migratedLessons.push(oldLesson);
+      }
     }
-    CONTENT_INDEX = data.chapters || [];
-    await db.set(STORES.CONTENT_CACHE, 'content_index', data);
-    const previousActiveChapterId = state.activeChapterId;
-    ensureActiveChapterId(state, CONTENT_INDEX);
-    if (previousActiveChapterId !== state.activeChapterId) await save(true);
-  } catch (e) {
-    console.error('Не удалось загрузить content-index.json:', e);
-    // План никогда не строится из частично загруженного LESSONS.
+    LESSONS = migratedLessons;
+    await db.set(STORES.CONTENT_CACHE, 'lessons', LESSONS);
+    await db.set(STORES.CONTENT_CACHE, 'lesson_version', String(fileVersion));
+    await db.set(STORES.CONTENT_CACHE, 'schema_version', NORMALIZED_WORD_SCHEMA_VERSION);
+  } else {
+    LESSONS = cachedLessons;
+    // Ensure if we don't have cache but version matches, we set the schema version anyway
+    if (cachedLessons.length === 0 && indexData) {
+      await db.set(STORES.CONTENT_CACHE, 'lesson_version', String(fileVersion));
+      await db.set(STORES.CONTENT_CACHE, 'schema_version', NORMALIZED_WORD_SCHEMA_VERSION);
+    }
+  }
+
+  if (LESSONS.length > 0) {
+    reconcileLessonIds();
+    LESSONS.forEach((l) => {
+      loadedChapters.set(l.id, { lesson: l, story: undefined });
+      ExamplesDB.registerLesson(l);
+    });
+    ExamplesDB.rebuildIndex();
+    let reconciled = false;
+    for (const lesson of LESSONS) {
+      if (!state.chapters[lesson.id]?.started) continue;
+      for (const word of lesson.words || []) {
+        reconciled = ensureVocabularySkillCards(word) || reconciled;
+      }
+    }
+    if (reconciled) await save(true);
+  }
+
+  if (indexData) {
+    CONTENT_INDEX = indexData.chapters || [];
+    await db.set(STORES.CONTENT_CACHE, 'content_index', indexData);
+  } else {
     const cachedIndex = await db.get(STORES.CONTENT_CACHE, 'content_index');
     CONTENT_INDEX = cachedIndex?.chapters || fallbackContentIndex();
   }
+
+  const previousActiveChapterId = state.activeChapterId;
+  ensureActiveChapterId(state, CONTENT_INDEX);
+  if (previousActiveChapterId !== state.activeChapterId) await save(true);
 
   try {
     const res = await fetch('data/particles-dictionary.json');
@@ -184,7 +218,7 @@ export function reconcileLessonIds() {
 // Нормализация одного сырого урока из data/lessons/lesson-XX.json
 function normalizeLesson(l) {
   const arr = (x) => (Array.isArray(x) ? x : x && typeof x === 'object' ? Object.values(x) : []);
-  const id = l.lesson_id;
+  const id = Number(l.id || l.lesson_id);
   const nm = CH_NAMES[id] || [l.title || 'Глава ' + id, ''];
   return {
     id,
@@ -208,10 +242,11 @@ async function persistLessonsCache() {
 // Ленивая загрузка полного контента главы (урок + история)
 export async function ensureLesson(id) {
   id = Number(id);
-  if (loadedChapters.has(id)) return loadedChapters.get(id);
+  let entry = loadedChapters.get(id);
+  if (entry && entry.story !== undefined) return entry;
 
   const { lesson, story } = await loadChapterData(id);
-  const normalized = normalizeLesson(lesson);
+  const normalized = entry ? entry.lesson : normalizeLesson(lesson);
 
   // Register in ExamplesDB
   ExamplesDB.registerLesson(normalized);
@@ -225,10 +260,15 @@ export async function ensureLesson(id) {
     LESSONS.sort((a, b) => a.id - b.id);
     reconcileLessonIds();
     persistLessonsCache();
+  } else if (!entry) {
+    const idx = LESSONS.findIndex((l) => l.id === id);
+    if (idx !== -1) LESSONS[idx] = normalized;
+    reconcileLessonIds();
+    persistLessonsCache();
   }
 
-  const entry = { lesson: normalized, story };
-  loadedChapters.set(id, entry);
+  const newEntry = { lesson: normalized, story: story || null };
+  loadedChapters.set(id, newEntry);
   if (state.chapters[id]?.started) {
     const changed = normalized.words.reduce(
       (result, word) => ensureVocabularySkillCards(word) || result,
@@ -236,7 +276,7 @@ export async function ensureLesson(id) {
     );
     if (changed) await save(true);
   }
-  return entry;
+  return newEntry;
 }
 
 // Подгрузка уроков для всех карточек, уже находящихся в SRS

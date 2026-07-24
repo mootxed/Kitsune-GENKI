@@ -66,8 +66,10 @@ export class ExamplesDBClass {
     requiredForm = null,
   }) {
     if (!japanese || !japanese.trim()) return;
+    const trimmedJp = japanese.trim();
+    if (this.rawSentences.some((s) => s.japanese === trimmedJp)) return;
     this.rawSentences.push({
-      japanese: japanese.trim(),
+      japanese: trimmedJp,
       reading: reading.trim(),
       translation: translation.trim(),
       sourceLessonId: Number(sourceLessonId) || 1,
@@ -83,14 +85,15 @@ export class ExamplesDBClass {
   registerLesson(lessonData) {
     if (!lessonData) return;
     const lesson = lessonData.lesson || lessonData;
-    const lessonId = Number(lesson.lesson_id) || 1;
+    const lessonId = Number(lesson.id || lesson.lesson_id) || 1;
 
     // 1. Зарегистрировать лексику урока
-    if (lesson.vocabulary) {
-      this.registerVocabulary(lesson.vocabulary);
+    const words = lesson.words || lesson.vocabulary;
+    if (words) {
+      this.registerVocabulary(words);
 
       // Проверить наличие вручную подготовленных contextProduction
-      for (const word of lesson.vocabulary) {
+      for (const word of words) {
         const cp = word.contextProduction || word.context_production;
         if (cp && cp.prompt && cp.meaningCue && cp.requiredForm) {
           const accepted = Array.isArray(cp.acceptedAnswers)
@@ -117,9 +120,10 @@ export class ExamplesDBClass {
       }
     }
 
-    // 2. Парсинг предложений из заметок урока (lesson.notes)
-    if (lesson.notes) {
-      const noteList = Array.isArray(lesson.notes) ? lesson.notes : Object.values(lesson.notes);
+    // 2. Парсинг предложений из заметок урока
+    const notes = lesson.grammar || lesson.notes;
+    if (notes) {
+      const noteList = Array.isArray(notes) ? notes : Object.values(notes);
 
       for (const note of noteList) {
         if (!note.content) continue;
@@ -128,10 +132,11 @@ export class ExamplesDBClass {
     }
 
     // 3. Парсинг предложений из культурных заметок
-    if (lesson.cultural_notes) {
-      const culturalList = Array.isArray(lesson.cultural_notes)
-        ? lesson.cultural_notes
-        : Object.values(lesson.cultural_notes);
+    const culturalNotes = lesson.cultural || lesson.cultural_notes;
+    if (culturalNotes) {
+      const culturalList = Array.isArray(culturalNotes)
+        ? culturalNotes
+        : Object.values(culturalNotes);
 
       for (const note of culturalList) {
         if (!note.content) continue;
