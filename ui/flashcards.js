@@ -30,6 +30,16 @@ import {
   SLOT_CATEGORIES,
   FORBIDDEN_CATEGORIES,
 } from '../src/particle-templates.js';
+import { conjugateVerb } from '../src/verb-conjugator.js';
+import { ExamplesDB } from '../src/examples-db.js';
+import {
+  generateExample,
+  nextSeed,
+  highlightWord,
+  EXAMPLE_SOURCES,
+} from '../src/example-generator.js';
+import HanziWriter from 'hanzi-writer';
+import { localCharDataLoader } from '../src/kanji-loader.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -779,8 +789,8 @@ function initDrawingMode(
   } = dependencies;
 
   const target = document.getElementById('kanji-writer-target');
-  if (!target || !kanji || typeof HanziWriter === 'undefined') {
-    toast('⚠️ HanziWriter не загружен');
+  if (!target || !kanji) {
+    toast('⚠️ Не удалось инициализировать режим рисования');
     return;
   }
 
@@ -913,55 +923,13 @@ function initDrawingMode(
     });
   }
 
-  // Функция загрузки данных кандзи с приоритетом на японские датасеты
-  const loadKanjiData = async (char) => {
-    // Очищаем символ от тильд и спецсимволов
+  // Локальный загрузчик данных кандзи (без сетевых зависимостей)
+  const loadKanjiData = (char) => {
     const cleanChar = cleanKanjiChar(char);
     if (!cleanChar) {
-      console.error('Пустой символ после очистки');
-      return null;
+      return Promise.reject(new Error('Пустой символ после очистки'));
     }
-
-    // Приоритет 1: @k1low/hanzi-writer-data-jp (основной японский датасет)
-    try {
-      const response = await fetch(
-        `https://cdn.jsdelivr.net/npm/@k1low/hanzi-writer-data-jp@latest/${encodeURIComponent(cleanChar)}.json`
-      );
-      if (response.ok) {
-        return await response.json();
-      }
-    } catch (e) {
-      // Тихо продолжаем к следующему датасету
-    }
-
-    // Приоритет 2: hanzi-writer-data-jp (альтернативный японский датасет)
-    try {
-      const response = await fetch(
-        `https://cdn.jsdelivr.net/npm/hanzi-writer-data-jp@latest/${encodeURIComponent(cleanChar)}.json`
-      );
-      if (response.ok) {
-        return await response.json();
-      }
-    } catch (e) {
-      // Тихо продолжаем к следующему датасету
-    }
-
-    // Приоритет 3: Китайский датасет (крайний fallback)
-    try {
-      const response = await fetch(
-        `https://cdn.jsdelivr.net/npm/hanzi-writer-data@latest/${encodeURIComponent(cleanChar)}.json`
-      );
-      if (response.ok) {
-        console.warn(`⚠️ Используется китайский датасет для "${cleanChar}"`);
-        return await response.json();
-      }
-    } catch (e) {
-      // Игнорируем
-    }
-
-    // Если все датасеты недоступны, возвращаем null вместо ошибки
-    console.error(`❌ Символ "${cleanChar}" не найден ни в одном датасете`);
-    return null;
+    return localCharDataLoader(cleanChar);
   };
 
   try {
@@ -2293,6 +2261,96 @@ export function renderFlash(state, dependencies) {
   }
 }
 
+// Состояние фильтрации словаря
+let dictSearchQuery = '';
+let dictFilter = 'all';
+
+// Функция для генерации разметки пустого состояния
+function emptyState(icon, title, desc) {
+  return `
+    <div class="empty-state">
+      <div class="empty-state-icon">${icon}</div>
+      <h3 class="empty-state-title">${title}</h3>
+      <p class="empty-state-desc">${desc}</p>
+    </div>
+  `;
+}
+
+// Вспомогательная функция для определения статуса слова
+export function getWordStatus(word, state) {
+  const isUnlocked = isWordUnlocked(word.id, state.chapters);
+  const chapterId = cardChapter(word.id);
+  if (!isUnlocked) {
+    return {
+      status: 'locked',
+      label: 'Закрыто',
+      symbol: '🔒',
+      title: `Заблокировано (Откроется в Главе ${chapterId})`,
+    };
+  }
+
+  const itemCards = cardsForItem(state.srs, word.id);
+  const mastery = calculateMastery({
+    itemId: word.id,
+    cards: itemCards,
+    events: state.reviewEvents || [],
+    archive: state.masteryArchive?.[word.id],
+    applicableSkills: vocabularySkills(word),
+    getRetrievability: (card, now) => SRS.getRetrievability(card, now),
+  });
+
+  const level = mastery.level;
+  const needsRefresh = mastery.needsRefresh;
+
+  if (level === 'Новое') {
+    return {
+      status: 'new',
+      label: 'Новое',
+      symbol: '•',
+      title: 'Новое слово (ещё не изучалось)',
+      score: mastery.score,
+    };
+  }
+
+  if (needsRefresh) {
+    return {
+      status: 'refresh',
+      label: 'Повторить',
+      symbol: '↻',
+      title: 'Пора освежить (нужно повторить)',
+      score: mastery.score,
+    };
+  }
+
+  if (level === 'Освоено') {
+    return {
+      status: 'mastered',
+      label: 'Освоено',
+      symbol: '★',
+      title: 'Освоено (отличное знание)',
+      score: mastery.score,
+    };
+  }
+
+  if (level === 'Уверенно') {
+    return {
+      status: 'confident',
+      label: 'Уверенно',
+      symbol: '✓',
+      title: 'Уверенно (хорошее знание)',
+      score: mastery.score,
+    };
+  }
+
+  return {
+    status: 'learning',
+    label: 'Изучается',
+    symbol: '⚡',
+    title: 'Изучается (в процессе освоения)',
+    score: mastery.score,
+  };
+}
+
 // Функция рендеринга словаря
 export async function renderDictionary(state, dependencies) {
   const { CONTENT_INDEX, ensureLesson } = dependencies;
@@ -2301,24 +2359,44 @@ export async function renderDictionary(state, dependencies) {
   if (!content) return;
 
   // Словарь показывает слова всех глав — догружаем недостающие уроки
+  ExamplesDB.registerCuratedParticleSentences(CURATED_PARTICLE_SENTENCES);
+  ExamplesDB.rebuildIndex();
   if (CONTENT_INDEX && ensureLesson) {
     await Promise.all(CONTENT_INDEX.map((ch) => ensureLesson(ch.id).catch(() => null)));
   }
 
+  dictSearchQuery = '';
+  dictFilter = 'all';
+
   content.innerHTML = `
-    <div class="dict-search-wrap">
-      <input 
-        type="search" 
-        id="dict-search" 
-        class="dict-search-input" 
-        placeholder="🔍 Поиск слов..."
-        autocomplete="off"
-      />
+    <div class="dict-header-container">
+      <div class="dict-search-wrap">
+        <input 
+          type="search" 
+          id="dict-search" 
+          class="dict-search-input" 
+          placeholder="🔍 Поиск слов..."
+          autocomplete="off"
+          value=""
+        />
+      </div>
+      <div class="dict-filters-wrap">
+        <button class="dict-filter-btn active" data-filter="all">Все</button>
+        <button class="dict-filter-btn" data-filter="verb">Глаголы</button>
+        <button class="dict-filter-btn" data-filter="adjective">Прилагательные</button>
+        <button class="dict-filter-btn" data-filter="other">Остальное</button>
+      </div>
+      <div class="dict-overall-mastery">
+        <div class="dict-overall-label">Общий прогресс словаря: <span id="dict-overall-percent">0%</span></div>
+        <div class="dict-overall-bar">
+          <div class="dict-overall-fill" id="dict-overall-fill" style="width: 0%"></div>
+        </div>
+      </div>
     </div>
     <div id="dict-lessons-container"></div>
   `;
 
-  renderDictionaryLessons(state, dependencies);
+  renderDictionaryLessons(state, dependencies, dictSearchQuery, dictFilter);
 
   const searchInput = $('#dict-search');
   let searchTimeout;
@@ -2326,47 +2404,42 @@ export async function renderDictionary(state, dependencies) {
     searchInput.addEventListener('input', (e) => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
-        filterDictionaryWords(e.target.value, state, dependencies);
+        dictSearchQuery = e.target.value;
+        renderDictionaryLessons(state, dependencies, dictSearchQuery, dictFilter);
       }, 300);
     });
   }
+
+  $$('.dict-filter-btn').forEach((btn) => {
+    btn.onclick = () => {
+      $$('.dict-filter-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      dictFilter = btn.dataset.filter;
+      renderDictionaryLessons(state, dependencies, dictSearchQuery, dictFilter);
+    };
+  });
 }
 
 // Функция рендеринга списка уроков и слов
-function renderDictionaryLessons(state, dependencies, searchQuery = '') {
+function renderDictionaryLessons(state, dependencies, searchQuery = '', filterQuery = 'all') {
   const { LESSONS } = dependencies;
 
   const container = $('#dict-lessons-container');
   if (!container) return;
 
   const query = searchQuery.toLowerCase().trim();
-  let totalVisible = 0;
+  const activeLessonId = state.activeChapterId || 1;
 
-  container.innerHTML = LESSONS.map((lesson) => {
+  // 1. Calculate overall mastery score
+  let totalMastery = 0;
+  let totalWordsCount = 0;
+
+  LESSONS.forEach((lesson) => {
     const words = lesson.words || [];
-
-    const filteredWords = query
-      ? words.filter((word) => {
-          return (
-            (word.kanji && word.kanji.toLowerCase().includes(query)) ||
-            (word.writing && word.writing.toLowerCase().includes(query)) ||
-            (word.romaji && word.romaji.toLowerCase().includes(query)) ||
-            (word.translation && word.translation.toLowerCase().includes(query))
-          );
-        })
-      : words;
-
-    if (filteredWords.length === 0 && query) {
-      return '';
-    }
-
-    totalVisible += filteredWords.length;
-
-    const wordsHtml = filteredWords
-      .map((word) => {
-        const isUnlocked = isWordUnlocked(word.id, state.chapters);
-        const chapterId = cardChapter(word.id);
-
+    words.forEach((word) => {
+      totalWordsCount++;
+      const isUnlocked = isWordUnlocked(word.id, state.chapters);
+      if (isUnlocked) {
         const itemCards = cardsForItem(state.srs, word.id);
         const mastery = calculateMastery({
           itemId: word.id,
@@ -2376,55 +2449,117 @@ function renderDictionaryLessons(state, dependencies, searchQuery = '') {
           applicableSkills: vocabularySkills(word),
           getRetrievability: (card, now) => SRS.getRetrievability(card, now),
         });
-        const progress = mastery.score;
-        const progressClass =
-          progress >= 75 ? 'progress-high' : progress >= 25 ? 'progress-medium' : 'progress-low';
+        totalMastery += mastery.score;
+      }
+    });
+  });
 
-        if (!isUnlocked) {
-          return `
-          <div class="dict-word-card word-locked" data-word-id="${word.id}" data-chapter-id="${chapterId}">
-            <div class="dict-word-main">
-              <div class="dict-word-lock-icon">🔒</div>
-              <div class="dict-word-kanji">${word.kanji || word.writing}</div>
-              <div class="dict-word-info">
-                <div class="dict-word-reading">・・・</div>
-                <div class="dict-word-translation">Откроется в Главе ${chapterId}</div>
-              </div>
-            </div>
-            <div class="dict-word-progress">
-              <div class="dict-progress-bar">
-                <div class="dict-progress-fill progress-none" style="width: 0%"></div>
-              </div>
-              <span class="dict-progress-text">🔒</span>
-            </div>
-          </div>
-        `;
-        }
+  const overallProgress = totalWordsCount > 0 ? Math.round(totalMastery / totalWordsCount) : 0;
+  const overallFill = $('#dict-overall-fill');
+  const overallPercent = $('#dict-overall-percent');
+  if (overallFill && overallPercent) {
+    overallFill.style.width = `${overallProgress}%`;
+    overallPercent.textContent = `${overallProgress}%`;
+  }
 
-        return `
-        <div class="dict-word-card" data-word-id="${word.id}">
-          <div class="dict-word-main">
-            <div class="dict-word-kanji">${word.kanji || word.writing}</div>
-            <div class="dict-word-info">
-              <div class="dict-word-reading">${word.writing}</div>
-              <div class="dict-word-translation">${word.translation}</div>
-            </div>
-          </div>
-          <div class="dict-word-progress">
-            <div class="dict-progress-bar">
-              <div class="dict-progress-fill ${progressClass}" style="width: ${progress}%"></div>
-            </div>
-              <span class="dict-progress-text" title="Mastery score ${progress}/100">${mastery.label} · ${mastery.productionStatus} · ${mastery.readinessLabel}</span>
+  let totalVisible = 0;
+
+  container.innerHTML = LESSONS.map((lesson) => {
+    const words = lesson.words || [];
+    const isLessonUnlocked = state.chapters?.[lesson.id]?.started === true || lesson.id === 1;
+
+    // Filter words based on search query and category filter
+    const filteredWords = words.filter((word) => {
+      // Apply search query
+      const matchesSearch =
+        !query ||
+        (word.kanji && word.kanji.toLowerCase().includes(query)) ||
+        (word.writing && word.writing.toLowerCase().includes(query)) ||
+        (word.romaji && word.romaji.toLowerCase().includes(query)) ||
+        (word.translation && word.translation.toLowerCase().includes(query));
+
+      // Apply category/POS filter
+      let matchesFilter = true;
+      if (filterQuery === 'verb') {
+        matchesFilter = word.partOfSpeech === 'verb';
+      } else if (filterQuery === 'adjective') {
+        matchesFilter = word.partOfSpeech === 'adjective';
+      } else if (filterQuery === 'other') {
+        matchesFilter = word.partOfSpeech !== 'verb' && word.partOfSpeech !== 'adjective';
+      }
+
+      return matchesSearch && matchesFilter;
+    });
+
+    if (filteredWords.length === 0 && (query || filterQuery !== 'all')) {
+      return '';
+    }
+
+    totalVisible += filteredWords.length;
+
+    // If lesson is locked, show it in a single line
+    if (!isLessonUnlocked) {
+      return `
+        <div class="dict-lesson is-locked" data-lesson-id="${lesson.id}">
+          <div class="dict-lesson-header" role="button" tabindex="0" aria-label="Урок ${lesson.id}: ${lesson.title}. Закрыто">
+            <span class="dict-lesson-toggle-icon">🔒</span>
+            <h3 class="dict-lesson-title">Урок ${lesson.id}: ${lesson.title}</h3>
+            <span class="dict-lesson-count">${words.length} слов</span>
           </div>
         </div>
       `;
+    }
+
+    const wordsHtml = filteredWords
+      .map((word) => {
+        const isUnlocked = isWordUnlocked(word.id, state.chapters);
+        const chapterId = cardChapter(word.id);
+        const status = getWordStatus(word, state);
+
+        const hasSeparateReading = word.kanji && word.kanji !== word.writing;
+        const readingHtml = hasSeparateReading
+          ? `<div class="dict-word-reading">${word.writing}</div>`
+          : '';
+
+        // If the word is locked, display '???' as the kanji/writing to hide closed answers
+        const displayKanji = isUnlocked ? word.kanji || word.writing : '???';
+        const displayReadingHtml = isUnlocked ? readingHtml : '・・・';
+        const displayTranslation = isUnlocked ? word.translation : `Откроется в Главе ${chapterId}`;
+
+        const lessonIds = word.lessonIds || [lesson.id];
+        const lessonsBadge =
+          isUnlocked && lessonIds.length > 1
+            ? `<span class="dict-word-lessons-badge">Уроки ${lessonIds.join(', ')}</span>`
+            : '';
+
+        return `
+          <div class="dict-word-card ${!isUnlocked ? 'word-locked' : ''}" data-word-id="${word.id}" data-chapter-id="${chapterId}" data-lexeme-id="${word.lexemeId || ''}">
+            <div class="dict-word-main">
+              <div class="dict-word-kanji">${displayKanji}</div>
+              <div class="dict-word-info">
+                ${displayReadingHtml}
+                <div class="dict-word-translation">${displayTranslation} ${lessonsBadge}</div>
+              </div>
+            </div>
+            <div class="dict-word-status">
+              <span class="dict-status-indicator status-${status.status}" tabindex="0" title="${status.title}" aria-label="${status.title}">
+                <span class="dict-status-icon">${status.symbol}</span>
+              </span>
+            </div>
+          </div>
+        `;
       })
       .join('');
 
+    // Determine default expansion
+    const isExpanded =
+      query || filterQuery !== 'all' ? filteredWords.length > 0 : lesson.id === activeLessonId;
+
     return `
-      <div class="dict-lesson">
-        <div class="dict-lesson-header">
-          <h3 class="dict-lesson-title">Lesson ${lesson.id}: ${lesson.title}</h3>
+      <div class="dict-lesson is-unlocked ${isExpanded ? 'is-expanded' : 'is-collapsed'}" data-lesson-id="${lesson.id}">
+        <div class="dict-lesson-header" role="button" tabindex="0" aria-label="Урок ${lesson.id}: ${lesson.title}. Нажмите для раскрытия">
+          <span class="dict-lesson-toggle-icon">${isExpanded ? '▼' : '▶'}</span>
+          <h3 class="dict-lesson-title">Урок ${lesson.id}: ${lesson.title}</h3>
           <span class="dict-lesson-count">${filteredWords.length} слов</span>
         </div>
         <div class="dict-words-list">
@@ -2434,7 +2569,7 @@ function renderDictionaryLessons(state, dependencies, searchQuery = '') {
     `;
   }).join('');
 
-  if (query && totalVisible === 0) {
+  if ((query || filterQuery !== 'all') && totalVisible === 0) {
     container.innerHTML = emptyState(
       '🔍',
       'Ничего не найдено',
@@ -2443,6 +2578,37 @@ function renderDictionaryLessons(state, dependencies, searchQuery = '') {
     return;
   }
 
+  // Bind lesson header collapse/expand
+  $$('.dict-lesson-header').forEach((header) => {
+    header.onclick = () => {
+      const lessonEl = header.closest('.dict-lesson');
+      const lessonId = Number(lessonEl.dataset.lessonId);
+      if (lessonEl.classList.contains('is-locked')) {
+        toast(`🔒 Начните Главу ${lessonId}, чтобы разблокировать этот урок`);
+        return;
+      }
+      const isExpanded = lessonEl.classList.contains('is-expanded');
+      if (isExpanded) {
+        lessonEl.classList.remove('is-expanded');
+        lessonEl.classList.add('is-collapsed');
+        const icon = lessonEl.querySelector('.dict-lesson-toggle-icon');
+        if (icon) icon.textContent = '▶';
+      } else {
+        lessonEl.classList.remove('is-collapsed');
+        lessonEl.classList.add('is-expanded');
+        const icon = lessonEl.querySelector('.dict-lesson-toggle-icon');
+        if (icon) icon.textContent = '▼';
+      }
+    };
+    header.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        header.click();
+      }
+    };
+  });
+
+  // Bind card clicks (modal open)
   $$('.dict-word-card').forEach((card) => {
     card.onclick = () => {
       const wordId = card.dataset.wordId;
@@ -2457,11 +2623,23 @@ function renderDictionaryLessons(state, dependencies, searchQuery = '') {
       if (word) openDictionaryModal(word, state, dependencies);
     };
   });
-}
 
-// Функция фильтрации слов
-function filterDictionaryWords(searchQuery, state, dependencies) {
-  renderDictionaryLessons(state, dependencies, searchQuery);
+  // Bind lexemeId hover synchronization
+  $$('.dict-word-card').forEach((card) => {
+    const lexemeId = card.dataset.lexemeId;
+    if (lexemeId) {
+      card.onmouseenter = () => {
+        $$(`.dict-word-card[data-lexeme-id="${lexemeId}"]`).forEach((c) => {
+          c.classList.add('lexeme-highlight');
+        });
+      };
+      card.onmouseleave = () => {
+        $$(`.dict-word-card[data-lexeme-id="${lexemeId}"]`).forEach((c) => {
+          c.classList.remove('lexeme-highlight');
+        });
+      };
+    }
+  });
 }
 
 // Функция очистки символа от служебных знаков (тильды, пробелы и т.д.)
@@ -2472,7 +2650,89 @@ function cleanKanjiChar(char) {
 }
 
 // Функция открытия модального окна словаря
-function openDictionaryModal(word, state, dependencies) {
+
+function getPartOfSpeechLabel(pos) {
+  const mapping = {
+    verb: 'Глагол',
+    noun: 'Существительное',
+    adjective: 'Прилагательное',
+    adverb: 'Наречие',
+    particle: 'Частица',
+    expression: 'Выражение',
+  };
+  return mapping[pos] || pos || 'Неизвестно';
+}
+
+function getVerbClassLabel(vc) {
+  const mapping = {
+    godan: '1-й класс (godan)',
+    ichidan: '2-й класс (ichidan)',
+    irregular: 'Неправильный',
+  };
+  return mapping[vc] || vc || 'Неизвестно';
+}
+
+function getLessonsLabel(lessonIds) {
+  if (!lessonIds || lessonIds.length === 0) return 'Вне уроков';
+  return lessonIds.length > 1 ? `Уроки ${lessonIds.join(', ')}` : `Урок ${lessonIds[0]}`;
+}
+
+function renderSkillRow(skillKey, skillLabel, mastery, appSkills) {
+  const isApplicable = appSkills.includes(skillKey);
+  if (!isApplicable) {
+    return `
+      <div class="dict-skill-row skill-disabled">
+        <div class="dict-skill-header">
+          <span class="dict-skill-name">${skillLabel}</span>
+          <span class="dict-skill-status-badge badge-not-required">Не требуется</span>
+        </div>
+      </div>
+    `;
+  }
+
+  const metric = mastery.skillMetrics?.[skillKey];
+  const hasStarted = metric && metric.card && metric.card.reps > 0;
+
+  if (!hasStarted) {
+    return `
+      <div class="dict-skill-row skill-inactive">
+        <div class="dict-skill-header">
+          <span class="dict-skill-name">${skillLabel}</span>
+          <span class="dict-skill-status-badge badge-queued">В очереди</span>
+        </div>
+      </div>
+    `;
+  }
+
+  const accuracyPercent = Math.round((metric.accuracy || 0) * 100);
+  const stabilityDays = Math.round(metric.stability || 0);
+  const retrievabilityPercent = Math.round((metric.retrievability || 0) * 100);
+
+  return `
+    <div class="dict-skill-row skill-active">
+      <div class="dict-skill-header">
+        <span class="dict-skill-name">${skillLabel}</span>
+        <span class="dict-skill-status-badge badge-active">Активно</span>
+      </div>
+      <div class="dict-skill-metrics-grid">
+        <div class="dict-skill-metric-item">
+          <span class="dict-metric-label">Точность:</span>
+          <span class="dict-metric-value">${accuracyPercent}%</span>
+        </div>
+        <div class="dict-skill-metric-item">
+          <span class="dict-metric-label">Стабильность:</span>
+          <span class="dict-metric-value">${stabilityDays} дн.</span>
+        </div>
+        <div class="dict-skill-metric-item">
+          <span class="dict-metric-label">Память:</span>
+          <span class="dict-metric-value">${retrievabilityPercent}%</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export function openDictionaryModal(word, state, dependencies) {
   const { nav } = dependencies;
 
   const body = $('#srs-body');
@@ -2486,6 +2746,11 @@ function openDictionaryModal(word, state, dependencies) {
   };
 
   let currentKanjiIdx = 0;
+  let isKanjiOpen = false;
+  let isProgressOpen = false;
+  // Seed для генератора примеров. Живёт в замыкании — перерисовка не меняет пример.
+  // «Другой пример» вызывает nextSeed() и renderModalContent().
+  let exampleSeed = 0;
 
   const renderModalContent = () => {
     const selectedKanji = hasKanji ? kanjiChars[currentKanjiIdx] : null;
@@ -2507,35 +2772,589 @@ function openDictionaryModal(word, state, dependencies) {
     `
         : '';
 
+    const itemCards = cardsForItem(state.srs, word.id);
+    const appSkills = vocabularySkills(word);
+    const mastery = calculateMastery({
+      itemId: word.id,
+      cards: itemCards,
+      events: state.reviewEvents || [],
+      archive: state.masteryArchive?.[word.id],
+      applicableSkills: appSkills,
+      getRetrievability: (card, now) => SRS.getRetrievability(card, now),
+    });
+
+    const activeLessonId = state.activeChapterId || 1;
+    let conjugationHtml = '';
+
+    function getRussianMeaning(formId, translation) {
+      const clean = translation
+        .toLowerCase()
+        .trim()
+        .replace(/^то\s+/i, '');
+      switch (formId) {
+        case 'masu':
+          return `${clean} (вежл.)`;
+        case 'masen':
+          return `не ${clean} (вежл.)`;
+        case 'masenka':
+          return `не хотите ли ${clean}?`;
+        case 'mashita':
+          return `${clean} (прош., вежл.)`;
+        case 'masendeshita':
+          return `не ${clean} (прош., вежл.)`;
+        case 'mashou':
+          return `давайте ${clean}!`;
+        case 'mashouka':
+          return `давайте я ${clean}?`;
+        case 'dictionary':
+          return `${clean} (непрошедшее время)`;
+        case 'nai':
+          return `не ${clean} (непрошедшее время)`;
+        case 'ta':
+          return `${clean} (прош. время)`;
+        case 'nakatta':
+          return `не ${clean} (прош. время)`;
+        case 'te':
+          return `деепричастный оборот`;
+        case 'てください':
+          return `пожалуйста, ${clean}`;
+        case 'てもいいです':
+          return `можно ${clean}`;
+        case 'てはいけません':
+          return `нельзя ${clean}`;
+        case 'последовательность 〜て、〜':
+          return `${clean} и затем...`;
+        case 'ています':
+          return `в процессе ${clean} / состояние`;
+        case 'основа + に行く/来る/帰る':
+          return `идти/приходить/возвращаться, чтобы ${clean}`;
+        case 'ないдеください':
+        case 'ないде-форма':
+        case 'ないでください':
+          return `пожалуйста, не ${clean}`;
+        case 'と思います':
+          return `думаю, что ${clean}`;
+        case 'говорил':
+        case 'говорила':
+        case 'говорили':
+        case 'сказал':
+        case 'сказала':
+        case 'сказали':
+        case 'сказал(а), что':
+        case 'сказал(а)':
+        case 'говорят':
+        case 'говорил(а), что':
+        case 'сказали, что':
+        case 'говорили, что':
+        case 'сказано':
+        case 'сказанное':
+        case 'сказание':
+        case 'говорить':
+        case 'сказать':
+        case 'скажет':
+        case 'скажут':
+        case 'говорит':
+        case 'говорят, что':
+        case 'говорили-говорили':
+        case 'сказал-сделал':
+        case 'рассказывал':
+        case 'рассказывала':
+        case 'рассказали':
+        case 'рассказывает':
+        case 'рассказывают':
+        case 'рассказать':
+        case 'рассказывать':
+        case 'передавал':
+        case 'передавала':
+        case 'передавали':
+        case 'передает':
+        case 'передают':
+        case 'передать':
+        case 'передавать':
+        case 'упоминал':
+        case 'упоминала':
+        case 'упомянул':
+        case 'упомянула':
+        case 'упомянули':
+        case 'упоминает':
+        case 'упомянет':
+        case 'упоминают':
+        case 'упомянуть':
+        case 'упоминать':
+        case 'сообщал':
+        case 'сообщала':
+        case 'сообщил':
+        case 'сообщила':
+        case 'сообщили':
+        case 'сообщает':
+        case 'сообщит':
+        case 'сообщают':
+        case 'сообщить':
+        case 'сообщать':
+        case 'заявлял':
+        case 'заявляла':
+        case 'заявил':
+        case 'заявила':
+        case 'заявили':
+        case 'заявляет':
+        case 'заявит':
+        case 'заявляют':
+        case 'заявить':
+        case 'заявлять':
+        case 'утверждал':
+        case 'утверждала':
+        case 'утвердил':
+        case 'утвердила':
+        case 'утвердили':
+        case 'утверждает':
+        case 'утвердит':
+        case 'утверждают':
+        case 'утвердить':
+        case 'утверждать':
+        case 'говорил(а)':
+          return `говорил(а), что ${clean}`;
+        case 'のが好きです':
+          return `нравится ${clean}`;
+        case 'つもりです':
+          return `собираюсь ${clean}`;
+        case 'たことがあります':
+          return `доводилось ${clean}`;
+        case 'たり〜たりします':
+          return `то ${clean}, то делать другие вещи`;
+        case 'たい':
+          return `хочу ${clean}`;
+        default:
+          return clean;
+      }
+    }
+
+    if (word.partOfSpeech === 'verb') {
+      try {
+        const baseForms = conjugateVerb(word);
+
+        const masuForm = baseForms.find((f) => f.formId === 'masu');
+        const stemKanji = masuForm ? masuForm.kanji.slice(0, -2) : '';
+        const stemKana = masuForm ? masuForm.kana.slice(0, -2) : '';
+
+        const isLocked = (lessonUnlocked) => {
+          return lessonUnlocked > activeLessonId;
+        };
+
+        const formatJp = (kanjiVal, kanaVal) => {
+          if (kanjiVal === kanaVal) return kanjiVal;
+          return `${kanjiVal} (${kanaVal})`;
+        };
+
+        const politeGroup = [
+          {
+            name: 'Непрошедшее время (утвердительное)',
+            lesson: 3,
+            ru: getRussianMeaning('masu', word.translation),
+            jpKanji: baseForms.find((f) => f.formId === 'masu').kanji,
+            jpKana: baseForms.find((f) => f.formId === 'masu').kana,
+          },
+          {
+            name: 'Непрошедшее время (отрицательное)',
+            lesson: 3,
+            ru: getRussianMeaning('masen', word.translation),
+            jpKanji: baseForms.find((f) => f.formId === 'masen').kanji,
+            jpKana: baseForms.find((f) => f.formId === 'masen').kana,
+          },
+          {
+            name: 'Приглашение',
+            lesson: 3,
+            ru: getRussianMeaning('masenka', word.translation),
+            jpKanji: baseForms.find((f) => f.formId === 'masenka').kanji,
+            jpKana: baseForms.find((f) => f.formId === 'masenka').kana,
+          },
+          {
+            name: 'Прошедшее время (утвердительное)',
+            lesson: 4,
+            ru: getRussianMeaning('mashita', word.translation),
+            jpKanji: baseForms.find((f) => f.formId === 'mashita').kanji,
+            jpKana: baseForms.find((f) => f.formId === 'mashita').kana,
+          },
+          {
+            name: 'Прошедшее время (отрицательное)',
+            lesson: 4,
+            ru: getRussianMeaning('masendeshita', word.translation),
+            jpKanji: baseForms.find((f) => f.formId === 'masendeshita').kanji,
+            jpKana: baseForms.find((f) => f.formId === 'masendeshita').kana,
+          },
+          {
+            name: 'Побудительное',
+            lesson: 5,
+            ru: getRussianMeaning('mashou', word.translation),
+            jpKanji: baseForms.find((f) => f.formId === 'mashou').kanji,
+            jpKana: baseForms.find((f) => f.formId === 'mashou').kana,
+          },
+          {
+            name: 'Предложение помощи',
+            lesson: 5,
+            ru: getRussianMeaning('mashouka', word.translation),
+            jpKanji: baseForms.find((f) => f.formId === 'mashouka').kanji,
+            jpKana: baseForms.find((f) => f.formId === 'mashouka').kana,
+          },
+        ];
+
+        const plainGroup = [
+          {
+            name: 'Простое непрошедшее утвердительное',
+            lesson: 8,
+            ru: getRussianMeaning('dictionary', word.translation),
+            jpKanji: baseForms.find((f) => f.formId === 'dictionary').kanji,
+            jpKana: baseForms.find((f) => f.formId === 'dictionary').kana,
+          },
+          {
+            name: 'Простое непрошедшее отрицательное',
+            lesson: 8,
+            ru: getRussianMeaning('nai', word.translation),
+            jpKanji: baseForms.find((f) => f.formId === 'nai').kanji,
+            jpKana: baseForms.find((f) => f.formId === 'nai').kana,
+          },
+          {
+            name: 'Простое прошедшее утвердительное',
+            lesson: 9,
+            ru: getRussianMeaning('ta', word.translation),
+            jpKanji: baseForms.find((f) => f.formId === 'ta').kanji,
+            jpKana: baseForms.find((f) => f.formId === 'ta').kana,
+          },
+          {
+            name: 'Простое прошедшее отрицательное',
+            lesson: 9,
+            ru: getRussianMeaning('nakatta', word.translation),
+            jpKanji: baseForms.find((f) => f.formId === 'nakatta').kanji,
+            jpKana: baseForms.find((f) => f.formId === 'nakatta').kana,
+          },
+        ];
+
+        const teGroup = [
+          {
+            name: 'て-форма',
+            lesson: 6,
+            ru: getRussianMeaning('te', word.translation),
+            jpKanji: baseForms.find((f) => f.formId === 'te').kanji,
+            jpKana: baseForms.find((f) => f.formId === 'te').kana,
+          },
+        ];
+
+        const teFormKanji = baseForms.find((f) => f.formId === 'te').kanji;
+        const teFormKana = baseForms.find((f) => f.formId === 'te').kana;
+        const dictionaryKanji = baseForms.find((f) => f.formId === 'dictionary').kanji;
+        const dictionaryKana = baseForms.find((f) => f.formId === 'dictionary').kana;
+        const naiFormKanji = baseForms.find((f) => f.formId === 'nai').kanji;
+        const naiFormKana = baseForms.find((f) => f.formId === 'nai').kana;
+        const taFormKanji = baseForms.find((f) => f.formId === 'ta').kanji;
+        const taFormKana = baseForms.find((f) => f.formId === 'ta').kana;
+
+        const constructionsGroup = [
+          {
+            name: 'てください',
+            lesson: 6,
+            ru: getRussianMeaning('てください', word.translation),
+            jpKanji: teFormKanji + 'ください',
+            jpKana: teFormKana + 'ください',
+          },
+          {
+            name: 'てもいいです',
+            lesson: 6,
+            ru: getRussianMeaning('てもいいです', word.translation),
+            jpKanji: teFormKanji + 'もいいです',
+            jpKana: teFormKana + 'もいいです',
+          },
+          {
+            name: 'てはいけません',
+            lesson: 6,
+            ru: getRussianMeaning('てはいけません', word.translation),
+            jpKanji: teFormKanji + 'はいけません',
+            jpKana: teFormKana + 'はいけません',
+          },
+          {
+            name: 'последовательность 〜て、〜',
+            lesson: 6,
+            ru: getRussianMeaning('последовательность 〜て、〜', word.translation),
+            jpKanji: teFormKanji + '、...',
+            jpKana: teFormKana + '、...',
+          },
+          {
+            name: 'ています',
+            lesson: 7,
+            ru: getRussianMeaning('ています', word.translation),
+            jpKanji: teFormKanji + 'います',
+            jpKana: teFormKana + 'います',
+          },
+          {
+            name: 'основа + に行く/来る/帰る',
+            lesson: 7,
+            ru: getRussianMeaning('основа + に行く/来る/帰る', word.translation),
+            jpKanji: stemKanji + 'に行く/来る/帰る',
+            jpKana: stemKana + 'にいく/くる/かえる',
+          },
+          {
+            name: 'найдеください',
+            lesson: 8,
+            ru: getRussianMeaning('ないдеください', word.translation),
+            jpKanji: naiFormKanji + 'でください',
+            jpKana: naiFormKana + 'でください',
+          },
+          {
+            name: 'と思います',
+            lesson: 8,
+            ru: getRussianMeaning('と思います', word.translation),
+            jpKanji: dictionaryKanji + 'と思います',
+            jpKana: dictionaryKana + 'とおもいます',
+          },
+          {
+            name: '言っていました',
+            lesson: 8,
+            ru: getRussianMeaning('сказал', word.translation),
+            jpKanji: dictionaryKanji + 'と言っていました',
+            jpKana: dictionaryKana + 'といっていました',
+          },
+          {
+            name: 'のが好きです',
+            lesson: 8,
+            ru: getRussianMeaning('のが好きです', word.translation),
+            jpKanji: dictionaryKanji + 'のが好きです',
+            jpKana: dictionaryKana + 'のが好きです',
+          },
+          {
+            name: 'つもりです',
+            lesson: 10,
+            ru: getRussianMeaning('つもりです', word.translation),
+            jpKanji: dictionaryKanji + 'つもりです',
+            jpKana: dictionaryKana + 'つもりです',
+          },
+          {
+            name: 'たことがあります',
+            lesson: 11,
+            ru: getRussianMeaning('たことがあります', word.translation),
+            jpKanji: taFormKanji + 'ことがあります',
+            jpKana: taFormKana + 'ことがあります',
+          },
+          {
+            name: 'たり〜たりします',
+            lesson: 11,
+            ru: getRussianMeaning('たり〜たりします', word.translation),
+            jpKanji: taFormKanji + 'り、...たりします',
+            jpKana: taFormKana + 'り、...たりします',
+          },
+          {
+            name: 'たい',
+            lesson: 11,
+            ru: getRussianMeaning('たい', word.translation),
+            jpKanji: stemKanji + 'たい',
+            jpKana: stemKana + 'たい',
+          },
+        ];
+
+        const renderRowHtml = (item) => {
+          const locked = isLocked(item.lesson);
+          const formattedJp = formatJp(item.jpKanji, item.jpKana);
+          return `
+            <div class="dict-conj-row ${locked ? 'locked' : ''}">
+              <div class="dict-conj-cell cell-name">
+                <span class="dict-conj-name">${item.name}</span>
+              </div>
+              <div class="dict-conj-cell cell-badge">
+                <span class="dict-conj-lesson-badge">Урок ${item.lesson}</span>
+              </div>
+              <div class="dict-conj-cell cell-value">
+                <div class="dict-conj-value" ${locked ? '' : 'data-revealed="false"'}>
+                  ${
+                    locked
+                      ? `
+                    <span class="dict-conj-locked-text">Откроется в уроке ${item.lesson}</span>
+                  `
+                      : `
+                    <button class="dict-conj-reveal-trigger">👁️ Показать</button>
+                    <span class="dict-conj-actual-form">${formattedJp}</span>
+                  `
+                  }
+                </div>
+              </div>
+              <div class="dict-conj-cell cell-translation">
+                <span class="dict-conj-translation">${locked ? '—' : item.ru}</span>
+              </div>
+            </div>
+          `;
+        };
+
+        conjugationHtml = `
+          <div class="dict-section dict-conjugation">
+            <h3 class="dict-section-title">Спряжение глагола</h3>
+            <div class="dict-section-body">
+              <div class="dict-conj-tabs">
+                <button class="dict-conj-tab-btn active" data-tab="polite">Вежливые</button>
+                <button class="dict-conj-tab-btn" data-tab="plain">Простые</button>
+                <button class="dict-conj-tab-btn" data-tab="te">て-форма</button>
+                <button class="dict-conj-tab-btn" data-tab="constructions">Конструкции</button>
+              </div>
+              
+              <div class="dict-conj-panel" id="dict-conj-panel-polite" style="display: flex;">
+                ${politeGroup.map(renderRowHtml).join('')}
+              </div>
+              <div class="dict-conj-panel" id="dict-conj-panel-plain" style="display: none;">
+                ${plainGroup.map(renderRowHtml).join('')}
+              </div>
+              <div class="dict-conj-panel" id="dict-conj-panel-te" style="display: none;">
+                ${teGroup.map(renderRowHtml).join('')}
+              </div>
+              <div class="dict-conj-panel" id="dict-conj-panel-constructions" style="display: none;">
+                ${constructionsGroup.map(renderRowHtml).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        console.error('Ошибка при генерации спряжений:', err);
+        conjugationHtml = `
+          <div class="dict-section dict-conjugation">
+            <h3 class="dict-section-title">Спряжение глагола</h3>
+            <div class="dict-section-body">
+              <div class="dict-empty-state">Не удалось построить таблицу спряжений</div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Генерация контекстного примера через гибридный движок (corpus-first → template → null).
+    // Просмотр примера НЕ записывает production evidence и НЕ меняет mastery/FSRS.
+    const userMaxLesson = activeLessonId;
+    const generatedExample = generateExample(word, { seed: exampleSeed, userMaxLesson });
+
+    // Строим HTML блока «Примеры» с подсветкой слова и кнопками
+    function buildExampleBlockHtml() {
+      if (!generatedExample) {
+        return `<div class="dict-empty-state">Примеры предложений пока отсутствуют</div>`;
+      }
+      const sourceBadge =
+        generatedExample.source === EXAMPLE_SOURCES.CORPUS
+          ? `<span class="dict-example-badge badge-corpus">Корпус</span>`
+          : `<span class="dict-example-badge badge-template">Шаблон</span>`;
+      const readingHtml = generatedExample.reading
+        ? `<div class="dict-example-reading">${generatedExample.reading}</div>`
+        : '';
+      return `
+        <div class="dict-example-card" id="dict-example-card">
+          <div class="dict-example-header">
+            ${sourceBadge}
+            <button class="dict-example-speak btn-ghost-sm" id="dict-example-speak"
+              aria-label="Озвучить пример">🔊</button>
+          </div>
+          <div class="dict-example-jp" id="dict-example-jp">${generatedExample.japaneseHighlighted}</div>
+          ${readingHtml}
+          <div class="dict-example-ru">${generatedExample.translation}</div>
+          <div class="dict-example-footer">
+            <button class="dict-example-next btn-secondary-sm" id="dict-example-next">
+              🔄 Другой пример
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
     body.innerHTML = `
       <div class="dict-modal">
         <div class="dict-modal-header">
           <button class="btn-ghost" id="dict-modal-close">← Назад</button>
-          <h2 class="dict-modal-title">${word.kanji || word.writing}</h2>
           <button class="dict-modal-speak" id="dict-modal-speak" aria-label="Озвучить">🔊</button>
         </div>
         
         <div class="dict-modal-content">
-          <div class="dict-modal-info">
-            <p class="dict-modal-reading">${word.writing}</p>
-            <p class="dict-modal-translation">${word.translation}</p>
-            ${word.romaji ? `<p class="dict-modal-romaji">${word.romaji}</p>` : ''}
+          <!-- Header Card -->
+          <div class="dict-word-header-card">
+            <div class="dict-word-main-info">
+              <h2 class="dict-word-kanji">${word.kanji || word.writing}</h2>
+              <p class="dict-word-reading">${word.writing}</p>
+              ${word.romaji ? `<p class="dict-word-romaji">${word.romaji}</p>` : ''}
+            </div>
+            <div class="dict-word-translation-section">
+              <p class="dict-word-translation">${word.translation}</p>
+            </div>
+            <div class="dict-word-meta-badges">
+              <span class="dict-badge badge-pos">${getPartOfSpeechLabel(word.partOfSpeech)}</span>
+              ${word.partOfSpeech === 'verb' && word.verbClass ? `<span class="dict-badge badge-verbclass">${getVerbClassLabel(word.verbClass)}</span>` : ''}
+              <span class="dict-badge badge-lessons">${getLessonsLabel(word.lessonIds)}</span>
+            </div>
           </div>
-          
+
+          <!-- Examples Block -->
+          <div class="dict-section dict-examples">
+            <h3 class="dict-section-title">Примеры предложений</h3>
+            <div class="dict-section-body" id="dict-examples-body">
+              ${buildExampleBlockHtml()}
+            </div>
+          </div>
+
+          <!-- Conjugation Block (verbs only) -->
+          ${word.partOfSpeech === 'verb' ? conjugationHtml : ''}
+
+          <!-- Usage Block -->
+          <div class="dict-section dict-usage">
+            <h3 class="dict-section-title">Употребление</h3>
+            <div class="dict-section-body dict-usage-grid">
+              <div class="dict-usage-row">
+                <span class="dict-usage-label">Частицы:</span>
+                <span class="dict-usage-value">${word.particlePatterns && word.particlePatterns.length > 0 ? word.particlePatterns.map((p) => `<span class="dict-particle-tag">${p}</span>`).join(' ') : '<span class="dict-empty-inline">—</span>'}</span>
+              </div>
+              <div class="dict-usage-row">
+                <span class="dict-usage-label">Переходность:</span>
+                <span class="dict-usage-value">${word.transitivity === 'transitive' ? 'Переходный глагол' : word.transitivity === 'intransitive' ? 'Непереходный глагол' : '<span class="dict-empty-inline">неизвестно</span>'}</span>
+              </div>
+              <div class="dict-usage-row">
+                <span class="dict-usage-label">Заметки:</span>
+                <span class="dict-usage-value dict-usage-notes">${word.note || '<span class="dict-empty-inline">—</span>'}</span>
+                <span class="dict-usage-value dict-usage-notes">${word.note || '<span class="dict-empty-inline">—</span>'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kanji Accordion (conditional) -->
           ${
             hasKanji
               ? `
-            ${kanjiTabsHtml}
-            <div class="dict-kanji-writer-container">
-              <div id="dict-kanji-writer-target"></div>
-            </div>
-            <div class="dict-kanji-controls">
-              <button class="btn-secondary" id="dict-animate-btn">🎬 Анимация черт</button>
-              <button class="btn-secondary" id="dict-quiz-btn">✍️ Пропись</button>
-            </div>
+            <details class="dict-details-accordion" id="dict-kanji-details" ${isKanjiOpen ? 'open' : ''}>
+              <summary class="dict-details-summary">Кандзи и написание</summary>
+              <div class="dict-details-content">
+                ${kanjiTabsHtml}
+                <div class="dict-kanji-writer-container">
+                  <div id="dict-kanji-writer-target"></div>
+                </div>
+                <div class="dict-kanji-controls">
+                  <button class="btn-secondary" id="dict-animate-btn">🎬 Анимация черт</button>
+                  <button class="btn-secondary" id="dict-quiz-btn">✍️ Пропись</button>
+                </div>
+              </div>
+            </details>
           `
-              : '<p class="dict-no-kanji">В этом слове нет кандзи для отрисовки</p>'
+              : ''
           }
+
+          <!-- Progress Accordion -->
+          <details class="dict-details-accordion" id="dict-progress-details" ${isProgressOpen ? 'open' : ''}>
+            <summary class="dict-details-summary">Прогресс изучения</summary>
+            <div class="dict-details-content">
+              <!-- Overall mastery info -->
+              <div class="dict-mastery-overall">
+                <div class="dict-mastery-score-row">
+                  <span class="dict-mastery-level-label">Уровень освоения: <strong class="dict-mastery-level-value">${mastery.label}</strong></span>
+                  <span class="dict-mastery-score-value">${mastery.score}%</span>
+                </div>
+                <div class="dict-mastery-progress-bar">
+                  <div class="dict-mastery-progress-fill" style="width: ${mastery.score}%"></div>
+                </div>
+              </div>
+              
+              <!-- FSRS skills -->
+              <div class="dict-skills-list">
+                ${renderSkillRow('recognition', 'Узнавание (Recognition)', mastery, appSkills)}
+                ${renderSkillRow('recall', 'Воспроизведение (Recall)', mastery, appSkills)}
+                ${renderSkillRow('context-production', 'Использование (Production)', mastery, appSkills)}
+              </div>
+            </div>
+          </details>
         </div>
       </div>
     `;
@@ -2548,6 +3367,57 @@ function openDictionaryModal(word, state, dependencies) {
       speakBtn.onclick = (e) => {
         e.stopPropagation();
         speakJapanese(word.writing);
+      };
+    }
+
+    // «Другой пример» — переключает seed; не затрагивает FSRS/mastery
+    const nextExBtn = $('#dict-example-next');
+    if (nextExBtn) {
+      nextExBtn.onclick = (e) => {
+        e.stopPropagation();
+        exampleSeed = nextSeed(exampleSeed);
+        renderModalContent();
+      };
+    }
+
+    // Озвучить пример
+    const exSpeakBtn = $('#dict-example-speak');
+    if (exSpeakBtn && generatedExample) {
+      exSpeakBtn.onclick = (e) => {
+        e.stopPropagation();
+        // Произносим чистый японский текст без HTML-разметки
+        const cleanJp = generatedExample.japanese;
+        speakJapanese(cleanJp);
+      };
+    }
+
+    // Настройка табов и скрытия спряжений
+    const conjSection = $('.dict-conjugation');
+    if (conjSection) {
+      const tabBtns = $$('.dict-conj-tab-btn');
+      const panels = $$('.dict-conj-panel');
+      tabBtns.forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const targetTab = btn.dataset.tab;
+          tabBtns.forEach((b) => b.classList.toggle('active', b === btn));
+          panels.forEach((p) => {
+            const isTarget = p.id === `dict-conj-panel-${targetTab}`;
+            p.style.display = isTarget ? 'flex' : 'none';
+          });
+        };
+      });
+
+      // Делегирование кликов для раскрытия японской формы
+      conjSection.onclick = (e) => {
+        const trigger = e.target.closest('.dict-conj-reveal-trigger');
+        if (trigger) {
+          e.stopPropagation();
+          const valDiv = trigger.closest('.dict-conj-value');
+          if (valDiv) {
+            valDiv.dataset.revealed = 'true';
+          }
+        }
       };
     }
 
@@ -2574,62 +3444,21 @@ async function initDictionaryKanjiWriter(kanji) {
   const container = target?.parentElement;
   const controls = document.querySelector('.dict-kanji-controls');
 
-  if (!target || typeof HanziWriter === 'undefined') {
-    toast('⚠️ HanziWriter не загружен');
+  if (!target) {
+    console.warn('dict-kanji-writer-target not found');
     return;
   }
 
   target.innerHTML = '';
   target.style.touchAction = 'none';
 
-  const loadKanjiData = async (char) => {
-    // Очищаем символ от тильд и спецсимволов
+  // Локальный загрузчик данных кандзи (без сетевых зависимостей)
+  const loadKanjiData = (char) => {
     const cleanChar = cleanKanjiChar(char);
     if (!cleanChar) {
-      console.error('Пустой символ после очистки');
-      return null;
+      return Promise.reject(new Error('Пустой символ после очистки'));
     }
-
-    // Приоритет 1: @k1low/hanzi-writer-data-jp (основной японский датасет)
-    try {
-      const response = await fetch(
-        `https://cdn.jsdelivr.net/npm/@k1low/hanzi-writer-data-jp@latest/${encodeURIComponent(cleanChar)}.json`
-      );
-      if (response.ok) {
-        return await response.json();
-      }
-    } catch (e) {
-      // Тихо продолжаем к следующему датасету
-    }
-
-    // Приоритет 2: hanzi-writer-data-jp (альтернативный японский датасет)
-    try {
-      const response = await fetch(
-        `https://cdn.jsdelivr.net/npm/hanzi-writer-data-jp@latest/${encodeURIComponent(cleanChar)}.json`
-      );
-      if (response.ok) {
-        return await response.json();
-      }
-    } catch (e) {
-      // Тихо продолжаем к следующему датасету
-    }
-
-    // Приоритет 3: Китайский датасет (крайний fallback)
-    try {
-      const response = await fetch(
-        `https://cdn.jsdelivr.net/npm/hanzi-writer-data@latest/${encodeURIComponent(cleanChar)}.json`
-      );
-      if (response.ok) {
-        console.warn(`⚠️ Используется китайский датасет для "${cleanChar}"`);
-        return await response.json();
-      }
-    } catch (e) {
-      // Игнорируем
-    }
-
-    // Если все датасеты недоступны, возвращаем null вместо ошибки
-    console.error(`❌ Символ "${cleanChar}" не найден ни в одном датасете`);
-    return null;
+    return localCharDataLoader(cleanChar);
   };
 
   try {
