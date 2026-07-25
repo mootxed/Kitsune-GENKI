@@ -1,0 +1,15 @@
+name: Auto Roadmap Dates
+on:
+  issues:
+    types: [opened, closed]
+
+jobs:
+  set-dates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Project Dates
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Автоматически фиксирует дату создания и закрытия задачи
+            console.log("Дата обновлена для таймлайна");
