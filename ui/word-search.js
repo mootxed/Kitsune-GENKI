@@ -72,6 +72,10 @@ export function cleanupWordSearch() {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.cleanupWordSearch = cleanupWordSearch;
+}
+
 /**
  * Main entry point for Word Search route.
  * Shows Mode & Difficulty Selection screen on initial enter.
@@ -349,7 +353,6 @@ export function startWordSearchGame(
       <!-- Header Info Bar (Single Line Compact HUD) -->
       <div class="ws-info-bar">
         <div class="ws-info-left">
-          <button class="ws-icon-btn ws-btn-back" id="ws-back-btn" data-testid="ws-back-btn" aria-label="К выбору сложности" title="К выбору сложности">←</button>
           <span class="ws-diff-badge" data-testid="ws-diff-badge">${badgeText}</span>
           <div class="ws-counter" data-testid="ws-counter" aria-label="Прогресс">
             <span id="ws-found-count">0</span> / ${placedWords.length}
@@ -370,23 +373,22 @@ export function startWordSearchGame(
       </div>
 
       <!-- Translations Strip (Compact Fixed Height Panel, 2 Rows Grid) -->
-      <div class="ws-clues-panel" data-testid="ws-clues-panel">
-        <div class="ws-clues-grid">
-          ${placedWords
-            .map(
-              (pw) => `
-            <div class="ws-translation-item" data-word-id="${pw.id}" aria-label="${escapeHtml(pw.translation)}">
-              ${escapeHtml(pw.translation)}
-            </div>
-          `
-            )
-            .join('')}
-        </div>
+      <div class="ws-clue-strip ws-translations-list" id="ws-translations-list" data-testid="ws-translations-list">
+        ${placedWords
+          .map(
+            (pw) => `
+          <div class="ws-clue-card ws-translation-item" data-word-id="${pw.id}" data-color-index="${pw.colorIndex || 0}" data-testid="ws-translation-${pw.id}" title="${escapeHtml(pw.translation)}">
+            <span class="ws-clue-check ws-status-icon">✓</span>
+            <span class="ws-clue-translation ws-translation-text">${escapeHtml(pw.translation)}</span>
+          </div>
+        `
+          )
+          .join('')}
       </div>
 
       <!-- Letter Grid Container -->
       <div class="ws-grid-wrapper">
-        <div class="ws-grid" id="ws-grid" style="--grid-size: ${gridSize};" data-testid="ws-grid" tabIndex="0" role="grid" aria-label="Сетка поиска слов">
+        <div class="ws-grid" id="ws-grid" style="--grid-size: ${gridSize}; grid-template-columns: repeat(${gridSize}, 1fr); grid-template-rows: repeat(${gridSize}, 1fr);" data-testid="ws-grid" tabIndex="0" role="grid" aria-label="Сетка поиска слов">
           ${grid
             .flatMap((row, rIdx) =>
               row.map(
@@ -410,7 +412,6 @@ export function startWordSearchGame(
   const hintsLeftEl = $('#ws-hints-left');
   const newGameBtn = $('#ws-new-game-btn');
   const changeDiffBtn = $('#ws-change-diff-btn');
-  const backBtn = $('#ws-back-btn');
 
   function getCellEl(row, col) {
     return gridEl?.querySelector(`.ws-cell[data-row="${row}"][data-col="${col}"]`);
@@ -690,9 +691,6 @@ export function startWordSearchGame(
   // Header controls
   newGameBtn.onclick = () => startWordSearchGame(state, dependencies, difficultyId, mode);
   changeDiffBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies, mode);
-  if (backBtn) {
-    backBtn.onclick = () => renderDifficultySelectionScreen(state, dependencies, mode);
-  }
 
   // Completion
   function completeGame() {

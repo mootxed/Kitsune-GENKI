@@ -37,6 +37,27 @@ export class Router {
    * @param {boolean} skipHistory - Пропустить добавление в историю браузера
    */
   navigate(name, opt, skipHistory = false) {
+    // Очищаем рендеры мини-игр при переходе на другие экраны
+    if (this.currentScreen === 'word-search' || name !== 'word-search') {
+      if (typeof window.cleanupWordSearch === 'function') {
+        window.cleanupWordSearch();
+      }
+      document.body.classList.remove('ws-focus-mode');
+    }
+    if (this.currentScreen === 'crossword' || name !== 'crossword') {
+      if (typeof window.cleanupCrossword === 'function') {
+        window.cleanupCrossword();
+      }
+    }
+
+    // Восстанавливаем tabbar для обычных экранов
+    if (name !== 'word-search' && name !== 'srs') {
+      const tabbar = document.querySelector('.tabbar');
+      if (tabbar) tabbar.style.display = '';
+    }
+
+    this.currentScreen = name;
+
     // Переключение видимости экранов
     this.screens.forEach((s) => {
       const screen = document.getElementById('screen-' + s);

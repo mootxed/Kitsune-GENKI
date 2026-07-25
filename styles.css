@@ -8438,13 +8438,14 @@ rt {
   z-index: 100;
   transform: translateY(100%);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  max-height: 30vh;
+  max-height: 45vh;
   overflow-y: auto;
 }
 
 .crossword-bottom-panel.active {
   transform: translateY(0);
 }
+
 
 .crossword-grid {
   --cw-cell-size: 48px;
@@ -8468,9 +8469,9 @@ rt {
 }
 
 .cw-zoom-controls {
-  position: fixed;
-  top: calc(var(--header-height, 70px) + 16px);
-  right: 20px;
+  position: absolute;
+  top: 60px;
+  right: 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -8510,8 +8511,8 @@ rt {
   }
 
   .cw-zoom-controls {
-    top: calc(var(--header-height, 70px) + 8px);
-    right: 10px;
+    top: 56px;
+    right: 12px;
   }
 
   .cw-zoom-btn {
@@ -11255,6 +11256,8 @@ body.ws-focus-mode .tabbar {
 
 .ws-grid {
   display: grid;
+  grid-template-columns: repeat(var(--grid-size, 8), 1fr);
+  grid-template-rows: repeat(var(--grid-size, 8), 1fr);
   width: 100%;
   max-width: min(92vw, calc(100vh - 140px));
   max-height: min(92vw, calc(100vh - 140px));
@@ -11576,6 +11579,48 @@ body.ws-focus-mode .tabbar {
 .cw-header-actions {
   display: flex;
   gap: 8px;
+}
+
+.cw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.cw-btn-primary {
+  background: var(--orange, #ff9800);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.25);
+}
+
+.cw-btn-primary:hover {
+  background: var(--orange-dark, #f57c00);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 152, 0, 0.35);
+}
+
+.cw-btn-primary:active {
+  transform: translateY(0);
+}
+
+.cw-btn-secondary {
+  background: var(--bg-card, #ffffff);
+  color: var(--text-main, #333333);
+  border: 1px solid var(--border, #cccccc);
+}
+
+.cw-btn-secondary:hover {
+  background: var(--bg-main, #f5f5f5);
+  border-color: var(--orange, #ff9800);
 }
 
 .cw-btn-sm {
