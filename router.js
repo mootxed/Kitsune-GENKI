@@ -4,6 +4,7 @@ export class Router {
   constructor() {
     this.screens = [
       'home',
+      'onboarding',
       'course',
       'profile',
       'chapter',
@@ -37,6 +38,13 @@ export class Router {
    * @param {boolean} skipHistory - Пропустить добавление в историю браузера
    */
   navigate(name, opt, skipHistory = false) {
+    const targetId = `screen-${name}`;
+    const targetScreen = document.getElementById(targetId);
+    if (!targetScreen) {
+      console.error(`[Router] Unknown screen: ${name}`);
+      return;
+    }
+
     // Очищаем рендеры мини-игр при переходе на другие экраны
     if (this.currentScreen === 'word-search' && name !== 'word-search') {
       if (typeof window.cleanupWordSearch === 'function') {
@@ -59,12 +67,17 @@ export class Router {
     this.currentScreen = name;
 
     // Переключение видимости экранов
-    this.screens.forEach((s) => {
-      const screen = document.getElementById('screen-' + s);
-      if (screen) {
-        screen.classList.toggle('hidden', s !== name);
-      }
+    document.querySelectorAll('.screen').forEach((screen) => {
+      screen.classList.toggle('hidden', screen.id !== targetId);
     });
+
+    const visibleScreens = [...document.querySelectorAll('.screen:not(.hidden)')];
+    if (visibleScreens.length !== 1) {
+      console.warn(
+        `[Router] Expected exactly one visible screen, found ${visibleScreens.length}`,
+        visibleScreens.map((screen) => screen.id)
+      );
+    }
 
     // Управление активными табами
     const tabs = document.querySelectorAll('.tab');

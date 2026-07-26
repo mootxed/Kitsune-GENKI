@@ -5,6 +5,12 @@ describe('Router minigame cleanup logic', () => {
   let router;
 
   beforeEach(() => {
+    document.body.innerHTML = `
+      <section class="screen hidden" id="screen-home"></section>
+      <section class="screen hidden" id="screen-profile"></section>
+      <section class="screen hidden" id="screen-word-search"></section>
+      <section class="screen hidden" id="screen-crossword"></section>
+    `;
     router = new Router();
     window.cleanupWordSearch = vi.fn();
     window.cleanupCrossword = vi.fn();
@@ -60,5 +66,45 @@ describe('Router minigame cleanup logic', () => {
 
     router.navigate('word-search');
     expect(window.cleanupWordSearch).not.toHaveBeenCalled();
+  });
+});
+
+describe('Router screen visibility and invariant logic', () => {
+  let router;
+  let onboardingScreen, homeScreen, planScreen;
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <section class="screen hidden" id="screen-onboarding"></section>
+      <section class="screen hidden" id="screen-home"></section>
+      <section class="screen hidden" id="screen-plan"></section>
+    `;
+    router = new Router();
+    onboardingScreen = document.getElementById('screen-onboarding');
+    homeScreen = document.getElementById('screen-home');
+    planScreen = document.getElementById('screen-plan');
+  });
+
+  it('correctly toggles screen visibility and maintains exactly one visible screen', () => {
+    router.navigate('onboarding');
+
+    expect(onboardingScreen.classList.contains('hidden')).toBe(false);
+    expect(homeScreen.classList.contains('hidden')).toBe(true);
+    expect(planScreen.classList.contains('hidden')).toBe(true);
+    expect(document.querySelectorAll('.screen:not(.hidden)').length).toBe(1);
+
+    router.navigate('home');
+
+    expect(homeScreen.classList.contains('hidden')).toBe(false);
+    expect(onboardingScreen.classList.contains('hidden')).toBe(true);
+    expect(planScreen.classList.contains('hidden')).toBe(true);
+    expect(document.querySelectorAll('.screen:not(.hidden)').length).toBe(1);
+
+    router.navigate('plan');
+
+    expect(planScreen.classList.contains('hidden')).toBe(false);
+    expect(onboardingScreen.classList.contains('hidden')).toBe(true);
+    expect(homeScreen.classList.contains('hidden')).toBe(true);
+    expect(document.querySelectorAll('.screen:not(.hidden)').length).toBe(1);
   });
 });

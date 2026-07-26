@@ -47,6 +47,18 @@ test.describe('E2E Onboarding & Chapter Flow', () => {
     await expect(commitBtn).toBeVisible();
     await commitBtn.click();
 
+    // Verify screen visibility on home screen right after creating plan
+    await expect(page.locator('#screen-onboarding')).toBeHidden();
+    await expect(page.locator('#screen-home')).toBeVisible();
+    await expect(page.locator('.screen:not(.hidden)')).toHaveCount(1);
+    await expect(page.locator('[data-testid="continue-learning-btn"]')).toBeVisible();
+
+    // Reload page and verify screen visibility state persists
+    await page.reload();
+    await expect(page.locator('#screen-onboarding')).toBeHidden();
+    await expect(page.locator('#screen-home')).toBeVisible();
+    await expect(page.locator('.screen:not(.hidden)')).toHaveCount(1);
+
     // 9. Navigate to Chapter 1
     await page.goto('/#chapter/1');
 

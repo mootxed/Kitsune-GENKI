@@ -1,5 +1,4 @@
-/* ui/onboarding.js — Step-by-step Onboarding Wizard */
-
+import { nav } from './router.js';
 import { $, $$ } from '../src/utils.js';
 import { save } from '../state/store.js';
 import { getOnboardingDraft, updateOnboardingDraft } from '../src/onboarding-state.js';
@@ -452,8 +451,7 @@ export async function renderOnboarding(state, dependencies = {}) {
           if (res.success) {
             await save(true);
             setAppChromeVisibility({ tabbar: true, header: true });
-            if (dependencies.renderHome) dependencies.renderHome();
-            if (window.nav) window.nav('home');
+            nav('home');
           }
         }
       };
