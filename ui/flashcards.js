@@ -64,6 +64,7 @@ export {
   completeBatchAndMoveNext,
   getCurrentBatchInfo,
   resetSessionBatching,
+  startSessionWithCards,
 } from './flashcards/session.js';
 
 export {

@@ -1,0 +1,117 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { defaultState } from '../state/store.js';
+import { generateDailyPlan, getDailyCapacity, getOrGenerateDailyPlan } from '../src/daily-plan.js';
+import { TIME_ESTIMATES } from '../src/time-estimates.js';
+
+const MOCK_LESSON = {
+  id: 2,
+  lesson_id: 2,
+  title: 'Урок 2',
+  words: [{ id: 'L2_V001' }, { id: 'L2_V002' }, { id: 'L2_V003' }],
+  notes: [{ note_id: 1, title: 'Грамматика 1' }],
+  practice: [{ id: 'p1', title: 'Практика 1', estimatedMinutes: 10, required: true }],
+};
+
+describe('Task 6: Atomic Daily Plan & Time Budget (src/daily-plan.js)', () => {
+  let appState;
+
+  beforeEach(() => {
+    appState = defaultState();
+    appState.dailyCapacityMinutes = 30;
+    appState.chapters[2] = { started: true, checklist: {} };
+    appState.activeChapterId = 2;
+    appState.studyPlan = {
+      capacityMinutes: 30,
+      studyDaysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+      segments: [
+        {
+          type: 'chapter',
+          chapterId: 2,
+          assignedDates: ['2026-07-26', '2026-07-27'],
+          dateStatuses: {},
+        },
+      ],
+    };
+  });
+
+  it('1. Извлекает дневной бюджет пользователя с запасным значением 30 мин', () => {
+    expect(getDailyCapacity(appState)).toBe(30);
+
+    appState.dailyCapacityMinutes = 15;
+    expect(getDailyCapacity(appState)).toBe(15);
+  });
+
+  it('2. Формирует атомарные задачи дня в порядке приоритета с учетом бюджета', () => {
+    appState.srs = {
+      card1: { id: 'L2_V001:reading', due: Date.now() - 10000, reps: 1, state: 2 },
+      card2: { id: 'L2_V002:reading', due: Date.now() - 10000, reps: 1, state: 2 },
+    };
+
+    const dailyPlan = generateDailyPlan(appState, {
+      dateKey: '2026-07-26',
+      capacityMinutes: 30,
+      chapterMeta: MOCK_LESSON,
+    });
+
+    expect(dailyPlan).toBeDefined();
+    expect(dailyPlan.dateKey).toBe('2026-07-26');
+    expect(dailyPlan.capacityMinutes).toBe(30);
+    expect(dailyPlan.tasks.length).toBeGreaterThan(0);
+
+    // В первой позиции — SRS повторения (приоритет 1)
+    expect(dailyPlan.tasks[0].type).toBe('review');
+    expect(dailyPlan.tasks[0].priority).toBe(1);
+  });
+
+  it('3. Большое число повторений забирает время бюджета', () => {
+    // 100 повторений = 20 минут
+    const mockSrs = {};
+    for (let i = 0; i < 100; i++) {
+      mockSrs[`card_${i}`] = { id: `L2_V${i}:reading`, due: Date.now() - 1000, reps: 1, state: 2 };
+    }
+    appState.srs = mockSrs;
+
+    const plan15 = generateDailyPlan(appState, {
+      dateKey: '2026-07-26',
+      capacityMinutes: 15,
+      chapterMeta: MOCK_LESSON,
+    });
+
+    expect(plan15.tasks[0].type).toBe('review');
+    expect(plan15.estimatedMinutes).toBeGreaterThanOrEqual(15);
+  });
+
+  it('4. Не создаёт задачи в день отдыха', () => {
+    appState.studyPlan.segments[0].dateStatuses['2026-07-26'] = 'rest-day';
+
+    const restPlan = generateDailyPlan(appState, {
+      dateKey: '2026-07-26',
+      capacityMinutes: 30,
+      chapterMeta: MOCK_LESSON,
+    });
+
+    expect(restPlan.isRestDay).toBe(true);
+    expect(restPlan.tasks.filter((t) => t.type !== 'review')).toHaveLength(0);
+  });
+
+  it('5. getOrGenerateDailyPlan сохраняет стабильность и историю плана', () => {
+    const plan1 = getOrGenerateDailyPlan(appState, {
+      dateKey: '2026-07-26',
+      capacityMinutes: 45,
+      chapterMeta: MOCK_LESSON,
+    });
+
+    expect(appState.dailyPlan).toBeDefined();
+    expect(appState.dailyPlanHistory).toHaveLength(1);
+    expect(appState.dailyPlanHistory[0].dateKey).toBe('2026-07-26');
+
+    // Повторный вызов в тот же день возвращает тот же план
+    const plan2 = getOrGenerateDailyPlan(appState, {
+      dateKey: '2026-07-26',
+      capacityMinutes: 45,
+      chapterMeta: MOCK_LESSON,
+    });
+
+    expect(plan2).toBe(plan1);
+  });
+});

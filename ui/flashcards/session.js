@@ -148,3 +148,33 @@ export function resetSessionBatching() {
   setSessionBatcher(null);
   setCurrentBatchIndex(0);
 }
+
+export function startSessionWithCards(cards, chapterId = null, state = null, dependencies = {}) {
+  if (!Array.isArray(cards) || cards.length === 0) return false;
+
+  const manager = new SessionManager(cards, {
+    srs: SRS,
+    questsManager: dependencies?.QuestsManager || window?.QuestsManager || null,
+    state: state || dependencies?.state || null,
+    onSave: dependencies?.save,
+  });
+
+  setSessionManager(manager);
+  setFlashQueue(cards);
+  setFlashIdx(0);
+  setFlashRevealed(false);
+  setFlashCtx(chapterId);
+  reviewUndoStack.clear();
+
+  const tabsContainer = document.getElementById('srs-tabs-container');
+  if (tabsContainer) tabsContainer.classList.add('hidden');
+
+  const renderFn = dependencies?.renderFlash || window?.renderFlash;
+  if (typeof renderFn === 'function') {
+    renderFn(state || dependencies?.state, dependencies);
+  } else if (typeof window?.nav === 'function') {
+    window.nav('srs');
+  }
+
+  return true;
+}

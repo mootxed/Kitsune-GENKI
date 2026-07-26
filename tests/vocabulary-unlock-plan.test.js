@@ -5,10 +5,17 @@ import { SRS } from '../srs.js';
 import { State } from 'ts-fsrs';
 import {
   DEFAULT_DAILY_NEW_VOCABULARY_LIMIT,
+  FALLBACK_DAILY_NEW_VOCABULARY_LIMIT,
+  MIN_DAILY_VOCABULARY_TARGET,
+  MAX_DAILY_VOCABULARY_TARGET,
   unlockDailyVocabularyBatch,
   getVocabularyBatchProgress,
   normalizeVocabularyLockState,
   countRemainingLockedWords,
+  calculateDailyVocabularyTarget,
+  getRemainingChapterStudyDates,
+  distributeVocabularyAcrossDates,
+  getTodayVocabularyUnlockDecision,
 } from '../src/vocabulary-unlock-plan.js';
 import { ensureChapterVocabularyCards } from '../src/chapter-vocabulary.js';
 import { dueCards, allCards } from '../src/srs-helpers.js';
@@ -87,11 +94,23 @@ describe('Vocabulary Unlock Plan', () => {
     expect(countRemainingLockedWords(state, 1, lesson.words)).toBe(43);
   });
 
-  it('4. On the next day, the next portion is unlocked', () => {
+  it('4. On the next day, the next portion is unlocked if previous batch is completed', () => {
     const lesson = makeMockLesson(1, 60);
     ensureChapterVocabularyCards(state, lesson, { planLocked: true });
 
-    unlockDailyVocabularyBatch(state, 1, { dateKey: '2026-07-26', words: lesson.words });
+    const day1 = unlockDailyVocabularyBatch(state, 1, {
+      dateKey: '2026-07-26',
+      words: lesson.words,
+    });
+    // Mark day 1 cards completed
+    const unlockedSet = new Set(day1.unlockedItemIds);
+    Object.values(state.srs).forEach((c) => {
+      if (unlockedSet.has(c.id) || (c.id && unlockedSet.has(c.id.split(':')[1]))) {
+        c.reps = 1;
+        c.state = State.Review;
+      }
+    });
+
     const day2 = unlockDailyVocabularyBatch(state, 1, {
       dateKey: '2026-07-27',
       words: lesson.words,
@@ -106,8 +125,24 @@ describe('Vocabulary Unlock Plan', () => {
     const lesson = makeMockLesson(1, 40);
     ensureChapterVocabularyCards(state, lesson, { planLocked: true });
 
-    unlockDailyVocabularyBatch(state, 1, { dateKey: '2026-07-26', words: lesson.words }); // 17
-    unlockDailyVocabularyBatch(state, 1, { dateKey: '2026-07-27', words: lesson.words }); // 17
+    const b1 = unlockDailyVocabularyBatch(state, 1, { dateKey: '2026-07-26', words: lesson.words }); // 17
+    const s1 = new Set(b1.unlockedItemIds);
+    Object.values(state.srs).forEach((c) => {
+      if (s1.has(c.id) || (c.id && s1.has(c.id.split(':')[1]))) {
+        c.reps = 1;
+        c.state = State.Review;
+      }
+    });
+
+    const b2 = unlockDailyVocabularyBatch(state, 1, { dateKey: '2026-07-27', words: lesson.words }); // 17
+    const s2 = new Set(b2.unlockedItemIds);
+    Object.values(state.srs).forEach((c) => {
+      if (s2.has(c.id) || (c.id && s2.has(c.id.split(':')[1]))) {
+        c.reps = 1;
+        c.state = State.Review;
+      }
+    });
+
     const day3 = unlockDailyVocabularyBatch(state, 1, {
       dateKey: '2026-07-28',
       words: lesson.words,
@@ -309,5 +344,274 @@ describe('Vocabulary Unlock Plan', () => {
     state.srs['L1_word_1'].state = State.New;
 
     expect(getVocabularyBatchProgress(state, 1, '2026-07-26').isCompleted).toBe(false);
+  });
+});
+
+describe('Stage 1: Dynamic Daily Vocabulary Batch Calculations', () => {
+  let state;
+
+  beforeEach(() => {
+    state = defaultState();
+  });
+
+  it('1. 60 words and 4 study days are distributed evenly', () => {
+    const dist = distributeVocabularyAcrossDates(60, [
+      '2026-07-26',
+      '2026-07-27',
+      '2026-07-28',
+      '2026-07-29',
+    ]);
+    expect(dist).toEqual({
+      '2026-07-26': 15,
+      '2026-07-27': 15,
+      '2026-07-28': 15,
+      '2026-07-29': 15,
+    });
+  });
+
+  it('2. 57 words and 4 study days give close portions with difference <= 1', () => {
+    const dist = distributeVocabularyAcrossDates(57, [
+      '2026-07-26',
+      '2026-07-27',
+      '2026-07-28',
+      '2026-07-29',
+    ]);
+    expect(dist).toEqual({
+      '2026-07-26': 15,
+      '2026-07-27': 14,
+      '2026-07-28': 14,
+      '2026-07-29': 14,
+    });
+  });
+
+  it('3. Uses reserve day when 3 or more study days are available if target <= 25', () => {
+    const res = calculateDailyVocabularyTarget({ remainingWords: 40, remainingStudyDays: 3 });
+    expect(res.reserveDays).toBe(1);
+    expect(res.effectiveVocabularyDays).toBe(2);
+    expect(res.target).toBe(20);
+    expect(res.insufficientDays).toBe(false);
+  });
+
+  it('4. Does not use reserve day when only 2 study days remain', () => {
+    const res = calculateDailyVocabularyTarget({ remainingWords: 30, remainingStudyDays: 2 });
+    expect(res.reserveDays).toBe(0);
+    expect(res.effectiveVocabularyDays).toBe(2);
+    expect(res.target).toBe(15);
+    expect(res.insufficientDays).toBe(false);
+  });
+
+  it('5. After 17 words already unlocked, remaining words are recalculated over remaining dates', () => {
+    const lesson = makeMockLesson(1, 57);
+    ensureChapterVocabularyCards(state, lesson, { planLocked: true });
+
+    // Day 1 unlocks 17
+    const day1 = unlockDailyVocabularyBatch(state, 1, {
+      dateKey: '2026-07-26',
+      limit: 17,
+      words: lesson.words,
+    });
+    expect(day1.remainingLockedCount).toBe(40);
+
+    // Complete day 1
+    const uSet = new Set(day1.unlockedItemIds);
+    Object.values(state.srs).forEach((c) => {
+      if (uSet.has(c.id) || (c.id && uSet.has(c.id.split(':')[1]))) {
+        c.reps = 1;
+        c.state = State.Review;
+      }
+    });
+
+    const mockPlan = {
+      studyDaysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+      segments: [
+        {
+          type: 'chapter',
+          chapterId: 1,
+          assignedDates: ['2026-07-26', '2026-07-27', '2026-07-28', '2026-07-29'],
+        },
+      ],
+    };
+
+    const decision = getTodayVocabularyUnlockDecision(state, 1, {
+      plan: mockPlan,
+      dateKey: '2026-07-27',
+      words: lesson.words,
+    });
+
+    // 40 words over 3 remaining study dates (2026-07-27, 2026-07-28, 2026-07-29).
+    // Effective days = 2 (reserve 1), 40 / 2 = 20 words.
+    expect(decision.target).toBe(20);
+  });
+
+  it('6. Skipped day does not create two batches at once', () => {
+    const lesson = makeMockLesson(1, 50);
+    ensureChapterVocabularyCards(state, lesson, { planLocked: true });
+
+    const mockPlan = {
+      studyDaysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+      segments: [
+        {
+          type: 'chapter',
+          chapterId: 1,
+          assignedDates: ['2026-07-26', '2026-07-27', '2026-07-28'],
+        },
+      ],
+    };
+
+    // User skipped 2026-07-26 and opens app on 2026-07-27
+    const result = unlockDailyVocabularyBatch(state, 1, {
+      plan: mockPlan,
+      dateKey: '2026-07-27',
+      words: lesson.words,
+    });
+
+    expect(result.unlockedCount).toBe(25); // 50 / 2 remaining dates
+    expect(result.alreadyUnlockedToday).toBe(false);
+    expect(result.blockedByPreviousBatch).toBe(false);
+  });
+
+  it('7. Uncompleted previous batch blocks unlocking a new batch', () => {
+    const lesson = makeMockLesson(1, 40);
+    ensureChapterVocabularyCards(state, lesson, { planLocked: true });
+
+    // Day 1 unlock
+    unlockDailyVocabularyBatch(state, 1, { dateKey: '2026-07-26', words: lesson.words });
+
+    // Day 2 attempt without completing Day 1
+    const day2Decision = getTodayVocabularyUnlockDecision(state, 1, {
+      dateKey: '2026-07-27',
+      words: lesson.words,
+    });
+    expect(day2Decision.blockedByPreviousBatch).toBe(true);
+    expect(day2Decision.shouldUnlock).toBe(false);
+
+    const day2Result = unlockDailyVocabularyBatch(state, 1, {
+      dateKey: '2026-07-27',
+      words: lesson.words,
+    });
+    expect(day2Result.blockedByPreviousBatch).toBe(true);
+    expect(day2Result.unlockedCount).toBe(0);
+  });
+
+  it('8. Fallback (17) is used when Study Plan is missing', () => {
+    const lesson = makeMockLesson(1, 40);
+    ensureChapterVocabularyCards(state, lesson, { planLocked: true });
+
+    const decision = getTodayVocabularyUnlockDecision(state, 1, {
+      plan: null,
+      dateKey: '2026-07-26',
+      words: lesson.words,
+    });
+    expect(decision.target).toBe(FALLBACK_DAILY_NEW_VOCABULARY_LIMIT);
+    expect(decision.reason).toBe('fallback-no-plan');
+  });
+
+  it('9. insufficientDays is set when schedule is too tight', () => {
+    const res = calculateDailyVocabularyTarget({ remainingWords: 80, remainingStudyDays: 2 });
+    expect(res.insufficientDays).toBe(true);
+    expect(res.target).toBe(MAX_DAILY_VOCABULARY_TARGET); // 25
+    expect(res.requiredDailyTarget).toBe(40);
+  });
+
+  it('10. Batch target does not exceed protective maximum (25)', () => {
+    const res = calculateDailyVocabularyTarget({ remainingWords: 100, remainingStudyDays: 3 });
+    expect(res.target).toBe(25);
+    expect(res.target).toBeLessThanOrEqual(MAX_DAILY_VOCABULARY_TARGET);
+  });
+
+  it('11. Repeated call on the same date remains idempotent', () => {
+    const lesson = makeMockLesson(1, 30);
+    ensureChapterVocabularyCards(state, lesson, { planLocked: true });
+
+    const call1 = unlockDailyVocabularyBatch(state, 1, {
+      dateKey: '2026-07-26',
+      words: lesson.words,
+    });
+    const call2 = unlockDailyVocabularyBatch(state, 1, {
+      dateKey: '2026-07-26',
+      words: lesson.words,
+    });
+
+    expect(call1.unlockedCount).toBe(FALLBACK_DAILY_NEW_VOCABULARY_LIMIT);
+    expect(call2.alreadyUnlockedToday).toBe(true);
+    expect(call2.unlockedCount).toBe(0);
+  });
+
+  it('12. Previously unlocked batches remain unchanged after plan recalculation', () => {
+    const lesson = makeMockLesson(1, 40);
+    ensureChapterVocabularyCards(state, lesson, { planLocked: true });
+
+    const batch1 = unlockDailyVocabularyBatch(state, 1, {
+      dateKey: '2026-07-26',
+      words: lesson.words,
+    });
+    expect(batch1.unlockedCount).toBe(17);
+
+    // Simulate plan recalculation
+    state.studyPlan = {
+      studyDaysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+      segments: [
+        {
+          type: 'chapter',
+          chapterId: 1,
+          assignedDates: ['2026-07-26', '2026-07-28', '2026-07-29', '2026-07-30'],
+        },
+      ],
+    };
+
+    expect(state.vocabularyUnlocks['1']['2026-07-26'].itemIds.length).toBe(17);
+    const unlockedCards = Object.values(state.srs).filter((c) => c.planLocked === false);
+    expect(unlockedCards.length).toBe(17);
+  });
+
+  it('13. Only real assignedDates of segment are counted', () => {
+    const mockPlan = {
+      studyDaysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+      segments: [
+        {
+          type: 'chapter',
+          chapterId: 1,
+          assignedDates: ['2026-07-26', '2026-07-28'],
+        },
+      ],
+    };
+
+    const dates = getRemainingChapterStudyDates(mockPlan, 1, '2026-07-26');
+    expect(dates).toEqual(['2026-07-26', '2026-07-28']);
+  });
+
+  it('14. Rest days and dates outside segment are ignored', () => {
+    const mockPlan = {
+      studyDaysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+      segments: [
+        {
+          type: 'chapter',
+          chapterId: 1,
+          assignedDates: ['2026-07-26', '2026-07-27', '2026-07-28'],
+          dateStatuses: {
+            '2026-07-27': 'rest-day',
+          },
+        },
+      ],
+    };
+
+    const dates = getRemainingChapterStudyDates(mockPlan, 1, '2026-07-26');
+    expect(dates).toEqual(['2026-07-26', '2026-07-28']);
+  });
+
+  it('15. No new batches unlocked after chapter completion', () => {
+    const lesson = makeMockLesson(1, 5);
+    ensureChapterVocabularyCards(state, lesson, { planLocked: true });
+
+    // Unlock all 5 words
+    unlockDailyVocabularyBatch(state, 1, { dateKey: '2026-07-26', words: lesson.words });
+
+    const decision = getTodayVocabularyUnlockDecision(state, 1, {
+      dateKey: '2026-07-27',
+      words: lesson.words,
+    });
+
+    expect(decision.shouldUnlock).toBe(false);
+    expect(decision.reason).toBe('chapter-completed');
   });
 });

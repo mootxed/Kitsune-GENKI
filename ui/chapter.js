@@ -13,8 +13,24 @@ import {
 } from './home.js';
 import { countAvailableCardsForSession } from '../src/srs-limits.js';
 import { StudyPlan } from '../studyplan.js';
-import { completeChapter, getChapterProgress, setChapterSection } from '../src/chapter-progress.js';
-import { countRemainingLockedWords } from '../src/vocabulary-unlock-plan.js';
+import {
+  completeChapter,
+  getChapterProgress,
+  getChapterGrammarTopics,
+  getChapterPracticeTasks,
+  isGrammarTopicCompleted,
+  isPracticeItemCompleted,
+  isVocabularyBlockCompleted,
+  setChapterSection,
+} from '../src/chapter-progress.js';
+import {
+  countRemainingLockedWords,
+  getTodayVocabularyUnlockDecision,
+  ensureTodayVocabularyBatch,
+  getOldestIncompleteVocabularyBatch,
+  getVocabularyBatchProgress,
+  startVocabularyBatchSession,
+} from '../src/vocabulary-unlock-plan.js';
 
 // ---------- Render: Chapter ----------
 export async function renderChapter(id, state, dependencies) {
@@ -50,10 +66,36 @@ export async function renderChapter(id, state, dependencies) {
   const unlockedWords = Math.max(0, totalWords - lockedWords);
 
   const today = todayStr();
+
+  if (cs.started || progress.completionSource === 'app') {
+    const batchRes = ensureTodayVocabularyBatch(state, id, {
+      plan: state.studyPlan,
+      dateKey: today,
+      words: l.words,
+    });
+    if (batchRes.created) await save(true);
+  }
+
+  const decision = getTodayVocabularyUnlockDecision(state, id, {
+    plan: state.studyPlan,
+    dateKey: today,
+    words: l.words,
+  });
+
   const todayUnlockEntry = state.vocabularyUnlocks?.[id]?.[today];
   const todayUnlockedCount = Array.isArray(todayUnlockEntry?.itemIds)
     ? todayUnlockEntry.itemIds.length
     : 0;
+
+  const oldBatch = getOldestIncompleteVocabularyBatch(state, id, today);
+  const todayBatchProgress = getVocabularyBatchProgress(state, id, today);
+  const targetBatchDateKey = oldBatch ? oldBatch.dateKey : today;
+  const hasBatchToStudy = Boolean(
+    oldBatch || (todayBatchProgress.total > 0 && !todayBatchProgress.isCompleted)
+  );
+  const batchBtnText = oldBatch
+    ? `Продолжить слова за ${oldBatch.dateKey} (${oldBatch.remaining} осталось)`
+    : `Продолжить сегодняшние слова (${todayBatchProgress.completed}/${todayBatchProgress.total})`;
 
   const isPriorKnowledge = progress.completionSource === 'prior-knowledge';
 
@@ -64,6 +106,14 @@ export async function renderChapter(id, state, dependencies) {
         ? `${unlockedWords} из ${totalWords} открыто (${lockedWords} будут добавляться постепенно)`
         : `Все ${totalWords} слов добавлены в обучение`;
 
+    const targetLabel = decision.target > 0 ? decision.target : todayUnlockedCount;
+
+    const warningHtml = decision.insufficientDays
+      ? `<div class="warning-banner card-warning" style="margin-top:8px;padding:10px;background:rgba(255,152,0,0.1);border-left:3px solid var(--orange,#ff9800);font-size:12px;color:var(--ink,#333);text-align:left;">
+          Чтобы завершить главу вовремя, требуется около ${decision.requiredDailyTarget} новых слов в день. Текущий безопасный максимум — 25. Пересчитайте план или продлите срок.
+        </div>`
+      : '';
+
     startBlock = `<div class="card srs-mini">
          <div class="m-row" style="display:flex;justify-content:space-around;text-align:center;margin-bottom:8px;">
            <div class="m"><b>${totalWords}</b><span>всего слов</span></div>
@@ -72,11 +122,13 @@ export async function renderChapter(id, state, dependencies) {
          </div>
          <p class="muted" style="font-size:12px;text-align:center;margin:6px 0;">${wordStatusMsg}</p>
          ${
-           todayUnlockedCount > 0
-             ? `<p class="badge-today" style="font-size:12px;text-align:center;color:var(--orange);margin-bottom:8px;">Сегодня открыто: ${todayUnlockedCount} новых слов</p>`
+           targetLabel > 0
+             ? `<p class="badge-today" style="font-size:12px;text-align:center;color:var(--orange);margin-bottom:8px;">Сегодня по плану: ${targetLabel} новых слов</p>`
              : ''
          }
-         <button class="btn-study-sm" id="ch-study" ${due === 0 ? 'disabled' : ''} data-testid="chapter-study-btn">Учить →</button>
+         ${warningHtml}
+         ${hasBatchToStudy ? `<button class="btn-primary" id="ch-batch-session" style="margin-bottom:8px;width:100%;" data-testid="chapter-batch-session-btn">${batchBtnText}</button>` : ''}
+         <button class="btn-study-sm" id="ch-study" ${due === 0 ? 'disabled' : ''} data-testid="chapter-study-btn">Учить все →</button>
        </div>`;
   } else if (isPriorKnowledge) {
     const studyBtnText = due > 0 ? 'Повторять слова →' : 'Учить слова →';
@@ -112,33 +164,106 @@ export async function renderChapter(id, state, dependencies) {
       ? validCategories.map((c) => `<span class="tag">${c}</span>`).join('')
       : '<span class="muted" style="font-size:13px">Темы не указаны</span>';
 
+  const grammarTopics = progress.grammarTopics || [];
+  const practiceTasks = progress.practiceTasks || [];
+
+  const completedGrammarCount = grammarTopics.filter(
+    (g) => isPriorKnowledge || isGrammarTopicCompleted(cs, g.id)
+  ).length;
+  const completedPracticeCount = practiceTasks.filter(
+    (p) => isPriorKnowledge || isPracticeItemCompleted(cs, p.id)
+  ).length;
+  const isVocabDone = isVocabularyBlockCompleted(state, id, l);
+
+  const vocabBlockStatusHtml = isVocabDone
+    ? `<span class="badge" style="background:rgba(76,175,80,0.15);color:var(--green,#2e7d32);font-weight:600;">✓ Все слова встроены</span>`
+    : `<span class="badge" style="background:rgba(255,152,0,0.15);color:var(--orange,#e65100);font-weight:600;">${unlockedWords}/${totalWords} открыто</span>`;
+
+  const targetLabel = decision.target > 0 ? decision.target : todayUnlockedCount;
+
   body.innerHTML = `
     <div class="card">
-      <div class="row-between"><span class="card-h" style="margin:0">Прогресс</span><b style="color:var(--orange)" data-testid="chapter-progress-text">${done}/${items}</b></div>
+      <div class="row-between"><span class="card-h" style="margin:0">Прогресс главы</span><b style="color:var(--orange)" data-testid="chapter-progress-text">${done}/${items}</b></div>
       <div class="prog-dash">
-        <i class="segment ${done >= 1 ? 'active' : ''}"></i>
-        <i class="segment ${done >= 2 ? 'active' : ''}"></i>
-        <i class="segment ${done >= 3 ? 'active' : ''}"></i>
-        <i class="segment ${done >= 4 ? 'active' : ''}"></i>
-        <i class="segment ${done >= 5 ? 'active' : ''}"></i>
+        ${Array.from({ length: items }, (_, i) => `<i class="segment ${i < done ? 'active' : ''}"></i>`).join('')}
       </div>
     </div>
-    ${startBlock}
-    <div class="card">
-      <h3 class="card-h">Чек-лист главы</h3>
-      ${CHECK_ITEMS.map((c) => {
-        const checked = isPriorKnowledge || !!cs.checklist[c[0]];
-        const locked = !cs.started && !progress.completed;
-        return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''}" data-check="${c[0]}" data-testid="check-${c[0]}">
-          <div class="checkbox">${checked ? '✓' : ''}</div>
-          <span class="check-label">${c[1]}</span>
-        </div>`;
-      }).join('')}
-    </div>
+
+    <!-- 1. Блок: Новые слова -->
+    <details class="card progress-card-block" open style="margin-bottom:12px;">
+      <summary class="row-between" style="cursor:pointer;list-style:none;">
+        <h3 class="card-h" style="margin:0">1. Новые слова</h3>
+        ${vocabBlockStatusHtml}
+      </summary>
+      <div style="margin-top:12px;">
+        <div class="m-row" style="display:flex;justify-content:space-around;text-align:center;margin-bottom:8px;">
+          <div class="m"><b>${totalWords}</b><span>всего</span></div>
+          <div class="m"><b>${unlockedWords}</b><span>открыто</span></div>
+          <div class="m"><b>${todayBatchProgress.completed}</b><span>в порции</span></div>
+          <div class="m"><b>${lockedWords}</b><span>заблокировано</span></div>
+        </div>
+        ${targetLabel > 0 ? `<p class="badge-today" style="font-size:12px;text-align:center;color:var(--orange);margin:6px 0;">Дневная норма: ${targetLabel} новых слов</p>` : ''}
+        ${startBlock}
+      </div>
+    </details>
+
+    <!-- 2. Блок: Грамматика -->
+    <details class="card progress-card-block" open style="margin-bottom:12px;">
+      <summary class="row-between" style="cursor:pointer;list-style:none;">
+        <h3 class="card-h" style="margin:0">2. Грамматика</h3>
+        <span class="badge" style="background:rgba(33,150,243,0.15);color:var(--blue,#1976d2);font-weight:600;">${completedGrammarCount}/${grammarTopics.length} пройдено</span>
+      </summary>
+      <div style="margin-top:12px;">
+        ${grammarTopics
+          .map((g) => {
+            const checked = isPriorKnowledge || isGrammarTopicCompleted(cs, g.id);
+            const locked = !cs.started && !progress.completed;
+            return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''}" data-check="${g.id}" data-testid="check-${g.id}">
+              <div class="checkbox">${checked ? '✓' : ''}</div>
+              <div class="check-label-group">
+                <span class="check-label">${g.title}</span>
+              </div>
+            </div>`;
+          })
+          .join('')}
+      </div>
+    </details>
+
+    <!-- 3. Блок: Практика -->
+    <details class="card progress-card-block" open style="margin-bottom:12px;">
+      <summary class="row-between" style="cursor:pointer;list-style:none;">
+        <h3 class="card-h" style="margin:0">3. Практика</h3>
+        <span class="badge" style="background:rgba(156,39,176,0.15);color:var(--purple,#7b1fa2);font-weight:600;">${completedPracticeCount}/${practiceTasks.length} выполнено</span>
+      </summary>
+      <div style="margin-top:12px;">
+        ${practiceTasks
+          .map((p) => {
+            const checked = isPriorKnowledge || isPracticeItemCompleted(cs, p.id);
+            const locked = !cs.started && !progress.completed;
+            return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''}" data-check="${p.id}" data-testid="check-${p.id}">
+              <div class="checkbox">${checked ? '✓' : ''}</div>
+              <span class="check-label">${p.title}</span>
+            </div>`;
+          })
+          .join('')}
+      </div>
+    </details>
+
     <div class="card">
       <h3 class="card-h">Ключевые темы</h3>
       <div class="tag-row">${tagsHtml}</div>
     </div>`;
+
+  if ($('#ch-batch-session')) {
+    $('#ch-batch-session').onclick = () => {
+      startVocabularyBatchSession(id, targetBatchDateKey, state, {
+        toast,
+        QuestsManager: window.QuestsManager,
+        save,
+        renderFlash: window.renderFlash,
+      });
+    };
+  }
 
   if ($('#ch-study')) {
     $('#ch-study').onclick = () => {

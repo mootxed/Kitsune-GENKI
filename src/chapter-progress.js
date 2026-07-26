@@ -1,4 +1,5 @@
 import { formatDateKey, getTodayDateKey } from './local-date.js';
+import { countRemainingLockedWords } from './vocabulary-unlock-plan.js';
 
 export const REQUIRED_CHAPTER_SECTIONS = Object.freeze([
   Object.freeze({ id: 'vocab', label: 'Лексика' }),
@@ -11,6 +12,98 @@ export const REQUIRED_CHAPTER_SECTIONS = Object.freeze([
 function normalizedChapterId(value) {
   const chapterId = Number(value);
   return Number.isInteger(chapterId) && chapterId > 0 ? chapterId : null;
+}
+
+export function getChapterGrammarTopics(chapterMeta) {
+  if (!chapterMeta) return [];
+  const rawNotes = Array.isArray(chapterMeta.notes)
+    ? chapterMeta.notes
+    : Array.isArray(chapterMeta.grammar)
+      ? chapterMeta.grammar
+      : [];
+  const chapterId = Number(chapterMeta.lesson_id || chapterMeta.id || 0);
+
+  return rawNotes.map((note, index) => {
+    const id =
+      note.id ||
+      note.key ||
+      (note.note_id ? `L${chapterId}_g${note.note_id}` : `L${chapterId}_g${index + 1}`);
+    return {
+      id: String(id),
+      title: note.title || `Тема ${index + 1}`,
+      content: note.content || '',
+      order: index + 1,
+      chapterId,
+      estimatedMinutes: note.estimatedMinutes || 10,
+    };
+  });
+}
+
+export function getChapterPracticeTasks(chapterMeta) {
+  const chapterId = Number(chapterMeta?.lesson_id || chapterMeta?.id || 0);
+  if (Array.isArray(chapterMeta?.practice) && chapterMeta.practice.length > 0) {
+    return chapterMeta.practice.map((item, idx) => ({
+      id: String(item.id || `L${chapterId}_p${idx + 1}`),
+      title: item.title || item.exercise || item.type || `Задание ${idx + 1}`,
+      type: item.type || 'practice',
+      page: item.page || null,
+      exercise: item.exercise || null,
+      estimatedMinutes: item.estimatedMinutes || 10,
+      required: item.required !== false,
+      relatedGrammarIds: Array.isArray(item.relatedGrammarIds) ? item.relatedGrammarIds : [],
+    }));
+  }
+  return [
+    { id: 'dialog', title: 'Диалог', type: 'dialog', required: true },
+    { id: 'listening', title: 'Аудирование', type: 'listening', required: true },
+    { id: 'reading', title: 'Чтение', type: 'reading', required: true },
+  ];
+}
+
+export function isVocabularyBlockCompleted(appState, chapterId, chapterMeta = null) {
+  const id = normalizedChapterId(chapterId);
+  if (!id) return false;
+  const chapterState = appState?.chapters?.[id];
+  if (chapterState?.checklist?.vocab === true) return true;
+  if (isPriorKnowledge(appState, id)) return true;
+  if (chapterState?.completedAt) return true;
+
+  const words = chapterMeta?.words || chapterMeta?.vocabulary || null;
+  if (words && Array.isArray(words) && words.length > 0) {
+    const locked = countRemainingLockedWords(appState, id, words);
+    return locked === 0;
+  }
+  return false;
+}
+
+export function isGrammarTopicCompleted(chapterState, topicId) {
+  if (!chapterState) return false;
+  if (chapterState.checklist?.[topicId] === true) return true;
+  if (chapterState.checklist?.grammar === true && chapterState.checklist?.[topicId] !== false)
+    return true;
+  return false;
+}
+
+export function isGrammarBlockCompleted(chapterState, chapterMeta) {
+  if (chapterState?.checklist?.grammar === true) return true;
+  const topics = getChapterGrammarTopics(chapterMeta);
+  if (topics.length === 0) {
+    return chapterState?.checklist?.grammar === true;
+  }
+  return topics.every((topic) => isGrammarTopicCompleted(chapterState, topic.id));
+}
+
+export function isPracticeItemCompleted(chapterState, itemId) {
+  if (!chapterState) return false;
+  if (chapterState.checklist?.[itemId] === true) return true;
+  return false;
+}
+
+export function isPracticeBlockCompleted(chapterState, chapterMeta) {
+  const tasks = getChapterPracticeTasks(chapterMeta);
+  const requiredTasks = tasks.filter((t) => t.required !== false);
+  if (requiredTasks.length === 0) return true;
+  return requiredTasks.every((task) => isPracticeItemCompleted(chapterState, task.id));
 }
 
 export function getRequiredChapterSections(chapterMeta = null) {
@@ -35,21 +128,72 @@ export function getRequiredChapterSections(chapterMeta = null) {
     }));
     if (sections.length > 0) return sections;
   }
-  return REQUIRED_CHAPTER_SECTIONS;
+
+  const grammarTopics = getChapterGrammarTopics(chapterMeta);
+  const practiceTasks = getChapterPracticeTasks(chapterMeta);
+
+  const sections = [];
+  sections.push({ id: 'vocab', label: 'Новые слова', type: 'vocabulary' });
+
+  if (grammarTopics.length > 0) {
+    for (const g of grammarTopics) {
+      sections.push({ id: g.id, label: g.title, type: 'grammar', topic: g });
+    }
+  } else {
+    sections.push({ id: 'grammar', label: 'Грамматика', type: 'grammar' });
+  }
+
+  for (const p of practiceTasks) {
+    sections.push({ id: p.id, label: p.title, type: 'practice', task: p });
+  }
+
+  return sections;
 }
 
-export function hasCompletedChecklist(chapterState, requiredSections = null) {
+export function hasCompletedChecklist(
+  chapterState,
+  requiredSections = null,
+  appState = null,
+  chapterMeta = null
+) {
   const checklist = chapterState?.checklist;
   if (!checklist || typeof checklist !== 'object') return false;
-  const ids = requiredSections?.length
-    ? requiredSections.map((section) => (typeof section === 'string' ? section : section.id))
-    : Object.keys(checklist);
-  return ids.length > 0 && ids.every((id) => checklist[id] === true);
+
+  const sections =
+    Array.isArray(requiredSections) && requiredSections.length > 0
+      ? requiredSections
+      : getRequiredChapterSections(chapterMeta);
+
+  if (!sections || sections.length === 0) return false;
+
+  return sections.every((sec) => {
+    const secId = typeof sec === 'string' ? sec : sec.id;
+    if (secId === 'vocab') {
+      return (
+        checklist.vocab === true ||
+        (appState &&
+          isVocabularyBlockCompleted(appState, chapterState.id || chapterMeta?.id, chapterMeta))
+      );
+    }
+    if (secId === 'grammar') {
+      return isGrammarBlockCompleted(chapterState, chapterMeta);
+    }
+    if (sec.type === 'grammar' || (typeof secId === 'string' && secId.includes('_g'))) {
+      return isGrammarTopicCompleted(chapterState, secId);
+    }
+    return checklist[secId] === true;
+  });
 }
 
-export function isChapterCompleted(chapterState, chapterMeta = null) {
+export function isChapterCompleted(chapterState, chapterMeta = null, appState = null) {
   if (chapterState?.completedAt) return true;
-  return hasCompletedChecklist(chapterState, getRequiredChapterSections(chapterMeta));
+  if (!chapterState) return false;
+  return hasCompletedChecklist(
+    chapterState,
+    getRequiredChapterSections(chapterMeta),
+    appState,
+    chapterMeta
+  );
 }
 
 export function isPriorKnowledge(appState, chapterId) {
@@ -73,7 +217,7 @@ export function isEffectivelyCompleted(appState, chapterOrId) {
   const meta = typeof chapterOrId === 'object' ? chapterOrId : null;
   const id = normalizedChapterId(chapterId);
   if (!id) return false;
-  if (isChapterCompleted(appState?.chapters?.[id], meta)) return true;
+  if (isChapterCompleted(appState?.chapters?.[id], meta, appState)) return true;
   if (isPriorKnowledge(appState, id)) return true;
   if (appState?.studyPlan?.completedChapters?.includes(id)) return true;
   return false;
@@ -84,7 +228,7 @@ export function getChapterProgress(appState, chapterId, chapterMeta = null) {
   const chapter = appState?.chapters?.[id] || { started: false, checklist: {} };
   const sections = getRequiredChapterSections(chapterMeta);
 
-  const actualCompleted = isChapterCompleted(chapter, chapterMeta);
+  const actualCompleted = isChapterCompleted(chapter, chapterMeta, appState);
   const prior = isPriorKnowledge(appState, id);
 
   let completionSource = null;
@@ -97,16 +241,30 @@ export function getChapterProgress(appState, chapterId, chapterMeta = null) {
   const previouslyStudied = completionSource === 'prior-knowledge';
   const isCompleted = completionSource !== null;
 
+  const grammarTopics = getChapterGrammarTopics(chapterMeta);
+  const practiceTasks = getChapterPracticeTasks(chapterMeta);
+
   const completedSections = isCompleted
     ? sections
-    : sections.filter((section) => chapter.checklist?.[section.id] === true);
-
-  const nextSection = isCompleted
-    ? null
-    : sections.find((section) => chapter.checklist?.[section.id] !== true) || null;
+    : sections.filter((section) => {
+        if (section.id === 'vocab') {
+          return isVocabularyBlockCompleted(appState, id, chapterMeta);
+        }
+        if (
+          section.type === 'grammar' ||
+          (typeof section.id === 'string' && section.id.includes('_g')) ||
+          section.id === 'grammar'
+        ) {
+          return isGrammarTopicCompleted(chapter, section.id);
+        }
+        return isPracticeItemCompleted(chapter, section.id);
+      });
 
   const completedCount = isCompleted ? sections.length : completedSections.length;
   const ratio = sections.length > 0 ? completedCount / sections.length : 0;
+  const nextSection = isCompleted
+    ? null
+    : sections.find((section) => !completedSections.some((c) => c.id === section.id)) || null;
 
   return {
     chapterId: id,
@@ -121,6 +279,8 @@ export function getChapterProgress(appState, chapterId, chapterMeta = null) {
     totalCount: sections.length,
     nextSection,
     ratio,
+    grammarTopics,
+    practiceTasks,
   };
 }
 

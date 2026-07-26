@@ -12,6 +12,12 @@ import {
   getCompletedChapterIds,
 } from '../src/chapter-progress.js';
 import { reconcilePriorKnowledgeVocabulary } from '../src/chapter-vocabulary.js';
+import {
+  ensureTodayVocabularyBatch,
+  getTodayVocabularyUnlockDecision,
+} from '../src/vocabulary-unlock-plan.js';
+import { getOrGenerateDailyPlan, getDailyCapacity } from '../src/daily-plan.js';
+import { TIME_ESTIMATES } from '../src/time-estimates.js';
 
 let planCalendarMonth = new Date();
 
@@ -42,6 +48,10 @@ export function renderPlan(state, dependencies) {
         state.priorKnowledgeChapterIds.length > 0
       ) {
         reconcileResult = await reconcilePriorKnowledgeVocabulary(state, ensureLesson);
+      }
+
+      if (state.activeChapterId) {
+        ensureTodayVocabularyBatch(state, state.activeChapterId, { plan: state.studyPlan });
       }
 
       save();
@@ -86,6 +96,11 @@ export function renderPlan(state, dependencies) {
       }
       state.studyPlan = result;
       ensureActiveChapterId(state, CONTENT_INDEX);
+
+      if (state.activeChapterId) {
+        ensureTodayVocabularyBatch(state, state.activeChapterId, { plan: state.studyPlan });
+      }
+
       save();
       renderPlanView(state);
       toast('Будущая часть плана пересчитана');
@@ -98,6 +113,11 @@ export function renderPlan(state, dependencies) {
       if (!state.studyPlan) return;
       state.studyPlan.paused = !state.studyPlan.paused;
       ensureActiveChapterId(state, CONTENT_INDEX);
+
+      if (!state.studyPlan.paused && state.activeChapterId) {
+        ensureTodayVocabularyBatch(state, state.activeChapterId, { plan: state.studyPlan });
+      }
+
       save();
       renderPlanView(state);
       toast(state.studyPlan.paused ? 'План приостановлен' : 'План возобновлён');
@@ -200,8 +220,11 @@ function collectPlanParams(state) {
   const studyDaysOfWeek = [...document.querySelectorAll('.weekday-btn.active')].map((button) =>
     Number(button.dataset.day)
   );
+  const capacityMinutes = Number($('#plan-capacity-minutes')?.value || 30);
+  state.dailyCapacityMinutes = capacityMinutes;
+
   const mode = document.querySelector('.plan-deadline-toggle .toggle-btn.active')?.dataset.mode;
-  const params = { startDate, studyDaysOfWeek };
+  const params = { startDate, studyDaysOfWeek, capacityMinutes };
   if (mode === 'days') params.totalDays = Number($('#plan-total-days')?.value);
   else params.deadline = $('#plan-deadline-date')?.value;
 
@@ -218,6 +241,7 @@ function collectPlanParams(state) {
     showPlanWarning(plan.error);
     return null;
   }
+  plan.capacityMinutes = capacityMinutes;
   return plan;
 }
 
@@ -229,9 +253,13 @@ function populateForm(plan, state) {
   const start = $('#plan-start-date');
   const deadline = $('#plan-deadline-date');
   const days = $('#plan-total-days');
+  const capacity = $('#plan-capacity-minutes');
+
   if (start) start.value = plan.recalculatedFrom || plan.startDate || getTodayDateKey();
   if (deadline) deadline.value = plan.deadline || '';
   if (days) days.value = plan.totalDays || 90;
+  if (capacity) capacity.value = plan.capacityMinutes || state?.dailyCapacityMinutes || 30;
+
   document.querySelectorAll('.weekday-btn').forEach((button) => {
     button.classList.toggle('active', plan.studyDaysOfWeek?.includes(Number(button.dataset.day)));
   });
@@ -275,9 +303,17 @@ function renderPlanSummary(plan, state) {
     ? getChapterProgress(state, activeChapter.id, activeChapter)
     : null;
 
+  const vocabDecision = activeChapter
+    ? getTodayVocabularyUnlockDecision(state, activeChapter.id, {
+        plan,
+        dateKey: getTodayDateKey(),
+        words: activeChapter.words,
+      })
+    : null;
+
   const todayCard = $('#plan-today-card');
   if (todayCard) {
-    todayCard.innerHTML = renderTodayPlan(context, activeChapter, progress);
+    todayCard.innerHTML = renderTodayPlan(context, activeChapter, progress, vocabDecision);
     todayCard.classList.remove('hidden');
     todayCard.querySelector('[data-action="review"]')?.addEventListener('click', () => nav('srs'));
     todayCard.querySelector('[data-action="chapter"]')?.addEventListener('click', () => {
@@ -298,11 +334,26 @@ function renderPlanSummary(plan, state) {
   bindCalendarToggle();
 }
 
-export function renderTodayPlan(context, activeChapter, progress) {
+export function renderTodayPlan(context, activeChapter, progress, vocabDecision = null) {
   const mastery = context.chapterMastery;
   const masteryLine = mastery
     ? `<small>История навыков: ${Math.round(mastery.avgScore)}% · освежить ${mastery.needsRefreshCount}</small>`
     : '<small>Mastery появится после подтверждённых FSRS-повторений</small>';
+
+  const vocabText =
+    vocabDecision && vocabDecision.target > 0
+      ? `<div class="plan-vocab-subtext" style="margin-top:6px;font-size:12px;color:var(--orange,#ff9800);">
+          <strong>Новые слова</strong> · Глава ${activeChapter.id} · ${vocabDecision.target} новых слов
+        </div>`
+      : '';
+
+  const warningHtml =
+    vocabDecision && vocabDecision.insufficientDays
+      ? `<div class="warning-banner card-warning" style="margin-top:8px;padding:10px;background:rgba(255,152,0,0.1);border-left:3px solid var(--orange,#ff9800);font-size:12px;color:var(--ink,#333);text-align:left;">
+          Чтобы завершить главу вовремя, требуется около ${vocabDecision.requiredDailyTarget} новых слов в день. Текущий безопасный максимум — 25. Пересчитайте план или продлите срок.
+        </div>`
+      : '';
+
   return `
     <div class="plan-screen-today">
       <span class="today-eyebrow">СЕГОДНЯ · ${statusLabel(context.dateStatus)}</span>
@@ -316,6 +367,8 @@ export function renderTodayPlan(context, activeChapter, progress) {
           <span class="today-action-kind">ОСНОВНОЙ РАЗДЕЛ</span>
           <strong>Глава ${activeChapter.id}: ${progress.nextSection?.label || 'Итоговая проверка'}</strong>
           <small>${progress.completedCount} из ${progress.totalCount} разделов</small>
+          ${vocabText}
+          ${warningHtml}
           ${masteryLine}
           <button class="today-action-button" data-action="chapter">Продолжить</button>
         </div>`

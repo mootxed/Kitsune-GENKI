@@ -27,7 +27,12 @@ import {
 import {
   unlockDailyVocabularyBatch,
   getVocabularyBatchProgress,
-  DEFAULT_DAILY_NEW_VOCABULARY_LIMIT,
+  getTodayVocabularyUnlockDecision,
+  FALLBACK_DAILY_NEW_VOCABULARY_LIMIT,
+  ensureTodayVocabularyBatch,
+  getNextStudyAction,
+  getOldestIncompleteVocabularyBatch,
+  startVocabularyBatchSession,
 } from '../src/vocabulary-unlock-plan.js';
 
 // ---------- Constants ----------
@@ -205,6 +210,14 @@ export async function loadLessons() {
     }
   } catch (e) {
     console.warn('Не удалось загрузить curated примеры для ExamplesDB:', e);
+  }
+
+  // Координатор дневных порций слов после загрузки уроков
+  if (state && state.initialized && state.activeChapterId) {
+    const batchRes = ensureTodayVocabularyBatch(state, state.activeChapterId, {
+      plan: state.studyPlan,
+    });
+    if (batchRes.created) await save(true);
   }
 
   // Принудительно обновляем отображение глав после загрузки данных
@@ -443,13 +456,19 @@ export function startChapter(id, toastFn = null) {
   cs.startedAt ||= Date.now();
   if (!state.activeChapterId) state.activeChapterId = Number(id);
   ensureChapterVocabularyCardsImpl(state, lesson, { planLocked: true });
-  unlockDailyVocabularyBatch(state, id, {
-    limit: DEFAULT_DAILY_NEW_VOCABULARY_LIMIT,
+
+  const batchRes = ensureTodayVocabularyBatch(state, id, {
+    plan: state.studyPlan,
     words: lesson.words,
   });
+
   save();
   markActivity(toastFn);
-  if (toastFn) toastFn('Глава начата! Первая порция слов доступна 🎴');
+  if (batchRes.blockedByPreviousBatch) {
+    if (toastFn) toastFn('Сначала завершите предыдущую дневную порцию слов');
+  } else if (toastFn) {
+    toastFn('Глава начата! Первая порция слов доступна 🎴');
+  }
 }
 
 // ---------- Update Main Quests Timer ----------
@@ -467,69 +486,49 @@ export function renderHome() {
   state.history[today] = state.dailyCards;
   refreshStreakDisplay();
   if (state.studyPlan) state.studyPlan = StudyPlan.normalizePlan(state.studyPlan);
-  const due = countAvailableCardsForSession(dueCards(state.srs), state.srs);
+
   const activeChapterId = ensureActiveChapterId(state, CONTENT_INDEX);
   const activeChapter = CONTENT_INDEX.find((chapter) => chapter.id === activeChapterId) || null;
   const progress = activeChapter
     ? getChapterProgress(state, activeChapter.id, activeChapter)
     : null;
 
-  const vocabProgress = activeChapterId
-    ? getVocabularyBatchProgress(state, activeChapterId, today)
-    : null;
-  const hasUncompletedVocabBatch =
-    vocabProgress && vocabProgress.total > 0 && !vocabProgress.isCompleted;
+  if (activeChapterId) {
+    const batchRes = ensureTodayVocabularyBatch(state, activeChapterId, {
+      plan: state.studyPlan,
+      dateKey: today,
+    });
+    if (batchRes.created) save();
+  }
+
+  const nextAction = getNextStudyAction(state, {
+    activeChapterId,
+    chapterProgress: progress,
+    today,
+  });
 
   const continueButton = $('#btn-continue-learning');
   const continueTitle = $('#continue-learning-title');
   const continueContext = $('#continue-learning-context');
 
-  const dateStatus = state.studyPlan
-    ? StudyPlan.getDateStatus(state.studyPlan, today, {
-        today,
-        learningEvents: state.learningEvents || [],
-        reviewEvents: state.reviewEvents || [],
-      })
-    : null;
-  const isRestDay = dateStatus === 'rest-day';
-
-  if (continueTitle) {
-    if (isRestDay) {
-      continueTitle.textContent = 'День отдыха';
-    } else if (due > 0 || activeChapterId === null) {
-      continueTitle.textContent =
-        activeChapterId === null ? 'Повторить слабые знания' : 'Повторить SRS';
-    } else if (hasUncompletedVocabBatch) {
-      continueTitle.textContent = 'Новые слова';
-    } else {
-      continueTitle.textContent = 'Продолжить обучение';
-    }
-  }
-  if (continueContext) {
-    if (isRestDay) {
-      continueContext.textContent =
-        due > 0
-          ? `По плану отдых, но накопилось ${due} повторений`
-          : 'Сегодня по плану отдых. Проведите день с пользой!';
-    } else if (due > 0) {
-      continueContext.textContent = `${due} обязательных повторений накопилось — сначала разберём их`;
-    } else if (hasUncompletedVocabBatch) {
-      continueContext.textContent = `Глава ${activeChapterId} · ${vocabProgress.remaining} новых слов на сегодня`;
-    } else if (activeChapter && progress) {
-      continueContext.textContent = `Глава ${activeChapter.id}: ${activeChapter.title}`;
-    } else {
-      continueContext.textContent = 'Все главы завершены — закрепите знания по FSRS';
-    }
-  }
+  if (continueTitle) continueTitle.textContent = nextAction.title;
+  if (continueContext) continueContext.textContent = nextAction.contextText;
   if (continueButton) {
     continueButton.onclick = () => {
-      if (isRestDay) {
-        if (due > 0) window.nav('srs');
-        else window.nav('course');
-      } else if (due > 0 || activeChapterId === null) {
+      if (nextAction.action === 'review') {
         window.nav('srs');
-      } else if (hasUncompletedVocabBatch || activeChapterId) {
-        window.nav('chapter', activeChapterId);
+      } else if (nextAction.action === 'vocab-session') {
+        startVocabularyBatchSession(nextAction.chapterId, nextAction.dateKey, state, {
+          toast: window.toast,
+          QuestsManager: window.QuestsManager,
+          save,
+          renderFlash: window.renderFlash,
+        });
+      } else if (nextAction.action === 'chapter') {
+        if (nextAction.chapterId) window.nav('chapter', nextAction.chapterId);
+        else window.nav('course');
+      } else if (nextAction.action === 'course') {
+        window.nav('course');
       } else {
         window.nav('srs');
       }
@@ -551,11 +550,18 @@ export function renderHome() {
     // Bind row click handlers and double-click protection for buttons
     todayContainer.querySelectorAll('.today-action.clickable').forEach((row) => {
       row.addEventListener('click', (e) => {
-        // Double-click protection if clicking on the action button directly
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
         const action = row.dataset.action;
+        const dateKey = row.dataset.dateKey || today;
         if (action === 'review') window.nav('srs');
-        else if (action === 'chapter') {
+        else if (action === 'vocab-session') {
+          startVocabularyBatchSession(activeChapterId, dateKey, state, {
+            toast: window.toast,
+            QuestsManager: window.QuestsManager,
+            save,
+            renderFlash: window.renderFlash,
+          });
+        } else if (action === 'chapter') {
           if (activeChapterId) window.nav('chapter', activeChapterId);
         } else if (action === 'ai-story') {
           window.nav('ai-story');
@@ -568,10 +574,18 @@ export function renderHome() {
     // Also bind explicit button clicks inside the rows
     todayContainer.querySelectorAll('.today-action-button').forEach((btn) => {
       btn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Stop propagation to avoid duplicate trigger
+        e.stopPropagation();
         const action = btn.dataset.action;
+        const dateKey = btn.dataset.dateKey || today;
         if (action === 'review') window.nav('srs');
-        else if (action === 'chapter') {
+        else if (action === 'vocab-session') {
+          startVocabularyBatchSession(activeChapterId, dateKey, state, {
+            toast: window.toast,
+            QuestsManager: window.QuestsManager,
+            save,
+            renderFlash: window.renderFlash,
+          });
+        } else if (action === 'chapter') {
           if (activeChapterId) window.nav('chapter', activeChapterId);
         } else if (action === 'ai-story') {
           window.nav('ai-story');
@@ -653,21 +667,39 @@ export function renderHomeTodayCard(appState, activeChapter, progress) {
     });
   }
 
-  const vocabProgress = activeChapter
-    ? getVocabularyBatchProgress(appState, activeChapter.id, today)
+  const oldVocabBatch = activeChapter
+    ? getOldestIncompleteVocabularyBatch(appState, activeChapter.id, today)
     : null;
-  const hasVocabTask = vocabProgress && vocabProgress.total > 0;
 
-  if (hasVocabTask) {
+  if (oldVocabBatch) {
     tasksToDisplay.push({
-      id: 'vocab-batch',
+      id: 'old-vocab-batch',
       isMandatory: true,
-      isCompleted: vocabProgress.isCompleted,
-      title: `Новые слова · Глава ${activeChapter.id}`,
-      subtext: `Глава ${activeChapter.id} · ${vocabProgress.total} новых слов`,
-      action: 'chapter',
-      progressHTML: `<div class="today-progress vocab"><i style="width:${Math.round(vocabProgress.ratio * 100)}%"></i></div>`,
+      isCompleted: false,
+      title: `Продолжить слова за ${oldVocabBatch.dateKey}`,
+      subtext: `Глава ${activeChapter.id} · Осталось ${oldVocabBatch.remaining} слов`,
+      action: 'vocab-session',
+      batchDateKey: oldVocabBatch.dateKey,
+      progressHTML: `<div class="today-progress vocab"><i style="width:${Math.round(oldVocabBatch.progress.ratio * 100)}%"></i></div>`,
     });
+  } else {
+    const vocabProgress = activeChapter
+      ? getVocabularyBatchProgress(appState, activeChapter.id, today)
+      : null;
+    const hasVocabTask = vocabProgress && vocabProgress.total > 0;
+
+    if (hasVocabTask) {
+      tasksToDisplay.push({
+        id: 'vocab-batch',
+        isMandatory: true,
+        isCompleted: vocabProgress.isCompleted,
+        title: `Новые слова · Глава ${activeChapter.id}`,
+        subtext: `${vocabProgress.completed} из ${vocabProgress.total} изучено`,
+        action: 'vocab-session',
+        batchDateKey: today,
+        progressHTML: `<div class="today-progress vocab"><i style="width:${Math.round(vocabProgress.ratio * 100)}%"></i></div>`,
+      });
+    }
   }
 
   if (hasChapterTask) {
@@ -746,9 +778,15 @@ export function renderHomeTodayCard(appState, activeChapter, progress) {
   });
 
   // Check if all mandatory tasks are done
+  const vocabTask = tasksToDisplay.find(
+    (t) => t.id === 'vocab-batch' || t.id === 'old-vocab-batch'
+  );
+  const hasVocabTask = Boolean(vocabTask);
+  const vocabCompleted = vocabTask ? vocabTask.isCompleted : true;
+
   const mandatoryTasks = [];
   if (hasFSRSTask) mandatoryTasks.push({ isCompleted: fsrsCompleted });
-  if (hasVocabTask) mandatoryTasks.push({ isCompleted: vocabProgress.isCompleted });
+  if (hasVocabTask) mandatoryTasks.push({ isCompleted: vocabCompleted });
   if (hasChapterTask) mandatoryTasks.push({ isCompleted: chapterCompleted });
   const allMandatoryDone =
     mandatoryTasks.length === 0 || mandatoryTasks.every((t) => t.isCompleted);
@@ -780,9 +818,13 @@ export function renderHomeTodayCard(appState, activeChapter, progress) {
             const kindLabel =
               task.id === 'fsrs'
                 ? 'ОБЯЗАТЕЛЬНО · FSRS'
-                : task.id === 'chapter'
-                  ? 'ОБЯЗАТЕЛЬНО · АКТИВНАЯ ГЛАВА'
-                  : 'ДОПОЛНИТЕЛЬНО · БОНУС';
+                : task.id === 'vocab-batch' || task.id === 'old-vocab-batch'
+                  ? 'ОБЯЗАТЕЛЬНО · НОВЫЕ СЛОВА'
+                  : task.id === 'chapter'
+                    ? 'ОБЯЗАТЕЛЬНО · АКТИВНАЯ ГЛАВА'
+                    : 'ДОПОЛНИТЕЛЬНО · БОНУС';
+
+            const dateKeyAttr = task.batchDateKey ? ` data-date-key="${task.batchDateKey}"` : '';
 
             const ctaHTML = task.isCompleted
               ? `<span class="task-status-completed">✓ Выполнено</span>`
@@ -790,9 +832,11 @@ export function renderHomeTodayCard(appState, activeChapter, progress) {
                   const btnText =
                     task.id === 'fsrs'
                       ? 'Начать повторение'
-                      : task.id === 'chapter'
-                        ? 'Продолжить'
-                        : 'Начать';
+                      : task.id === 'vocab-batch' || task.id === 'old-vocab-batch'
+                        ? 'Учить слова'
+                        : task.id === 'chapter'
+                          ? 'Продолжить'
+                          : 'Начать';
 
                   const btnClass = `today-action-button${
                     task.btnStyle === 'primary'
@@ -804,13 +848,13 @@ export function renderHomeTodayCard(appState, activeChapter, progress) {
                           : ''
                   }`;
 
-                  return `<button class="${btnClass}" data-action="${task.action}">${btnText}</button>`;
+                  return `<button class="${btnClass}" data-action="${task.action}"${dateKeyAttr}>${btnText}</button>`;
                 })();
 
             const clickableClass = !task.isCompleted ? 'clickable' : '';
 
             return `
-        <div class="today-action ${task.isMandatory ? 'required' : ''} ${clickableClass}" data-action="${task.action}">
+        <div class="today-action ${task.isMandatory ? 'required' : ''} ${clickableClass}" data-action="${task.action}"${dateKeyAttr}>
           <div class="today-action-icon">${icon}</div>
           <div class="today-action-copy">
             <span class="today-action-kind">${kindLabel}</span>
