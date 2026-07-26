@@ -348,6 +348,16 @@ export async function renderOnboarding(state, dependencies = {}) {
               <b>⚠️ Обратите внимание:</b>
               <p style="margin:4px 0 8px;">${preview.warnings.join('<br>')}</p>
               ${recsHtml ? `<div><b>Рекомендуемые решения:</b><br>${recsHtml}</div>` : ''}
+              ${
+                preview.isTight
+                  ? `
+                <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;cursor:pointer;">
+                  <input type="checkbox" id="ob-accept-deadline" ${draft.acceptRecommendedDeadline ? 'checked' : ''} data-testid="accept-recommended-deadline-checkbox">
+                  <span>Я согласен использовать рекомендуемый реалистичный срок — ${preview.recommendedTargetDate}</span>
+                </label>
+              `
+                  : ''
+              }
             </div>
           `;
         }

@@ -6,6 +6,16 @@ import { StudyPlan } from '../studyplan.js';
 import { completeOnboarding } from './onboarding-state.js';
 import { ensureActiveChapterId } from './chapter-progress.js';
 
+function dedupeById(tasks) {
+  const map = new Map();
+  for (const t of tasks) {
+    if (t && t.id) {
+      if (!map.has(t.id)) map.set(t.id, t);
+    }
+  }
+  return Array.from(map.values());
+}
+
 export function buildStudyPlanContentCatalog(
   contentIndex = [],
   workbookData = null,
@@ -39,7 +49,9 @@ export function buildStudyPlanContentCatalog(
     const vocabularyMinutes = vocabCount * 1;
     const grammarMinutes = grammarCount * 10;
 
-    const workbookTasks = workbookMap.get(id) || chapter.practiceTasks || chapter.practice || [];
+    const builtInTasks = chapter.practiceTasks || chapter.practice || [];
+    const wbTasks = workbookMap.get(id) || [];
+    const workbookTasks = dedupeById([...builtInTasks, ...wbTasks]);
 
     let requiredPracticeCount = 0;
     let recommendedPracticeCount = 0;
@@ -125,19 +137,6 @@ export function previewStudyPlanFromPreferences(preferences, catalog) {
     errors.push('all-chapters-marked-as-known');
   }
 
-  if (errors.length > 0) {
-    return {
-      valid: false,
-      errors,
-      warnings,
-      recommendations,
-      previewPlan: null,
-      estimatedCompletionDate: null,
-      requiredStudyDays: 0,
-      totalRequiredMinutes: 0,
-    };
-  }
-
   const totalRequiredMinutes = targetChapters.reduce((sum, ch) => sum + ch.requiredTotalMinutes, 0);
 
   // Резерв времени на повторения (FSRS): ~25% от дневного бюджета
@@ -173,52 +172,24 @@ export function previewStudyPlanFromPreferences(preferences, catalog) {
     warnings.push(
       `Указанный срок (${targetStudyDaysCount} учебных дней) меньше минимально необходимого (${requiredStudyDays} дней).`
     );
-
-    recommendations.push({
-      id: 'extend-deadline',
-      type: 'extend-deadline',
-      label: `Продлить срок до ${recommendedTargetDate}`,
-      recommendedDate: recommendedTargetDate,
-    });
-
-    if (!studyDays.includes(6)) {
-      const extraDays = [...new Set([...studyDays, 6])].sort();
-      const withSatDates = getStudyDateKeys(startDate, requiredStudyDays, extraDays);
-      recommendations.push({
-        id: 'add-saturday',
-        type: 'add-saturday',
-        label: `Заниматься дополнительно по субботам (финиш ~${withSatDates.at(-1)})`,
-        studyDays: extraDays,
-      });
+    if (!preferences.acceptRecommendedDeadline) {
+      errors.push('target-deadline-too-tight');
     }
+  }
 
-    if (dailyCapacityMinutes < 60) {
-      const nextCap = dailyCapacityMinutes + 15;
-      const nextContentCap = Math.max(5, nextCap - Math.min(15, Math.round(nextCap * 0.25)));
-      const nextReqDays = Math.max(
-        targetChapters.length,
-        Math.ceil(totalRequiredMinutes / nextContentCap)
-      );
-      const nextDates = getStudyDateKeys(startDate, nextReqDays, studyDays);
-      recommendations.push({
-        id: 'increase-time',
-        type: 'increase-time',
-        label: `Увеличить дневную нагрузку до ${nextCap} минут (финиш ~${nextDates.at(-1)})`,
-        dailyCapacityMinutes: nextCap,
-      });
-    }
-
-    if (preferences.workbookSettings?.includeReadingWriting !== false) {
-      recommendations.push({
-        id: 'disable-rw',
-        type: 'disable-rw',
-        label: 'Отключить необязательный раздел чтения и письма в Workbook',
-        workbookSettings: {
-          ...(preferences.workbookSettings || {}),
-          includeReadingWriting: false,
-        },
-      });
-    }
+  if (errors.length > 0) {
+    return {
+      valid: false,
+      errors,
+      warnings,
+      recommendations,
+      previewPlan: null,
+      estimatedCompletionDate: recommendedTargetDate,
+      requiredStudyDays,
+      totalRequiredMinutes,
+      isTight,
+      recommendedTargetDate,
+    };
   }
 
   // Генерируем план через канонический StudyPlan.generatePlan

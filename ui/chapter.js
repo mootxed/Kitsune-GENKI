@@ -14,6 +14,7 @@ import {
   isPracticeItemCompleted,
   isVocabularyBlockCompleted,
   isPriorKnowledge,
+  materializeLegacyChapterEvidence,
 } from '../src/chapter-progress.js';
 import {
   countRemainingLockedWords,
@@ -49,6 +50,10 @@ export async function renderChapter(id, state, dependencies) {
   }
 
   const cs = chState(id);
+  const migration = materializeLegacyChapterEvidence(cs, l);
+  if (migration?.changed) {
+    await save(true);
+  }
   const progress = getChapterProgress(state, id, l);
 
   $('#chapter-title').textContent = `Глава ${id}: ${l.title}`;
@@ -189,7 +194,7 @@ export async function renderChapter(id, state, dependencies) {
   const isVocabDone = isVocabularyBlockCompleted(state, id, l);
   const vocabBlockStatusHtml = isVocabDone
     ? `<span class="badge" style="background:rgba(76,175,80,0.15);color:var(--green,#2e7d32);font-weight:600;">✓ Все слова встроены</span>`
-    : `<span class="badge" style="background:rgba(255,152,0,0.15);color:var(--orange,#e65100);font-weight:600;">${unlockedWords}/${totalWords} открыто</span>`;
+    : `<span class="badge" style="background:rgba(255,152,0,0.15);color:var(--orange,#e65100);font-weight:600;">Слова ${snapshot.vocabulary.completed}/${snapshot.vocabulary.total} изучено</span>`;
 
   const targetLabel = decision.target > 0 ? decision.target : todayUnlockedCount;
 
@@ -209,7 +214,7 @@ export async function renderChapter(id, state, dependencies) {
       <div class="chapter-summary-3blocks" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;font-size:12px;">
         <div style="background:rgba(255,122,26,0.08);padding:8px;border-radius:8px;">
           <span style="display:block;color:var(--muted,#666);margin-bottom:2px;">Слова</span>
-          <b>${snapshot.vocabulary.unlocked}/${snapshot.vocabulary.total}</b>
+          <b>${snapshot.vocabulary.completed}/${snapshot.vocabulary.total}</b>
         </div>
         <div style="background:rgba(33,150,243,0.08);padding:8px;border-radius:8px;">
           <span style="display:block;color:var(--muted,#666);margin-bottom:2px;">Грамматика</span>
@@ -232,20 +237,13 @@ export async function renderChapter(id, state, dependencies) {
       <div class="vocab-progress-panel" style="margin-top:12px;">
         <div class="vocab-metrics-grid">
           <div class="vocab-metric">
-            <b>${snapshot.vocabulary.total}</b>
-            <span>всего</span>
+            <b>Изучено: ${snapshot.vocabulary.completed} из ${snapshot.vocabulary.total}</b>
           </div>
           <div class="vocab-metric">
-            <b>${snapshot.vocabulary.unlocked}</b>
-            <span>открыто</span>
+            <b>Открыто: ${snapshot.vocabulary.unlocked} из ${snapshot.vocabulary.total}</b>
           </div>
           <div class="vocab-metric">
-            <b>${todayBatchProgress.completed}</b>
-            <span>в порции</span>
-          </div>
-          <div class="vocab-metric">
-            <b>${snapshot.vocabulary.locked}</b>
-            <span>пока закрыто</span>
+            <b>Пока закрыто: ${snapshot.vocabulary.locked}</b>
           </div>
         </div>
         ${targetLabel > 0 ? `<p class="badge-today" style="font-size:12px;text-align:center;color:var(--orange);margin:8px 0;">Дневная норма: ${targetLabel} новых слов</p>` : ''}
@@ -273,9 +271,7 @@ export async function renderChapter(id, state, dependencies) {
       <div style="margin-top:12px;">
         ${grammarTopics
           .map((g) => {
-            const grammarStatus = isPriorKnowledge
-              ? 'completed'
-              : getGrammarTopicStatus(state, id, g.id, l);
+            const grammarStatus = isPrior ? 'completed' : getGrammarTopicStatus(state, id, g.id, l);
             const checked = grammarStatus === 'completed';
             const locked = grammarStatus === 'locked';
             return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''}" data-kind="grammar" data-check="${g.id}" data-testid="check-${g.id}">
@@ -299,7 +295,7 @@ export async function renderChapter(id, state, dependencies) {
       <div style="margin-top:12px;">
         ${practiceTasks
           .map((p) => {
-            const checked = isPriorKnowledge || isPracticeItemCompleted(cs, p.id);
+            const checked = isPrior || isPracticeItemCompleted(cs, p.id);
             const unlock = checked ? { canUnlock: true } : canUnlockPracticeTask(state, id, p, l);
             const locked = !unlock.canUnlock;
             const workbookMeta =

@@ -17,6 +17,12 @@ import {
   startVocabularyBatchSession,
 } from '../src/vocabulary-unlock-plan.js';
 import { getOrGenerateDailyPlan } from '../src/daily-plan.js';
+import {
+  buildStudyPlanContentCatalog,
+  previewStudyPlanFromPreferences,
+  commitStudyPlanFromPreferences,
+} from '../src/study-plan-creation.js';
+import { loadWorkbookPracticeData } from '../src/workbook-practice.js';
 
 let planCalendarMonth = new Date();
 let planRuntimeDependencies = {};
@@ -38,10 +44,32 @@ export function renderPlan(state, dependencies) {
   const generateButton = $('#plan-generate-btn');
   if (generateButton) {
     generateButton.onclick = async () => {
-      const plan = collectPlanParams(state);
-      if (!plan) return;
-      state.studyPlan = plan;
-      ensureActiveChapterId(state, CONTENT_INDEX);
+      const workbookData = await loadWorkbookPracticeData();
+      const preferences = collectPlanPreferences(state);
+      if (!preferences) return;
+
+      const catalog = buildStudyPlanContentCatalog(
+        CONTENT_INDEX,
+        workbookData,
+        preferences.workbookSettings
+      );
+
+      const preview = previewStudyPlanFromPreferences(preferences, catalog);
+
+      if (!preview.valid) {
+        showPlanWarning(preview.errors?.join(', ') || 'Ошибка при генерации плана');
+        return;
+      }
+
+      const result = commitStudyPlanFromPreferences(state, preferences, preview, {
+        source: 'plan-settings',
+        preserveHistory: true,
+      });
+
+      if (!result.success) {
+        showPlanWarning(result.error || 'Не удалось создать план');
+        return;
+      }
 
       let reconcileResult = null;
       if (
@@ -79,14 +107,21 @@ export function renderPlan(state, dependencies) {
 
   const recalcButton = $('#plan-recalc-btn');
   if (recalcButton) {
-    recalcButton.onclick = () => {
+    recalcButton.onclick = async () => {
       if (!state.studyPlan) return;
-      const completed = getCompletedChapterIds(state, CONTENT_INDEX);
-      const result = StudyPlan.recalcPlan(state.studyPlan, CONTENT_INDEX, completed, {
+      const workbookData = await loadWorkbookPracticeData();
+      const catalog = buildStudyPlanContentCatalog(
+        CONTENT_INDEX,
+        workbookData,
+        state.workbookSettings
+      );
+
+      const completed = getCompletedChapterIds(state, catalog.chapters);
+      const result = StudyPlan.recalcPlan(state.studyPlan, catalog.chapters, completed, {
         vocabularyUnlocks: state.vocabularyUnlocks || {},
       });
       if (result.deadlineExpired) {
-        showDeadlineExpiredDialog(result, state, save);
+        showDeadlineExpiredDialog(result, state, save, catalog.chapters);
         return;
       }
       if (result.error) {
@@ -94,7 +129,7 @@ export function renderPlan(state, dependencies) {
         return;
       }
       state.studyPlan = result;
-      ensureActiveChapterId(state, CONTENT_INDEX);
+      ensureActiveChapterId(state, catalog.chapters);
 
       save();
       renderPlanView(state);
@@ -206,37 +241,37 @@ function selectedCompletedChapters(state) {
   return getCompletedChapterIds(state, CONTENT_INDEX);
 }
 
-function collectPlanParams(state) {
-  const startDate = $('#plan-start-date')?.value;
-  const studyDaysOfWeek = [...document.querySelectorAll('.weekday-btn.active')].map((button) =>
+function collectPlanPreferences(state) {
+  syncPriorKnowledgeFromForm(state);
+  const startDate = $('#plan-start-date')?.value || getTodayDateKey();
+  const studyDays = [...document.querySelectorAll('.weekday-btn.active')].map((button) =>
     Number(button.dataset.day)
   );
-  const capacityMinutes = Number($('#plan-capacity-minutes')?.value || 30);
-  state.dailyCapacityMinutes = capacityMinutes;
-  state.workbookSettings ||= {};
-  state.workbookSettings.includeReadingWriting =
-    $('#plan-workbook-reading-writing')?.checked !== false;
+  const dailyCapacityMinutes = Number($('#plan-capacity-minutes')?.value || 30);
+  const includeRW = $('#plan-workbook-reading-writing')?.checked !== false;
+
+  const workbookSettings = {
+    enabled: state?.workbookSettings?.enabled !== false,
+    includeConversationGrammar: state?.workbookSettings?.includeConversationGrammar !== false,
+    includeReadingWriting: includeRW,
+  };
 
   const mode = document.querySelector('.plan-deadline-toggle .toggle-btn.active')?.dataset.mode;
-  const params = { startDate, studyDaysOfWeek, capacityMinutes };
-  if (mode === 'days') params.totalDays = Number($('#plan-total-days')?.value);
-  else params.deadline = $('#plan-deadline-date')?.value;
+  const targetType = mode === 'days' ? 'days' : 'deadline';
+  const targetValue =
+    mode === 'days' ? Number($('#plan-total-days')?.value) : $('#plan-deadline-date')?.value;
 
-  if (CONTENT_INDEX.length === 0) {
-    showPlanWarning('Полный каталог глав ещё не загружен');
-    return null;
-  }
-  const plan = StudyPlan.generatePlan(params, CONTENT_INDEX, selectedCompletedChapters(state));
-  if (plan.deadlineExpired) {
-    showPlanWarning('Дедлайн уже прошёл. Выберите будущую дату.');
-    return null;
-  }
-  if (plan.error) {
-    showPlanWarning(plan.error);
-    return null;
-  }
-  plan.capacityMinutes = capacityMinutes;
-  return plan;
+  return {
+    startDate,
+    studyDays,
+    dailyCapacityMinutes,
+    workbookSettings,
+    priorKnowledgeChapterIds: state.priorKnowledgeChapterIds || [],
+    targetType,
+    targetValue,
+    acceptRecommendedDeadline: true,
+    allowPastDate: true,
+  };
 }
 
 function populateForm(plan, state) {
@@ -554,7 +589,7 @@ function renderPlanCalendar(plan, state) {
   }
 }
 
-function showDeadlineExpiredDialog(result, state, save) {
+function showDeadlineExpiredDialog(result, state, save, chaptersList = CONTENT_INDEX) {
   const warning = $('#plan-warning');
   if (!warning) return;
   warning.innerHTML = `
@@ -580,8 +615,8 @@ function showDeadlineExpiredDialog(result, state, save) {
         renderPlanView(state);
         return;
       }
-      const completed = getCompletedChapterIds(state, CONTENT_INDEX);
-      const replacement = StudyPlan.generatePlan(option.params, CONTENT_INDEX, completed);
+      const completed = getCompletedChapterIds(state, chaptersList);
+      const replacement = StudyPlan.generatePlan(option.params, chaptersList, completed);
       if (replacement.error) {
         showPlanWarning(replacement.error);
         return;
@@ -593,7 +628,7 @@ function showDeadlineExpiredDialog(result, state, save) {
           totalDays: replacement.totalDays,
           studyDaysOfWeek: replacement.studyDaysOfWeek,
         },
-        CONTENT_INDEX,
+        chaptersList,
         completed,
         { today: getTodayDateKey() }
       );
@@ -602,7 +637,7 @@ function showDeadlineExpiredDialog(result, state, save) {
         return;
       }
       state.studyPlan = preserved;
-      ensureActiveChapterId(state, CONTENT_INDEX);
+      ensureActiveChapterId(state, chaptersList);
       save();
       warning.classList.add('hidden');
       renderPlanView(state);

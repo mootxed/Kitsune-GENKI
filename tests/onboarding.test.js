@@ -96,4 +96,13 @@ describe('Onboarding & First Launch Flow', () => {
     expect(state.studyPlan).not.toBeNull();
     expect(state.activeChapterId).toBe(2);
   });
+
+  it('user with created plan (createdAt / segments) but 0 XP and no started chapters is not sent to onboarding', () => {
+    state.studyPlan = {
+      createdAt: Date.now(),
+      segments: [{ chapterId: 1, assignedDates: ['2026-08-01'] }],
+    };
+    expect(hasMeaningfulUserProgress(state)).toBe(true);
+    expect(shouldShowOnboarding(state)).toBe(false);
+  });
 });

@@ -2,7 +2,7 @@
 
 import { SRS } from '../srs.js';
 import { db, STORES } from '../src/db.js';
-import { appendReviewLog } from '../src/review-log.js';
+import { appendReviewLog, clearReviewLogs } from '../src/review-log.js';
 import { acknowledgeReviewLogs, compactReviewJournal } from '../src/review-journal.js';
 import { normalizeVocabularyLockState } from '../src/vocabulary-unlock-plan.js';
 import { hasMeaningfulUserProgress } from '../src/onboarding-state.js';
@@ -566,6 +566,7 @@ export async function loadState() {
 let saveTimeout = null;
 let saveQueue = Promise.resolve();
 let pendingSaveResolvers = [];
+let persistenceGeneration = 0;
 
 export function save(immediate = false) {
   if (immediate) {
@@ -626,11 +627,21 @@ function performSave() {
     console.warn('[Store] Ошибка синхронного бэкапа в localStorage:', e);
   }
 
-  saveQueue = saveQueue.catch(() => undefined).then(() => persistSnapshot(snapshot));
+  const generation = persistenceGeneration;
+  saveQueue = saveQueue.catch(() => undefined).then(() => persistSnapshot(snapshot, generation));
   return saveQueue;
 }
 
-async function persistSnapshot(snapshot) {
+async function persistSnapshot(snapshot, generation) {
+  if (generation !== persistenceGeneration) {
+    console.log(
+      '[Store] Сохранение отменено: устаревшее поколение',
+      generation,
+      'текущее:',
+      persistenceGeneration
+    );
+    return;
+  }
   let primaryStatePersisted = false;
   try {
     console.log(
@@ -719,11 +730,42 @@ export function cancelPendingSaves() {
 }
 
 export async function resetApplicationData(options = {}) {
+  persistenceGeneration++;
   const preservedDarkMode = state?.settings?.darkMode || 'auto';
   const preservedTheme = state?.currentTheme || 'default';
 
   cancelPendingSaves();
   loadedChapters.clear();
+
+  try {
+    if (STORES.CONTENT_CACHE) {
+      await db.clear(STORES.CONTENT_CACHE);
+    }
+  } catch (err) {
+    console.warn('[Store] Ошибка очистки CONTENT_CACHE:', err);
+  }
+
+  try {
+    await clearReviewLogs();
+  } catch (err) {
+    console.warn('[Store] Ошибка очистки review logs:', err);
+  }
+
+  try {
+    if (STORES.UI_PREFERENCES) {
+      await db.delete(STORES.UI_PREFERENCES, 'idb_migrated');
+    }
+  } catch (err) {
+    console.warn('[Store] Ошибка удаления idb_migrated:', err);
+  }
+
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.clear();
+    }
+  } catch (err) {
+    console.warn('[Store] Ошибка очистки sessionStorage:', err);
+  }
 
   try {
     await db.set(STORES.APP_STATE, 'state', null);
@@ -754,6 +796,10 @@ export async function resetApplicationData(options = {}) {
   }
 
   const fresh = defaultState();
+  fresh.pendingReviewLogs = [];
+  fresh.reviewEvents = [];
+  fresh.masteryArchive = {};
+
   if (options.preserveTheme !== false) {
     fresh.settings.darkMode = preservedDarkMode;
     fresh.currentTheme = preservedTheme;

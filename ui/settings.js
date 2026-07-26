@@ -12,6 +12,7 @@ import { db, STORES } from '../src/db.js';
 import { clearReviewLogs } from '../src/review-log.js';
 import { localDateKey } from '../src/local-date.js';
 import { getDailyStudyDigest } from '../src/daily-study-digest.js';
+import { resetApplicationData } from '../state/store.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -223,34 +224,13 @@ export function renderSettings(state, dependencies) {
   bindEvent('#theme-custom', 'click', () => setThemeAndSave('custom', state, dependencies));
 
   bindEvent('#btn-reset', 'click', async () => {
-    if (confirm('Сбросить весь прогресс? Это действие необратимо.')) {
-      try {
-        // 1. Очищаем IndexedDB (основное хранилище данных)
-        await db.clear(STORES.APP_STATE);
-        await db.clear(STORES.CONTENT_CACHE);
-        await clearReviewLogs();
-
-        // Очищаем флаг миграции, но сохраняем тему
-        await db.delete(STORES.UI_PREFERENCES, 'idb_migrated');
-
-        // 2. Очищаем localStorage (для обратной совместимости)
-        Object.keys(localStorage)
-          .filter((k) => k.startsWith('kitsune_') && k !== LS_THEME)
-          .forEach((k) => localStorage.removeItem(k));
-
-        // 3. Перезагружаем состояние (получаем чистый defaultState)
-        await loadState();
-
-        // 4. Сохраняем чистое состояние в IndexedDB
-        save(true);
-
-        toast('Прогресс сброшен. Доступна только Глава 1');
-        nav('home');
-      } catch (error) {
-        console.error('Ошибка при сбросе прогресса:', error);
-        toast('Ошибка при сбросе прогресса. Попробуйте перезагрузить страницу.');
-      }
+    if (!confirm('Сбросить весь прогресс? Это действие необратимо.')) {
+      return;
     }
+
+    await resetApplicationData({
+      preserveTheme: true,
+    });
   });
 
   bindEvent('#btn-export-full', 'click', () => handleFullExport(state, toast));

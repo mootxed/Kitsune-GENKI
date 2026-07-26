@@ -1,6 +1,8 @@
 import { formatDateKey, getTodayDateKey } from './local-date.js';
 import { getChapterVocabularyProgress } from './vocabulary-unlock-plan.js';
 import { getNormalizedChapterPracticeTasks } from './practice-tasks.js';
+import { getGrammarTopicStatus } from './grammar-plan.js';
+import { canUnlockPracticeTask } from './practice-plan.js';
 
 export const REQUIRED_CHAPTER_SECTIONS = Object.freeze([
   Object.freeze({ id: 'vocab', label: 'Лексика' }),
@@ -60,7 +62,8 @@ export function isVocabularyBlockCompleted(appState, chapterId, chapterMeta = nu
 }
 
 export function materializeLegacyChapterEvidence(chapterState, chapterMeta) {
-  if (!chapterState || !chapterMeta) return;
+  if (!chapterState || !chapterMeta) return { changed: false };
+  let changed = false;
 
   if (
     chapterState.legacyCompletionEvidence?.grammar === true ||
@@ -69,15 +72,22 @@ export function materializeLegacyChapterEvidence(chapterState, chapterMeta) {
     const topics = getChapterGrammarTopics(chapterMeta);
     chapterState.checklist ||= {};
     for (const topic of topics) {
-      if (chapterState.checklist[topic.id] !== false) {
+      if (chapterState.checklist[topic.id] !== true) {
         chapterState.checklist[topic.id] = true;
+        changed = true;
       }
     }
-    if (chapterState.legacyCompletionEvidence) {
+    if (chapterState.legacyCompletionEvidence?.grammar) {
       chapterState.legacyCompletionEvidence.grammar = false;
+      changed = true;
     }
-    delete chapterState.checklist.grammar;
+    if (chapterState.checklist.grammar !== undefined) {
+      delete chapterState.checklist.grammar;
+      changed = true;
+    }
   }
+
+  return { changed };
 }
 
 export function isGrammarTopicCompleted(chapterState, topicId) {
@@ -86,7 +96,12 @@ export function isGrammarTopicCompleted(chapterState, topicId) {
 }
 
 export function isGrammarBlockCompleted(chapterState, chapterMeta) {
-  materializeLegacyChapterEvidence(chapterState, chapterMeta);
+  if (
+    chapterState?.legacyCompletionEvidence?.grammar === true ||
+    chapterState?.checklist?.grammar === true
+  ) {
+    return true;
+  }
   const topics = getChapterGrammarTopics(chapterMeta);
   if (topics.length === 0) return true;
   return topics.every((topic) => isGrammarTopicCompleted(chapterState, topic.id));
@@ -312,35 +327,45 @@ export function getChapterProgressSnapshot(appState, chapterId, chapterMeta = nu
   const id = normalizedChapterId(chapterId);
   const chapterState = appState?.chapters?.[id] || { started: false, checklist: {} };
 
-  if (chapterMeta) {
-    materializeLegacyChapterEvidence(chapterState, chapterMeta);
-  }
-
   const prior = isPriorKnowledge(appState, id);
   const isComp = prior || isChapterCompleted(chapterState, chapterMeta, appState);
 
   const words = chapterMeta?.words || chapterMeta?.vocabulary || [];
   const vocabTotal = words.length;
 
+  let vocabCompleted = 0;
   let vocabUnlocked = 0;
   let vocabLocked = 0;
+
   if (prior || isComp) {
+    vocabCompleted = vocabTotal;
     vocabUnlocked = vocabTotal;
     vocabLocked = 0;
   } else if (words.length > 0) {
     const vocabProg = getChapterVocabularyProgress(appState, id, chapterMeta);
-    vocabUnlocked = Number(vocabProg?.unlockedCount) || 0;
-    vocabLocked = Number(vocabProg?.lockedCount) || 0;
+    vocabCompleted = Number(vocabProg?.introducedWords) || 0;
+    vocabUnlocked = Number(vocabProg?.unlockedWords) || 0;
+    vocabLocked = Number(vocabProg?.lockedWords) || 0;
   }
-  const vocabCompleted = vocabUnlocked;
   const vocabRatio = vocabTotal > 0 ? Math.min(1, vocabCompleted / vocabTotal) : 1;
 
   const topics = getChapterGrammarTopics(chapterMeta);
   const grammarTotal = topics.length;
-  const grammarCompleted =
-    prior || isComp
-      ? grammarTotal
-      : topics.filter((t) => isGrammarTopicCompleted(chapterState, t.id)).length;
+
+  let grammarCompleted = 0;
+  let grammarAvailable = 0;
+  let grammarLocked = 0;
+
+  if (prior || isComp) {
+    grammarCompleted = grammarTotal;
+    grammarAvailable = 0;
+    grammarLocked = 0;
+  } else {
+    const statuses = topics.map((t) => getGrammarTopicStatus(appState, id, t.id, chapterMeta));
+    grammarCompleted = statuses.filter((s) => s === 'completed').length;
+    grammarAvailable = statuses.filter((s) => s === 'unlocked' || s === 'in_progress').length;
+    grammarLocked = statuses.filter((s) => s === 'locked').length;
+  }
   const grammarRatio = grammarTotal > 0 ? grammarCompleted / grammarTotal : 1;
 
   const practiceTasks = getChapterPracticeTasks(chapterMeta);
@@ -356,10 +381,28 @@ export function getChapterProgressSnapshot(appState, chapterId, chapterMeta = nu
 
   const practiceTotal = practiceTasks.length;
   const practiceRequired = requiredPracticeTasks.length;
-  const practiceCompleted =
-    prior || isComp
-      ? practiceRequired
-      : requiredPracticeTasks.filter((t) => isPracticeItemCompleted(chapterState, t.id)).length;
+
+  let practiceCompleted = 0;
+  let practiceAvailable = 0;
+  let practiceLocked = 0;
+
+  if (prior || isComp) {
+    practiceCompleted = practiceRequired;
+    practiceAvailable = 0;
+    practiceLocked = 0;
+  } else {
+    practiceCompleted = requiredPracticeTasks.filter((t) =>
+      isPracticeItemCompleted(chapterState, t.id)
+    ).length;
+    practiceAvailable = requiredPracticeTasks.filter((t) => {
+      if (isPracticeItemCompleted(chapterState, t.id)) return false;
+      return canUnlockPracticeTask(appState, id, t, chapterMeta).canUnlock;
+    }).length;
+    practiceLocked = requiredPracticeTasks.filter((t) => {
+      if (isPracticeItemCompleted(chapterState, t.id)) return false;
+      return !canUnlockPracticeTask(appState, id, t, chapterMeta).canUnlock;
+    }).length;
+  }
   const practiceRatio = practiceRequired > 0 ? practiceCompleted / practiceRequired : 1;
 
   const vocabMinutes = vocabTotal * 1;
@@ -392,7 +435,7 @@ export function getChapterProgressSnapshot(appState, chapterId, chapterMeta = nu
     chapterId: id,
     vocabulary: {
       total: vocabTotal,
-      completed: prior || isComp ? vocabTotal : vocabUnlocked,
+      completed: vocabCompleted,
       unlocked: vocabUnlocked,
       locked: vocabLocked,
       ratio: vocabRatio,
@@ -400,23 +443,22 @@ export function getChapterProgressSnapshot(appState, chapterId, chapterMeta = nu
     grammar: {
       total: grammarTotal,
       completed: grammarCompleted,
-      available: Math.max(0, grammarTotal - grammarCompleted),
-      locked: Math.max(0, grammarTotal - grammarCompleted),
+      available: grammarAvailable,
+      locked: grammarLocked,
       ratio: grammarRatio,
     },
     practice: {
       total: practiceTotal,
       required: practiceRequired,
       completed: practiceCompleted,
-      available: Math.max(0, practiceRequired - practiceCompleted),
-      locked: Math.max(0, practiceRequired - practiceCompleted),
+      available: practiceAvailable,
+      locked: practiceLocked,
       ratio: practiceRatio,
     },
     completedRequiredMinutes,
     requiredTotalMinutes,
     overallRatio,
-    requiredCompleted:
-      (prior || isComp ? vocabTotal : vocabUnlocked) + grammarCompleted + practiceCompleted,
+    requiredCompleted: vocabCompleted + grammarCompleted + practiceCompleted,
     requiredTotal: vocabTotal + grammarTotal + practiceRequired,
     isCompleted: isComp,
   };

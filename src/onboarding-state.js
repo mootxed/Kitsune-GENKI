@@ -4,7 +4,13 @@ export function hasMeaningfulUserProgress(state) {
   if (!state || typeof state !== 'object') return false;
 
   // 1. Созданный учебный план
-  if (state.studyPlan && state.studyPlan.createdDate) return true;
+  if (
+    state.studyPlan?.createdAt ||
+    state.studyPlan?.createdDate ||
+    state.studyPlan?.segments?.length
+  ) {
+    return true;
+  }
 
   // 2. Начатые или завершённые главы
   if (state.chapters && typeof state.chapters === 'object') {
