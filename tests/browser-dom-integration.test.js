@@ -1,4 +1,4 @@
-/* tests/browser-smoke.test.js — Integration & Browser Smoke Test */
+/* tests/browser-dom-integration.test.js — DOM Integration Test */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { defaultState, resetApplicationData, state } from '../state/store.js';
 import { renderOnboarding } from '../ui/onboarding.js';
@@ -11,7 +11,7 @@ import {
   commitStudyPlanFromPreferences,
 } from '../src/study-plan-creation.js';
 
-describe('Browser Integration Smoke Flow', () => {
+describe('Browser DOM Integration Flow', () => {
   let appState;
 
   beforeEach(() => {
@@ -98,13 +98,12 @@ describe('Browser Integration Smoke Flow', () => {
     expect(shouldShowOnboarding(freshState)).toBe(true);
   });
 
-  it('Responsive layout check: no horizontal overflow at 320, 360, 390, 422 px', () => {
-    const viewports = [320, 360, 390, 422];
+  it('Responsive layout check: no horizontal overflow at 320, 360, 390, 422, 768 px', () => {
+    const viewports = [320, 360, 390, 422, 768];
     for (const width of viewports) {
       document.documentElement.style.width = `${width}px`;
       document.body.style.width = `${width}px`;
 
-      // Проверяем, что ширина прокрутки элемента не превышает доступную ширину окна/контейнера
       const scrollWidth = document.documentElement.scrollWidth;
       expect(scrollWidth).toBeLessThanOrEqual(width);
     }

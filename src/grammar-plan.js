@@ -1,11 +1,8 @@
 /* src/grammar-plan.js — Gradual Grammar Delivery & Verification */
 
 import { localDateKey, getLocalWeekday } from './local-date.js';
-import {
-  getChapterGrammarTopics,
-  isGrammarTopicCompleted,
-  isPriorKnowledge,
-} from './chapter-progress.js';
+import { getChapterGrammarTopics } from './chapter-content-model.js';
+import { isGrammarTopicCompleted, isPriorKnowledge } from './chapter-evidence.js';
 import {
   getOldestIncompleteVocabularyBatch,
   getVocabularyBatchProgress,
@@ -222,13 +219,47 @@ export function completeGrammarTopicWithCheck(
   options = {}
 ) {
   const chId = Number(chapterId);
-  const occurredAt = options.now ?? Date.now();
-  const dateKey = options.dateKey || localDateKey(occurredAt);
+  if (!Number.isInteger(chId) || chId <= 0) {
+    return { changed: false, completed: false, reason: 'invalid-chapter-id' };
+  }
+
+  const cs = state?.chapters?.[chId];
+  if (!cs || !cs.started) {
+    return { changed: false, completed: false, reason: 'chapter-not-started' };
+  }
+
+  const chapterMeta =
+    options.chapterMeta ||
+    (Array.isArray(options.chapters)
+      ? options.chapters.find((c) => Number(c.id || c.lesson_id) === chId)
+      : null);
+  let topicFound = false;
+
+  if (chapterMeta) {
+    const topics = getChapterGrammarTopics(chapterMeta);
+    topicFound = topics.some((t) => t.id === topicId);
+  } else {
+    const isUnlocked = Object.values(state?.grammarUnlocks?.[chId] || {}).some(
+      (arr) => Array.isArray(arr) && arr.includes(topicId)
+    );
+    const isPatternMatch =
+      typeof topicId === 'string' &&
+      (topicId.startsWith(`L${chId}_g`) || topicId.startsWith(`g${chId}_`));
+    topicFound =
+      isUnlocked || isPatternMatch || Boolean(state?.chapters?.[chId]?.checklist?.[topicId]);
+  }
+
+  if (!topicFound) {
+    return { changed: false, completed: false, reason: 'topic-not-found' };
+  }
 
   const status = getGrammarTopicStatus(state, chId, topicId, options.chapterMeta);
   if (status === 'locked') {
     return { completed: false, changed: false, reason: 'topic-locked' };
   }
+
+  const occurredAt = options.now ?? Date.now();
+  const dateKey = options.dateKey || localDateKey(occurredAt);
 
   if (!checkResult || checkResult.passed !== true) {
     state.grammarProgress ||= {};
@@ -240,8 +271,6 @@ export function completeGrammarTopicWithCheck(
     return { completed: false, reason: 'check-failed' };
   }
 
-  state.chapters ||= {};
-  const cs = (state.chapters[chId] ||= { started: true, checklist: {} });
   cs.checklist ||= {};
   if (isGrammarTopicCompleted(cs, topicId)) {
     return { completed: false, changed: false, alreadyCompleted: true };

@@ -215,15 +215,17 @@ function renderCompletedChaptersList(state) {
   });
 }
 
-function syncPriorKnowledgeFromForm(state) {
+function getPriorKnowledgeFromForm(state) {
   const actualCompleted = new Set(getActualCompletedChapterIds(state, CONTENT_INDEX));
   const checked = [...document.querySelectorAll('.chapter-checkbox:checked')]
     .map((checkbox) => Number(checkbox.dataset.chapterId))
     .filter((id) => Number.isInteger(id) && id > 0);
 
-  state.priorKnowledgeChapterIds = checked
-    .filter((id) => !actualCompleted.has(id))
-    .sort((a, b) => a - b);
+  return checked.filter((id) => !actualCompleted.has(id)).sort((a, b) => a - b);
+}
+
+function syncPriorKnowledgeFromForm(state) {
+  state.priorKnowledgeChapterIds = getPriorKnowledgeFromForm(state);
 }
 
 function updateManualProgress() {
@@ -237,12 +239,12 @@ function updateManualProgress() {
 }
 
 function selectedCompletedChapters(state) {
-  syncPriorKnowledgeFromForm(state);
-  return getCompletedChapterIds(state, CONTENT_INDEX);
+  const formPrior = getPriorKnowledgeFromForm(state);
+  return getCompletedChapterIds({ ...state, priorKnowledgeChapterIds: formPrior }, CONTENT_INDEX);
 }
 
 function collectPlanPreferences(state) {
-  syncPriorKnowledgeFromForm(state);
+  const priorKnowledgeChapterIds = getPriorKnowledgeFromForm(state);
   const startDate = $('#plan-start-date')?.value || getTodayDateKey();
   const studyDays = [...document.querySelectorAll('.weekday-btn.active')].map((button) =>
     Number(button.dataset.day)
@@ -261,15 +263,17 @@ function collectPlanPreferences(state) {
   const targetValue =
     mode === 'days' ? Number($('#plan-total-days')?.value) : $('#plan-deadline-date')?.value;
 
+  const acceptRecommendedDeadline = Boolean($('#plan-accept-deadline')?.checked);
+
   return {
     startDate,
     studyDays,
     dailyCapacityMinutes,
     workbookSettings,
-    priorKnowledgeChapterIds: state.priorKnowledgeChapterIds || [],
+    priorKnowledgeChapterIds,
     targetType,
     targetValue,
-    acceptRecommendedDeadline: true,
+    acceptRecommendedDeadline,
     allowPastDate: true,
   };
 }
@@ -384,6 +388,12 @@ function renderPlanSummary(plan, state) {
     timeline.querySelectorAll('[data-chapter-id]').forEach((card) => {
       card.addEventListener('click', () => nav('chapter', Number(card.dataset.chapterId)));
     });
+    timeline.querySelector('#status-recalc-btn')?.addEventListener('click', () => {
+      $('#plan-recalc-btn')?.click();
+    });
+    timeline.querySelector('#status-edit-btn')?.addEventListener('click', () => {
+      $('#plan-edit-btn')?.click();
+    });
   }
 
   $('#plan-advice-container')?.classList.add('hidden');
@@ -420,6 +430,92 @@ export function renderTodayPlan(dailyPlan, state = { studyPlan: {} }) {
   return renderHomeTodayCard(state, dailyPlan);
 }
 
+function renderPlanStatusCard(plan, state) {
+  const today = getTodayDateKey();
+  const allDates = plan?.studyDates || [];
+  const totalStudyDays = allDates.length || plan?.totalDays || 1;
+
+  const pastAndTodayDates = allDates.filter((d) => d <= today);
+  const expectedDays = pastAndTodayDates.length;
+
+  const completedChaptersCount = (plan?.completedChapters || []).length;
+  let completedDatesCount = 0;
+  for (const d of pastAndTodayDates) {
+    const status = StudyPlan.getDateStatus(plan, d, {
+      learningEvents: state?.learningEvents || [],
+      reviewEvents: state?.reviewEvents || [],
+    });
+    if (status === 'completed') completedDatesCount++;
+  }
+
+  const actualStudyDays = Math.max(completedDatesCount, completedChaptersCount);
+  const daysBehind = Math.max(0, expectedDays - actualStudyDays);
+
+  const expectedProgress = Math.min(100, Math.round((expectedDays / totalStudyDays) * 100));
+  const actualProgress = Math.min(100, Math.round((actualStudyDays / totalStudyDays) * 100));
+
+  let status = 'on-track';
+  if (completedChaptersCount >= (CONTENT_INDEX.length || 12)) {
+    status = 'completed';
+  } else if (plan?.paused) {
+    status = 'paused';
+  } else if (daysBehind > 0) {
+    status = 'behind';
+  } else if (actualStudyDays > expectedDays) {
+    status = 'ahead';
+  }
+
+  let statusTitle = 'Вы идёте по плану 🟢';
+  let badgeHtml =
+    '<span class="badge" style="background:rgba(76,175,80,0.15);color:var(--green,#2e7d32);">По плану</span>';
+  let borderColor = 'var(--green,#2e7d32)';
+
+  if (status === 'completed') {
+    statusTitle = 'План полностью завершён 🎉';
+    badgeHtml =
+      '<span class="badge" style="background:rgba(76,175,80,0.15);color:var(--green,#2e7d32);">Завершено</span>';
+  } else if (status === 'paused') {
+    statusTitle = 'План на паузе ⏸️';
+    badgeHtml =
+      '<span class="badge" style="background:rgba(158,158,158,0.15);color:#666;">На паузе</span>';
+    borderColor = '#888';
+  } else if (status === 'behind') {
+    statusTitle = `Отставание на ${daysBehind} дн. ⚠️`;
+    badgeHtml = `<span class="badge" style="background:rgba(244,67,54,0.15);color:var(--red,#d32f2f);">Отставание ${daysBehind} дн.</span>`;
+    borderColor = 'var(--red,#d32f2f)';
+  } else if (status === 'ahead') {
+    statusTitle = 'Вы опережаете график 🚀';
+    badgeHtml =
+      '<span class="badge" style="background:rgba(33,150,243,0.15);color:var(--blue,#1976d2);">Опережение</span>';
+    borderColor = 'var(--blue,#1976d2)';
+  }
+
+  const forecastStr = plan?.deadline || '';
+
+  const actionsHtml =
+    status === 'behind'
+      ? `<div class="plan-status-actions" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-sm btn-primary" id="status-recalc-btn" style="font-size:12px;">Пересчитать будущую часть</button>
+          <button class="btn-sm btn-outline" id="status-edit-btn" style="font-size:12px;">Изменить настройки</button>
+         </div>`
+      : '';
+
+  return `
+    <div class="card plan-status-card" style="margin-bottom:14px;border-left:4px solid ${borderColor};" data-testid="plan-status-card">
+      <div class="row-between" style="margin-bottom:6px;">
+        <strong style="font-size:14px;">${statusTitle}</strong>
+        ${badgeHtml}
+      </div>
+      <p style="margin:4px 0 6px;font-size:13px;">Пройдено <b>${actualStudyDays}</b> из <b>${totalStudyDays}</b> учебных дней (${actualProgress}%)</p>
+      <div class="row-between" style="font-size:12px;color:var(--muted,#666);">
+        <span>Прогноз завершения: <b style="color:var(--ink,#333);">${forecastStr}</b></span>
+        <span>Ожидалось: ${expectedProgress}%</span>
+      </div>
+      ${actionsHtml}
+    </div>
+  `;
+}
+
 function renderTimeline(plan, state, activeChapterId) {
   const completed = new Set(plan.completedChapters || []);
   const chapterSegments = (plan.segments || []).filter((segment) => segment.type === 'chapter');
@@ -433,7 +529,10 @@ function renderTimeline(plan, state, activeChapterId) {
     .slice(0, 2)
     .reduce((sum, segment) => sum + Number(segment.estimatedMinutes || 0), 0);
 
+  const statusCardHtml = renderPlanStatusCard(plan, state);
+
   return `
+    ${statusCardHtml}
     <section class="plan-section">
       <span class="today-eyebrow">ТЕКУЩИЙ АКТИВНЫЙ СЕГМЕНТ</span>
       ${active ? segmentCard(active, state, true) : '<div class="card muted">Активный сегмент не найден.</div>'}

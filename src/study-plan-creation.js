@@ -1,10 +1,10 @@
 /* src/study-plan-creation.js — Unified Study Plan Content Catalog, Preview, and Commit Service */
 
 import { addLocalDays, formatDateKey, getTodayDateKey, parseDateKey } from './local-date.js';
-import { getStudyDateKeys } from '../studyplan.js';
-import { StudyPlan } from '../studyplan.js';
+import { getStudyDateKeys, StudyPlan } from '../studyplan.js';
 import { completeOnboarding } from './onboarding-state.js';
 import { ensureActiveChapterId } from './chapter-progress.js';
+import { getBuiltInPracticeTasks } from './practice-tasks.js';
 
 function dedupeById(tasks) {
   const map = new Map();
@@ -49,29 +49,37 @@ export function buildStudyPlanContentCatalog(
     const vocabularyMinutes = vocabCount * 1;
     const grammarMinutes = grammarCount * 10;
 
-    const builtInTasks = chapter.practiceTasks || chapter.practice || [];
-    const wbTasks = workbookMap.get(id) || [];
-    const workbookTasks = dedupeById([...builtInTasks, ...wbTasks]);
+    const builtInTasks = getBuiltInPracticeTasks(id);
+    const builtInPracticeCount = builtInTasks.length;
+    const builtInPracticeMinutes = builtInTasks.reduce(
+      (sum, t) => sum + Number(t.estimatedMinutes || 10),
+      0
+    );
 
-    let requiredPracticeCount = 0;
+    const wbTasksFromMap = workbookMap.get(id) || [];
+    const chPractice = chapter.practiceTasks || chapter.practice || [];
+    const allWbCandidates = dedupeById([...wbTasksFromMap, ...chPractice]).filter(
+      (t) => t && t.id !== 'dialog' && t.id !== 'listening' && t.id !== 'reading'
+    );
+
+    let workbookPracticeCount = 0;
+    let workbookPracticeMinutes = 0;
     let recommendedPracticeCount = 0;
-    let requiredPracticeMinutes = 0;
     let recommendedPracticeMinutes = 0;
 
-    if (enabled && Array.isArray(workbookTasks)) {
-      for (const task of workbookTasks) {
+    if (enabled && Array.isArray(allWbCandidates)) {
+      for (const task of allWbCandidates) {
         const isRW = task.section === 'reading-writing';
         const isCG = task.section === 'conversation-grammar' || !task.section;
 
         const isTaskIncluded = (isCG && includeCG) || (isRW && includeRW);
-
         const isRequired = task.required !== false && task.requiredForChapterCompletion !== false;
         const estMin = Number(task.estimatedMinutes || 10);
 
         if (isTaskIncluded) {
           if (isRequired) {
-            requiredPracticeCount += 1;
-            requiredPracticeMinutes += estMin;
+            workbookPracticeCount += 1;
+            workbookPracticeMinutes += estMin;
           } else {
             recommendedPracticeCount += 1;
             recommendedPracticeMinutes += estMin;
@@ -79,6 +87,9 @@ export function buildStudyPlanContentCatalog(
         }
       }
     }
+
+    const requiredPracticeCount = builtInPracticeCount + workbookPracticeCount;
+    const requiredPracticeMinutes = builtInPracticeMinutes + workbookPracticeMinutes;
 
     const requiredTotalMinutes = vocabularyMinutes + grammarMinutes + requiredPracticeMinutes;
     const fullTotalMinutes = requiredTotalMinutes + recommendedPracticeMinutes;
@@ -94,6 +105,8 @@ export function buildStudyPlanContentCatalog(
       vocabularyMinutes,
       grammarMinutes,
       requiredPracticeMinutes,
+      builtInPracticeMinutes,
+      workbookPracticeMinutes,
       recommendedPracticeMinutes,
       requiredTotalMinutes: Math.max(1, requiredTotalMinutes),
       fullTotalMinutes: Math.max(1, fullTotalMinutes),
@@ -137,6 +150,22 @@ export function previewStudyPlanFromPreferences(preferences, catalog) {
     errors.push('all-chapters-marked-as-known');
   }
 
+  if (errors.length > 0) {
+    return {
+      valid: false,
+      feasible: false,
+      errors,
+      warnings,
+      recommendations,
+      previewPlan: null,
+      estimatedCompletionDate: startDate,
+      requiredStudyDays: 0,
+      totalRequiredMinutes: 0,
+      isTight: false,
+      recommendedTargetDate: startDate,
+    };
+  }
+
   const totalRequiredMinutes = targetChapters.reduce((sum, ch) => sum + ch.requiredTotalMinutes, 0);
 
   // Резерв времени на повторения (FSRS): ~25% от дневного бюджета
@@ -172,27 +201,48 @@ export function previewStudyPlanFromPreferences(preferences, catalog) {
     warnings.push(
       `Указанный срок (${targetStudyDaysCount} учебных дней) меньше минимально необходимого (${requiredStudyDays} дней).`
     );
-    if (!preferences.acceptRecommendedDeadline) {
-      errors.push('target-deadline-too-tight');
+
+    recommendations.push({
+      type: 'extend-deadline',
+      label: `Продлить дедлайн до ${recommendedTargetDate}`,
+      recommendedDate: recommendedTargetDate,
+    });
+    if (studyDays.length < 7) {
+      recommendations.push({
+        type: 'add-study-day',
+        label: 'Добавить учебный день недели',
+        studyDays: [1, 2, 3, 4, 5, 6, 0],
+      });
+    }
+    if (dailyCapacityMinutes < 60) {
+      recommendations.push({
+        type: 'increase-time',
+        label: 'Увеличить дневное время до 45 мин',
+        dailyCapacityMinutes: 45,
+      });
+    }
+    if (preferences.workbookSettings?.includeReadingWriting !== false) {
+      recommendations.push({
+        type: 'disable-rw',
+        label: 'Отключить Workbook Чтение и Письмо',
+        workbookSettings: {
+          ...(preferences.workbookSettings || {}),
+          includeReadingWriting: false,
+        },
+      });
+    }
+    if (preferences.workbookSettings?.enabled !== false) {
+      recommendations.push({
+        type: 'disable-workbook',
+        label: 'Полностью отключить Workbook',
+        workbookSettings: {
+          ...(preferences.workbookSettings || {}),
+          enabled: false,
+        },
+      });
     }
   }
 
-  if (errors.length > 0) {
-    return {
-      valid: false,
-      errors,
-      warnings,
-      recommendations,
-      previewPlan: null,
-      estimatedCompletionDate: recommendedTargetDate,
-      requiredStudyDays,
-      totalRequiredMinutes,
-      isTight,
-      recommendedTargetDate,
-    };
-  }
-
-  // Генерируем план через канонический StudyPlan.generatePlan
   const actualDaysToSchedule = Math.max(requiredStudyDays, targetStudyDaysCount);
   const scheduledDates = getStudyDateKeys(startDate, actualDaysToSchedule, studyDays);
 
@@ -207,14 +257,18 @@ export function previewStudyPlanFromPreferences(preferences, catalog) {
       title: ch.title,
       vocabCount: ch.vocabCount,
       grammarCount: ch.grammarCount,
+      requiredTotalMinutes: ch.requiredTotalMinutes,
       estimatedMinutes: ch.requiredTotalMinutes,
       importanceWeight: ch.importanceWeight,
     })),
     [...priorKnowledgeIds]
   );
 
+  const isFeasible = !isTight || Boolean(preferences.acceptRecommendedDeadline);
+
   return {
     valid: true,
+    feasible: isFeasible,
     errors: [],
     warnings,
     recommendations,
@@ -225,13 +279,31 @@ export function previewStudyPlanFromPreferences(preferences, catalog) {
     contentCapacityMinutes,
     catalogChapters,
     recommendedTargetDate,
+    isTight,
   };
 }
 
-export function commitStudyPlanFromPreferences(state, preferences, previewResult) {
+export function createStudyPlanFromPreferences(state, preferences, previewResult) {
+  return commitStudyPlanFromPreferences(state, preferences, previewResult, { mode: 'create' });
+}
+
+export function updateStudyPlanFromPreferences(state, preferences, previewResult, options = {}) {
+  return commitStudyPlanFromPreferences(state, preferences, previewResult, {
+    mode: 'update',
+    ...options,
+  });
+}
+
+export function commitStudyPlanFromPreferences(state, preferences, previewResult, options = {}) {
   if (!state || !previewResult || !previewResult.valid || !previewResult.previewPlan) {
     return { success: false, error: 'invalid-preview-result' };
   }
+
+  if (previewResult.isTight && !previewResult.feasible && !preferences.acceptRecommendedDeadline) {
+    return { success: false, error: 'target-deadline-too-tight' };
+  }
+
+  const isUpdate = options.mode === 'update' || options.source === 'plan-settings';
 
   const priorKnowledgeChapterIds = [
     ...new Set(
@@ -249,13 +321,29 @@ export function commitStudyPlanFromPreferences(state, preferences, previewResult
     includeReadingWriting: preferences?.workbookSettings?.includeReadingWriting !== false,
   };
 
-  state.studyPlan = previewResult.previewPlan;
+  if (isUpdate && state.studyPlan) {
+    const existingPlan = state.studyPlan;
+    const newPlan = previewResult.previewPlan;
+
+    // Preserve history, completed chapters, dateStatuses, vocabulary unlocks
+    newPlan.history = [...(existingPlan.history || []), ...(newPlan.history || [])];
+    newPlan.completedChapters = [
+      ...new Set([...(existingPlan.completedChapters || []), ...(newPlan.completedChapters || [])]),
+    ].sort((a, b) => a - b);
+
+    state.studyPlan = newPlan;
+  } else {
+    state.studyPlan = previewResult.previewPlan;
+  }
+
   state.dailyPlan = null;
 
   const catalogChapters = previewResult.catalogChapters || [];
   ensureActiveChapterId(state, catalogChapters);
 
-  completeOnboarding(state);
+  if (!isUpdate) {
+    completeOnboarding(state);
+  }
 
   return {
     success: true,

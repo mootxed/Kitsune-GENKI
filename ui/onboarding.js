@@ -592,6 +592,15 @@ export async function renderOnboarding(state, dependencies = {}) {
         };
       }
     } else if (currentStep === 7) {
+      const acceptCb = $('#ob-accept-deadline');
+      if (acceptCb) {
+        acceptCb.onchange = (e) => {
+          draft.acceptRecommendedDeadline = e.target.checked;
+          updateOnboardingDraft(state, draft, currentStep);
+          renderStep();
+        };
+      }
+
       $$('.rec-btn').forEach((btn) => {
         btn.onclick = () => {
           const type = btn.dataset.recType;

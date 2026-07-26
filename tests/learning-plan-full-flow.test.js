@@ -7,7 +7,7 @@ import {
   startVocabularyBatchSession,
 } from '../src/vocabulary-unlock-plan.js';
 import { completeGrammarTopicWithCheck, getGrammarTopicStatus } from '../src/grammar-plan.js';
-import { completePracticeTask } from '../src/practice-plan.js';
+import { completePracticeTask } from '../src/chapter-progress.js';
 
 const chapter1 = {
   id: 1,

@@ -31,6 +31,7 @@ import {
   completePracticeTask,
   undoPracticeTask,
 } from '../src/practice-plan.js';
+import { isPracticeTaskEnabled } from '../src/practice-tasks.js';
 import { getOrGenerateDailyPlan } from '../src/daily-plan.js';
 
 // ---------- Render: Chapter ----------
@@ -189,7 +190,15 @@ export async function renderChapter(id, state, dependencies) {
       : '<span class="muted" style="font-size:13px">Темы не указаны</span>';
 
   const grammarTopics = progress.grammarTopics || [];
-  const practiceTasks = progress.practiceTasks || [];
+  const allPracticeTasks = progress.practiceTasks || [];
+  const practiceTasks = allPracticeTasks.filter((p) =>
+    isPracticeTaskEnabled(p, state?.workbookSettings)
+  );
+
+  const activeDailyType = dailyPlan?.tasks?.[0]?.type;
+  const openGrammar = activeDailyType === 'grammar';
+  const openPractice = activeDailyType === 'practice';
+  const openVocab = !openGrammar && !openPractice;
 
   const isVocabDone = isVocabularyBlockCompleted(state, id, l);
   const vocabBlockStatusHtml = isVocabDone
@@ -203,6 +212,11 @@ export async function renderChapter(id, state, dependencies) {
         Чтобы завершить главу вовремя, требуется около ${decision.requiredDailyTarget} новых слов в день. Текущий безопасный максимум — 25. Пересчитайте план или продлите срок.
       </div>`
     : '';
+
+  const wbDisabledNotice =
+    state?.workbookSettings?.enabled === false
+      ? `<p class="muted" style="font-size:12px;margin:4px 0 8px;color:var(--muted,#888);">Задания Workbook отключены в Плане обучения.</p>`
+      : '';
 
   body.innerHTML = `
     <!-- Верхний прогресс главы (3 блока сводки) -->
@@ -229,7 +243,7 @@ export async function renderChapter(id, state, dependencies) {
 
     <!-- 1. Блок: Новые слова -->
     ${isPrior ? startBlock : ''}
-    <details class="card progress-card-block" open style="margin-bottom:12px;">
+    <details class="card progress-card-block" ${openVocab ? 'open' : ''} style="margin-bottom:12px;">
       <summary class="row-between" style="cursor:pointer;list-style:none;">
         <h3 class="card-h" style="margin:0">1. Новые слова</h3>
         ${vocabBlockStatusHtml}
@@ -263,18 +277,19 @@ export async function renderChapter(id, state, dependencies) {
     </details>
 
     <!-- 2. Блок: Грамматика -->
-    <details class="card progress-card-block" open style="margin-bottom:12px;">
+    <details class="card progress-card-block" ${openGrammar ? 'open' : ''} style="margin-bottom:12px;">
       <summary class="row-between" style="cursor:pointer;list-style:none;">
         <h3 class="card-h" style="margin:0">2. Грамматика</h3>
         <span class="badge" style="background:rgba(33,150,243,0.15);color:var(--blue,#1976d2);font-weight:600;">${snapshot.grammar.completed}/${snapshot.grammar.total} пройдено</span>
       </summary>
       <div style="margin-top:12px;">
         ${grammarTopics
-          .map((g) => {
+          .map((g, idx) => {
             const grammarStatus = isPrior ? 'completed' : getGrammarTopicStatus(state, id, g.id, l);
             const checked = grammarStatus === 'completed';
             const locked = grammarStatus === 'locked';
-            return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''}" data-kind="grammar" data-check="${g.id}" data-testid="check-${g.id}">
+            const hiddenClass = idx >= 4 ? 'grammar-extra-item hidden' : '';
+            return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''} ${hiddenClass}" data-kind="grammar" data-check="${g.id}" data-testid="check-${g.id}">
               <div class="checkbox">${checked ? '✓' : ''}</div>
               <div class="check-label-group">
                 <span class="check-label">${g.title}</span>
@@ -283,26 +298,33 @@ export async function renderChapter(id, state, dependencies) {
             </div>`;
           })
           .join('')}
+        ${
+          grammarTopics.length > 4
+            ? `<button class="btn-sm btn-outline" id="toggle-grammar-topics" style="width:100%;margin-top:8px;">Показать все темы (${grammarTopics.length})</button>`
+            : ''
+        }
       </div>
     </details>
 
     <!-- 3. Блок: Практика -->
-    <details class="card progress-card-block" open style="margin-bottom:12px;">
+    <details class="card progress-card-block" ${openPractice ? 'open' : ''} style="margin-bottom:12px;">
       <summary class="row-between" style="cursor:pointer;list-style:none;">
         <h3 class="card-h" style="margin:0">3. Практика</h3>
         <span class="badge" style="background:rgba(156,39,176,0.15);color:var(--purple,#7b1fa2);font-weight:600;">${snapshot.practice.completed}/${snapshot.practice.required} выполнено</span>
       </summary>
       <div style="margin-top:12px;">
+        ${wbDisabledNotice}
         ${practiceTasks
-          .map((p) => {
+          .map((p, idx) => {
             const checked = isPrior || isPracticeItemCompleted(cs, p.id);
             const unlock = checked ? { canUnlock: true } : canUnlockPracticeTask(state, id, p, l);
             const locked = !unlock.canUnlock;
+            const hiddenClass = idx >= 4 ? 'practice-extra-item hidden' : '';
             const workbookMeta =
               p.type === 'workbook'
                 ? `<small>${p.source || 'GENKI I Workbook'}${p.page ? ` · Стр. ${p.page}` : ''}${p.exercise ? ` · ${p.exercise}` : ''} · Около ${p.estimatedMinutes} минут</small>`
                 : `<small>${p.description || 'Интерактивная практика'} · Около ${p.estimatedMinutes || 10} минут</small>`;
-            return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''}" data-kind="practice" data-check="${p.id}" data-testid="check-${p.id}">
+            return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''} ${hiddenClass}" data-kind="practice" data-check="${p.id}" data-testid="check-${p.id}">
               <div class="checkbox">${checked ? '✓' : ''}</div>
               <div class="check-label-group">
                 <span class="check-label">${p.title}</span>
@@ -311,6 +333,11 @@ export async function renderChapter(id, state, dependencies) {
             </div>`;
           })
           .join('')}
+        ${
+          practiceTasks.length > 4
+            ? `<button class="btn-sm btn-outline" id="toggle-practice-tasks" style="width:100%;margin-top:8px;">Показать все задания (${practiceTasks.length})</button>`
+            : ''
+        }
       </div>
     </details>
 
@@ -318,6 +345,30 @@ export async function renderChapter(id, state, dependencies) {
       <h3 class="card-h">Ключевые темы</h3>
       <div class="tag-row">${tagsHtml}</div>
     </div>`;
+
+  const btnGrammarToggle = $('#toggle-grammar-topics');
+  if (btnGrammarToggle) {
+    btnGrammarToggle.onclick = () => {
+      const extras = $$('.grammar-extra-item');
+      const isHidden = extras[0]?.classList.contains('hidden');
+      extras.forEach((el) => el.classList.toggle('hidden', !isHidden));
+      btnGrammarToggle.textContent = isHidden
+        ? 'Скрыть дополнительные темы'
+        : `Показать все темы (${grammarTopics.length})`;
+    };
+  }
+
+  const btnPracticeToggle = $('#toggle-practice-tasks');
+  if (btnPracticeToggle) {
+    btnPracticeToggle.onclick = () => {
+      const extras = $$('.practice-extra-item');
+      const isHidden = extras[0]?.classList.contains('hidden');
+      extras.forEach((el) => el.classList.toggle('hidden', !isHidden));
+      btnPracticeToggle.textContent = isHidden
+        ? 'Скрыть дополнительные задания'
+        : `Показать все задания (${practiceTasks.length})`;
+    };
+  }
 
   if ($('#ch-batch-session')) {
     $('#ch-batch-session').onclick = () => {

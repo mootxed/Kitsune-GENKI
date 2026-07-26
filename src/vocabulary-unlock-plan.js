@@ -283,8 +283,7 @@ export function getChapterVocabularyProgress(state, chapterId, chapterMeta = nul
   ).filter((word) => word?.id);
   const uniqueWords = [...new Map(words.map((word) => [word.id, word])).values()];
   const chapterState = state?.chapters?.[chId];
-  const legacyCompleted =
-    chapterState?.legacyVocabularyCompleted === true || Boolean(chapterState?.completedAt);
+  const legacyCompleted = chapterState?.legacyVocabularyCompleted === true;
 
   if (legacyCompleted) {
     const totalWords = uniqueWords.length;

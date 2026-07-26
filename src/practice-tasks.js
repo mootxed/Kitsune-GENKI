@@ -1,3 +1,5 @@
+/* src/practice-tasks.js — Pure rules and builders for practice tasks */
+
 export function normalizePracticeTask(task, chapterId, idx = 0) {
   const chId = Number(chapterId);
   return {
@@ -21,12 +23,9 @@ export function normalizePracticeTask(task, chapterId, idx = 0) {
   };
 }
 
-export function getNormalizedChapterPracticeTasks(chapterMeta) {
-  const chapterId = Number(chapterMeta?.lesson_id || chapterMeta?.id || 0);
-  const workbookTasks = Array.isArray(chapterMeta?.practice)
-    ? chapterMeta.practice.map((item, idx) => normalizePracticeTask(item, chapterId, idx))
-    : [];
-  const builtInTasks = [
+export function getBuiltInPracticeTasks(chapterId) {
+  const chId = Number(chapterId);
+  return [
     {
       id: 'dialog',
       type: 'dialog',
@@ -39,6 +38,7 @@ export function getNormalizedChapterPracticeTasks(chapterMeta) {
       required: true,
       requiredForChapterCompletion: true,
       completionMode: 'interactive',
+      chapterId: chId,
     },
     {
       id: 'listening',
@@ -52,6 +52,7 @@ export function getNormalizedChapterPracticeTasks(chapterMeta) {
       required: true,
       requiredForChapterCompletion: true,
       completionMode: 'interactive',
+      chapterId: chId,
     },
     {
       id: 'reading',
@@ -65,8 +66,49 @@ export function getNormalizedChapterPracticeTasks(chapterMeta) {
       required: true,
       requiredForChapterCompletion: true,
       completionMode: 'interactive',
+      chapterId: chId,
     },
   ];
+}
+
+export function getNormalizedChapterPracticeTasks(chapterMeta) {
+  const chapterId = Number(chapterMeta?.lesson_id || chapterMeta?.id || 0);
+  const workbookTasks = Array.isArray(chapterMeta?.practice)
+    ? chapterMeta.practice.map((item, idx) => normalizePracticeTask(item, chapterId, idx))
+    : [];
+  const builtInTasks = getBuiltInPracticeTasks(chapterId);
   const seen = new Set(workbookTasks.map((task) => task.id));
   return [...workbookTasks, ...builtInTasks.filter((task) => !seen.has(task.id))];
+}
+
+export function isPracticeTaskEnabled(task, workbookSettings = {}) {
+  if (!task) return false;
+  if (task.type !== 'workbook') {
+    return true; // Built-in practice tasks are always available regardless of Workbook settings
+  }
+  const enabled = workbookSettings?.enabled !== false;
+  if (!enabled) return false;
+
+  const includeCG = workbookSettings?.includeConversationGrammar !== false;
+  const includeRW = workbookSettings?.includeReadingWriting !== false;
+
+  if (task.section === 'conversation-grammar') return includeCG;
+  if (task.section === 'reading-writing') return includeRW;
+  return includeCG;
+}
+
+export function isPracticeTaskRequired(task, workbookSettings = {}) {
+  if (!isPracticeTaskEnabled(task, workbookSettings)) return false;
+  if (task.type !== 'workbook') return true;
+  return task.required !== false && task.requiredForChapterCompletion !== false;
+}
+
+export function getEnabledChapterPracticeTasks(chapterMeta, workbookSettings = {}) {
+  const allTasks = getNormalizedChapterPracticeTasks(chapterMeta);
+  return allTasks.filter((task) => isPracticeTaskEnabled(task, workbookSettings));
+}
+
+export function getRequiredChapterPracticeTasks(chapterMeta, workbookSettings = {}) {
+  const allTasks = getNormalizedChapterPracticeTasks(chapterMeta);
+  return allTasks.filter((task) => isPracticeTaskRequired(task, workbookSettings));
 }

@@ -1,17 +1,19 @@
 /* src/practice-plan.js — Unified Practice Tasks & GENKI Workbook Integration */
 
 import { localDateKey } from './local-date.js';
-import { isGrammarTopicCompleted, evaluateAndCompleteChapter } from './chapter-progress.js';
+import { getChapterPracticeTasks } from './chapter-content-model.js';
+import { isGrammarTopicCompleted } from './chapter-evidence.js';
 import { isFirstVocabularyBatchCompleted } from './grammar-plan.js';
-import { getNormalizedChapterPracticeTasks, normalizePracticeTask } from './practice-tasks.js';
+import {
+  getNormalizedChapterPracticeTasks,
+  normalizePracticeTask,
+  isPracticeTaskEnabled,
+  getBuiltInPracticeTasks,
+} from './practice-tasks.js';
 
 import { getPlanDateAvailability } from '../studyplan.js';
 
-export { normalizePracticeTask };
-
-export function getChapterPracticeTasks(chapterMeta) {
-  return getNormalizedChapterPracticeTasks(chapterMeta);
-}
+export { normalizePracticeTask, getChapterPracticeTasks };
 
 export function canUnlockPracticeTask(state, chapterId, task, chapterMeta = null, options = {}) {
   const chId = Number(chapterId);
@@ -19,6 +21,10 @@ export function canUnlockPracticeTask(state, chapterId, task, chapterMeta = null
 
   if (!cs || !cs.started) {
     return { canUnlock: false, reason: 'chapter-not-started' };
+  }
+
+  if (!isPracticeTaskEnabled(task, state?.workbookSettings)) {
+    return { canUnlock: false, reason: 'task-disabled' };
   }
 
   const checkDateKey = options.dateKey || (options.now ? null : localDateKey());
@@ -63,36 +69,79 @@ export function getAvailablePracticeTasks(state, chapterId, chapterMeta = null, 
   const tasks = getChapterPracticeTasks(chapterMeta);
   return tasks.filter(
     (task) =>
-      (task.section !== 'reading-writing' ||
-        state?.workbookSettings?.includeReadingWriting !== false) &&
+      isPracticeTaskEnabled(task, state?.workbookSettings) &&
       canUnlockPracticeTask(state, chapterId, task, chapterMeta, options).canUnlock
   );
 }
 
 export function completePracticeTask(state, chapterId, taskId, options = {}) {
   const chId = Number(chapterId);
+  if (!Number.isInteger(chId) || chId <= 0) {
+    return { changed: false, completed: false, reason: 'invalid-chapter-id' };
+  }
+
+  const cs = state?.chapters?.[chId];
+  if (!cs || !cs.started) {
+    return { changed: false, completed: false, reason: 'chapter-not-started' };
+  }
+
+  const chapterMeta =
+    options.chapterMeta ||
+    (Array.isArray(options.chapters)
+      ? options.chapters.find((c) => Number(c.id || c.lesson_id) === chId)
+      : null);
+  let task = null;
+
+  if (chapterMeta) {
+    const tasks = getChapterPracticeTasks(chapterMeta);
+    task = tasks.find((t) => t.id === taskId);
+  } else {
+    const builtIn = getBuiltInPracticeTasks(chId).find((t) => t.id === taskId);
+    if (builtIn) {
+      task = builtIn;
+    } else {
+      const isPatternMatch =
+        typeof taskId === 'string' &&
+        (taskId.startsWith(`L${chId}_p`) ||
+          taskId.startsWith(`L0${chId}-workbook`) ||
+          taskId.startsWith(`L${chId}-workbook`) ||
+          taskId.startsWith(`L0${chId}_p`));
+      if (isPatternMatch || state?.chapters?.[chId]?.checklist?.[taskId] !== undefined) {
+        task = {
+          id: taskId,
+          type: 'workbook',
+          estimatedMinutes: 10,
+          required: true,
+          requiredForChapterCompletion: true,
+        };
+      }
+    }
+  }
+
+  if (!task) {
+    return { changed: false, completed: false, reason: 'task-not-found' };
+  }
+
+  if (!isPracticeTaskEnabled(task, state?.workbookSettings)) {
+    return { changed: false, completed: false, reason: 'task-disabled' };
+  }
+
   const occurredAt = options.now ?? Date.now();
   const dateKey = options.dateKey || localDateKey(occurredAt);
 
-  state.chapters ||= {};
-  const cs = (state.chapters[chId] ||= { started: true, checklist: {} });
-  cs.checklist ||= {};
-
-  if (cs.checklist[taskId] === true) {
-    return { changed: false, alreadyCompleted: true };
-  }
-
-  const task = getChapterPracticeTasks(options.chapterMeta).find((t) => t.id === taskId) || {
-    id: taskId,
-  };
   const unlock = canUnlockPracticeTask(state, chId, task, options.chapterMeta, {
     dateKey: options.dateKey,
     now: occurredAt,
   });
   if (!unlock.canUnlock) {
-    return { completed: false, changed: false, reason: 'task-locked' };
+    return { completed: false, changed: false, reason: unlock.reason || 'task-locked' };
   }
 
+  if (cs.checklist?.[taskId] === true) {
+    return { changed: false, alreadyCompleted: true };
+  }
+
+  cs.checklist ||= {};
   cs.checklist[taskId] = true;
   cs.updatedAt = occurredAt;
 
@@ -110,11 +159,15 @@ export function completePracticeTask(state, chapterId, taskId, options = {}) {
     });
   }
 
-  const completion = evaluateAndCompleteChapter(state, chId, {
-    chapters: options.chapters || [],
-    now: occurredAt,
-    recalculatePlan: options.recalculatePlan,
-  });
+  const evaluator = options.evaluateAndCompleteChapter;
+  const completion =
+    typeof evaluator === 'function'
+      ? evaluator(state, chId, {
+          chapters: options.chapters || [],
+          now: occurredAt,
+          recalculatePlan: options.recalculatePlan,
+        })
+      : { changed: false };
 
   return {
     changed: true,
@@ -153,11 +206,15 @@ export function undoPracticeTask(state, chapterId, taskId, options = {}) {
     occurredAt,
   });
 
-  const completion = evaluateAndCompleteChapter(state, chId, {
-    chapters: options.chapters || [],
-    now: occurredAt,
-    recalculatePlan: options.recalculatePlan,
-  });
+  const evaluator = options.evaluateAndCompleteChapter;
+  const completion =
+    typeof evaluator === 'function'
+      ? evaluator(state, chId, {
+          chapters: options.chapters || [],
+          now: occurredAt,
+          recalculatePlan: options.recalculatePlan,
+        })
+      : { changed: false };
 
   return {
     changed: true,

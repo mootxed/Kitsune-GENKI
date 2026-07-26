@@ -1,8 +1,37 @@
 import { formatDateKey, getTodayDateKey } from './local-date.js';
 import { getChapterVocabularyProgress } from './vocabulary-unlock-plan.js';
-import { getNormalizedChapterPracticeTasks } from './practice-tasks.js';
+import {
+  getNormalizedChapterPracticeTasks,
+  isPracticeTaskEnabled,
+  isPracticeTaskRequired,
+  getRequiredChapterPracticeTasks,
+} from './practice-tasks.js';
 import { getGrammarTopicStatus } from './grammar-plan.js';
-import { canUnlockPracticeTask } from './practice-plan.js';
+import {
+  canUnlockPracticeTask,
+  completePracticeTask as domainCompletePracticeTask,
+  undoPracticeTask as domainUndoPracticeTask,
+} from './practice-plan.js';
+import {
+  normalizedChapterId,
+  getChapterGrammarTopics,
+  getChapterPracticeTasks,
+} from './chapter-content-model.js';
+import {
+  isPriorKnowledge,
+  isGrammarTopicCompleted,
+  isPracticeItemCompleted,
+  isBasicVocabularyEvidencePresent,
+} from './chapter-evidence.js';
+
+export {
+  normalizedChapterId,
+  getChapterGrammarTopics,
+  getChapterPracticeTasks,
+  isPriorKnowledge,
+  isGrammarTopicCompleted,
+  isPracticeItemCompleted,
+};
 
 export const REQUIRED_CHAPTER_SECTIONS = Object.freeze([
   Object.freeze({ id: 'vocab', label: 'Лексика' }),
@@ -12,53 +41,19 @@ export const REQUIRED_CHAPTER_SECTIONS = Object.freeze([
   Object.freeze({ id: 'reading', label: 'Чтение' }),
 ]);
 
-function normalizedChapterId(value) {
-  const chapterId = Number(value);
-  return Number.isInteger(chapterId) && chapterId > 0 ? chapterId : null;
-}
-
-export function getChapterGrammarTopics(chapterMeta) {
-  if (!chapterMeta) return [];
-  const rawNotes = Array.isArray(chapterMeta.notes)
-    ? chapterMeta.notes
-    : Array.isArray(chapterMeta.grammar)
-      ? chapterMeta.grammar
-      : [];
-  const chapterId = Number(chapterMeta.lesson_id || chapterMeta.id || 0);
-
-  return rawNotes.map((note, index) => {
-    const id =
-      note.id ||
-      note.key ||
-      (note.note_id ? `L${chapterId}_g${note.note_id}` : `L${chapterId}_g${index + 1}`);
-    return {
-      id: String(id),
-      title: note.title || `Тема ${index + 1}`,
-      content: note.content || '',
-      order: index + 1,
-      chapterId,
-      estimatedMinutes: note.estimatedMinutes || 10,
-    };
-  });
-}
-
-export function getChapterPracticeTasks(chapterMeta) {
-  return getNormalizedChapterPracticeTasks(chapterMeta);
-}
-
 export function isVocabularyBlockCompleted(appState, chapterId, chapterMeta = null) {
   const id = normalizedChapterId(chapterId);
   if (!id) return false;
   const chapterState = appState?.chapters?.[id];
-  if (chapterState?.legacyVocabularyCompleted === true) return true;
+  if (chapterState?.legacyVocabularyCompleted === true || chapterState?.checklist?.vocab === true)
+    return true;
   if (isPriorKnowledge(appState, id)) return true;
-  if (chapterState?.completedAt) return true;
 
   const words = chapterMeta?.words || chapterMeta?.vocabulary || null;
   if (words && Array.isArray(words) && words.length > 0) {
     return getChapterVocabularyProgress(appState, id, chapterMeta).isCompleted;
   }
-  return false;
+  return true;
 }
 
 export function materializeLegacyChapterEvidence(chapterState, chapterMeta) {
@@ -90,11 +85,6 @@ export function materializeLegacyChapterEvidence(chapterState, chapterMeta) {
   return { changed };
 }
 
-export function isGrammarTopicCompleted(chapterState, topicId) {
-  if (!chapterState) return false;
-  return chapterState.checklist?.[topicId] === true;
-}
-
 export function isGrammarBlockCompleted(chapterState, chapterMeta) {
   if (
     chapterState?.legacyCompletionEvidence?.grammar === true ||
@@ -107,20 +97,8 @@ export function isGrammarBlockCompleted(chapterState, chapterMeta) {
   return topics.every((topic) => isGrammarTopicCompleted(chapterState, topic.id));
 }
 
-export function isPracticeItemCompleted(chapterState, itemId) {
-  if (!chapterState) return false;
-  if (chapterState.checklist?.[itemId] === true) return true;
-  return false;
-}
-
 export function isPracticeBlockCompleted(chapterState, chapterMeta, appState = null) {
-  const tasks = getChapterPracticeTasks(chapterMeta);
-  const requiredTasks = tasks.filter((task) => {
-    if (task.section === 'reading-writing') {
-      return appState?.workbookSettings?.includeReadingWriting !== false && task.required !== false;
-    }
-    return task.requiredForChapterCompletion !== false && task.required !== false;
-  });
+  const requiredTasks = getRequiredChapterPracticeTasks(chapterMeta, appState?.workbookSettings);
   if (requiredTasks.length === 0) return true;
   return requiredTasks.every((task) => isPracticeItemCompleted(chapterState, task.id));
 }
@@ -190,8 +168,8 @@ export function hasCompletedChecklist(
     if (secId === 'vocab') {
       return (
         chapterState.legacyVocabularyCompleted === true ||
-        (appState &&
-          isVocabularyBlockCompleted(appState, chapterState.id || chapterMeta?.id, chapterMeta))
+        chapterState.checklist?.vocab === true ||
+        isVocabularyBlockCompleted(appState, chapterState.id || chapterMeta?.id, chapterMeta)
       );
     }
     if (secId === 'grammar') {
@@ -233,12 +211,6 @@ export function isChapterCompleted(chapterState, chapterMeta = null, appState = 
 
   if (chapterState.completedAt && checklistComplete) return true;
   return checklistComplete;
-}
-
-export function isPriorKnowledge(appState, chapterId) {
-  const id = normalizedChapterId(chapterId);
-  if (!id || !Array.isArray(appState?.priorKnowledgeChapterIds)) return false;
-  return appState.priorKnowledgeChapterIds.includes(id);
 }
 
 export function shouldChapterHaveVocabularyCards(appState, chapterId) {
@@ -369,15 +341,10 @@ export function getChapterProgressSnapshot(appState, chapterId, chapterMeta = nu
   const grammarRatio = grammarTotal > 0 ? grammarCompleted / grammarTotal : 1;
 
   const practiceTasks = getChapterPracticeTasks(chapterMeta);
-  const requiredPracticeTasks = practiceTasks.filter((task) => {
-    if (appState?.workbookSettings?.enabled === false && task.type === 'workbook') {
-      return false;
-    }
-    if (task.section === 'reading-writing') {
-      return appState?.workbookSettings?.includeReadingWriting !== false && task.required !== false;
-    }
-    return task.requiredForChapterCompletion !== false && task.required !== false;
-  });
+  const requiredPracticeTasks = getRequiredChapterPracticeTasks(
+    chapterMeta,
+    appState?.workbookSettings
+  );
 
   const practiceTotal = practiceTasks.length;
   const practiceRequired = requiredPracticeTasks.length;
@@ -815,4 +782,18 @@ export function getCanonicalMaxUnlockedLesson(appState, contentIndex = null) {
   }
 
   return Math.max(1, maxUnlocked);
+}
+
+export function completePracticeTask(appState, chapterId, taskId, options = {}) {
+  return domainCompletePracticeTask(appState, chapterId, taskId, {
+    ...options,
+    evaluateAndCompleteChapter,
+  });
+}
+
+export function undoPracticeTask(appState, chapterId, taskId, options = {}) {
+  return domainUndoPracticeTask(appState, chapterId, taskId, {
+    ...options,
+    evaluateAndCompleteChapter,
+  });
 }

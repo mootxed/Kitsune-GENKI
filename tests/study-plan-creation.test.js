@@ -40,19 +40,19 @@ describe('Unified Study Plan Creation & Catalog Service', () => {
       includeConversationGrammar: true,
       includeReadingWriting: true,
     });
-    expect(catalogFull.chapters[0].requiredTotalMinutes).toBe(30 * 1 + 4 * 10 + 15 + 20);
+    expect(catalogFull.chapters[0].requiredTotalMinutes).toBe(30 * 1 + 4 * 10 + 30 + 15 + 20);
 
     const catalogNoRW = buildStudyPlanContentCatalog(contentIndex, workbookData, {
       enabled: true,
       includeConversationGrammar: true,
       includeReadingWriting: false,
     });
-    expect(catalogNoRW.chapters[0].requiredTotalMinutes).toBe(30 * 1 + 4 * 10 + 15);
+    expect(catalogNoRW.chapters[0].requiredTotalMinutes).toBe(30 * 1 + 4 * 10 + 30 + 15);
 
     const catalogDisabledWB = buildStudyPlanContentCatalog(contentIndex, workbookData, {
       enabled: false,
     });
-    expect(catalogDisabledWB.chapters[0].requiredTotalMinutes).toBe(30 * 1 + 4 * 10);
+    expect(catalogDisabledWB.chapters[0].requiredTotalMinutes).toBe(30 * 1 + 4 * 10 + 30);
   });
 
   it('previewStudyPlanFromPreferences does not mutate in-memory state', () => {
