@@ -59,6 +59,7 @@ describe('Task 3: Chapter Progress & 3-Block Redesign', () => {
   it('3. Старые сохранения с checklist.grammar = true считаются пройденными по грамматике', () => {
     appState.chapters[2] = {
       started: true,
+      legacyVocabularyCompleted: true,
       checklist: { vocab: true, grammar: true, dialog: true, listening: true, reading: true },
     };
 
@@ -91,6 +92,7 @@ describe('Task 3: Chapter Progress & 3-Block Redesign', () => {
   it('5. Глава завершена только при открытии всех слов, прохождении всей грамматики и практики', () => {
     appState.chapters[2] = {
       started: true,
+      legacyVocabularyCompleted: true,
       checklist: { vocab: true, L2_g1: true, L2_g2: true, dialog: true, listening: true },
     };
 

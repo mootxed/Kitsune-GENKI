@@ -8,7 +8,6 @@ import {
   vocabularySkills,
   vocabularySkillsReadyForIntroduction,
 } from './knowledge-model.js';
-import { shouldChapterHaveVocabularyCards } from './chapter-progress.js';
 
 /**
  * Ensures vocabulary skill cards exist in appState.srs for a single word.

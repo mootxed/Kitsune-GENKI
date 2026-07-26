@@ -135,4 +135,27 @@ describe('Task 4: Gradual Grammar Delivery (src/grammar-plan.js)', () => {
     expect(res.unlocked).toBe(false);
     expect(res.reason).toBe('rest-day');
   });
+
+  it('7. Завершение и право на XP идемпотентны', () => {
+    appState.grammarUnlocks[2] = { '2026-07-26': ['L2_g1'] };
+    const first = completeGrammarTopicWithCheck(
+      appState,
+      2,
+      'L2_g1',
+      { passed: true, score: 100 },
+      { now: 100 }
+    );
+    const second = completeGrammarTopicWithCheck(
+      appState,
+      2,
+      'L2_g1',
+      { passed: true, score: 100 },
+      { now: 200 }
+    );
+    expect(first).toMatchObject({ changed: true, rewardGranted: true });
+    expect(second).toMatchObject({ changed: false, alreadyCompleted: true });
+    expect(
+      appState.learningEvents.filter((event) => event.eventType === 'grammar-topic-completed')
+    ).toHaveLength(1);
+  });
 });

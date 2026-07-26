@@ -1,69 +1,14 @@
 /* src/practice-plan.js — Unified Practice Tasks & GENKI Workbook Integration */
 
 import { localDateKey } from './local-date.js';
-import {
-  isGrammarTopicCompleted,
-  isPracticeItemCompleted,
-  completeChapter,
-} from './chapter-progress.js';
+import { isGrammarTopicCompleted, evaluateAndCompleteChapter } from './chapter-progress.js';
 import { isFirstVocabularyBatchCompleted } from './grammar-plan.js';
+import { getNormalizedChapterPracticeTasks, normalizePracticeTask } from './practice-tasks.js';
 
-export function normalizePracticeTask(task, chapterId, idx = 0) {
-  const chId = Number(chapterId);
-  return {
-    id: String(task.id || `L${chId}_p${idx + 1}`),
-    type: task.type || 'workbook', // 'workbook' | 'dialog' | 'listening' | 'reading'
-    source: task.source || (task.type === 'workbook' ? 'GENKI Workbook' : 'GENKI Textbook'),
-    page: typeof task.page === 'number' ? task.page : null,
-    exercise: task.exercise || null,
-    title: task.title || task.exercise || `Задание ${idx + 1}`,
-    relatedGrammarIds: Array.isArray(task.relatedGrammarIds) ? task.relatedGrammarIds : [],
-    estimatedMinutes: Number(task.estimatedMinutes) || 10,
-    required: task.required !== false,
-  };
-}
+export { normalizePracticeTask };
 
 export function getChapterPracticeTasks(chapterMeta) {
-  const chapterId = Number(chapterMeta?.lesson_id || chapterMeta?.id || 0);
-  if (Array.isArray(chapterMeta?.practice) && chapterMeta.practice.length > 0) {
-    return chapterMeta.practice.map((item, idx) => normalizePracticeTask(item, chapterId, idx));
-  }
-  // Default practice items fallback
-  return [
-    {
-      id: 'dialog',
-      type: 'dialog',
-      source: 'GENKI Textbook',
-      title: 'Диалог',
-      page: null,
-      exercise: null,
-      relatedGrammarIds: [],
-      estimatedMinutes: 10,
-      required: true,
-    },
-    {
-      id: 'listening',
-      type: 'listening',
-      source: 'GENKI Audio',
-      title: 'Аудирование',
-      page: null,
-      exercise: null,
-      relatedGrammarIds: [],
-      estimatedMinutes: 10,
-      required: true,
-    },
-    {
-      id: 'reading',
-      type: 'reading',
-      source: 'GENKI Textbook',
-      title: 'Чтение',
-      page: null,
-      exercise: null,
-      relatedGrammarIds: [],
-      estimatedMinutes: 10,
-      required: true,
-    },
-  ];
+  return getNormalizedChapterPracticeTasks(chapterMeta);
 }
 
 export function canUnlockPracticeTask(state, chapterId, task, chapterMeta = null) {
@@ -87,12 +32,31 @@ export function canUnlockPracticeTask(state, chapterId, task, chapterMeta = null
     }
   }
 
+  if (task.section === 'reading-writing') {
+    const readingWriting = getChapterPracticeTasks(chapterMeta).filter(
+      (candidate) => candidate.section === 'reading-writing'
+    );
+    const index = readingWriting.findIndex((candidate) => candidate.id === task.id);
+    if (index > 0 && cs.checklist?.[readingWriting[index - 1].id] !== true) {
+      return {
+        canUnlock: false,
+        reason: 'previous-practice-incomplete',
+        previousTaskId: readingWriting[index - 1].id,
+      };
+    }
+  }
+
   return { canUnlock: true, reason: 'eligible' };
 }
 
 export function getAvailablePracticeTasks(state, chapterId, chapterMeta = null) {
   const tasks = getChapterPracticeTasks(chapterMeta);
-  return tasks.filter((t) => canUnlockPracticeTask(state, chapterId, t, chapterMeta).canUnlock);
+  return tasks.filter(
+    (task) =>
+      (task.section !== 'reading-writing' ||
+        state?.workbookSettings?.includeReadingWriting !== false) &&
+      canUnlockPracticeTask(state, chapterId, task, chapterMeta).canUnlock
+  );
 }
 
 export function completePracticeTask(state, chapterId, taskId, options = {}) {
@@ -112,8 +76,9 @@ export function completePracticeTask(state, chapterId, taskId, options = {}) {
   cs.updatedAt = occurredAt;
 
   state.learningEvents ||= [];
-  const eventId = `practice-task-completed:${chId}:${taskId}:${occurredAt}`;
-  if (!state.learningEvents.some((e) => e.eventId === eventId)) {
+  const eventId = `practice-task-completed:${chId}:${taskId}`;
+  const rewardGranted = !state.learningEvents.some((e) => e.eventId === eventId);
+  if (rewardGranted) {
     state.learningEvents.push({
       eventId,
       eventType: 'practice-task-completed',
@@ -124,9 +89,10 @@ export function completePracticeTask(state, chapterId, taskId, options = {}) {
     });
   }
 
-  const completion = completeChapter(state, chId, {
+  const completion = evaluateAndCompleteChapter(state, chId, {
     chapters: options.chapters || [],
     now: occurredAt,
+    recalculatePlan: options.recalculatePlan,
   });
 
   return {
@@ -136,7 +102,9 @@ export function completePracticeTask(state, chapterId, taskId, options = {}) {
     taskId,
     dateKey,
     occurredAt,
+    rewardGranted,
     chapterCompleted: completion.changed && completion.completedAt,
+    chapterCompletion: completion,
   };
 }
 

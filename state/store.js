@@ -9,7 +9,7 @@ import { normalizeVocabularyLockState } from '../src/vocabulary-unlock-plan.js';
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-export const CURRENT_VERSION = 10;
+export const CURRENT_VERSION = 11;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -199,6 +199,43 @@ const MIGRATIONS = {
     baseState.version = 10;
     return normalizeVocabularyLockState(baseState);
   },
+  11: (oldState) => {
+    const baseState = { ...oldState };
+    const chapters = { ...(baseState.chapters || {}) };
+    for (const [chapterId, chapterValue] of Object.entries(chapters)) {
+      const chapter = { ...(chapterValue || {}) };
+      chapter.checklist = { ...(chapter.checklist || {}) };
+      // Legacy aggregate flags are converted once into explicit migration
+      // evidence. New completion logic never depends on checklist.vocab.
+      if (chapter.checklist.vocab === true) chapter.legacyVocabularyCompleted = true;
+      chapters[chapterId] = chapter;
+    }
+    return {
+      ...baseState,
+      chapters,
+      grammarUnlocks:
+        baseState.grammarUnlocks && typeof baseState.grammarUnlocks === 'object'
+          ? baseState.grammarUnlocks
+          : {},
+      grammarProgress:
+        baseState.grammarProgress && typeof baseState.grammarProgress === 'object'
+          ? baseState.grammarProgress
+          : {},
+      practiceUnlocks:
+        baseState.practiceUnlocks && typeof baseState.practiceUnlocks === 'object'
+          ? baseState.practiceUnlocks
+          : {},
+      dailyPlan:
+        baseState.dailyPlan && typeof baseState.dailyPlan === 'object' ? baseState.dailyPlan : null,
+      dailyPlanHistory: Array.isArray(baseState.dailyPlanHistory) ? baseState.dailyPlanHistory : [],
+      dailyCapacityMinutes:
+        Number(baseState.dailyCapacityMinutes) > 0 ? Number(baseState.dailyCapacityMinutes) : 30,
+      workbookSettings: {
+        includeReadingWriting: baseState.workbookSettings?.includeReadingWriting !== false,
+      },
+      version: 11,
+    };
+  },
 };
 
 // ---------- Default State ----------
@@ -212,6 +249,13 @@ export function defaultState() {
     activeChapterId: null, // единый указатель на главу для «Продолжить обучение»
     learningEvents: [], // фактические события разделов/глав для плана, отдельно от dailyCards
     vocabularyUnlocks: {}, // chapterId -> { dateKey -> { itemIds, occurredAt } }
+    grammarUnlocks: {}, // chapterId -> { dateKey -> topicIds[] }
+    grammarProgress: {}, // chapterId -> { topicId -> attempts/check result }
+    practiceUnlocks: {}, // chapterId -> { dateKey -> taskIds[] }
+    dailyPlan: null,
+    dailyPlanHistory: [],
+    dailyCapacityMinutes: 30,
+    workbookSettings: { includeReadingWriting: true },
     srs: {}, // cardId -> SRS record
     reviewEvents: [], // ограниченное окно событий; полные snapshot остаются только для Undo
     masteryArchive: {}, // агрегированные доказательства из свёрнутых review events
@@ -335,6 +379,33 @@ function normalizeRuntimeShape(loadedState) {
     loadedState.vocabularyUnlocks && typeof loadedState.vocabularyUnlocks === 'object'
       ? loadedState.vocabularyUnlocks
       : {};
+  normalized.grammarUnlocks =
+    loadedState.grammarUnlocks && typeof loadedState.grammarUnlocks === 'object'
+      ? loadedState.grammarUnlocks
+      : {};
+  normalized.grammarProgress =
+    loadedState.grammarProgress && typeof loadedState.grammarProgress === 'object'
+      ? loadedState.grammarProgress
+      : {};
+  normalized.practiceUnlocks =
+    loadedState.practiceUnlocks && typeof loadedState.practiceUnlocks === 'object'
+      ? loadedState.practiceUnlocks
+      : {};
+  normalized.dailyPlan =
+    loadedState.dailyPlan && typeof loadedState.dailyPlan === 'object'
+      ? loadedState.dailyPlan
+      : null;
+  normalized.dailyPlanHistory = Array.isArray(loadedState.dailyPlanHistory)
+    ? loadedState.dailyPlanHistory
+    : [];
+  normalized.dailyCapacityMinutes =
+    Number(loadedState.dailyCapacityMinutes) > 0
+      ? Number(loadedState.dailyCapacityMinutes)
+      : base.dailyCapacityMinutes;
+  normalized.workbookSettings = {
+    ...base.workbookSettings,
+    ...(loadedState.workbookSettings || {}),
+  };
   normalizeVocabularyLockState(normalized);
   return normalized;
 }

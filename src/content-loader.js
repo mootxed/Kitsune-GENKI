@@ -1,6 +1,8 @@
 /* src/content-loader.js — Ленивая загрузка контента глав (уроки + истории) */
 
 // In-memory кэши: не дёргаем сеть повторно за уже загруженными чанками
+import { clearWorkbookPracticeCache, getWorkbookPracticeForChapter } from './workbook-practice.js';
+
 let indexPromise = null;
 const chapterPromises = new Map(); // chapterId -> Promise<{ lesson, story }>
 
@@ -28,9 +30,10 @@ export function loadChapterData(chapterId) {
   const id = Number(chapterId);
   if (!chapterPromises.has(id)) {
     const promise = (async () => {
-      const [lessonRes, storyRes] = await Promise.allSettled([
+      const [lessonRes, storyRes, workbookRes] = await Promise.allSettled([
         fetchJson(`data/lessons/lesson-${pad(id)}.json`),
         fetchJson(`data/stories/story-${pad(id)}.json`),
+        getWorkbookPracticeForChapter(id),
       ]);
       if (lessonRes.status === 'rejected') {
         chapterPromises.delete(id);
@@ -38,7 +41,20 @@ export function loadChapterData(chapterId) {
       }
       // История может отсутствовать для главы — это нормально
       const story = storyRes.status === 'fulfilled' ? storyRes.value : null;
-      return { lesson: lessonRes.value.lesson, version: lessonRes.value.version, story };
+      if (workbookRes.status === 'rejected') {
+        console.warn(
+          '[Content] Workbook metadata недоступны, используется fallback:',
+          workbookRes.reason
+        );
+      }
+      return {
+        lesson: {
+          ...lessonRes.value.lesson,
+          practice: workbookRes.status === 'fulfilled' ? workbookRes.value : [],
+        },
+        version: lessonRes.value.version,
+        story,
+      };
     })();
     chapterPromises.set(id, promise);
   }
@@ -49,4 +65,5 @@ export function loadChapterData(chapterId) {
 export function clearContentCache() {
   indexPromise = null;
   chapterPromises.clear();
+  clearWorkbookPracticeCache();
 }

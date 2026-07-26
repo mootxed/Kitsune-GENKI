@@ -438,9 +438,9 @@ describe('Stage 1: Dynamic Daily Vocabulary Batch Calculations', () => {
       words: lesson.words,
     });
 
-    // 40 words over 3 remaining study dates (2026-07-27, 2026-07-28, 2026-07-29).
-    // Effective days = 2 (reserve 1), 40 / 2 = 20 words.
-    expect(decision.target).toBe(20);
+    // 40 words are distributed once across all remaining dates: 14, 13, 13.
+    // The final date is not re-reserved on each daily request.
+    expect(decision.target).toBe(14);
   });
 
   it('6. Skipped day does not create two batches at once', () => {

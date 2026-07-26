@@ -154,6 +154,7 @@ describe('Dictionary Integration', () => {
     });
     await db.set(STORES.CONTENT_CACHE, 'lesson_version', '1');
     await db.set(STORES.CONTENT_CACHE, 'schema_version', 3);
+    await db.set(STORES.CONTENT_CACHE, 'workbook_schema_version', 1);
 
     await loadLessons();
 

@@ -124,6 +124,8 @@ export function submitReview(card, quality, state, context = null) {
       },
       { eventId: result.event.eventId }
     );
+    state.dailyPlan = null;
+    activeReviewDependencies?.onReviewCommitted?.(srsCard, result.event);
   }
 
   if (!wasLeech && isLeech(srsCard)) {
@@ -157,6 +159,8 @@ export async function undoLastReview(state, dependencies, renderFlashFn) {
   if (previous?.session && !sessionManager?.restoreSnapshot(previous.session)) return false;
   if (previous?.card) persistedEvent.previousCard = previous.card;
   if (!undoReviewEvent(state, persistedEvent.eventId)) return false;
+  state.dailyPlan = null;
+  dependencies.onReviewUndone?.(persistedEvent);
   const undoneAt = persistedEvent.undoneAt;
   enqueueReviewLog(state, {
     eventId: `undo-${persistedEvent.eventId}-${undoneAt}`,

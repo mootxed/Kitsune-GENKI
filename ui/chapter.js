@@ -3,25 +3,15 @@ import { refreshStreakDisplay } from './shared.js';
 import { $, $$, todayStr } from '../src/utils.js';
 import { allCards, dueCards } from '../src/srs-helpers.js';
 import { XP_CHECK, XP_CHAPTER_FULL, addXP } from '../src/xp-system.js';
-import {
-  CHECK_ITEMS,
-  CONTENT_INDEX,
-  getLesson,
-  ensureLesson,
-  startChapter,
-  markActivity,
-} from './home.js';
+import { CONTENT_INDEX, getLesson, ensureLesson, startChapter, markActivity } from './home.js';
 import { countAvailableCardsForSession } from '../src/srs-limits.js';
 import { StudyPlan } from '../studyplan.js';
 import {
-  completeChapter,
+  evaluateAndCompleteChapter,
   getChapterProgress,
-  getChapterGrammarTopics,
-  getChapterPracticeTasks,
   isGrammarTopicCompleted,
   isPracticeItemCompleted,
   isVocabularyBlockCompleted,
-  setChapterSection,
 } from '../src/chapter-progress.js';
 import {
   countRemainingLockedWords,
@@ -31,6 +21,14 @@ import {
   getVocabularyBatchProgress,
   startVocabularyBatchSession,
 } from '../src/vocabulary-unlock-plan.js';
+import { ensureChapterVocabularyCards } from '../src/chapter-vocabulary.js';
+import { completeGrammarTopicWithCheck, getGrammarTopicStatus } from '../src/grammar-plan.js';
+import {
+  canUnlockPracticeTask,
+  completePracticeTask,
+  undoPracticeTask,
+} from '../src/practice-plan.js';
+import { getOrGenerateDailyPlan } from '../src/daily-plan.js';
 
 // ---------- Render: Chapter ----------
 export async function renderChapter(id, state, dependencies) {
@@ -67,13 +65,30 @@ export async function renderChapter(id, state, dependencies) {
 
   const today = todayStr();
 
+  let dailyPlan = getOrGenerateDailyPlan(state, {
+    dateKey: today,
+    activeChapterId: id,
+    chapterMeta: l,
+  });
   if (cs.started || progress.completionSource === 'app') {
+    const plannedVocabulary = dailyPlan?.tasks.find(
+      (task) => task.type === 'vocabulary' && task.batchDateKey === today
+    );
     const batchRes = ensureTodayVocabularyBatch(state, id, {
       plan: state.studyPlan,
       dateKey: today,
       words: l.words,
+      limit: plannedVocabulary?.count,
     });
-    if (batchRes.created) await save(true);
+    if (batchRes.created) {
+      await save(true);
+      getOrGenerateDailyPlan(state, {
+        dateKey: today,
+        activeChapterId: id,
+        chapterMeta: l,
+        forceRefresh: true,
+      });
+    }
   }
 
   const decision = getTodayVocabularyUnlockDecision(state, id, {
@@ -216,12 +231,16 @@ export async function renderChapter(id, state, dependencies) {
       <div style="margin-top:12px;">
         ${grammarTopics
           .map((g) => {
-            const checked = isPriorKnowledge || isGrammarTopicCompleted(cs, g.id);
-            const locked = !cs.started && !progress.completed;
-            return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''}" data-check="${g.id}" data-testid="check-${g.id}">
+            const grammarStatus = isPriorKnowledge
+              ? 'completed'
+              : getGrammarTopicStatus(state, id, g.id, l);
+            const checked = grammarStatus === 'completed';
+            const locked = grammarStatus === 'locked';
+            return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''}" data-kind="grammar" data-check="${g.id}" data-testid="check-${g.id}">
               <div class="checkbox">${checked ? '✓' : ''}</div>
               <div class="check-label-group">
                 <span class="check-label">${g.title}</span>
+                <small>${locked ? '🔒 Тема откроется после предыдущего шага' : checked ? 'Проверка пройдена' : 'Открыть объяснение и короткую проверку'}</small>
               </div>
             </div>`;
           })
@@ -239,10 +258,18 @@ export async function renderChapter(id, state, dependencies) {
         ${practiceTasks
           .map((p) => {
             const checked = isPriorKnowledge || isPracticeItemCompleted(cs, p.id);
-            const locked = !cs.started && !progress.completed;
-            return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''}" data-check="${p.id}" data-testid="check-${p.id}">
+            const unlock = checked ? { canUnlock: true } : canUnlockPracticeTask(state, id, p, l);
+            const locked = !unlock.canUnlock;
+            const workbookMeta =
+              p.type === 'workbook'
+                ? `<small>${p.source || 'GENKI I Workbook'}${p.page ? ` · Стр. ${p.page}` : ''}${p.exercise ? ` · ${p.exercise}` : ''} · Около ${p.estimatedMinutes} минут</small>`
+                : `<small>${p.description || 'Интерактивная практика'} · Около ${p.estimatedMinutes || 10} минут</small>`;
+            return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''}" data-kind="practice" data-check="${p.id}" data-testid="check-${p.id}">
               <div class="checkbox">${checked ? '✓' : ''}</div>
-              <span class="check-label">${p.title}</span>
+              <div class="check-label-group">
+                <span class="check-label">${p.title}</span>
+                ${locked ? '<small>🔒 Задание откроется после связанной грамматики или предыдущего задания</small>' : workbookMeta}
+              </div>
             </div>`;
           })
           .join('')}
@@ -256,11 +283,12 @@ export async function renderChapter(id, state, dependencies) {
 
   if ($('#ch-batch-session')) {
     $('#ch-batch-session').onclick = () => {
-      startVocabularyBatchSession(id, targetBatchDateKey, state, {
+      startVocabularyBatchSession({
+        state,
+        chapterId: id,
+        dateKey: targetBatchDateKey,
+        startSession: dependencies?.startChapterFlashcards,
         toast,
-        QuestsManager: window.QuestsManager,
-        save,
-        renderFlash: window.renderFlash,
       });
     };
   }
@@ -286,14 +314,13 @@ export async function renderChapter(id, state, dependencies) {
   if ($('#ch-reconcile-srs')) {
     $('#ch-reconcile-srs').onclick = async () => {
       try {
-        const { ensureChapterVocabularyCards } = await import('../src/chapter-vocabulary.js');
         const entry = await ensureLesson(id);
         if (entry && entry.lesson) {
           ensureChapterVocabularyCards(state, entry.lesson);
           await save(true);
           toast('Слова главы добавлены в SRS');
         }
-      } catch (err) {
+      } catch {
         toast('Ошибка при загрузке карточек главы');
       }
       await renderChapter(id, state, dependencies);
@@ -314,35 +341,67 @@ export async function renderChapter(id, state, dependencies) {
       e.stopPropagation();
 
       if (isPriorKnowledge) return;
+      const itemId = el.dataset.check;
+      const chapters = CONTENT_INDEX.map((chapter) => (chapter.id === Number(id) ? l : chapter));
 
-      if (!cs.started) {
-        startChapter(id, toast);
-      }
+      if (el.dataset.kind === 'grammar') {
+        const topic = grammarTopics.find((entry) => entry.id === itemId);
+        const status = getGrammarTopicStatus(state, id, itemId, l);
+        if (status === 'locked') {
+          toast('🔒 Тема откроется после предыдущего шага');
+          return;
+        }
+        if (status === 'completed') return;
 
-      const k = el.dataset.check;
-      const wasCompleted = cs.checklist[k] === true;
-      const sectionResult = setChapterSection(state, id, k, !wasCompleted, {
-        chapters: CONTENT_INDEX,
-      });
-      if (!sectionResult.changed) return;
+        const checkResult = await openGrammarCheck(topic);
+        const result = completeGrammarTopicWithCheck(state, id, itemId, checkResult);
+        if (!result.completed) {
+          toast('Проверка не пройдена. Можно повторить попытку.');
+        } else {
+          if (result.rewardGranted) addXP(XP_CHECK, state);
+          toast('Грамматическая тема завершена');
+        }
+      } else if (el.dataset.kind === 'practice') {
+        const task = practiceTasks.find((entry) => entry.id === itemId);
+        const unlock = canUnlockPracticeTask(state, id, task, l);
+        if (!unlock.canUnlock && !isPracticeItemCompleted(cs, itemId)) {
+          toast('🔒 Сначала завершите предыдущий шаг');
+          return;
+        }
 
-      if (wasCompleted) {
-        state.xp = Math.max(0, state.xp - XP_CHECK);
-        toast(`❌ Отметка снята, -${XP_CHECK} XP`);
-      } else {
-        addXP(XP_CHECK, state);
-        toast(`+${XP_CHECK} XP за чек-лист!`);
-
-        if (sectionResult.completedNow) {
-          const completion = completeChapter(state, id, {
-            chapters: CONTENT_INDEX,
+        if (isPracticeItemCompleted(cs, itemId)) {
+          if (!window.confirm('Повторно открыть это задание?')) return;
+          undoPracticeTask(state, id, itemId);
+        } else {
+          if (
+            task.type === 'workbook' &&
+            !window.confirm(
+              'Отмечайте после самостоятельного выполнения упражнения в рабочей тетради.'
+            )
+          ) {
+            return;
+          }
+          const result = completePracticeTask(state, id, itemId, {
+            chapters,
             recalculatePlan: StudyPlan.recalculateFuturePlan,
           });
-          if (completion.rewardGranted) {
+          if (result.rewardGranted) addXP(XP_CHECK, state);
+          if (result.chapterCompletion?.rewardGranted) {
             addXP(XP_CHAPTER_FULL, state);
             toast(`🎉 Глава пройдена! +${XP_CHAPTER_FULL} XP!`);
+          } else {
+            toast('Практическое задание завершено');
           }
         }
+      }
+
+      const completion = evaluateAndCompleteChapter(state, id, {
+        chapters,
+        recalculatePlan: StudyPlan.recalculateFuturePlan,
+      });
+      if (completion.rewardGranted) {
+        addXP(XP_CHAPTER_FULL, state);
+        toast(`🎉 Глава пройдена! +${XP_CHAPTER_FULL} XP!`);
       }
 
       await save(true);
@@ -351,5 +410,38 @@ export async function renderChapter(id, state, dependencies) {
       await renderChapter(id, state, dependencies);
       dependencies?.renderHome?.();
     };
+  });
+}
+
+function openGrammarCheck(topic) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay grammar-check-modal';
+    overlay.innerHTML = `
+      <div class="modal-card" role="dialog" aria-modal="true" aria-label="Проверка грамматики">
+        <h2>${topic?.title || 'Грамматическая тема'}</h2>
+        <div class="grammar-explanation">${topic?.content || 'Прочитайте объяснение темы.'}</div>
+        <h3>Короткая проверка</h3>
+        <label><input type="checkbox" data-check-answer> Я могу назвать основную конструкцию темы.</label>
+        <label><input type="checkbox" data-check-answer> Я понимаю приведённый пример.</label>
+        <label><input type="checkbox" data-check-answer> Я могу составить собственный пример.</label>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" data-cancel>Закрыть</button>
+          <button type="button" class="btn-primary" data-submit>Проверить</button>
+        </div>
+      </div>`;
+    const finish = (result) => {
+      overlay.remove();
+      resolve(result);
+    };
+    overlay.querySelector('[data-cancel]').onclick = () =>
+      finish({ passed: false, score: 0, canceled: true });
+    overlay.querySelector('[data-submit]').onclick = () => {
+      const answers = [...overlay.querySelectorAll('[data-check-answer]')];
+      const correct = answers.filter((answer) => answer.checked).length;
+      const score = Math.round((correct / answers.length) * 100);
+      finish({ passed: score >= 70, score });
+    };
+    document.body.appendChild(overlay);
   });
 }

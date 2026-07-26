@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { defaultState } from '../state/store.js';
-import { generateDailyPlan, getDailyCapacity, getOrGenerateDailyPlan } from '../src/daily-plan.js';
-import { TIME_ESTIMATES } from '../src/time-estimates.js';
+import {
+  generateDailyPlan,
+  getDailyCapacity,
+  getNextStudyAction,
+  getOrGenerateDailyPlan,
+} from '../src/daily-plan.js';
 
 const MOCK_LESSON = {
   id: 2,
@@ -113,5 +117,71 @@ describe('Task 6: Atomic Daily Plan & Time Budget (src/daily-plan.js)', () => {
     });
 
     expect(plan2).toBe(plan1);
+    expect(appState.dailyPlanHistory[0].tasks.map((task) => task.id)).toEqual(
+      plan1.tasks.map((task) => task.id)
+    );
+  });
+
+  it('6. Не добавляет новую 12-минутную грамматику, если осталось только 5 минут', () => {
+    appState.dailyCapacityMinutes = 10;
+    appState.srs = Object.fromEntries(
+      Array.from({ length: 25 }, (_, index) => [
+        `L2_due_${index}`,
+        {
+          id: `L2_due_${index}`,
+          due: Date.now() - 1000,
+          reps: 1,
+          state: 2,
+        },
+      ])
+    );
+    appState.vocabularyUnlocks[2] = {
+      '2026-07-25': { itemIds: ['L2_V001'] },
+    };
+    appState.reviewEvents = [{ eventType: 'review', itemId: 'L2_V001' }];
+
+    const plan = generateDailyPlan(appState, {
+      dateKey: '2026-07-26',
+      capacityMinutes: 10,
+      chapterMeta: MOCK_LESSON,
+    });
+    expect(plan.requiredMinutes).toBe(5);
+    expect(plan.tasks.some((task) => task.type === 'grammar')).toBe(false);
+    expect(plan.deferredTaskIds).toContain('grammar-L2_g1');
+  });
+
+  it('7. Undo/review revision replaces only today snapshot and finalizes past history', () => {
+    const first = getOrGenerateDailyPlan(appState, {
+      dateKey: '2026-07-26',
+      chapterMeta: MOCK_LESSON,
+    });
+    appState.reviewEvents.push({
+      eventId: 'review-1',
+      eventType: 'review',
+      reviewedAt: Date.now(),
+    });
+    const refreshed = getOrGenerateDailyPlan(appState, {
+      dateKey: '2026-07-26',
+      chapterMeta: MOCK_LESSON,
+    });
+    expect(refreshed).not.toBe(first);
+    expect(appState.dailyPlanHistory).toHaveLength(1);
+
+    getOrGenerateDailyPlan(appState, {
+      dateKey: '2026-07-27',
+      chapterMeta: MOCK_LESSON,
+    });
+    expect(appState.dailyPlanHistory[0].finalizedAt).not.toBeNull();
+  });
+
+  it('8. Следующее действие является тонким selector поверх tasks', () => {
+    const dailyPlan = {
+      tasks: [
+        { id: 'done', status: 'completed' },
+        { id: 'locked', status: 'locked' },
+        { id: 'next', status: 'available' },
+      ],
+    };
+    expect(getNextStudyAction(dailyPlan)?.id).toBe('next');
   });
 });

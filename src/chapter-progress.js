@@ -1,5 +1,6 @@
 import { formatDateKey, getTodayDateKey } from './local-date.js';
-import { countRemainingLockedWords } from './vocabulary-unlock-plan.js';
+import { getChapterVocabularyProgress } from './vocabulary-unlock-plan.js';
+import { getNormalizedChapterPracticeTasks } from './practice-tasks.js';
 
 export const REQUIRED_CHAPTER_SECTIONS = Object.freeze([
   Object.freeze({ id: 'vocab', label: 'Лексика' }),
@@ -40,38 +41,20 @@ export function getChapterGrammarTopics(chapterMeta) {
 }
 
 export function getChapterPracticeTasks(chapterMeta) {
-  const chapterId = Number(chapterMeta?.lesson_id || chapterMeta?.id || 0);
-  if (Array.isArray(chapterMeta?.practice) && chapterMeta.practice.length > 0) {
-    return chapterMeta.practice.map((item, idx) => ({
-      id: String(item.id || `L${chapterId}_p${idx + 1}`),
-      title: item.title || item.exercise || item.type || `Задание ${idx + 1}`,
-      type: item.type || 'practice',
-      page: item.page || null,
-      exercise: item.exercise || null,
-      estimatedMinutes: item.estimatedMinutes || 10,
-      required: item.required !== false,
-      relatedGrammarIds: Array.isArray(item.relatedGrammarIds) ? item.relatedGrammarIds : [],
-    }));
-  }
-  return [
-    { id: 'dialog', title: 'Диалог', type: 'dialog', required: true },
-    { id: 'listening', title: 'Аудирование', type: 'listening', required: true },
-    { id: 'reading', title: 'Чтение', type: 'reading', required: true },
-  ];
+  return getNormalizedChapterPracticeTasks(chapterMeta);
 }
 
 export function isVocabularyBlockCompleted(appState, chapterId, chapterMeta = null) {
   const id = normalizedChapterId(chapterId);
   if (!id) return false;
   const chapterState = appState?.chapters?.[id];
-  if (chapterState?.checklist?.vocab === true) return true;
+  if (chapterState?.legacyVocabularyCompleted === true) return true;
   if (isPriorKnowledge(appState, id)) return true;
   if (chapterState?.completedAt) return true;
 
   const words = chapterMeta?.words || chapterMeta?.vocabulary || null;
   if (words && Array.isArray(words) && words.length > 0) {
-    const locked = countRemainingLockedWords(appState, id, words);
-    return locked === 0;
+    return getChapterVocabularyProgress(appState, id, chapterMeta).isCompleted;
   }
   return false;
 }
@@ -99,9 +82,14 @@ export function isPracticeItemCompleted(chapterState, itemId) {
   return false;
 }
 
-export function isPracticeBlockCompleted(chapterState, chapterMeta) {
+export function isPracticeBlockCompleted(chapterState, chapterMeta, appState = null) {
   const tasks = getChapterPracticeTasks(chapterMeta);
-  const requiredTasks = tasks.filter((t) => t.required !== false);
+  const requiredTasks = tasks.filter((task) => {
+    if (task.section === 'reading-writing') {
+      return appState?.workbookSettings?.includeReadingWriting !== false && task.required !== false;
+    }
+    return task.requiredForChapterCompletion !== false && task.required !== false;
+  });
   if (requiredTasks.length === 0) return true;
   return requiredTasks.every((task) => isPracticeItemCompleted(chapterState, task.id));
 }
@@ -170,7 +158,7 @@ export function hasCompletedChecklist(
     const secId = typeof sec === 'string' ? sec : sec.id;
     if (secId === 'vocab') {
       return (
-        checklist.vocab === true ||
+        chapterState.legacyVocabularyCompleted === true ||
         (appState &&
           isVocabularyBlockCompleted(appState, chapterState.id || chapterMeta?.id, chapterMeta))
       );
@@ -180,6 +168,21 @@ export function hasCompletedChecklist(
     }
     if (sec.type === 'grammar' || (typeof secId === 'string' && secId.includes('_g'))) {
       return isGrammarTopicCompleted(chapterState, secId);
+    }
+    if (sec.type === 'practice') {
+      if (sec.task?.required === false) return true;
+      if (
+        sec.task?.section === 'reading-writing' &&
+        appState?.workbookSettings?.includeReadingWriting === false
+      ) {
+        return true;
+      }
+      if (
+        sec.task?.section !== 'reading-writing' &&
+        sec.task?.requiredForChapterCompletion === false
+      ) {
+        return true;
+      }
     }
     return checklist[secId] === true;
   });
@@ -453,7 +456,7 @@ export function completeChapter(
     const activeChapterId = ensureActiveChapterId(appState, chapters);
     return { changed: false, alreadyCompleted: true, activeChapterId };
   }
-  if (!hasCompletedChecklist(chapter, getRequiredChapterSections(meta))) {
+  if (!hasCompletedChecklist(chapter, getRequiredChapterSections(meta), appState, meta)) {
     return { changed: false, reason: 'required-sections-incomplete' };
   }
 
@@ -500,6 +503,7 @@ export function completeChapter(
     if (typeof recalculatePlan === 'function') {
       const recalculated = recalculatePlan(plan, chapters, plan.completedChapters, {
         today: dateKey,
+        vocabularyUnlocks: appState.vocabularyUnlocks || {},
       });
       if (recalculated && !recalculated.error && !recalculated.deadlineExpired) {
         appState.studyPlan = recalculated;
@@ -511,6 +515,23 @@ export function completeChapter(
 
   const activeChapterId = ensureActiveChapterId(appState, chapters, dateKey);
   return { changed: true, rewardGranted, activeChapterId, completedAt: now };
+}
+
+/**
+ * Canonical completion evaluator used after vocabulary, grammar and practice
+ * events. It always evaluates against the full application state.
+ */
+export function evaluateAndCompleteChapter(appState, chapterId, context = {}) {
+  const id = normalizedChapterId(chapterId);
+  if (!id) return { changed: false, reason: 'invalid-chapter' };
+  if (isPriorKnowledge(appState, id)) {
+    return {
+      changed: false,
+      reason: 'prior-knowledge',
+      activeChapterId: ensureActiveChapterId(appState, context.chapters || []),
+    };
+  }
+  return completeChapter(appState, id, context);
 }
 
 /**

@@ -2,7 +2,7 @@
 
 import { StudyPlan } from '../studyplan.js';
 import { $ } from '../src/utils.js';
-import { CONTENT_INDEX, ensureLesson } from './home.js';
+import { CONTENT_INDEX, ensureLesson, getLesson, renderHomeTodayCard } from './home.js';
 import { nav } from './router.js';
 import { getTodayDateKey, parseDateKey } from '../src/local-date.js';
 import {
@@ -14,14 +14,15 @@ import {
 import { reconcilePriorKnowledgeVocabulary } from '../src/chapter-vocabulary.js';
 import {
   ensureTodayVocabularyBatch,
-  getTodayVocabularyUnlockDecision,
+  startVocabularyBatchSession,
 } from '../src/vocabulary-unlock-plan.js';
-import { getOrGenerateDailyPlan, getDailyCapacity } from '../src/daily-plan.js';
-import { TIME_ESTIMATES } from '../src/time-estimates.js';
+import { getOrGenerateDailyPlan } from '../src/daily-plan.js';
 
 let planCalendarMonth = new Date();
+let planRuntimeDependencies = {};
 
 export function renderPlan(state, dependencies) {
+  planRuntimeDependencies = dependencies || planRuntimeDependencies;
   const { save } = dependencies;
   if (state.studyPlan) state.studyPlan = StudyPlan.normalizePlan(state.studyPlan);
   $('[data-testid="plan-back-btn"]')?.addEventListener('click', () => nav('home'), {
@@ -48,10 +49,6 @@ export function renderPlan(state, dependencies) {
         state.priorKnowledgeChapterIds.length > 0
       ) {
         reconcileResult = await reconcilePriorKnowledgeVocabulary(state, ensureLesson);
-      }
-
-      if (state.activeChapterId) {
-        ensureTodayVocabularyBatch(state, state.activeChapterId, { plan: state.studyPlan });
       }
 
       save();
@@ -85,7 +82,9 @@ export function renderPlan(state, dependencies) {
     recalcButton.onclick = () => {
       if (!state.studyPlan) return;
       const completed = getCompletedChapterIds(state, CONTENT_INDEX);
-      const result = StudyPlan.recalcPlan(state.studyPlan, CONTENT_INDEX, completed);
+      const result = StudyPlan.recalcPlan(state.studyPlan, CONTENT_INDEX, completed, {
+        vocabularyUnlocks: state.vocabularyUnlocks || {},
+      });
       if (result.deadlineExpired) {
         showDeadlineExpiredDialog(result, state, save);
         return;
@@ -96,10 +95,6 @@ export function renderPlan(state, dependencies) {
       }
       state.studyPlan = result;
       ensureActiveChapterId(state, CONTENT_INDEX);
-
-      if (state.activeChapterId) {
-        ensureTodayVocabularyBatch(state, state.activeChapterId, { plan: state.studyPlan });
-      }
 
       save();
       renderPlanView(state);
@@ -113,10 +108,6 @@ export function renderPlan(state, dependencies) {
       if (!state.studyPlan) return;
       state.studyPlan.paused = !state.studyPlan.paused;
       ensureActiveChapterId(state, CONTENT_INDEX);
-
-      if (!state.studyPlan.paused && state.activeChapterId) {
-        ensureTodayVocabularyBatch(state, state.activeChapterId, { plan: state.studyPlan });
-      }
 
       save();
       renderPlanView(state);
@@ -222,6 +213,9 @@ function collectPlanParams(state) {
   );
   const capacityMinutes = Number($('#plan-capacity-minutes')?.value || 30);
   state.dailyCapacityMinutes = capacityMinutes;
+  state.workbookSettings ||= {};
+  state.workbookSettings.includeReadingWriting =
+    $('#plan-workbook-reading-writing')?.checked !== false;
 
   const mode = document.querySelector('.plan-deadline-toggle .toggle-btn.active')?.dataset.mode;
   const params = { startDate, studyDaysOfWeek, capacityMinutes };
@@ -259,6 +253,10 @@ function populateForm(plan, state) {
   if (deadline) deadline.value = plan.deadline || '';
   if (days) days.value = plan.totalDays || 90;
   if (capacity) capacity.value = plan.capacityMinutes || state?.dailyCapacityMinutes || 30;
+  const readingWriting = $('#plan-workbook-reading-writing');
+  if (readingWriting) {
+    readingWriting.checked = state?.workbookSettings?.includeReadingWriting !== false;
+  }
 
   document.querySelectorAll('.weekday-btn').forEach((button) => {
     button.classList.toggle('active', plan.studyDaysOfWeek?.includes(Number(button.dataset.day)));
@@ -287,37 +285,61 @@ function renderPlanView(state) {
 }
 
 function renderPlanSummary(plan, state) {
-  const context = StudyPlan.getDailyPlanContext(
-    plan,
-    state.srs || {},
-    state.masteryArchive || {},
-    getTodayDateKey(),
-    {
-      reviewEvents: state.reviewEvents || [],
-      learningEvents: state.learningEvents || [],
-    }
-  );
   const activeChapterId = ensureActiveChapterId(state, CONTENT_INDEX);
-  const activeChapter = CONTENT_INDEX.find((chapter) => chapter.id === activeChapterId);
-  const progress = activeChapter
-    ? getChapterProgress(state, activeChapter.id, activeChapter)
-    : null;
-
-  const vocabDecision = activeChapter
-    ? getTodayVocabularyUnlockDecision(state, activeChapter.id, {
-        plan,
+  const activeChapter = getLesson(activeChapterId);
+  if (activeChapterId && !activeChapter) {
+    const todayCard = $('#plan-today-card');
+    if (todayCard) {
+      todayCard.innerHTML =
+        '<div class="today-plan-empty"><p>Задачи дня загружаются вместе с главой…</p></div>';
+      todayCard.classList.remove('hidden');
+    }
+    ensureLesson(activeChapterId)
+      .then(() => renderPlanView(state))
+      .catch((error) => console.warn('[Plan] Не удалось загрузить активную главу:', error));
+    return;
+  }
+  let dailyPlan = getOrGenerateDailyPlan(state, {
+    dateKey: getTodayDateKey(),
+    activeChapterId,
+    chapterMeta: activeChapter?.words ? activeChapter : null,
+  });
+  const vocabularyTask = dailyPlan?.tasks.find(
+    (task) => task.type === 'vocabulary' && task.batchDateKey === getTodayDateKey()
+  );
+  if (
+    vocabularyTask &&
+    activeChapter?.words &&
+    !state.vocabularyUnlocks?.[activeChapterId]?.[getTodayDateKey()]
+  ) {
+    const result = ensureTodayVocabularyBatch(state, activeChapterId, {
+      plan,
+      dateKey: getTodayDateKey(),
+      words: activeChapter.words,
+      limit: vocabularyTask.count,
+    });
+    if (result.created) {
+      planRuntimeDependencies.save?.();
+      dailyPlan = getOrGenerateDailyPlan(state, {
         dateKey: getTodayDateKey(),
-        words: activeChapter.words,
-      })
-    : null;
+        activeChapterId,
+        chapterMeta: activeChapter,
+        forceRefresh: true,
+      });
+    }
+  }
 
   const todayCard = $('#plan-today-card');
   if (todayCard) {
-    todayCard.innerHTML = renderTodayPlan(context, activeChapter, progress, vocabDecision);
+    todayCard.innerHTML = renderHomeTodayCard(state, dailyPlan);
     todayCard.classList.remove('hidden');
-    todayCard.querySelector('[data-action="review"]')?.addEventListener('click', () => nav('srs'));
-    todayCard.querySelector('[data-action="chapter"]')?.addEventListener('click', () => {
-      if (activeChapterId) nav('chapter', activeChapterId);
+    todayCard.querySelectorAll('[data-task-id]').forEach((element) => {
+      element.addEventListener('click', (event) => {
+        if (event.currentTarget !== element) return;
+        event.stopPropagation();
+        const task = dailyPlan?.tasks.find((entry) => entry.id === element.dataset.taskId);
+        executePlanDailyTask(task, activeChapterId, state);
+      });
     });
   }
 
@@ -334,47 +356,27 @@ function renderPlanSummary(plan, state) {
   bindCalendarToggle();
 }
 
-export function renderTodayPlan(context, activeChapter, progress, vocabDecision = null) {
-  const mastery = context.chapterMastery;
-  const masteryLine = mastery
-    ? `<small>История навыков: ${Math.round(mastery.avgScore)}% · освежить ${mastery.needsRefreshCount}</small>`
-    : '<small>Mastery появится после подтверждённых FSRS-повторений</small>';
+function executePlanDailyTask(task, activeChapterId, state) {
+  if (!task) return;
+  if (task.type === 'review') {
+    nav('srs');
+    return;
+  }
+  if (task.type === 'vocabulary') {
+    startVocabularyBatchSession({
+      state,
+      chapterId: task.action?.chapterId || activeChapterId,
+      dateKey: task.batchDateKey || task.action?.batchDateKey,
+      startSession: planRuntimeDependencies.startChapterFlashcards,
+      toast,
+    });
+    return;
+  }
+  nav('chapter', task.action?.chapterId || activeChapterId);
+}
 
-  const vocabText =
-    vocabDecision && vocabDecision.target > 0
-      ? `<div class="plan-vocab-subtext" style="margin-top:6px;font-size:12px;color:var(--orange,#ff9800);">
-          <strong>Новые слова</strong> · Глава ${activeChapter.id} · ${vocabDecision.target} новых слов
-        </div>`
-      : '';
-
-  const warningHtml =
-    vocabDecision && vocabDecision.insufficientDays
-      ? `<div class="warning-banner card-warning" style="margin-top:8px;padding:10px;background:rgba(255,152,0,0.1);border-left:3px solid var(--orange,#ff9800);font-size:12px;color:var(--ink,#333);text-align:left;">
-          Чтобы завершить главу вовремя, требуется около ${vocabDecision.requiredDailyTarget} новых слов в день. Текущий безопасный максимум — 25. Пересчитайте план или продлите срок.
-        </div>`
-      : '';
-
-  return `
-    <div class="plan-screen-today">
-      <span class="today-eyebrow">СЕГОДНЯ · ${statusLabel(context.dateStatus)}</span>
-      <h2>${context.dueCount > 0 ? `${context.dueCount} повторений` : 'Повторения выполнены'}</h2>
-      <p>${context.reviewedToday} выполнено сегодня · ${context.overdueCount} просрочено</p>
-      <div class="today-progress"><i style="width:${Math.round(context.reviewProgress * 100)}%"></i></div>
-      <button class="btn-primary compact" data-action="review" ${context.dueCount === 0 ? 'disabled' : ''}>Начать повторение</button>
-      ${
-        activeChapter && progress
-          ? `<div class="plan-current-task">
-          <span class="today-action-kind">ОСНОВНОЙ РАЗДЕЛ</span>
-          <strong>Глава ${activeChapter.id}: ${progress.nextSection?.label || 'Итоговая проверка'}</strong>
-          <small>${progress.completedCount} из ${progress.totalCount} разделов</small>
-          ${vocabText}
-          ${warningHtml}
-          ${masteryLine}
-          <button class="today-action-button" data-action="chapter">Продолжить</button>
-        </div>`
-          : ''
-      }
-    </div>`;
+export function renderTodayPlan(dailyPlan, state = { studyPlan: {} }) {
+  return renderHomeTodayCard(state, dailyPlan);
 }
 
 function renderTimeline(plan, state, activeChapterId) {

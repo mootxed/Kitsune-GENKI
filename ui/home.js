@@ -2,14 +2,17 @@
 import { state, save, chState, loadedChapters } from '../state/store.js';
 import { refreshStreakDisplay, syncAvatars, updateSrsBadge } from './shared.js';
 import { $, todayStr } from '../src/utils.js';
-import { dueCards, allCards, cardChapter } from '../src/srs-helpers.js';
-import { SRS } from '../srs.js';
+import { allCards, cardChapter } from '../src/srs-helpers.js';
 import { StudyPlan } from '../studyplan.js';
 import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
 import { normalizeWord } from '../src/normalize-word.js';
+import { normalizeChapterContent } from '../src/chapter-content.js';
+import {
+  loadWorkbookPracticeData,
+  WORKBOOK_PRACTICE_SCHEMA_VERSION,
+} from '../src/workbook-practice.js';
 import { db, STORES } from '../src/db.js';
 import { ExamplesDB } from '../src/examples-db.js';
-import { countAvailableCardsForSession } from '../src/srs-limits.js';
 import { formatDateKey, parseDateKey } from '../src/local-date.js';
 import {
   REQUIRED_CHAPTER_SECTIONS,
@@ -25,15 +28,10 @@ import {
   reconcilePriorKnowledgeVocabulary,
 } from '../src/chapter-vocabulary.js';
 import {
-  unlockDailyVocabularyBatch,
-  getVocabularyBatchProgress,
-  getTodayVocabularyUnlockDecision,
-  FALLBACK_DAILY_NEW_VOCABULARY_LIMIT,
   ensureTodayVocabularyBatch,
-  getNextStudyAction,
-  getOldestIncompleteVocabularyBatch,
   startVocabularyBatchSession,
 } from '../src/vocabulary-unlock-plan.js';
+import { getNextStudyAction, getOrGenerateDailyPlan } from '../src/daily-plan.js';
 
 // ---------- Constants ----------
 export const CH_NAMES = {
@@ -53,7 +51,6 @@ export const CH_NAMES = {
 
 export const CHECK_ITEMS = REQUIRED_CHAPTER_SECTIONS.map(({ id, label }) => [id, label]);
 
-const DUE_FIRST_THRESHOLD = 20;
 const FALLBACK_CHAPTER_METRICS = [
   [60, 5, 2, 105],
   [57, 9, 1.5, 125],
@@ -83,7 +80,6 @@ function fallbackContentIndex() {
         estimatedItems: vocabCount + grammarCount * 4,
         importanceWeight,
         estimatedMinutes,
-        checklist: CHECK_ITEMS.map(([sectionId]) => sectionId),
       };
     }
   );
@@ -109,12 +105,25 @@ export async function loadLessons() {
   } catch (e) {
     console.error('Не удалось загрузить content-index.json:', e);
   }
+  let workbookSchemaVersion = 0;
+  try {
+    const workbook = await loadWorkbookPracticeData();
+    workbookSchemaVersion = workbook.schemaVersion;
+  } catch (e) {
+    console.warn('Не удалось загрузить Workbook metadata:', e);
+  }
 
   const cachedVersion = await db.get(STORES.CONTENT_CACHE, 'lesson_version');
   const cachedSchemaVersion = (await db.get(STORES.CONTENT_CACHE, 'schema_version')) || 0;
+  const cachedWorkbookSchemaVersion =
+    (await db.get(STORES.CONTENT_CACHE, 'workbook_schema_version')) || 0;
 
   const contentVersionMatches = String(cachedVersion) === String(fileVersion);
   const schemaVersionMatches = cachedSchemaVersion === NORMALIZED_WORD_SCHEMA_VERSION;
+  const workbookVersionMatches =
+    workbookSchemaVersion === 0 ||
+    (cachedWorkbookSchemaVersion === WORKBOOK_PRACTICE_SCHEMA_VERSION &&
+      cachedWorkbookSchemaVersion === workbookSchemaVersion);
 
   const raw = await db.get(STORES.CONTENT_CACHE, 'lessons');
   let cachedLessons = [];
@@ -126,14 +135,17 @@ export async function loadLessons() {
     }
   }
 
-  if (cachedLessons.length > 0 && (!contentVersionMatches || !schemaVersionMatches)) {
+  if (
+    cachedLessons.length > 0 &&
+    (!contentVersionMatches || !schemaVersionMatches || !workbookVersionMatches)
+  ) {
     // Migration: reconstruct safely from actual lesson JSON
     const migratedLessons = [];
     for (const oldLesson of cachedLessons) {
       try {
         const { lesson } = await loadChapterData(oldLesson.id);
         migratedLessons.push(normalizeLesson(lesson));
-      } catch (e) {
+      } catch {
         // Fallback to old lesson if offline
         migratedLessons.push(oldLesson);
       }
@@ -142,12 +154,18 @@ export async function loadLessons() {
     await db.set(STORES.CONTENT_CACHE, 'lessons', LESSONS);
     await db.set(STORES.CONTENT_CACHE, 'lesson_version', String(fileVersion));
     await db.set(STORES.CONTENT_CACHE, 'schema_version', NORMALIZED_WORD_SCHEMA_VERSION);
+    if (workbookSchemaVersion > 0) {
+      await db.set(STORES.CONTENT_CACHE, 'workbook_schema_version', workbookSchemaVersion);
+    }
   } else {
     LESSONS = cachedLessons;
     // Ensure if we don't have cache but version matches, we set the schema version anyway
     if (cachedLessons.length === 0 && indexData) {
       await db.set(STORES.CONTENT_CACHE, 'lesson_version', String(fileVersion));
       await db.set(STORES.CONTENT_CACHE, 'schema_version', NORMALIZED_WORD_SCHEMA_VERSION);
+      if (workbookSchemaVersion > 0) {
+        await db.set(STORES.CONTENT_CACHE, 'workbook_schema_version', workbookSchemaVersion);
+      }
     }
   }
 
@@ -254,19 +272,11 @@ export function reconcileLessonIds() {
 }
 
 // Нормализация одного сырого урока из data/lessons/lesson-XX.json
-function normalizeLesson(l) {
-  const arr = (x) => (Array.isArray(x) ? x : x && typeof x === 'object' ? Object.values(x) : []);
-  const id = Number(l.id || l.lesson_id);
-  const nm = CH_NAMES[id] || [l.title || 'Глава ' + id, ''];
-  return {
-    id,
-    title: nm[0],
-    jp: nm[1],
-    particles: arr(l.particles),
-    words: arr(l.vocabulary).map((v) => normalizeWord(v, id)),
-    grammar: arr(l.notes).map((n) => ({ title: n.title, content: n.content })),
-    cultural: arr(l.cultural_notes).map((n) => ({ title: n.title, content: n.content })),
-  };
+function normalizeLesson(lesson) {
+  return normalizeChapterContent(lesson, lesson.practice || [], {
+    chapterNames: CH_NAMES,
+    normalizeWord,
+  });
 }
 
 async function persistLessonsCache() {
@@ -480,7 +490,10 @@ export function updateMainQuestsTimer() {
 }
 
 // ---------- Render: Home ----------
-export function renderHome() {
+let homeRuntimeDependencies = {};
+
+export function renderHome(_appState = state, dependencies = null) {
+  if (dependencies) homeRuntimeDependencies = dependencies;
   const today = todayStr();
   state.dailyCards = countCompletedReviewsForDate(state, today);
   state.history[today] = state.dailyCards;
@@ -488,56 +501,71 @@ export function renderHome() {
   if (state.studyPlan) state.studyPlan = StudyPlan.normalizePlan(state.studyPlan);
 
   const activeChapterId = ensureActiveChapterId(state, CONTENT_INDEX);
-  const activeChapter = CONTENT_INDEX.find((chapter) => chapter.id === activeChapterId) || null;
-  const progress = activeChapter
-    ? getChapterProgress(state, activeChapter.id, activeChapter)
+  const chapterCatalogEntry =
+    CONTENT_INDEX.find((chapter) => chapter.id === activeChapterId) || null;
+  const loadedActiveChapter = getLesson(activeChapterId);
+  const activeChapter = loadedActiveChapter || chapterCatalogEntry;
+  if (activeChapterId && !loadedActiveChapter) {
+    ensureLesson(activeChapterId)
+      .then(() => renderHome(state, homeRuntimeDependencies))
+      .catch((error) => console.warn('[Home] Не удалось загрузить активную главу:', error));
+  }
+  let dailyPlan = loadedActiveChapter
+    ? getOrGenerateDailyPlan(state, {
+        dateKey: today,
+        activeChapterId,
+        chapterMeta: loadedActiveChapter,
+      })
     : null;
-
-  if (activeChapterId) {
+  let batchCreated = false;
+  const plannedVocabulary = dailyPlan?.tasks.find(
+    (task) => task.type === 'vocabulary' && task.batchDateKey === today
+  );
+  if (
+    activeChapterId &&
+    activeChapter?.words &&
+    plannedVocabulary &&
+    !state.vocabularyUnlocks?.[activeChapterId]?.[today]
+  ) {
     const batchRes = ensureTodayVocabularyBatch(state, activeChapterId, {
       plan: state.studyPlan,
       dateKey: today,
+      words: activeChapter.words,
+      limit: plannedVocabulary.count,
     });
-    if (batchRes.created) save();
+    batchCreated = batchRes.created === true;
+    if (batchCreated) save();
   }
 
-  const nextAction = getNextStudyAction(state, {
-    activeChapterId,
-    chapterProgress: progress,
-    today,
-  });
+  if (batchCreated) {
+    dailyPlan = getOrGenerateDailyPlan(state, {
+      dateKey: today,
+      activeChapterId,
+      chapterMeta: activeChapter,
+      forceRefresh: true,
+    });
+  }
+  const nextAction = getNextStudyAction(dailyPlan);
 
   const continueButton = $('#btn-continue-learning');
   const continueTitle = $('#continue-learning-title');
   const continueContext = $('#continue-learning-context');
 
-  if (continueTitle) continueTitle.textContent = nextAction.title;
-  if (continueContext) continueContext.textContent = nextAction.contextText;
+  if (continueTitle) {
+    continueTitle.textContent = nextAction?.title || 'Все задачи на сегодня выполнены';
+  }
+  if (continueContext) {
+    continueContext.textContent =
+      nextAction?.description || 'Можно перейти к дополнительной практике';
+  }
   if (continueButton) {
-    continueButton.onclick = () => {
-      if (nextAction.action === 'review') {
-        window.nav('srs');
-      } else if (nextAction.action === 'vocab-session') {
-        startVocabularyBatchSession(nextAction.chapterId, nextAction.dateKey, state, {
-          toast: window.toast,
-          QuestsManager: window.QuestsManager,
-          save,
-          renderFlash: window.renderFlash,
-        });
-      } else if (nextAction.action === 'chapter') {
-        if (nextAction.chapterId) window.nav('chapter', nextAction.chapterId);
-        else window.nav('course');
-      } else if (nextAction.action === 'course') {
-        window.nav('course');
-      } else {
-        window.nav('srs');
-      }
-    };
+    continueButton.onclick = () =>
+      executeHomeDailyTask(nextAction, activeChapterId, homeRuntimeDependencies);
   }
 
   const todayContainer = $('#home-plan-today');
   if (todayContainer) {
-    todayContainer.innerHTML = renderHomeTodayCard(state, activeChapter, progress);
+    todayContainer.innerHTML = renderHomeTodayCard(state, dailyPlan);
 
     // Bind click events on interactive child elements within today-plan-empty
     todayContainer.querySelector('[data-action="create-plan"]')?.addEventListener('click', () => {
@@ -551,23 +579,8 @@ export function renderHome() {
     todayContainer.querySelectorAll('.today-action.clickable').forEach((row) => {
       row.addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-        const action = row.dataset.action;
-        const dateKey = row.dataset.dateKey || today;
-        if (action === 'review') window.nav('srs');
-        else if (action === 'vocab-session') {
-          startVocabularyBatchSession(activeChapterId, dateKey, state, {
-            toast: window.toast,
-            QuestsManager: window.QuestsManager,
-            save,
-            renderFlash: window.renderFlash,
-          });
-        } else if (action === 'chapter') {
-          if (activeChapterId) window.nav('chapter', activeChapterId);
-        } else if (action === 'ai-story') {
-          window.nav('ai-story');
-        } else if (action === 'crossword') {
-          window.nav('crossword');
-        }
+        const task = dailyPlan?.tasks.find((entry) => entry.id === row.dataset.taskId);
+        executeHomeDailyTask(task, activeChapterId, homeRuntimeDependencies);
       });
     });
 
@@ -575,23 +588,8 @@ export function renderHome() {
     todayContainer.querySelectorAll('.today-action-button').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const action = btn.dataset.action;
-        const dateKey = btn.dataset.dateKey || today;
-        if (action === 'review') window.nav('srs');
-        else if (action === 'vocab-session') {
-          startVocabularyBatchSession(activeChapterId, dateKey, state, {
-            toast: window.toast,
-            QuestsManager: window.QuestsManager,
-            save,
-            renderFlash: window.renderFlash,
-          });
-        } else if (action === 'chapter') {
-          if (activeChapterId) window.nav('chapter', activeChapterId);
-        } else if (action === 'ai-story') {
-          window.nav('ai-story');
-        } else if (action === 'crossword') {
-          window.nav('crossword');
-        }
+        const task = dailyPlan?.tasks.find((entry) => entry.id === btn.dataset.taskId);
+        executeHomeDailyTask(task, activeChapterId, homeRuntimeDependencies);
       });
     });
   }
@@ -602,7 +600,30 @@ export function renderHome() {
   syncAvatars();
 }
 
-export function renderHomeTodayCard(appState, activeChapter, progress) {
+function executeHomeDailyTask(task, activeChapterId, dependencies) {
+  if (!task) return;
+  if (task.type === 'review') {
+    window.nav('srs');
+    return;
+  }
+  if (task.type === 'vocabulary') {
+    startVocabularyBatchSession({
+      state,
+      chapterId: task.action?.chapterId || activeChapterId,
+      dateKey: task.batchDateKey || task.action?.batchDateKey,
+      startSession: dependencies.startChapterFlashcards,
+      toast: window.toast,
+    });
+    return;
+  }
+  if (['grammar', 'practice', 'assessment'].includes(task.type)) {
+    window.nav('chapter', task.action?.chapterId || activeChapterId);
+    return;
+  }
+  window.nav('srs');
+}
+
+export function renderHomeTodayCard(appState, dailyPlan) {
   if (!appState.studyPlan) {
     return `
       <div class="today-plan-empty">
@@ -615,270 +636,76 @@ export function renderHomeTodayCard(appState, activeChapter, progress) {
       </div>`;
   }
 
-  const today = todayStr();
-  const context = StudyPlan.getDailyPlanContext(
-    appState.studyPlan,
-    appState.srs || {},
-    appState.masteryArchive || {},
-    today,
-    {
-      reviewEvents: appState.reviewEvents || [],
-      learningEvents: appState.learningEvents || [],
-    }
-  );
-
-  const dateStatus = context.dateStatus;
-  const dueCount = context.dueCount;
-  const reviewedToday = context.reviewedToday;
-  const reviewTotalToday = context.reviewTotalToday;
-  const overdueCount = context.overdueCount;
-
-  // Real event evidence of learning section completion today
-  const hasLearningEvidence =
-    (appState.learningEvents || []).some(
-      (event) =>
-        !event.undoneAt &&
-        event.dateKey === today &&
-        event.chapterId === (activeChapter?.id || null) &&
-        ['section-completed', 'chapter-completed'].includes(event.eventType)
-    ) || false;
-
-  const hasFSRSTask = dueCount > 0 || reviewedToday > 0;
-  const fsrsCompleted = dueCount === 0;
-
-  const isRestDay = dateStatus === 'rest-day';
-  const hasChapterTask = !isRestDay && activeChapter !== null;
-  const chapterCompleted = progress ? progress.completed || hasLearningEvidence : true;
-
-  // Build the display tasks array
-  const tasksToDisplay = [];
-
-  if (hasFSRSTask) {
-    const overdueLabel =
-      overdueCount > 0 ? ` · <span class="today-overdue">${overdueCount} просрочено</span>` : '';
-    tasksToDisplay.push({
-      id: 'fsrs',
-      isMandatory: true,
-      isCompleted: fsrsCompleted,
-      title: `Повторить ${reviewTotalToday} карточек`,
-      subtext: `${reviewedToday} из ${reviewTotalToday} выполнено${overdueLabel}`,
-      action: 'review',
-      progressHTML: `<div class="today-progress"><i style="width:${Math.round(context.reviewProgress * 100)}%"></i></div>`,
-    });
+  if (!dailyPlan) {
+    return '<div class="today-plan-empty"><p>Задачи дня загружаются…</p></div>';
   }
 
-  const oldVocabBatch = activeChapter
-    ? getOldestIncompleteVocabularyBatch(appState, activeChapter.id, today)
-    : null;
-
-  if (oldVocabBatch) {
-    tasksToDisplay.push({
-      id: 'old-vocab-batch',
-      isMandatory: true,
-      isCompleted: false,
-      title: `Продолжить слова за ${oldVocabBatch.dateKey}`,
-      subtext: `Глава ${activeChapter.id} · Осталось ${oldVocabBatch.remaining} слов`,
-      action: 'vocab-session',
-      batchDateKey: oldVocabBatch.dateKey,
-      progressHTML: `<div class="today-progress vocab"><i style="width:${Math.round(oldVocabBatch.progress.ratio * 100)}%"></i></div>`,
-    });
-  } else {
-    const vocabProgress = activeChapter
-      ? getVocabularyBatchProgress(appState, activeChapter.id, today)
-      : null;
-    const hasVocabTask = vocabProgress && vocabProgress.total > 0;
-
-    if (hasVocabTask) {
-      tasksToDisplay.push({
-        id: 'vocab-batch',
-        isMandatory: true,
-        isCompleted: vocabProgress.isCompleted,
-        title: `Новые слова · Глава ${activeChapter.id}`,
-        subtext: `${vocabProgress.completed} из ${vocabProgress.total} изучено`,
-        action: 'vocab-session',
-        batchDateKey: today,
-        progressHTML: `<div class="today-progress vocab"><i style="width:${Math.round(vocabProgress.ratio * 100)}%"></i></div>`,
-      });
-    }
-  }
-
-  if (hasChapterTask) {
-    const remaining = Math.max(0, (progress?.totalCount || 0) - (progress?.completedCount || 0));
-    const duration = activeChapter?.estimatedMinutes
-      ? Math.max(10, Math.ceil(activeChapter.estimatedMinutes / 5))
-      : null;
-    const durationLabel = duration ? ` · ~${duration} мин` : '';
-    const sectionLabel = progress?.nextSection?.label || 'Итоговая проверка';
-
-    tasksToDisplay.push({
-      id: 'chapter',
-      isMandatory: true,
-      isCompleted: chapterCompleted,
-      title: `Глава ${activeChapter.id} · ${sectionLabel}`,
-      subtext: `${progress?.completedCount || 0} из ${progress?.totalCount || 0} разделов · осталось ${remaining}${durationLabel}`,
-      action: 'chapter',
-      progressHTML: `<div class="today-progress chapter"><i style="width:${Math.round((progress?.ratio || 0) * 100)}%"></i></div>`,
-    });
-  }
-
-  // Bonus task check: weak words / lapses / low retrievability
-  const now = Date.now();
-  const activeCards = Object.values(appState.srs || {}).filter((c) => !c.suspended && c.reps > 0);
-  const weakCards = activeCards.filter((c) => {
-    const retrievability = SRS.getRetrievability(c, now);
-    return c.lapses > 0 || c.difficulty >= 6.5 || (retrievability > 0 && retrievability < 0.85);
-  });
-
-  const startedLessons = Object.keys(appState.chapters || {}).filter((id) =>
-    shouldChapterHaveVocabularyCards(appState, id)
-  ).length;
-  const crosswordUnlocked = startedLessons >= 3;
-
-  let bonusTask = null;
-  if (weakCards.length > 0) {
-    bonusTask = {
-      id: 'ai-story',
-      title: 'Закрепить слабые слова в AI-истории',
-      subtext: `У вас есть ${weakCards.length} сложных слов для тренировки`,
-      action: 'ai-story',
-    };
-  } else if (crosswordUnlocked) {
-    bonusTask = {
-      id: 'crossword',
-      title: 'Решить кроссворд',
-      subtext: 'Закрепляйте изученные слова в игровой форме',
-      action: 'crossword',
-    };
-  }
-
-  if (bonusTask) {
-    tasksToDisplay.push({
-      id: bonusTask.id,
-      isMandatory: false,
-      isCompleted: false,
-      title: bonusTask.title,
-      subtext: bonusTask.subtext,
-      action: bonusTask.action,
-    });
-  }
-
-  // Distribute button styles for uncompleted tasks
-  const uncompletedMandatory = tasksToDisplay.filter((t) => t.isMandatory && !t.isCompleted);
-  tasksToDisplay.forEach((t) => {
-    if (t.isCompleted) return;
-    if (t.isMandatory) {
-      if (t === uncompletedMandatory[0]) {
-        t.btnStyle = 'primary';
-      } else {
-        t.btnStyle = 'secondary';
-      }
-    } else {
-      t.btnStyle = 'neutral';
-    }
-  });
-
-  // Check if all mandatory tasks are done
-  const vocabTask = tasksToDisplay.find(
-    (t) => t.id === 'vocab-batch' || t.id === 'old-vocab-batch'
-  );
-  const hasVocabTask = Boolean(vocabTask);
-  const vocabCompleted = vocabTask ? vocabTask.isCompleted : true;
-
-  const mandatoryTasks = [];
-  if (hasFSRSTask) mandatoryTasks.push({ isCompleted: fsrsCompleted });
-  if (hasVocabTask) mandatoryTasks.push({ isCompleted: vocabCompleted });
-  if (hasChapterTask) mandatoryTasks.push({ isCompleted: chapterCompleted });
-  const allMandatoryDone =
-    mandatoryTasks.length === 0 || mandatoryTasks.every((t) => t.isCompleted);
-
-  const headerTitle = allMandatoryDone
-    ? 'План на сегодня выполнен ✓'
-    : isRestDay
-      ? 'День отдыха'
-      : 'Конкретные шаги';
-
-  const tasksHTML =
-    tasksToDisplay.length === 0
-      ? `
-      <div class="today-completed-state">
-        <span class="completed-icon">🎉</span>
-        <p>Вы выполнили все обязательные задачи на сегодня. Отличная работа!</p>
-      </div>`
-      : tasksToDisplay
+  const taskTypeLabel = {
+    review: 'ОБЯЗАТЕЛЬНО · FSRS',
+    vocabulary: 'ОБЯЗАТЕЛЬНО · НОВЫЕ СЛОВА',
+    grammar: 'ГРАММАТИКА',
+    practice: 'ПРАКТИКА',
+    assessment: 'ПРОВЕРКА',
+    bonus: 'ДОПОЛНИТЕЛЬНО',
+  };
+  const taskIcon = {
+    review: '↻',
+    vocabulary: '語',
+    grammar: '文',
+    practice: '練',
+    assessment: '✓',
+    bonus: '✨',
+  };
+  const tasksHtml =
+    dailyPlan.tasks.length === 0
+      ? '<div class="today-completed-state"><span class="completed-icon">🎉</span><p>Все обязательные задачи на сегодня выполнены.</p></div>'
+      : dailyPlan.tasks
           .map((task) => {
-            const icon =
-              task.id === 'chapter'
-                ? '章'
-                : task.id === 'ai-story'
-                  ? '✨'
-                  : task.id === 'crossword'
-                    ? '🧩'
-                    : '↻';
-
-            const kindLabel =
-              task.id === 'fsrs'
-                ? 'ОБЯЗАТЕЛЬНО · FSRS'
-                : task.id === 'vocab-batch' || task.id === 'old-vocab-batch'
-                  ? 'ОБЯЗАТЕЛЬНО · НОВЫЕ СЛОВА'
-                  : task.id === 'chapter'
-                    ? 'ОБЯЗАТЕЛЬНО · АКТИВНАЯ ГЛАВА'
-                    : 'ДОПОЛНИТЕЛЬНО · БОНУС';
-
-            const dateKeyAttr = task.batchDateKey ? ` data-date-key="${task.batchDateKey}"` : '';
-
-            const ctaHTML = task.isCompleted
-              ? `<span class="task-status-completed">✓ Выполнено</span>`
-              : (() => {
-                  const btnText =
-                    task.id === 'fsrs'
-                      ? 'Начать повторение'
-                      : task.id === 'vocab-batch' || task.id === 'old-vocab-batch'
-                        ? 'Учить слова'
-                        : task.id === 'chapter'
-                          ? 'Продолжить'
-                          : 'Начать';
-
-                  const btnClass = `today-action-button${
-                    task.btnStyle === 'primary'
-                      ? ' primary'
-                      : task.btnStyle === 'secondary'
-                        ? ' secondary'
-                        : task.btnStyle === 'neutral'
-                          ? ' neutral'
-                          : ''
-                  }`;
-
-                  return `<button class="${btnClass}" data-action="${task.action}"${dateKeyAttr}>${btnText}</button>`;
-                })();
-
-            const clickableClass = !task.isCompleted ? 'clickable' : '';
-
+            const completed = task.status === 'completed';
+            const action =
+              task.type === 'review'
+                ? 'review'
+                : task.type === 'vocabulary'
+                  ? 'vocab-session'
+                  : task.type === 'bonus'
+                    ? 'bonus'
+                    : 'chapter';
+            const dateAttr = task.batchDateKey ? ` data-date-key="${task.batchDateKey}"` : '';
             return `
-        <div class="today-action ${task.isMandatory ? 'required' : ''} ${clickableClass}" data-action="${task.action}"${dateKeyAttr}>
-          <div class="today-action-icon">${icon}</div>
-          <div class="today-action-copy">
-            <span class="today-action-kind">${kindLabel}</span>
-            <strong>${task.title}</strong>
-            <small>${task.subtext}</small>
-            ${task.progressHTML || ''}
-          </div>
-          <div class="today-action-cta">
-            ${ctaHTML}
-          </div>
-        </div>
-      `;
+              <div class="today-action required ${completed ? '' : 'clickable'}"
+                   data-task-id="${task.id}" data-action="${action}"${dateAttr}>
+                <div class="today-action-icon">${taskIcon[task.type] || '•'}</div>
+                <div class="today-action-copy">
+                  <span class="today-action-kind">${taskTypeLabel[task.type] || task.type}</span>
+                  <strong>${task.title}</strong>
+                  <small>${task.description || ''} · ~${task.estimatedMinutes} мин</small>
+                </div>
+                <div class="today-action-cta">
+                  ${
+                    completed
+                      ? '<span class="task-status-completed">✓ Выполнено</span>'
+                      : `<button class="today-action-button" data-task-id="${task.id}" data-action="${action}"${dateAttr}>Продолжить</button>`
+                  }
+                </div>
+              </div>`;
           })
           .join('');
+
+  const warningHtml = dailyPlan.warnings?.length
+    ? `<div class="warning-banner card-warning">${dailyPlan.warnings.join(' ')}</div>`
+    : '';
 
   return `
     <div class="today-card-header">
       <div>
         <span class="today-eyebrow">ПЛАН НА СЕГОДНЯ</span>
-        <h2>${headerTitle}</h2>
+        <h2>${dailyPlan.isRestDay ? 'День отдыха' : 'Конкретные шаги'}</h2>
+        <small>${dailyPlan.estimatedMinutes} из ${dailyPlan.capacityMinutes} мин</small>
       </div>
       <button class="text-button" data-action="open-plan">Весь план</button>
     </div>
-    ${tasksHTML}
+    ${warningHtml}
+    ${tasksHtml}
   `;
 }
 

@@ -1,6 +1,7 @@
 /* studyplan.js — deterministic, local-time study plan for Kitsune Genki */
 
 import { SRS } from './srs.js';
+import { createVocabularySchedule } from './src/vocabulary-schedule.js';
 import { calculateMastery } from './src/mastery.js';
 import { parseCardIdentity } from './src/knowledge-model.js';
 import {
@@ -121,13 +122,18 @@ export function distributeProportionally(items, weights, totalDays) {
   return allocated;
 }
 
-function buildSegments(lessons, studyDays) {
+function buildSegments(lessons, studyDays, vocabularyRemainingByChapter = {}) {
   const weights = lessons.map(calculateChapterWeight);
   const allocatedDays = distributeProportionally(lessons, weights, studyDays.length);
   let cursor = 0;
   return lessons.map((lesson, index) => {
     const assignedDates = studyDays.slice(cursor, cursor + allocatedDays[index]);
     cursor += allocatedDays[index];
+    const vocabulary = createVocabularySchedule(
+      vocabularyRemainingByChapter[lesson.id] ?? lesson.vocabCount ?? lesson.words?.length ?? 0,
+      assignedDates,
+      { maxPerDay: 25 }
+    );
     return {
       id: `chapter-${lesson.id}-${assignedDates[0] || 'unscheduled'}`,
       type: 'chapter',
@@ -139,6 +145,16 @@ function buildSegments(lessons, studyDays) {
       estimatedMinutes: Number(lesson.estimatedMinutes || 0) || null,
       status: 'planned',
       dateStatuses: {},
+      vocabularySchedule: vocabulary.schedule,
+      vocabularyScheduleReserveDays: vocabulary.reserveDays,
+      vocabularyScheduleWarning: vocabulary.infeasible
+        ? {
+            code: 'vocabulary-deadline-infeasible',
+            requiredDailyTarget: vocabulary.requiredDailyTarget,
+            safeMaximum: 25,
+            unscheduledWords: vocabulary.unscheduledWords,
+          }
+        : null,
     };
   });
 }
@@ -312,7 +328,7 @@ export function recalculateFuturePlan(
   currentPlan,
   lessons,
   completedChapters = [],
-  { today = getTodayDateKey() } = {}
+  { today = getTodayDateKey(), vocabularyUnlocks = {} } = {}
 ) {
   if (!currentPlan) return { error: 'План не найден' };
   if (currentPlan.deadline && currentPlan.deadline < today) {
@@ -352,8 +368,21 @@ export function recalculateFuturePlan(
     };
   }
 
+  const vocabularyRemainingByChapter = Object.fromEntries(
+    remainingLessons.map((lesson) => {
+      const unlocked = new Set(
+        Object.values(vocabularyUnlocks?.[lesson.id] || {}).flatMap((entry) => entry?.itemIds || [])
+      );
+      return [
+        lesson.id,
+        Math.max(0, Number(lesson.vocabCount ?? lesson.words?.length ?? 0) - unlocked.size),
+      ];
+    })
+  );
   const futureSegments =
-    remainingLessons.length > 0 ? buildSegments(remainingLessons, futureDates) : [];
+    remainingLessons.length > 0
+      ? buildSegments(remainingLessons, futureDates, vocabularyRemainingByChapter)
+      : [];
   const merged = [...preserved];
   for (const segment of futureSegments) {
     const existing = merged.find(
@@ -368,6 +397,13 @@ export function recalculateFuturePlan(
       existing.endDate = existing.assignedDates.at(-1);
       existing.days = existing.assignedDates.length;
       existing.estimatedMinutes ||= segment.estimatedMinutes;
+      existing.vocabularySchedule = {
+        ...Object.fromEntries(
+          Object.entries(existing.vocabularySchedule || {}).filter(([dateKey]) => dateKey <= today)
+        ),
+        ...(segment.vocabularySchedule || {}),
+      };
+      existing.vocabularyScheduleWarning = segment.vocabularyScheduleWarning;
     } else {
       merged.push(segment);
     }

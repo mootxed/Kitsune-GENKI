@@ -17,7 +17,7 @@ describe('content index planning metadata', () => {
       expect(chapter.estimatedItems).toBeGreaterThan(0);
       expect(chapter.importanceWeight).toBeGreaterThan(0);
       expect(chapter.estimatedMinutes).toBeGreaterThan(0);
-      expect(chapter.checklist).toEqual(['vocab', 'grammar', 'dialog', 'listening', 'reading']);
+      expect(chapter.checklist).toBeUndefined();
     });
 
     const plan = StudyPlan.generatePlan(

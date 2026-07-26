@@ -17,6 +17,7 @@ import { initializeDB } from './src/db.js';
 import { migrateFromLocalStorage } from './src/migration.js';
 import { localDateKey } from './src/local-date.js';
 import { getDailyStudyDigest } from './src/daily-study-digest.js';
+import { evaluateAndCompleteChapter } from './src/chapter-progress.js';
 
 // Утилиты
 import {
@@ -229,6 +230,24 @@ function createDependencies() {
     renderDictionary,
     startExtraReview,
     startChapterFlashcards: null, // Будет назначено в setupRouter
+    onReviewCommitted: (card) => {
+      state.dailyPlan = null;
+      const chapterId = cardChapter(card?.id);
+      const chapter = getLesson(chapterId);
+      if (!chapter) return;
+      const chapters = CONTENT_INDEX.map((entry) => (entry.id === chapterId ? chapter : entry));
+      const completion = evaluateAndCompleteChapter(state, chapterId, {
+        chapters,
+        recalculatePlan: StudyPlan.recalculateFuturePlan,
+      });
+      if (completion.rewardGranted) {
+        addXP(XP_CHAPTER_FULL, state);
+        toast(`🎉 Глава пройдена! +${XP_CHAPTER_FULL} XP!`);
+      }
+    },
+    onReviewUndone: () => {
+      state.dailyPlan = null;
+    },
 
     // Profile
     renderProfile,

@@ -1,9 +1,13 @@
 import { localDateKey, getLocalWeekday } from './local-date.js';
 import { parseCardIdentity } from './knowledge-model.js';
-import { cardChapter, dueCards } from './srs-helpers.js';
-import { countAvailableCardsForSession } from './srs-limits.js';
-import { StudyPlan } from '../studyplan.js';
+import { cardChapter } from './srs-helpers.js';
 import { State } from 'ts-fsrs';
+import {
+  createVocabularySchedule,
+  distributeVocabularyAcrossDates,
+} from './vocabulary-schedule.js';
+
+export { distributeVocabularyAcrossDates };
 
 export const FALLBACK_DAILY_NEW_VOCABULARY_LIMIT = 17;
 export const DEFAULT_DAILY_NEW_VOCABULARY_LIMIT = FALLBACK_DAILY_NEW_VOCABULARY_LIMIT;
@@ -17,7 +21,7 @@ export function calculateDailyVocabularyTarget({
   remainingWords = 0,
   remainingStudyDays = 0,
   reserveDays,
-  previousBatchProgress = null,
+  previousBatchProgress: _previousBatchProgress = null,
 } = {}) {
   const words = Math.max(0, Number(remainingWords) || 0);
   if (words === 0) {
@@ -112,34 +116,6 @@ export function getRemainingChapterStudyDates(plan, chapterId, dateKey = localDa
 /**
  * Distributes total words evenly across assigned date keys.
  */
-export function distributeVocabularyAcrossDates(totalWords, dateKeys, options = {}) {
-  if (!Array.isArray(dateKeys) || dateKeys.length === 0) return {};
-  const words = Math.max(0, Number(totalWords) || 0);
-  const n = dateKeys.length;
-  const reserveDays = Math.min(Math.max(0, Number(options.reserveDays) || 0), n - 1);
-  const activeCount = n - reserveDays;
-
-  const result = {};
-  if (words === 0 || activeCount <= 0) {
-    for (const d of dateKeys) result[d] = 0;
-    return result;
-  }
-
-  const base = Math.floor(words / activeCount);
-  const remainder = words % activeCount;
-
-  for (let i = 0; i < n; i++) {
-    const d = dateKeys[i];
-    if (i < activeCount) {
-      result[d] = base + (i < remainder ? 1 : 0);
-    } else {
-      result[d] = 0;
-    }
-  }
-
-  return result;
-}
-
 /**
  * Checks if a card is locked by the learning plan.
  */
@@ -287,6 +263,77 @@ export function isVocabularyItemIntroduced(state, itemId) {
 }
 
 /**
+ * Returns evidence-based vocabulary progress for a chapter.
+ * Unlocking a card is not completion: every required word must have a
+ * non-undone first learning interaction.
+ */
+export function getChapterVocabularyProgress(state, chapterId, chapterMeta = null) {
+  const chId = Number(chapterId);
+  const words = getChapterWords(
+    state,
+    chId,
+    chapterMeta?.words || chapterMeta?.vocabulary || null
+  ).filter((word) => word?.id);
+  const uniqueWords = [...new Map(words.map((word) => [word.id, word])).values()];
+  const chapterState = state?.chapters?.[chId];
+  const legacyCompleted =
+    chapterState?.legacyVocabularyCompleted === true || Boolean(chapterState?.completedAt);
+
+  if (legacyCompleted) {
+    const totalWords = uniqueWords.length;
+    return {
+      totalWords,
+      lockedWords: 0,
+      unlockedWords: totalWords,
+      introducedWords: totalWords,
+      remainingToIntroduce: 0,
+      allUnlocked: true,
+      isCompleted: true,
+      ratio: 1,
+    };
+  }
+
+  let lockedWords = 0;
+  let introducedWords = 0;
+  for (const word of uniqueWords) {
+    const cards = cardsForWord(state?.srs, word.id);
+    if (cards.length > 0 && cards.every((card) => card.planLocked === true)) {
+      lockedWords++;
+    }
+
+    let introduced = isVocabularyItemIntroduced(state, word.id);
+    // A repeated lexeme may already have reliable evidence under another item
+    // ID in the same normalized chapter.
+    if (!introduced && word.lexemeId) {
+      introduced = uniqueWords.some(
+        (candidate) =>
+          candidate.id !== word.id &&
+          candidate.lexemeId === word.lexemeId &&
+          isVocabularyItemIntroduced(state, candidate.id)
+      );
+    }
+    if (introduced) introducedWords++;
+  }
+
+  const totalWords = uniqueWords.length;
+  const unlockedWords = Math.max(0, totalWords - lockedWords);
+  const remainingToIntroduce = Math.max(0, totalWords - introducedWords);
+  const allUnlocked = totalWords > 0 && lockedWords === 0;
+  const isCompleted = allUnlocked && introducedWords === totalWords;
+
+  return {
+    totalWords,
+    lockedWords,
+    unlockedWords,
+    introducedWords,
+    remainingToIntroduce,
+    allUnlocked,
+    isCompleted,
+    ratio: totalWords > 0 ? introducedWords / totalWords : 0,
+  };
+}
+
+/**
  * Returns progress of the daily vocabulary batch for today (or specified dateKey).
  */
 export function getVocabularyBatchProgress(state, chapterId, dateKey = localDateKey()) {
@@ -399,7 +446,7 @@ export function getTodayVocabularyUnlockDecision(state, chapterId, options = {})
 
   const remainingStudyDates = getRemainingChapterStudyDates(plan, chId, dateKey);
 
-  if (!plan || remainingStudyDates.length === 0) {
+  if (!plan) {
     const target = Math.min(remainingWords, FALLBACK_DAILY_NEW_VOCABULARY_LIMIT);
     return {
       shouldUnlock: target > 0,
@@ -414,22 +461,56 @@ export function getTodayVocabularyUnlockDecision(state, chapterId, options = {})
     };
   }
 
-  const calc = calculateDailyVocabularyTarget({
-    remainingWords,
-    remainingStudyDays: remainingStudyDates.length,
-  });
+  const segment = plan.segments?.find(
+    (entry) =>
+      entry?.type === 'chapter' && Number(entry.chapterId) === chId && entry.status !== 'completed'
+  );
+  if (!segment || !remainingStudyDates.includes(dateKey)) {
+    return {
+      shouldUnlock: false,
+      target: 0,
+      remainingWords,
+      remainingStudyDates,
+      reserveDays: 0,
+      insufficientDays: false,
+      requiredDailyTarget: 0,
+      blockedByPreviousBatch: false,
+      reason: 'no-plan-allocation',
+    };
+  }
 
-  const target = Math.min(remainingWords, calc.target);
+  if (!segment.vocabularySchedule || !(dateKey in segment.vocabularySchedule)) {
+    const allocation = createVocabularySchedule(remainingWords, remainingStudyDates, {
+      maxPerDay: MAX_DAILY_VOCABULARY_TARGET,
+    });
+    segment.vocabularySchedule = {
+      ...(segment.vocabularySchedule || {}),
+      ...allocation.schedule,
+    };
+    segment.vocabularyScheduleReserveDays = allocation.reserveDays;
+    segment.vocabularyScheduleWarning = allocation.infeasible
+      ? {
+          code: 'vocabulary-deadline-infeasible',
+          requiredDailyTarget: allocation.requiredDailyTarget,
+          safeMaximum: MAX_DAILY_VOCABULARY_TARGET,
+          unscheduledWords: allocation.unscheduledWords,
+        }
+      : null;
+  }
+
+  const scheduledTarget = Number(segment.vocabularySchedule[dateKey]) || 0;
+  const target = Math.min(remainingWords, scheduledTarget);
+  const warning = segment.vocabularyScheduleWarning;
   return {
     shouldUnlock: target > 0,
     target,
     remainingWords,
     remainingStudyDates,
-    reserveDays: calc.reserveDays,
-    insufficientDays: calc.insufficientDays,
-    requiredDailyTarget: calc.requiredDailyTarget,
+    reserveDays: Number(segment.vocabularyScheduleReserveDays) || 0,
+    insufficientDays: Boolean(warning),
+    requiredDailyTarget: warning?.requiredDailyTarget || target,
     blockedByPreviousBatch: false,
-    reason: calc.insufficientDays ? 'insufficient-days' : 'plan-target',
+    reason: warning ? 'insufficient-days' : target > 0 ? 'plan-schedule' : 'reserve-day',
   };
 }
 
@@ -716,7 +797,10 @@ export function ensureTodayVocabularyBatch(state, chapterId, options = {}) {
   }
 
   const result = unlockDailyVocabularyBatch(state, chId, {
-    limit: decision.target,
+    limit:
+      Number.isInteger(options.limit) && options.limit > 0
+        ? Math.min(options.limit, decision.target)
+        : decision.target,
     dateKey,
     plan,
     words: options.words,
@@ -737,130 +821,6 @@ export function ensureTodayVocabularyBatch(state, chapterId, options = {}) {
 }
 
 /**
- * Single application-level decision function for main study CTA button and "Plan Today" card.
- */
-export function getNextStudyAction(state, context = {}) {
-  if (!state) {
-    return {
-      type: 'extra-practice',
-      title: 'Продолжить обучение',
-      contextText: '',
-      buttonText: 'Начать',
-      action: 'extra-practice',
-    };
-  }
-
-  const today = context.today || localDateKey(context.now ?? Date.now());
-  const plan = state.studyPlan;
-
-  const dateStatus = plan
-    ? StudyPlan.getDateStatus(plan, today, {
-        today,
-        learningEvents: state.learningEvents || [],
-        reviewEvents: state.reviewEvents || [],
-      })
-    : null;
-  const isRestDay = dateStatus === 'rest-day';
-
-  // Priority 1: Mandatory due/overdue SRS reviews (studied cards due for repetition)
-  const studiedDueCards = dueCards(state.srs).filter(
-    (c) =>
-      c &&
-      !c.suspended &&
-      !c.planLocked &&
-      (c.reps > 0 || c.state !== State.New || c.lastReview != null)
-  );
-  const due = countAvailableCardsForSession(studiedDueCards, state.srs);
-  if (due > 0) {
-    return {
-      type: 'review',
-      title: isRestDay ? 'Повторить слабые знания' : 'Повторить SRS',
-      contextText: isRestDay
-        ? `По плану отдых, но накопилось ${due} повторений`
-        : `${due} обязательных повторений накопилось — сначала разберём их`,
-      buttonText: 'Повторить →',
-      action: 'review',
-      dueCount: due,
-      isRestDay,
-    };
-  }
-
-  if (isRestDay) {
-    return {
-      type: 'rest-day',
-      title: 'День отдыха',
-      contextText: 'Сегодня по плану отдых. Проведите день с пользой!',
-      buttonText: 'Обзор курса',
-      action: 'course',
-      isRestDay: true,
-    };
-  }
-
-  const activeChapterId = context.activeChapterId ?? state.activeChapterId ?? null;
-
-  if (activeChapterId) {
-    // Priority 2: Unfinished old batch
-    const oldBatch = getOldestIncompleteVocabularyBatch(state, activeChapterId, today);
-    if (oldBatch) {
-      return {
-        type: 'old-vocab-batch',
-        title: 'Продолжить новые слова',
-        contextText: `Продолжить слова за ${oldBatch.dateKey} · Осталось ${oldBatch.remaining}`,
-        buttonText: 'Учить слова →',
-        action: 'vocab-session',
-        chapterId: activeChapterId,
-        dateKey: oldBatch.dateKey,
-        remaining: oldBatch.remaining,
-      };
-    }
-
-    // Priority 3: Today's portion of new words
-    const todaysProgress = getVocabularyBatchProgress(state, activeChapterId, today);
-    if (todaysProgress.total > 0 && !todaysProgress.isCompleted) {
-      return {
-        type: 'today-vocab-batch',
-        title: 'Новые слова',
-        contextText: `Глава ${activeChapterId} · ${todaysProgress.completed} из ${todaysProgress.total} изучено`,
-        buttonText: 'Продолжить слова →',
-        action: 'vocab-session',
-        chapterId: activeChapterId,
-        dateKey: today,
-        remaining: todaysProgress.remaining,
-      };
-    }
-
-    // Priority 4: Chapter section / grammar
-    const progress = context.chapterProgress || null;
-    const remainingSections = Math.max(
-      0,
-      (progress?.totalCount || 0) - (progress?.completedCount || 0)
-    );
-    const sectionLabel = progress?.nextSection?.label || 'Раздел главы';
-
-    if (!progress || !progress.completed) {
-      return {
-        type: 'chapter-section',
-        title: 'Продолжить обучение',
-        contextText: `Глава ${activeChapterId} · ${sectionLabel}`,
-        buttonText: 'К главе →',
-        action: 'chapter',
-        chapterId: activeChapterId,
-        remainingSections,
-      };
-    }
-  }
-
-  // Priority 5: Additional practice
-  return {
-    type: 'extra-practice',
-    title: 'Все задачи на сегодня выполнены',
-    contextText: 'Все главы и слова изучены — закрепите знания',
-    buttonText: 'Практика →',
-    action: 'extra-practice',
-  };
-}
-
-/**
  * Builds card queue for a specific daily vocabulary batch.
  */
 export function buildVocabularyBatchSessionQueue(state, chapterId, dateKey) {
@@ -871,39 +831,71 @@ export function buildVocabularyBatchSessionQueue(state, chapterId, dateKey) {
 
   if (itemIds.length === 0) return [];
 
-  const itemIdSet = new Set(itemIds);
+  const itemOrder = new Map(itemIds.map((itemId, index) => [itemId, index]));
   const srs = state.srs || {};
   const batchCards = [];
 
   for (const card of Object.values(srs)) {
-    if (!card || card.planLocked === true) continue;
+    if (!card || card.planLocked === true || card.suspended === true) continue;
     if (cardChapter(card.id) !== chId) continue;
 
     const identity = parseCardIdentity(card);
-    if (itemIdSet.has(identity.itemId)) {
+    if (itemOrder.has(identity.itemId)) {
       batchCards.push(card);
     }
   }
 
-  return batchCards;
+  // Preserve the vocabulary portion order while keeping the existing staged
+  // skill order for cards belonging to the same lexical item.
+  return batchCards.sort((a, b) => {
+    const aIdentity = parseCardIdentity(a);
+    const bIdentity = parseCardIdentity(b);
+    return itemOrder.get(aIdentity.itemId) - itemOrder.get(bIdentity.itemId);
+  });
 }
 
 /**
  * Starts a study session restricted strictly to itemIds of the specified batch dateKey.
  */
-export function startVocabularyBatchSession(chapterId, dateKey, state, dependencies = {}) {
+export function startVocabularyBatchSession({
+  state,
+  chapterId,
+  dateKey,
+  startSession,
+  toast,
+} = {}) {
+  const chId = Number(chapterId);
   const cards = buildVocabularyBatchSessionQueue(state, chapterId, dateKey);
   if (cards.length === 0) {
-    if (typeof dependencies.toast === 'function') {
-      dependencies.toast('Порция слов не найдена');
-    }
-    return false;
+    if (typeof toast === 'function') toast('Порция слов не найдена');
+    return {
+      started: false,
+      reason: 'empty-batch',
+      chapterId: chId,
+      batchDateKey: dateKey || null,
+      itemCount: 0,
+      cardCount: 0,
+    };
   }
 
-  if (typeof dependencies.startSessionWithCards === 'function') {
-    dependencies.startSessionWithCards(cards, chapterId, dateKey);
-    return true;
+  if (typeof startSession !== 'function') {
+    if (typeof toast === 'function') toast('Не удалось запустить учебную сессию');
+    return {
+      started: false,
+      reason: 'session-starter-unavailable',
+      chapterId: chId,
+      batchDateKey: dateKey,
+      itemCount: new Set(cards.map((card) => parseCardIdentity(card).itemId)).size,
+      cardCount: cards.length,
+    };
   }
 
-  return cards;
+  startSession(chId, cards, { batchDateKey: dateKey, sessionType: 'vocabulary-batch' });
+  return {
+    started: true,
+    chapterId: chId,
+    batchDateKey: dateKey,
+    itemCount: new Set(cards.map((card) => parseCardIdentity(card).itemId)).size,
+    cardCount: cards.length,
+  };
 }

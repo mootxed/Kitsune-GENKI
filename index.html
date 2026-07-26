@@ -421,7 +421,11 @@
 
             <div class="form-group">
               <label class="form-label">Сколько времени вы готовы заниматься в учебный день?</label>
-              <select id="plan-capacity-minutes" class="form-input" data-testid="plan-capacity-select">
+              <select
+                id="plan-capacity-minutes"
+                class="form-input"
+                data-testid="plan-capacity-select"
+              >
                 <option value="15">15 минут</option>
                 <option value="30" selected>30 минут</option>
                 <option value="45">45 минут</option>
@@ -446,6 +450,21 @@
             <details class="plan-advanced-details">
               <summary>Дополнительные настройки</summary>
               <div class="plan-advanced-content">
+                <label class="chapter-checkbox-item">
+                  <input
+                    type="checkbox"
+                    id="plan-workbook-reading-writing"
+                    data-testid="plan-workbook-reading-writing"
+                    checked
+                  />
+                  <span class="chapter-checkbox-label">
+                    Включить раздел чтения и письма Workbook
+                  </span>
+                </label>
+                <p style="font-size: 0.875rem; color: #666; margin: 0.5rem 0 1rem">
+                  Добавляет 22 последовательных задания чтения и письма. По умолчанию они
+                  обязательны для завершения соответствующих глав.
+                </p>
                 <label class="form-label">Уже изученные главы (ручная корректировка)</label>
                 <p style="font-size: 0.875rem; color: #666; margin-bottom: 1rem">
                   Отметьте главы, которые вы уже изучили. Они не будут включены в план обучения.

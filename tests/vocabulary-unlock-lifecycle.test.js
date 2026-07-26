@@ -4,12 +4,11 @@ import { defaultState } from '../state/store.js';
 import { State } from 'ts-fsrs';
 import {
   ensureTodayVocabularyBatch,
-  getOldestIncompleteVocabularyBatch,
   isVocabularyItemIntroduced,
   getVocabularyBatchProgress,
-  getNextStudyAction,
   buildVocabularyBatchSessionQueue,
 } from '../src/vocabulary-unlock-plan.js';
+import { getNextStudyAction } from '../src/daily-plan.js';
 import { ensureChapterVocabularyCards } from '../src/chapter-vocabulary.js';
 import { StudyPlan } from '../studyplan.js';
 
@@ -289,9 +288,18 @@ describe('Stage 2: Full Lifecycle of Daily Vocabulary Batches', () => {
       words: lesson.words,
     });
 
-    const action = getNextStudyAction(state, {
-      activeChapterId: 1,
-      today: '2026-07-26',
+    const action = getNextStudyAction({
+      tasks: [
+        {
+          id: 'vocab:1:2026-07-26',
+          type: 'today-vocab-batch',
+          title: 'Новые слова',
+          action: 'vocab-session',
+          chapterId: 1,
+          dateKey: '2026-07-26',
+          status: 'available',
+        },
+      ],
     });
 
     expect(action.type).toBe('today-vocab-batch');

@@ -3,7 +3,6 @@ import { defaultState } from '../state/store.js';
 import {
   canUnlockPracticeTask,
   completePracticeTask,
-  getAvailablePracticeTasks,
   getChapterPracticeTasks,
   undoPracticeTask,
 } from '../src/practice-plan.js';
@@ -58,7 +57,8 @@ describe('Task 5: GENKI Workbook & Practice Tasks (src/practice-plan.js)', () =>
 
   it('1. Извлекает метаданные заданий GENKI Workbook из описания главы', () => {
     const tasks = getChapterPracticeTasks(MOCK_LESSON);
-    expect(tasks).toHaveLength(2);
+    expect(tasks).toHaveLength(5);
+    expect(tasks.slice(2).map((task) => task.id)).toEqual(['dialog', 'listening', 'reading']);
     expect(tasks[0]).toMatchObject({
       id: 'L02-workbook-1a',
       type: 'workbook',
@@ -113,5 +113,46 @@ describe('Task 5: GENKI Workbook & Practice Tasks (src/practice-plan.js)', () =>
       (e) => e.eventType === 'practice-task-reopened' && e.taskId === 'L02-workbook-1a'
     );
     expect(reopenEvent).toBeDefined();
+  });
+
+  it('5. Повторное завершение после Undo не позволяет фармить XP', () => {
+    appState.chapters[2].checklist.L2_g1 = true;
+    const first = completePracticeTask(appState, 2, 'L02-workbook-1a', { now: 100 });
+    undoPracticeTask(appState, 2, 'L02-workbook-1a', { now: 150 });
+    const second = completePracticeTask(appState, 2, 'L02-workbook-1a', { now: 200 });
+    expect(first.rewardGranted).toBe(true);
+    expect(second.rewardGranted).toBe(false);
+    expect(
+      appState.learningEvents.filter((event) => event.eventType === 'practice-task-completed')
+    ).toHaveLength(1);
+  });
+
+  it('6. reading-writing открывается строго по порядку', () => {
+    const chapter = {
+      ...MOCK_LESSON,
+      practice: [
+        {
+          id: 'rw-1',
+          type: 'workbook',
+          section: 'reading-writing',
+          title: 'Чтение 1',
+          relatedGrammarIds: [],
+        },
+        {
+          id: 'rw-2',
+          type: 'workbook',
+          section: 'reading-writing',
+          title: 'Чтение 2',
+          relatedGrammarIds: [],
+        },
+      ],
+    };
+    expect(canUnlockPracticeTask(appState, 2, chapter.practice[0], chapter).canUnlock).toBe(true);
+    expect(canUnlockPracticeTask(appState, 2, chapter.practice[1], chapter)).toMatchObject({
+      canUnlock: false,
+      reason: 'previous-practice-incomplete',
+    });
+    appState.chapters[2].checklist['rw-1'] = true;
+    expect(canUnlockPracticeTask(appState, 2, chapter.practice[1], chapter).canUnlock).toBe(true);
   });
 });

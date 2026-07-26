@@ -1,6 +1,6 @@
 /* src/daily-plan.js — Atomic Daily Plan generator & Single Source of Truth */
 
-import { localDateKey, getLocalWeekday } from './local-date.js';
+import { localDateKey } from './local-date.js';
 import {
   TIME_ESTIMATES,
   DEFAULT_DAILY_CAPACITY_MINUTES,
@@ -11,14 +11,16 @@ import {
 } from './time-estimates.js';
 import { countAvailableCardsForSession } from './srs-limits.js';
 import { dueCards } from './srs-helpers.js';
-import { getChapterProgress, isChapterCompleted } from './chapter-progress.js';
 import {
-  ensureTodayVocabularyBatch,
   getOldestIncompleteVocabularyBatch,
   getVocabularyBatchProgress,
   getTodayVocabularyUnlockDecision,
 } from './vocabulary-unlock-plan.js';
-import { canUnlockNextGrammarTopic, getGrammarTopicStatus } from './grammar-plan.js';
+import {
+  canUnlockNextGrammarTopic,
+  getGrammarTopicStatus,
+  unlockDailyGrammarTopic,
+} from './grammar-plan.js';
 import { getAvailablePracticeTasks } from './practice-plan.js';
 
 export function getDailyCapacity(state) {
@@ -50,6 +52,9 @@ export function generateDailyPlan(state, options = {}) {
   const activeChapterId = options.activeChapterId ?? state?.activeChapterId ?? 1;
   const tasks = [];
   let currentMinutes = 0;
+  let requiredMinutes = 0;
+  const deferredTaskIds = [];
+  const warnings = [];
 
   // 1. Priority 1: Due & Overdue SRS Reviews
   const studiedDueCards = dueCards(state?.srs).filter(
@@ -67,11 +72,14 @@ export function generateDailyPlan(state, options = {}) {
       description: `${dueCount} карточек к повторению`,
       estimatedMinutes: est,
       priority: 1,
-      status: 'planned',
+      status: 'available',
       completionMode: 'interactive',
+      action: { type: 'review' },
+      overCapacity: currentMinutes + est > capacityMinutes,
       count: dueCount,
     });
     currentMinutes += est;
+    requiredMinutes += est;
   }
 
   if (isRestDay) {
@@ -79,8 +87,20 @@ export function generateDailyPlan(state, options = {}) {
       dateKey,
       chapterId: activeChapterId,
       tasks,
+      requiredMinutes,
+      plannedMinutes: currentMinutes,
       estimatedMinutes: currentMinutes,
       capacityMinutes,
+      overCapacity: currentMinutes > capacityMinutes,
+      deferredTaskIds,
+      warnings:
+        currentMinutes > capacityMinutes
+          ? ['Сегодня потребуется больше обычного: накопились обязательные повторения.']
+          : warnings,
+      completion: {
+        completedCount: tasks.filter((task) => task.status === 'completed').length,
+        totalCount: tasks.length,
+      },
       generatedAt: now,
       isRestDay: true,
     };
@@ -98,12 +118,19 @@ export function generateDailyPlan(state, options = {}) {
       description: `Доучить незавершённую порцию`,
       estimatedMinutes: est,
       priority: 2,
-      status: 'planned',
+      status: 'carried_over',
       completionMode: 'interactive',
+      action: {
+        type: 'vocabulary',
+        chapterId: activeChapterId,
+        batchDateKey: oldBatch.dateKey,
+      },
+      overCapacity: currentMinutes + est > capacityMinutes,
       batchDateKey: oldBatch.dateKey,
       count: oldBatch.remaining,
     });
     currentMinutes += est;
+    requiredMinutes += est;
   }
 
   // 3. Priority 3: Today's New Vocabulary Batch (if capacity permits)
@@ -118,23 +145,31 @@ export function generateDailyPlan(state, options = {}) {
     const todayBatchProgress = getVocabularyBatchProgress(state, activeChapterId, dateKey);
     const targetCount = decision.target > 0 ? decision.target : todayBatchProgress.total;
 
-    if (targetCount > 0 && !todayBatchProgress.isCompleted) {
-      const remainingCount = targetCount - todayBatchProgress.completed;
-      const est = calculateVocabMinutes(remainingCount);
-      tasks.push({
-        id: `vocab-today-${dateKey}`,
-        type: 'vocabulary',
-        sourceId: `vocab-${dateKey}`,
-        title: `Новые слова (${todayBatchProgress.completed}/${targetCount})`,
-        description: `Порция из ${targetCount} новых слов`,
-        estimatedMinutes: est,
-        priority: 3,
-        status: todayBatchProgress.completed > 0 ? 'in_progress' : 'planned',
-        completionMode: 'interactive',
-        batchDateKey: dateKey,
-        count: remainingCount,
-      });
-      currentMinutes += est;
+    if (targetCount > 0 && (todayBatchProgress.total === 0 || !todayBatchProgress.isCompleted)) {
+      const remainingCount = Math.max(0, targetCount - todayBatchProgress.completed);
+      const availableMinutes = Math.max(0, capacityMinutes - currentMinutes);
+      const plannedCount = Math.min(remainingCount, Math.floor(availableMinutes));
+      const est = calculateVocabMinutes(plannedCount);
+      if (plannedCount >= Math.min(3, remainingCount) && currentMinutes + est <= capacityMinutes) {
+        tasks.push({
+          id: `vocab-today-${dateKey}`,
+          type: 'vocabulary',
+          sourceId: `vocab-${dateKey}`,
+          title: `Новые слова (${todayBatchProgress.completed}/${targetCount})`,
+          description: `Порция из ${targetCount} новых слов`,
+          estimatedMinutes: est,
+          priority: 3,
+          status: todayBatchProgress.completed > 0 ? 'in_progress' : 'available',
+          completionMode: 'interactive',
+          action: { type: 'vocabulary', chapterId: activeChapterId, batchDateKey: dateKey },
+          batchDateKey: dateKey,
+          count: plannedCount,
+          targetCount,
+        });
+        currentMinutes += est;
+      } else {
+        deferredTaskIds.push(`vocab-today-${dateKey}`);
+      }
     }
   }
 
@@ -166,19 +201,43 @@ export function generateDailyPlan(state, options = {}) {
 
       if (status !== 'completed') {
         const est = calculateGrammarMinutes(topicObj);
-        tasks.push({
-          id: `grammar-${topicObj.id}`,
-          type: 'grammar',
-          sourceId: topicObj.id,
-          title: topicObj.title,
-          description: `Объяснение и короткая проверка`,
-          estimatedMinutes: est,
-          priority: 4,
-          status: status === 'unlocked' ? 'in_progress' : 'planned',
-          completionMode: 'interactive',
-          topicId: topicObj.id,
-        });
-        currentMinutes += est;
+        if (currentMinutes + est <= capacityMinutes) {
+          if (grammarDecision.canUnlock) {
+            unlockDailyGrammarTopic(state, activeChapterId, {
+              dateKey,
+              plan,
+              now,
+              chapterMeta,
+            });
+          }
+          const resolvedStatus = getGrammarTopicStatus(
+            state,
+            activeChapterId,
+            topicObj.id,
+            chapterMeta
+          );
+          tasks.push({
+            id: `grammar-${topicObj.id}`,
+            type: 'grammar',
+            sourceId: topicObj.id,
+            title: topicObj.title,
+            description: `Объяснение и короткая проверка`,
+            estimatedMinutes: est,
+            priority: 4,
+            status:
+              resolvedStatus === 'in_progress'
+                ? 'in_progress'
+                : resolvedStatus === 'unlocked'
+                  ? 'available'
+                  : 'planned',
+            completionMode: 'interactive',
+            action: { type: 'grammar', chapterId: activeChapterId, topicId: topicObj.id },
+            topicId: topicObj.id,
+          });
+          currentMinutes += est;
+        } else {
+          deferredTaskIds.push(`grammar-${topicObj.id}`);
+        }
       }
     }
   }
@@ -192,6 +251,10 @@ export function generateDailyPlan(state, options = {}) {
       const isDone = cs?.checklist?.[pTask.id] === true;
       if (!isDone) {
         const est = calculatePracticeMinutes(pTask);
+        if (currentMinutes + est > capacityMinutes) {
+          deferredTaskIds.push(`practice-${pTask.id}`);
+          continue;
+        }
         tasks.push({
           id: `practice-${pTask.id}`,
           type: 'practice',
@@ -202,8 +265,9 @@ export function generateDailyPlan(state, options = {}) {
             : 'Практическое задание',
           estimatedMinutes: est,
           priority: 5,
-          status: 'planned',
+          status: 'available',
           completionMode: 'manual',
+          action: { type: 'practice', chapterId: activeChapterId, taskId: pTask.id },
           taskId: pTask.id,
         });
         currentMinutes += est;
@@ -213,7 +277,7 @@ export function generateDailyPlan(state, options = {}) {
   }
 
   // 6. Priority 6: Bonus task if everything else is finished
-  if (tasks.length === 0) {
+  if (tasks.length === 0 && TIME_ESTIMATES.DEFAULT_BONUS_MINUTES <= capacityMinutes) {
     tasks.push({
       id: `bonus-${dateKey}`,
       type: 'bonus',
@@ -222,18 +286,32 @@ export function generateDailyPlan(state, options = {}) {
       description: 'Мини-игры, карточки или чтения',
       estimatedMinutes: TIME_ESTIMATES.DEFAULT_BONUS_MINUTES,
       priority: 6,
-      status: 'planned',
+      status: 'available',
       completionMode: 'interactive',
+      action: { type: 'bonus' },
     });
     currentMinutes += TIME_ESTIMATES.DEFAULT_BONUS_MINUTES;
   }
 
+  const overCapacity = requiredMinutes > capacityMinutes;
+  if (overCapacity) {
+    warnings.push('Сегодня потребуется больше обычного: накопились обязательные повторения.');
+  }
   return {
     dateKey,
     chapterId: activeChapterId,
     tasks,
     estimatedMinutes: currentMinutes,
+    requiredMinutes,
+    plannedMinutes: currentMinutes,
     capacityMinutes,
+    overCapacity,
+    deferredTaskIds,
+    warnings,
+    completion: {
+      completedCount: tasks.filter((task) => task.status === 'completed').length,
+      totalCount: tasks.length,
+    },
     generatedAt: now,
     isRestDay: false,
   };
@@ -243,24 +321,70 @@ export function getOrGenerateDailyPlan(state, options = {}) {
   if (!state) return null;
   const dateKey = options.dateKey || localDateKey(options.now ?? Date.now());
 
-  if (state.dailyPlan && state.dailyPlan.dateKey === dateKey && !options.forceRefresh) {
+  const inputRevision = getDailyPlanInputRevision(state, options);
+  if (
+    state.dailyPlan &&
+    state.dailyPlan.dateKey === dateKey &&
+    state.dailyPlan.inputRevision === inputRevision &&
+    !options.forceRefresh
+  ) {
     return state.dailyPlan;
   }
 
   const newPlan = generateDailyPlan(state, options);
+  newPlan.inputRevision = inputRevision;
   state.dailyPlan = newPlan;
 
   state.dailyPlanHistory ||= [];
-  if (!state.dailyPlanHistory.some((p) => p.dateKey === dateKey)) {
-    state.dailyPlanHistory.push({
-      dateKey,
-      chapterId: newPlan.chapterId,
-      taskCount: newPlan.tasks.length,
-      estimatedMinutes: newPlan.estimatedMinutes,
-      capacityMinutes: newPlan.capacityMinutes,
-      generatedAt: newPlan.generatedAt,
-    });
+  for (const historical of state.dailyPlanHistory) {
+    if (historical.dateKey < dateKey && !historical.finalizedAt) {
+      historical.finalizedAt = newPlan.generatedAt;
+    }
+  }
+  const snapshot = {
+    dateKey,
+    chapterId: newPlan.chapterId,
+    tasks: newPlan.tasks.map((task) => ({ ...task })),
+    estimatedMinutes: newPlan.estimatedMinutes,
+    capacityMinutes: newPlan.capacityMinutes,
+    generatedAt: newPlan.generatedAt,
+    finalizedAt: null,
+  };
+  const existingIndex = state.dailyPlanHistory.findIndex((plan) => plan.dateKey === dateKey);
+  if (existingIndex < 0) {
+    state.dailyPlanHistory.push(snapshot);
+  } else if (!state.dailyPlanHistory[existingIndex].finalizedAt) {
+    state.dailyPlanHistory[existingIndex] = snapshot;
   }
 
   return newPlan;
+}
+
+function getDailyPlanInputRevision(state, options) {
+  const lastLearningEvent = state?.learningEvents?.at?.(-1);
+  const lastReviewEvent = state?.reviewEvents?.at?.(-1);
+  const chapterMeta = options.chapterMeta;
+  return JSON.stringify([
+    state?.updatedAt || 0,
+    state?.activeChapterId || null,
+    getDailyCapacity(state),
+    state?.studyPlan?.updatedAt || state?.studyPlan?.recalculatedAt || 0,
+    state?.learningEvents?.length || 0,
+    lastLearningEvent?.eventId || lastLearningEvent?.occurredAt || null,
+    state?.reviewEvents?.length || 0,
+    lastReviewEvent?.eventId || lastReviewEvent?.reviewedAt || null,
+    Object.keys(state?.vocabularyUnlocks?.[state?.activeChapterId] || {}).length,
+    chapterMeta?.id || chapterMeta?.lesson_id || null,
+    chapterMeta?.words?.length || 0,
+    chapterMeta?.grammarTopics?.length || chapterMeta?.grammar?.length || 0,
+    chapterMeta?.practice?.length || 0,
+    options.capacityMinutes || null,
+  ]);
+}
+
+export function getNextStudyAction(dailyPlan) {
+  return (
+    dailyPlan?.tasks?.find((task) => task.status !== 'completed' && task.status !== 'locked') ||
+    null
+  );
 }

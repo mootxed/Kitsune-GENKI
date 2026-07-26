@@ -19,7 +19,7 @@ export function normalizeGrammarState(state) {
   state.grammarUnlocks ||= {};
 
   if (state.chapters && typeof state.chapters === 'object') {
-    for (const [chIdStr, cs] of Object.entries(state.chapters)) {
+    for (const cs of Object.values(state.chapters)) {
       if (!cs || !cs.checklist) continue;
       if (cs.checklist.grammar === true) {
         cs.checklist.grammar = true;
@@ -29,7 +29,7 @@ export function normalizeGrammarState(state) {
   return state;
 }
 
-export function isFirstVocabularyBatchCompleted(state, chapterId, dateKey = localDateKey()) {
+export function isFirstVocabularyBatchCompleted(state, chapterId, _dateKey = localDateKey()) {
   const chId = Number(chapterId);
   const unlocks = state?.vocabularyUnlocks?.[chId];
   if (!unlocks || typeof unlocks !== 'object') return false;
@@ -39,7 +39,7 @@ export function isFirstVocabularyBatchCompleted(state, chapterId, dateKey = loca
 
   const firstDate = dates[0];
   const progress = getVocabularyBatchProgress(state, chId, firstDate);
-  return progress.completed > 0 || progress.isCompleted;
+  return progress.total > 0 && progress.isCompleted;
 }
 
 export function getUnlockedGrammarTopicIds(state, chapterId) {
@@ -55,7 +55,7 @@ export function getUnlockedGrammarTopicIds(state, chapterId) {
   return topicIds;
 }
 
-export function getGrammarTopicStatus(state, chapterId, topicId, chapterMeta = null) {
+export function getGrammarTopicStatus(state, chapterId, topicId, _chapterMeta = null) {
   const chId = Number(chapterId);
   const cs = state?.chapters?.[chId];
 
@@ -65,6 +65,7 @@ export function getGrammarTopicStatus(state, chapterId, topicId, chapterMeta = n
 
   const unlockedIds = getUnlockedGrammarTopicIds(state, chapterId);
   if (unlockedIds.has(topicId)) {
+    if (state?.grammarProgress?.[chId]?.[topicId]?.attempts > 0) return 'in_progress';
     return 'unlocked';
   }
 
@@ -225,18 +226,28 @@ export function completeGrammarTopicWithCheck(
   const dateKey = options.dateKey || localDateKey(occurredAt);
 
   if (!checkResult || checkResult.passed !== true) {
+    state.grammarProgress ||= {};
+    state.grammarProgress[chId] ||= {};
+    const progress = (state.grammarProgress[chId][topicId] ||= { attempts: 0 });
+    progress.attempts += 1;
+    progress.lastScore = checkResult?.score ?? 0;
+    progress.updatedAt = occurredAt;
     return { completed: false, reason: 'check-failed' };
   }
 
   state.chapters ||= {};
   const cs = (state.chapters[chId] ||= { started: true, checklist: {} });
   cs.checklist ||= {};
+  if (isGrammarTopicCompleted(cs, topicId)) {
+    return { completed: false, changed: false, alreadyCompleted: true };
+  }
   cs.checklist[topicId] = true;
   cs.updatedAt = occurredAt;
 
   state.learningEvents ||= [];
-  const eventId = `grammar-topic-completed:${chId}:${topicId}:${occurredAt}`;
-  if (!state.learningEvents.some((e) => e.eventId === eventId)) {
+  const eventId = `grammar-topic-completed:${chId}:${topicId}`;
+  const rewardGranted = !state.learningEvents.some((e) => e.eventId === eventId);
+  if (rewardGranted) {
     state.learningEvents.push({
       eventId,
       eventType: 'grammar-topic-completed',
@@ -250,6 +261,8 @@ export function completeGrammarTopicWithCheck(
 
   return {
     completed: true,
+    changed: true,
+    rewardGranted,
     chapterId: chId,
     topicId,
     dateKey,

@@ -83,7 +83,11 @@ describe('chapter completion', () => {
   it('завершает главу идемпотентно, синхронизирует сегмент и выбирает следующую', () => {
     const state = appState({
       chapters: {
-        1: { started: true, checklist: completeChecklist() },
+        1: {
+          started: true,
+          legacyVocabularyCompleted: true,
+          checklist: completeChecklist(),
+        },
       },
       studyPlan: {
         completedChapters: [],
