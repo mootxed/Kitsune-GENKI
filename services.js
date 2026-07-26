@@ -2,6 +2,45 @@
 import { parseAndValidateAIStory } from './src/ai-story-parser.js';
 
 const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const DEFAULT_TIMEOUT_MS = 45000;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const { signal: externalSignal, ...restOptions } = options;
+
+  let timerId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timerId = setTimeout(() => {
+      controller.abort();
+      reject(
+        new Error(`Превышено время ожидания ответа от API (${Math.round(timeoutMs / 1000)} сек)`)
+      );
+    }, timeoutMs);
+  });
+
+  const onExternalAbort = () => controller.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+    }
+  }
+
+  try {
+    const res = await Promise.race([
+      fetch(url, { ...restOptions, signal: controller.signal }),
+      timeoutPromise,
+    ]);
+    return res;
+  } finally {
+    clearTimeout(timerId);
+    if (externalSignal) {
+      externalSignal.removeEventListener('abort', onExternalAbort);
+    }
+  }
+}
+
 function getSystemPrompt(userLevel) {
   const level = userLevel || 'N5';
   return `Ты — Kitsune Sensei, дружелюбный учитель японского языка. 
@@ -23,8 +62,8 @@ function getSystemPrompt(userLevel) {
 const SYSTEM_PROMPT = getSystemPrompt('N5');
 
 // ---- OpenRouter ----
-async function askSensei(history, settings) {
-  if (!settings.openrouterKey) {
+async function askSensei(history, settings, options = {}) {
+  if (!settings?.openrouterKey) {
     throw new Error('Не задан API-ключ OpenRouter. Откройте Настройки.');
   }
   // Валидация формата ключа
@@ -37,19 +76,24 @@ async function askSensei(history, settings) {
   }
   const systemPrompt = getSystemPrompt(settings.userLevel || 'N5');
   const messages = [{ role: 'system', content: systemPrompt }, ...history];
-  const res = await fetch(OR_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + settings.openrouterKey,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': location.origin,
-      'X-Title': 'Kitsune Genki',
+  const res = await fetchWithTimeout(
+    OR_URL,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + key,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': location.origin,
+        'X-Title': 'Kitsune Genki',
+      },
+      body: JSON.stringify({
+        model: settings.model || 'deepseek/deepseek-v4-flash',
+        messages,
+      }),
+      signal: options.signal,
     },
-    body: JSON.stringify({
-      model: settings.model || 'deepseek/deepseek-v4-flash',
-      messages,
-    }),
-  });
+    options.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  );
   if (!res.ok) {
     const t = await res.text();
     throw new Error('OpenRouter ' + res.status + ': ' + t.slice(0, 160));
@@ -66,7 +110,7 @@ async function askSensei(history, settings) {
 }
 
 // ---- AI Story Generator ----
-async function generateAIStory(userPrompt, weakWords, settings) {
+async function generateAIStory(userPrompt, weakWords, settings, options = {}) {
   if (!settings?.openrouterKey) {
     throw new Error('Не задан API-ключ OpenRouter. Откройте Настройки.');
   }
@@ -105,7 +149,7 @@ async function generateAIStory(userPrompt, weakWords, settings) {
 1. СТИЛЬ "ПОВЕСТВОВАНИЕ" (Рассказ от одного лица):
    - Роль ("speaker") для ВСЕХ предложений должна быть одинаковой — "Рассказчик" или "私".
    - Исключи любые вопросы самому себе (вроде "買いますか？" - "Я куплю?"). Пиши только утверждения: "お菓子も買います。" ("Затем я покупаю еще и сладости.").
-   - Действия других людей описывай от третьего лица: "店員さんが袋をくれます。" ("Продавец дает мне пакет.").
+   - Действия других людей описывай от третьего лица: "店員さんが袋를くれます。" ("Продавец дает мне пакет.").
 
 2. СТИЛЬ "ДИАЛОГ" (Разговор двух персонажей, например, Клиент "私" и Продавец "店員"):
    - Роли в поле "speaker" должны ЧЕТКО меняться в зависимости от того, кто говорит.
@@ -131,21 +175,26 @@ ${
 
   const model = settings.model || 'deepseek/deepseek-v4-flash';
 
-  const res = await fetch(OR_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': location.origin,
+  const res = await fetchWithTimeout(
+    OR_URL,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': location.origin,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+      }),
+      signal: options.signal,
     },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-    }),
-  });
+    options.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  );
 
   if (!res.ok) {
     const t = await res.text();
@@ -201,21 +250,26 @@ ${errorDetails || firstAttemptResult.message}
   ]
 }`;
 
-  const repairRes = await fetch(OR_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': location.origin,
+  const repairRes = await fetchWithTimeout(
+    OR_URL,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': location.origin,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: repairSystemPrompt },
+          { role: 'user', content: repairUserPrompt },
+        ],
+      }),
+      signal: options.signal,
     },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: repairSystemPrompt },
-        { role: 'user', content: repairUserPrompt },
-      ],
-    }),
-  });
+    options.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  );
 
   if (!repairRes.ok) {
     const t = await repairRes.text();

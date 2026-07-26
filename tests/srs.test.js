@@ -434,6 +434,20 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
       expect(migrated.lastReview).toBe(1699000000000);
     });
 
+    it('сохраняет ISO-строку даты due как корректный timestamp', () => {
+      const isoDue = '2026-12-31T12:00:00.000Z';
+      const expectedTimestamp = Date.parse(isoDue);
+      const legacy = {
+        id: 'L1_iso',
+        ef: 2.5,
+        interval: 10,
+        reps: 3,
+        due: isoDue,
+      };
+      const migrated = SRS.migrateSM2ToFSRS(legacy);
+      expect(migrated.due).toBe(expectedTimestamp);
+    });
+
     it('высокий EF (лёгкая карточка) → низкая difficulty', () => {
       const easy = SRS.migrateSM2ToFSRS({ id: 'a', ef: 2.5, interval: 10, reps: 3, due: 1 });
       const hard = SRS.migrateSM2ToFSRS({ id: 'b', ef: 1.3, interval: 10, reps: 3, due: 1 });

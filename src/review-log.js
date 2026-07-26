@@ -167,4 +167,9 @@ export function replaceReviewLogs(entries) {
   return writeQueue;
 }
 
+export function syncReviewLogQueue(fn) {
+  writeQueue = writeQueue.catch(() => undefined).then(fn);
+  return writeQueue;
+}
+
 export { validateReviewLogEntry };

@@ -10,7 +10,7 @@
  * Автоматически: prebuild hook в package.json
  */
 
-import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -74,16 +74,28 @@ function build() {
   const kanji = collectKanji();
   console.log(`[build-kanji-data] Found ${kanji.length} unique kanji`);
 
-  const result = {};
+  const outDir = join(ROOT, 'public', 'data', 'kanji');
+  mkdirSync(outDir, { recursive: true });
+
   const missing = [];
+  let writtenCount = 0;
 
   for (const char of kanji) {
     const data = loadCharData(char);
     if (data) {
-      result[char] = data;
+      const charPath = join(outDir, `${char}.json`);
+      writeFileSync(charPath, JSON.stringify(data), 'utf8');
+      writtenCount++;
     } else {
       missing.push(char);
     }
+  }
+
+  // Удаляем устаревший монолитный файл, если он существует
+  const oldMonolithPath = join(ROOT, 'public', 'data', 'kanji-data.json');
+  if (existsSync(oldMonolithPath)) {
+    rmSync(oldMonolithPath);
+    console.log('[build-kanji-data] 🧹 Removed obsolete public/data/kanji-data.json');
   }
 
   if (missing.length > 0) {
@@ -93,12 +105,8 @@ function build() {
     console.warn('[build-kanji-data]    These will fall back to multiple-choice mode at runtime.');
   }
 
-  const outPath = join(ROOT, 'public', 'data', 'kanji-data.json');
-  writeFileSync(outPath, JSON.stringify(result), 'utf8');
-
-  const sizeKb = Math.round(readFileSync(outPath).length / 1024);
   console.log(
-    `[build-kanji-data] ✅ Written ${Object.keys(result).length}/${kanji.length} chars → ${outPath} (${sizeKb} KB)`
+    `[build-kanji-data] ✅ Written ${writtenCount}/${kanji.length} char files → ${outDir}`
   );
 }
 

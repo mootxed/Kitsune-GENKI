@@ -4,13 +4,14 @@ import { State } from 'ts-fsrs';
 
 describe('home daily progress', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ toFake: ['Date'] });
     // Устанавливаем системное время на полдень 23 июля 2026 года
     const mockDate = new Date(2026, 6, 23, 12);
     vi.setSystemTime(mockDate);
   });
 
   afterEach(() => {
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 

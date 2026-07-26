@@ -195,6 +195,7 @@ const MIGRATIONS = {
 export function defaultState() {
   return {
     version: CURRENT_VERSION,
+    updatedAt: Date.now(),
     initialized: false,
     chapters: {}, // id -> {started, checklist:{}}
     priorKnowledgeChapterIds: [], // главы, изученные пользователем вне приложения
@@ -267,6 +268,7 @@ export function runMigrations(loadedState) {
 function normalizeRuntimeShape(loadedState) {
   const base = defaultState();
   const normalized = { ...base, ...loadedState };
+  normalized.updatedAt = Number(loadedState.updatedAt) || 0;
   normalized.settings = { ...base.settings, ...(loadedState.settings || {}) };
   normalized.priorKnowledgeChapterIds = Array.isArray(loadedState.priorKnowledgeChapterIds)
     ? [...new Set(loadedState.priorKnowledgeChapterIds.map(Number))]
@@ -345,48 +347,57 @@ function notify() {
 
 // ---------- Load State ----------
 export async function loadState() {
+  let idbState = null;
+  let lsState = null;
+
   try {
     console.log('[Store] Попытка загрузки состояния из IndexedDB...');
-    // Пытаемся загрузить из IndexedDB
     const loaded = await db.get(STORES.APP_STATE, 'state');
-    console.log('[Store] Результат загрузки:', loaded ? 'данные найдены' : 'данных нет');
-
     if (loaded) {
-      // Прогоняем миграции если версия старая
-      state = normalizeRuntimeShape(runMigrations(loaded));
+      idbState = normalizeRuntimeShape(runMigrations(loaded));
       console.log(
         '[Store] ✅ Состояние загружено из IndexedDB. XP:',
-        state.xp,
+        idbState.xp,
         'Chapters:',
-        Object.keys(state.chapters).length
+        Object.keys(idbState.chapters).length
       );
-    } else {
-      // Фоллбек: пытаемся загрузить из localStorage (на случай первого запуска)
-      const fallback = localStorage.getItem(LS_STATE);
-      if (fallback) {
-        const parsedFallback = JSON.parse(fallback);
-        state = normalizeRuntimeShape(runMigrations(parsedFallback));
-        console.log('[Store] Состояние загружено из localStorage (фоллбек)');
-      } else {
-        state = defaultState();
-        console.log('[Store] Инициализировано состояние по умолчанию');
-      }
     }
   } catch (err) {
-    console.error('[Store] Ошибка загрузки state:', err);
+    console.error('[Store] Ошибка загрузки state из IndexedDB:', err);
+  }
 
-    // Последний фоллбек: localStorage
-    try {
-      const fallback = localStorage.getItem(LS_STATE);
-      if (fallback) {
-        state = normalizeRuntimeShape(runMigrations(JSON.parse(fallback)));
-        console.warn('[Store] Использован localStorage после ошибки IndexedDB');
-      } else {
-        state = defaultState();
-      }
-    } catch {
-      state = defaultState();
+  try {
+    const fallback = localStorage.getItem(LS_STATE);
+    if (fallback) {
+      lsState = normalizeRuntimeShape(runMigrations(JSON.parse(fallback)));
+      console.log('[Store] Состояние найдено в localStorage. XP:', lsState.xp);
     }
+  } catch (err) {
+    console.warn('[Store] Ошибка чтения localStorage:', err);
+  }
+
+  if (idbState && lsState) {
+    const idbTime = Number(idbState.updatedAt) || 0;
+    const lsTime = Number(lsState.updatedAt) || 0;
+
+    if (lsTime > idbTime) {
+      console.warn(
+        `[Store] Данные в localStorage новее (${lsTime} > ${idbTime}). Восстанавливаем из localStorage.`
+      );
+      state = lsState;
+      performSave();
+    } else {
+      state = idbState;
+    }
+  } else if (idbState) {
+    state = idbState;
+  } else if (lsState) {
+    state = lsState;
+    console.warn('[Store] Состояние загружено из localStorage (фоллбек)');
+    performSave();
+  } else {
+    state = defaultState();
+    console.log('[Store] Инициализировано состояние по умолчанию');
   }
 
   // Инициализация квестов через QuestsManager
@@ -403,6 +414,7 @@ export async function loadState() {
 // ---------- Save State ----------
 let saveTimeout = null;
 let saveQueue = Promise.resolve();
+let pendingSaveResolvers = [];
 
 export function save(immediate = false) {
   if (immediate) {
@@ -410,15 +422,44 @@ export function save(immediate = false) {
       clearTimeout(saveTimeout);
       saveTimeout = null;
     }
-    return performSave();
+    const resolvers = pendingSaveResolvers;
+    pendingSaveResolvers = [];
+    const p = performSave();
+    return p.then(
+      (val) => {
+        resolvers.forEach((r) => r.resolve(val));
+        return val;
+      },
+      (err) => {
+        resolvers.forEach((r) => r.reject(err));
+        throw err;
+      }
+    );
   } else {
     if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(performSave, 500);
-    return Promise.resolve();
+
+    const p = new Promise((resolve, reject) => {
+      pendingSaveResolvers.push({ resolve, reject });
+    });
+
+    saveTimeout = setTimeout(() => {
+      saveTimeout = null;
+      const resolvers = pendingSaveResolvers;
+      pendingSaveResolvers = [];
+      performSave().then(
+        (val) => resolvers.forEach((r) => r.resolve(val)),
+        (err) => resolvers.forEach((r) => r.reject(err))
+      );
+    }, 500);
+
+    return p;
   }
 }
 
 function performSave() {
+  if (state) {
+    state.updatedAt = Date.now();
+  }
   compactReviewJournal(state);
   // Снимок делается до первого await, а записи выполняются строго по порядку.
   // Поэтому поздний review/Undo не может быть перезаписан более старым save.
@@ -426,6 +467,14 @@ function performSave() {
     typeof globalThis.structuredClone === 'function'
       ? globalThis.structuredClone(state)
       : JSON.parse(JSON.stringify(state));
+
+  // Синхронный бэкап в localStorage на случай быстрого закрытия вкладки/PWA
+  try {
+    localStorage.setItem(LS_STATE, JSON.stringify(snapshot));
+  } catch (e) {
+    console.warn('[Store] Ошибка синхронного бэкапа в localStorage:', e);
+  }
+
   saveQueue = saveQueue.catch(() => undefined).then(() => persistSnapshot(snapshot));
   return saveQueue;
 }

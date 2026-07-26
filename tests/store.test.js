@@ -395,5 +395,63 @@ describe('Store - Версионирование и миграции', () => {
       expect(state.level).toBe(15);
       expect(state.coins).toBe(500);
     });
+
+    it('отложенный save() возвращает Promise, который резолвится после выполнения записи', async () => {
+      vi.useFakeTimers();
+      await loadState();
+      state.xp = 777;
+
+      let isResolved = false;
+      const savePromise = save(false).then(() => {
+        isResolved = true;
+      });
+
+      expect(isResolved).toBe(false);
+
+      await vi.runAllTimersAsync();
+      await savePromise;
+
+      expect(isResolved).toBe(true);
+      expect(state.xp).toBe(777);
+      vi.useRealTimers();
+    });
+
+    it('немедленный save(true) отменяет таймер и резолвит отложенные промисы save()', async () => {
+      vi.useFakeTimers();
+      await loadState();
+      state.xp = 888;
+
+      let debouncedResolved = false;
+      const pendingPromise = save(false).then(() => {
+        debouncedResolved = true;
+      });
+
+      expect(debouncedResolved).toBe(false);
+
+      await save(true);
+
+      expect(debouncedResolved).toBe(true);
+      expect(state.xp).toBe(888);
+      vi.useRealTimers();
+    });
+
+    it('loadState() восстанавливает более свежие данные из localStorage при быстром закрытии', async () => {
+      const oldState = defaultState();
+      oldState.xp = 100;
+      oldState.updatedAt = 1000;
+      localStorage.setItem(LS_STATE, JSON.stringify(oldState));
+
+      await loadState();
+      expect(state.xp).toBe(100);
+
+      const newerState = defaultState();
+      newerState.xp = 250;
+      newerState.updatedAt = 2000;
+      localStorage.setItem(LS_STATE, JSON.stringify(newerState));
+
+      await loadState();
+
+      expect(state.xp).toBe(250);
+    });
   });
 });

@@ -1,15 +1,67 @@
 name: Auto Roadmap Dates
+
 on:
   issues:
     types: [opened, closed]
+
+permissions:
+  issues: write
+  pull-requests: write
+  projects: write
 
 jobs:
   set-dates:
     runs-on: ubuntu-latest
     steps:
-      - name: Update Project Dates
+      - name: Update Issue and Roadmap Dates
         uses: actions/github-script@v7
         with:
           script: |
-            // Автоматически фиксирует дату создания и закрытия задачи
-            console.log("Дата обновлена для таймлайна");
+            const issue = context.payload.issue;
+            if (!issue) return;
+
+            const action = context.payload.action;
+            const today = new Date().toISOString().split('T')[0];
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = issue.number;
+
+            let body = issue.body || '';
+            let bodyChanged = false;
+
+            if (action === 'opened') {
+              if (!body.includes('**Start Date:**')) {
+                body += `\n\n---\n**Start Date:** ${today}`;
+                bodyChanged = true;
+              }
+            } else if (action === 'closed') {
+              if (!body.includes('**End Date:**')) {
+                body += `\n**End Date:** ${today}`;
+                bodyChanged = true;
+              } else {
+                body = body.replace(/\*\*End Date:\*\*.*/, `**End Date:** ${today}`);
+                bodyChanged = true;
+              }
+            }
+
+            if (bodyChanged) {
+              await github.rest.issues.update({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body: body,
+              });
+              console.log(`Updated issue #${issueNumber} description with timeline date.`);
+            }
+
+            const commentBody = action === 'opened'
+              ? `📅 **Roadmap Date Updated**: Issue opened on ${today}. Start Date set to **${today}**.`
+              : `📅 **Roadmap Date Updated**: Issue closed on ${today}. End Date set to **${today}**.`;
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: commentBody,
+            });
+            console.log(`Posted roadmap date comment on issue #${issueNumber}.`);

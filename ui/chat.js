@@ -16,6 +16,9 @@ let chatSending = false;
 // Функция рендеринга главного экрана сенсея
 export function renderSensei(state, dependencies) {
   if (dependencies) deps = dependencies;
+  if (state && Array.isArray(state.chatHistory)) {
+    chatHistory = state.chatHistory;
+  }
   const { CHECK_ITEMS, save, todayStr } = deps;
   const $$ = deps?.$$ || window.$$ || ((s) => Array.from(document.querySelectorAll(s)));
   const toast = deps?.toast || window.toast || (() => {});
@@ -152,7 +155,7 @@ function escapeHtml(s) {
 }
 
 // Функция парсинга Markdown
-function md(text) {
+export function md(text) {
   const codeBlocks = [];
   const preserved = text.replace(/```([\s\S]*?)```/g, (_, c) => {
     const idx = codeBlocks.length;
@@ -186,7 +189,13 @@ function md(text) {
       .join('');
     return '<ul>' + items + '</ul>';
   });
-  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
+    const trimmedUrl = url.trim();
+    if (/^(?:https?:\/\/|mailto:)/i.test(trimmedUrl)) {
+      return `<a href="${trimmedUrl}" target="_blank" rel="noopener">${label}</a>`;
+    }
+    return label;
+  });
   h = h.replace(/((?:^\|.*\|\n?)+)/gm, (match) => {
     const lines = match
       .trim()

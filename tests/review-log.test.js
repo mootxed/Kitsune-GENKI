@@ -26,86 +26,90 @@ function createFakeIndexedDB() {
         },
       };
     },
-    transaction([storeName]) {
+    transaction(storeNames) {
       const transaction = { error: null };
-      const definition = stores.get(storeName);
+      const defaultStoreName = Array.isArray(storeNames) ? storeNames[0] : storeNames;
 
-      transaction.objectStore = () => ({
-        index(indexName) {
-          return {
-            get(key) {
-              const request = { result: undefined, error: null };
-              defer(() => {
-                const keyPath = definition.indexes.get(indexName).keyPath;
-                request.result = definition.records.find((record) => record[keyPath] === key);
-                request.onsuccess?.();
-                defer(() => transaction.oncomplete?.());
-              });
-              return request;
-            },
-          };
-        },
-        get(key) {
-          const request = { result: undefined, error: null };
-          defer(() => {
-            const keyPath = definition.options.keyPath;
-            request.result = definition.records.find((record) => record[keyPath] === key);
-            request.onsuccess?.();
-          });
-          return request;
-        },
-        put(value) {
-          const request = { result: undefined, error: null };
-          defer(() => {
-            const keyPath = definition.options.keyPath;
-            const key = value[keyPath];
-            const index = definition.records.findIndex((record) => record[keyPath] === key);
-            if (index >= 0) definition.records[index] = { ...value };
-            else definition.records.push({ ...value });
-            request.result = key;
-            request.onsuccess?.();
-            defer(() => transaction.oncomplete?.());
-          });
-          return request;
-        },
-        add(value) {
-          const request = { result: undefined, error: null };
-          defer(() => {
-            const id = definition.nextId++;
-            definition.records.push({ ...value, id });
-            request.result = id;
-            request.onsuccess?.();
-            defer(() => transaction.oncomplete?.());
-          });
-          return request;
-        },
-        getAll() {
-          const request = { result: undefined, error: null };
-          defer(() => {
-            request.result = definition.records.map((record) => ({ ...record }));
-            request.onsuccess?.();
-          });
-          return request;
-        },
-        clear() {
-          const request = { error: null };
-          defer(() => {
-            definition.records = [];
-            definition.nextId = 1;
-            request.onsuccess?.();
-          });
-          return request;
-        },
-        delete(key) {
-          const request = { error: null };
-          defer(() => {
-            const keyPath = definition.options.keyPath;
-            definition.records = definition.records.filter((record) => record[keyPath] !== key);
-            request.onsuccess?.();
-          });
-          return request;
-        },
-      });
+      transaction.objectStore = (targetName) => {
+        const storeName = targetName || defaultStoreName;
+        const definition = stores.get(storeName);
+        return {
+          index(indexName) {
+            return {
+              get(key) {
+                const request = { result: undefined, error: null };
+                defer(() => {
+                  const keyPath = definition.indexes.get(indexName).keyPath;
+                  request.result = definition.records.find((record) => record[keyPath] === key);
+                  request.onsuccess?.();
+                  defer(() => transaction.oncomplete?.());
+                });
+                return request;
+              },
+            };
+          },
+          get(key) {
+            const request = { result: undefined, error: null };
+            defer(() => {
+              const keyPath = definition.options.keyPath;
+              request.result = definition.records.find((record) => record[keyPath] === key);
+              request.onsuccess?.();
+            });
+            return request;
+          },
+          put(value) {
+            const request = { result: undefined, error: null };
+            defer(() => {
+              const keyPath = definition.options.keyPath;
+              const key = value[keyPath];
+              const index = definition.records.findIndex((record) => record[keyPath] === key);
+              if (index >= 0) definition.records[index] = { ...value };
+              else definition.records.push({ ...value });
+              request.result = key;
+              request.onsuccess?.();
+              defer(() => transaction.oncomplete?.());
+            });
+            return request;
+          },
+          add(value) {
+            const request = { result: undefined, error: null };
+            defer(() => {
+              const id = definition.nextId++;
+              definition.records.push({ ...value, id });
+              request.result = id;
+              request.onsuccess?.();
+              defer(() => transaction.oncomplete?.());
+            });
+            return request;
+          },
+          getAll() {
+            const request = { result: undefined, error: null };
+            defer(() => {
+              request.result = definition.records.map((record) => ({ ...record }));
+              request.onsuccess?.();
+            });
+            return request;
+          },
+          clear() {
+            const request = { error: null };
+            defer(() => {
+              definition.records = [];
+              definition.nextId = 1;
+              request.onsuccess?.();
+            });
+            return request;
+          },
+          delete(key) {
+            const request = { error: null };
+            defer(() => {
+              const keyPath = definition.options.keyPath;
+              definition.records = definition.records.filter((record) => record[keyPath] !== key);
+              request.onsuccess?.();
+            });
+            return request;
+          },
+        };
+      };
 
       return transaction;
     },

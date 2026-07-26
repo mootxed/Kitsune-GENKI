@@ -345,7 +345,7 @@ function migrateSM2ToFSRS(card) {
   card.state = reps === 0 ? State.New : State.Review;
 
   // `due` и `lastReview` сохраняем как есть
-  if (typeof card.due !== 'number') card.due = Date.now();
+  card.due = timestamp(card.due, Date.now());
   if (card.lastReview === undefined) card.lastReview = null;
 
   // Удаляем legacy-поля SM-2

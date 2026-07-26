@@ -22,26 +22,133 @@ class IndexedDBWrapper {
   }
 
   /**
+   * Сброс состояния подключения к БД
+   */
+  resetState() {
+    if (this.db) {
+      try {
+        this.db.close();
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    this.db = null;
+    this.isInitialized = false;
+    this.initializationPromise = null;
+  }
+
+  /**
    * Инициализация базы данных
+   * @param {Object} [options]
+   * @param {number} [options.timeoutMs=5000] - таймаут ожидания открытия в мс
+   * @param {number} [options.maxRetries=2] - количество повторных попыток
    * @returns {Promise<void>}
    */
-  async initDB() {
+  async initDB(options = {}) {
     if (this.isInitialized) return;
     if (this.initializationPromise) return this.initializationPromise;
 
-    this.initializationPromise = new Promise((resolve, reject) => {
+    const timeoutMs = options.timeoutMs ?? 5000;
+    const maxRetries = options.maxRetries ?? 2;
+
+    this.initializationPromise = (async () => {
+      let lastError = null;
+
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          await this._openDatabase(timeoutMs);
+          return;
+        } catch (err) {
+          lastError = err;
+          this.resetState();
+
+          if (attempt < maxRetries) {
+            console.warn(`[DB] Попытка повторного открытия DB (${attempt + 1}/${maxRetries})...`);
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        }
+      }
+
+      this.resetState();
+      throw lastError || new Error('Не удалось открыть IndexedDB');
+    })();
+
+    return this.initializationPromise;
+  }
+
+  /**
+   * Внутренний метод открытия IndexedDB с подпиской на события и таймаутом
+   * @private
+   * @param {number} timeoutMs
+   * @returns {Promise<void>}
+   */
+  _openDatabase(timeoutMs) {
+    return new Promise((resolve, reject) => {
+      let timer = null;
+      let isSettled = false;
+      let blockedAlertShown = false;
+
+      const cleanup = () => {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      };
+
       try {
         const request = window.indexedDB.open(DB_NAME, DB_VERSION);
 
+        if (timeoutMs > 0) {
+          timer = setTimeout(() => {
+            if (isSettled) return;
+            isSettled = true;
+            console.warn('[DB] Таймаут открытия IndexedDB');
+            try {
+              if (request.result) {
+                request.result.close();
+              }
+            } catch (_) {
+              /* ignore */
+            }
+            reject(new Error('IndexedDB open timeout'));
+          }, timeoutMs);
+        }
+
         request.onerror = () => {
+          if (isSettled) return;
+          isSettled = true;
+          cleanup();
           console.error('[DB] Ошибка открытия IndexedDB:', request.error);
           reject(request.error);
         };
 
         request.onsuccess = () => {
+          if (isSettled) {
+            try {
+              if (request.result) request.result.close();
+            } catch (_) {
+              /* ignore */
+            }
+            return;
+          }
+          isSettled = true;
+          cleanup();
+
           this.db = request.result;
-          this.db.onversionchange = () => this.db.close();
           this.isInitialized = true;
+
+          this.db.onversionchange = () => {
+            console.warn(
+              '[DB] Обнаружено изменение версии схемы в другой вкладке, закрываем соединение'
+            );
+            this.resetState();
+          };
+
+          this.db.onclose = () => {
+            console.warn('[DB] Соединение IndexedDB закрыто');
+            this.resetState();
+          };
+
           console.log('[DB] IndexedDB успешно инициализирована');
           resolve();
         };
@@ -89,14 +196,21 @@ class IndexedDBWrapper {
 
         request.onblocked = () => {
           console.warn('[DB] Обновление схемы заблокировано другой открытой вкладкой');
+          if (!blockedAlertShown) {
+            blockedAlertShown = true;
+            if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+              window.alert('Закройте старую вкладку');
+            }
+          }
         };
       } catch (error) {
+        if (isSettled) return;
+        isSettled = true;
+        cleanup();
         console.error('[DB] Исключение при открытии IndexedDB:', error);
         reject(error);
       }
     });
-
-    return this.initializationPromise;
   }
 
   /**
@@ -321,6 +435,76 @@ class IndexedDBWrapper {
   }
 
   /**
+   * Выполнить атомарный импорт всех данных в единой транзакции
+   * @param {Object} payload - { state, lessonVersion, lastActivityDay, theme, reviewLog }
+   * @returns {Promise<void>}
+   */
+  async atomicImport({ state, lessonVersion, lastActivityDay, theme, reviewLog }) {
+    await this.ensureInitialized();
+
+    return new Promise((resolve, reject) => {
+      try {
+        const stores = [
+          STORES.APP_STATE,
+          STORES.CONTENT_CACHE,
+          STORES.UI_PREFERENCES,
+          STORES.REVIEW_LOG,
+        ];
+        const transaction = this.db.transaction(stores, 'readwrite');
+
+        transaction.onerror = () =>
+          reject(transaction.error || new Error('Ошибка транзакции импорта'));
+        transaction.onabort = () =>
+          reject(transaction.error || new Error('Транзакция импорта прервана'));
+        transaction.oncomplete = () => resolve();
+
+        // 1. APP_STATE
+        const appStateStore = transaction.objectStore(STORES.APP_STATE);
+        if (state) {
+          appStateStore.put({ id: 'state', value: state });
+        } else {
+          appStateStore.delete('state');
+        }
+
+        // 2. CONTENT_CACHE
+        const contentCacheStore = transaction.objectStore(STORES.CONTENT_CACHE);
+        if (lessonVersion !== undefined && lessonVersion !== null) {
+          contentCacheStore.put({ key: 'lesson_version', value: lessonVersion });
+        } else {
+          contentCacheStore.delete('lesson_version');
+        }
+        if (lastActivityDay !== undefined && lastActivityDay !== null) {
+          contentCacheStore.put({ key: 'last_activity_day', value: lastActivityDay });
+        } else {
+          contentCacheStore.delete('last_activity_day');
+        }
+
+        // 3. UI_PREFERENCES
+        const uiPrefStore = transaction.objectStore(STORES.UI_PREFERENCES);
+        if (theme !== undefined && theme !== null) {
+          uiPrefStore.put({ key: 'theme', value: theme });
+        } else {
+          uiPrefStore.delete('theme');
+        }
+
+        // 4. REVIEW_LOG
+        const reviewLogStore = transaction.objectStore(STORES.REVIEW_LOG);
+        reviewLogStore.clear();
+
+        if (Array.isArray(reviewLog)) {
+          for (const entry of reviewLog) {
+            const { id: _id, ...cleanEntry } = entry;
+            reviewLogStore.add(cleanEntry);
+          }
+        }
+      } catch (error) {
+        console.error('[DB] Исключение при атомарном импорте:', error);
+        reject(error);
+      }
+    });
+  }
+
+  /**
    * Проверить доступность IndexedDB
    * @returns {boolean}
    */
@@ -418,6 +602,48 @@ class InMemoryFallback {
     this.autoIncrement.delete(storeName);
   }
 
+  async atomicImport({ state, lessonVersion, lastActivityDay, theme, reviewLog }) {
+    const backupStorage = new Map(this.storage);
+    const backupAutoInc = new Map(this.autoIncrement);
+
+    try {
+      if (state) {
+        this.storage.set(`${STORES.APP_STATE}:state`, state);
+      } else {
+        this.storage.delete(`${STORES.APP_STATE}:state`);
+      }
+
+      if (lessonVersion !== undefined && lessonVersion !== null) {
+        this.storage.set(`${STORES.CONTENT_CACHE}:lesson_version`, lessonVersion);
+      } else {
+        this.storage.delete(`${STORES.CONTENT_CACHE}:lesson_version`);
+      }
+
+      if (lastActivityDay !== undefined && lastActivityDay !== null) {
+        this.storage.set(`${STORES.CONTENT_CACHE}:last_activity_day`, lastActivityDay);
+      } else {
+        this.storage.delete(`${STORES.CONTENT_CACHE}:last_activity_day`);
+      }
+
+      if (theme !== undefined && theme !== null) {
+        this.storage.set(`${STORES.UI_PREFERENCES}:theme`, theme);
+      } else {
+        this.storage.delete(`${STORES.UI_PREFERENCES}:theme`);
+      }
+
+      await this.clear(STORES.REVIEW_LOG);
+      if (Array.isArray(reviewLog)) {
+        for (const entry of reviewLog) {
+          await this.add(STORES.REVIEW_LOG, entry);
+        }
+      }
+    } catch (error) {
+      this.storage = backupStorage;
+      this.autoIncrement = backupAutoInc;
+      throw error;
+    }
+  }
+
   isAvailable() {
     return false; // Всегда false, т.к. это fallback
   }
@@ -454,9 +680,16 @@ export let db = null;
 export async function initializeDB() {
   if (!db) {
     db = await createDB();
+  } else if (db instanceof IndexedDBWrapper && !db.isInitialized) {
+    try {
+      await db.initDB();
+    } catch (error) {
+      console.error('[DB] Ошибка повторной инициализации DB, переключение на fallback:', error);
+      db = new InMemoryFallback();
+    }
   }
   return db;
 }
 
-// Экспорт имён stores для использования в других модулях
-export { DB_NAME, DB_VERSION, STORES };
+// Экспорт имён stores и обёртки для использования в других модулях и тестах
+export { DB_NAME, DB_VERSION, STORES, IndexedDBWrapper };

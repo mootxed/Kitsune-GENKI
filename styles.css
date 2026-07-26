@@ -8446,7 +8446,6 @@ rt {
   transform: translateY(0);
 }
 
-
 .crossword-grid {
   --cw-cell-size: 48px;
   display: inline-grid;

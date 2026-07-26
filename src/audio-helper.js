@@ -10,8 +10,9 @@ let voiceLoadPromise = null;
 /**
  * Инициализация и кэширование списка голосов
  * Firefox требует ожидания события voiceschanged
+ * @param {number} [timeoutMs=1000] - Максимальное время ожидания загрузки голосов в мс
  */
-function initVoices() {
+function initVoices(timeoutMs = 1000) {
   if (voiceLoadPromise) return voiceLoadPromise;
 
   voiceLoadPromise = new Promise((resolve) => {
@@ -22,10 +23,9 @@ function initVoices() {
       return;
     }
 
-    const loadVoices = () => {
+    const checkVoices = () => {
       const voices = window.speechSynthesis.getVoices();
-
-      if (voices.length > 0) {
+      if (voices && voices.length > 0) {
         voicesLoaded = true;
 
         // Ищем японский голос с приоритетом ja-JP
@@ -34,30 +34,81 @@ function initVoices() {
 
         if (japaneseVoice) {
           console.log('✅ Японский голос найден:', japaneseVoice.name, japaneseVoice.lang);
-          resolve(true);
+          return true;
         } else {
           console.warn('⚠️ Японский голос не найден в системе');
-          resolve(false);
+          return false;
         }
-      } else {
-        // Голоса ещё не загружены, ждём события (Firefox)
-        if (!window.speechSynthesis.onvoiceschanged) {
-          window.speechSynthesis.onvoiceschanged = () => {
-            loadVoices();
-          };
-        }
+      }
+      return null;
+    };
 
-        // Fallback: повторная попытка через 100ms
-        setTimeout(() => {
-          const retryVoices = window.speechSynthesis.getVoices();
-          if (retryVoices.length > 0) {
-            loadVoices();
-          }
-        }, 100);
+    const initialResult = checkVoices();
+    if (initialResult !== null) {
+      if (!initialResult) {
+        voiceLoadPromise = null;
+      }
+      resolve(initialResult);
+      return;
+    }
+
+    let isSettled = false;
+    let timeoutId = null;
+    let retryTimerId = null;
+
+    const cleanup = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (retryTimerId) clearTimeout(retryTimerId);
+      if (typeof window.speechSynthesis.removeEventListener === 'function') {
+        window.speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
+      } else if (window.speechSynthesis.onvoiceschanged === onVoicesChanged) {
+        window.speechSynthesis.onvoiceschanged = null;
       }
     };
 
-    loadVoices();
+    const finish = (result) => {
+      if (isSettled) return;
+      isSettled = true;
+      cleanup();
+      if (!result) {
+        voiceLoadPromise = null;
+      }
+      resolve(result);
+    };
+
+    const onVoicesChanged = () => {
+      const res = checkVoices();
+      if (res !== null) {
+        finish(res);
+      }
+    };
+
+    if (typeof window.speechSynthesis.addEventListener === 'function') {
+      window.speechSynthesis.addEventListener('voiceschanged', onVoicesChanged);
+    } else {
+      window.speechSynthesis.onvoiceschanged = onVoicesChanged;
+    }
+
+    // Fallback 1: повторная попытка через 100ms
+    retryTimerId = setTimeout(() => {
+      if (isSettled) return;
+      const res = checkVoices();
+      if (res !== null) {
+        finish(res);
+      }
+    }, 100);
+
+    // Fallback 2: тайм-аут, чтобы Promise не повис навсегда
+    timeoutId = setTimeout(() => {
+      if (isSettled) return;
+      const finalRes = checkVoices();
+      if (finalRes !== null) {
+        finish(finalRes);
+      } else {
+        console.warn('⚠️ Тайм-аут ожидания загрузки голосов TTS');
+        finish(false);
+      }
+    }, timeoutMs);
   });
 
   return voiceLoadPromise;
@@ -146,6 +197,15 @@ export async function getAvailableVoices() {
 export async function isJapaneseVoiceAvailable() {
   await initVoices();
   return !!japaneseVoice;
+}
+
+/**
+ * Сброс состояния (для тестирования)
+ */
+export function _resetVoicesForTesting() {
+  japaneseVoice = null;
+  voicesLoaded = false;
+  voiceLoadPromise = null;
 }
 
 // Автоматическая инициализация при загрузке модуля

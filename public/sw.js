@@ -6,10 +6,19 @@ const CACHE_STATIC = `kitsune-static-v${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `kitsune-dynamic-v${CACHE_VERSION}`;
 const CACHE_LESSON = `kitsune-lesson-v${CACHE_VERSION}`;
 
+// Базовый путь скоупа SW (например, '/Kitsune-GENKI/' или '/')
+const SW_SCOPE = new URL('./', self.location).pathname;
+const OFFLINE_URL = new URL('offline.html', self.location).pathname;
+
 // ===== СТАТИЧЕСКИЕ РЕСУРСЫ (Cache-First) =====
+// В production этот список изменяется плагином Vite в vite.config.js на хэшированные бандлы из dist/assets/
 const STATIC_ASSETS = [
   './',
   'index.html',
+  'manifest.json',
+  'icon.svg',
+  'offline.html',
+  /* __STATIC_ASSETS_BEGIN__ */
   'styles.css',
   'app.js',
   'router.js',
@@ -19,10 +28,6 @@ const STATIC_ASSETS = [
   'studyplan.js',
   'achievements.js',
   'quests.js',
-  'manifest.json',
-  'icon.svg',
-  'offline.html',
-  // JavaScript модули
   'src/audio-helper.js',
   'src/backup-manager.js',
   'src/card-behavior.js',
@@ -58,45 +63,46 @@ const STATIC_ASSETS = [
   'ui/shared.js',
   'ui/shop.js',
   'ui/stories.js',
-  // Данные отрисовки кандзи (HanziWriter, офлайн-PWA)
-  'data/kanji-data.json',
+  /* __STATIC_ASSETS_END__ */
 ];
 
-// ===== КОНТЕНТ ГЛАВ (Stale-While-Revalidate) =====
-// Индекс кэшируем на install — он лёгкий; чанки уроков/историй
-// кэшируются в фоне по мере обращения, не раздувая shell-кэш.
-const LESSON_FILES = ['/data/content-index.json'];
-// Проверка по суффиксу: работает и при base-пути (GitHub Pages /Kitsune-GENKI/)
-const CONTENT_CHUNK_RE = /\/data\/(lessons|stories)\/(lesson|story)-\d+\.json$/;
+// ===== КОНТЕНТ ГЛАВ И КАНДЗИ (Stale-While-Revalidate) =====
+const LESSON_FILES = ['data/content-index.json'];
+const CONTENT_CHUNK_RE = /\/data\/((lessons|stories)\/(lesson|story)-\d+|kanji\/.*)\.json$/;
+
+// Скомпилированные пути для сопоставления с url.pathname
+const RESOLVED_STATIC_PATHS = STATIC_ASSETS.map((asset) => new URL(asset, self.location).pathname);
+const LESSON_FILE_PATHS = LESSON_FILES.map((file) => new URL(file, self.location).pathname);
 
 // ===== INSTALL EVENT =====
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing...');
   event.waitUntil(
     Promise.all([
-      // Кэшируем статические ресурсы
+      // Кэшируем статические ресурсы относительно расположения SW
       caches.open(CACHE_STATIC).then((cache) => {
         return Promise.allSettled(
-          STATIC_ASSETS.map((url) =>
-            cache.add(url).catch((err) => {
+          STATIC_ASSETS.map((url) => {
+            const resolvedUrl = new URL(url, self.location).href;
+            return cache.add(resolvedUrl).catch((err) => {
               console.warn(`[SW] Failed to cache ${url}:`, err);
-            })
-          )
+            });
+          })
         );
       }),
       // Кэшируем файлы уроков
       caches.open(CACHE_LESSON).then((cache) => {
         return Promise.allSettled(
-          LESSON_FILES.map((url) =>
-            cache.add(url).catch((err) => {
+          LESSON_FILES.map((url) => {
+            const resolvedUrl = new URL(url, self.location).href;
+            return cache.add(resolvedUrl).catch((err) => {
               console.warn(`[SW] Failed to cache ${url}:`, err);
-            })
-          )
+            });
+          })
         );
       }),
     ])
   );
-  // НЕ вызываем skipWaiting автоматически - только по команде пользователя
 });
 
 // ===== ACTIVATE EVENT =====
@@ -143,23 +149,20 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ===== STALE-WHILE-REVALIDATE для контента глав =====
-  // Перехватываем индекс и wildcard-чанки /data/lessons/lesson-*.json, /data/stories/story-*.json
-  if (LESSON_FILES.some((file) => url.pathname.endsWith(file)) || CONTENT_CHUNK_RE.test(url.pathname)) {
+  if (LESSON_FILE_PATHS.includes(url.pathname) || CONTENT_CHUNK_RE.test(url.pathname)) {
     event.respondWith(
       caches.open(CACHE_LESSON).then((cache) => {
         return cache.match(request).then((cachedResponse) => {
           const fetchPromise = fetch(request)
             .then((networkResponse) => {
-              // Обновляем кеш в фоне
               cache.put(request, networkResponse.clone());
               return networkResponse;
             })
             .catch((err) => {
               console.warn('[SW] Network fetch failed for lesson:', err);
-              return cachedResponse; // Возвращаем кешированную версию при ошибке
+              return cachedResponse;
             });
 
-          // Возвращаем кешированную версию сразу, если есть
           return cachedResponse || fetchPromise;
         });
       })
@@ -168,13 +171,19 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ===== CACHE-FIRST для статических ресурсов =====
-  if (STATIC_ASSETS.some((asset) => url.pathname === asset || url.pathname.startsWith('/src/') || url.pathname.startsWith('/ui/') || url.pathname.startsWith('/state/'))) {
+  const isStaticAsset =
+    RESOLVED_STATIC_PATHS.includes(url.pathname) ||
+    url.pathname.startsWith(`${SW_SCOPE}assets/`) ||
+    url.pathname.startsWith(`${SW_SCOPE}src/`) ||
+    url.pathname.startsWith(`${SW_SCOPE}ui/`) ||
+    url.pathname.startsWith(`${SW_SCOPE}state/`);
+
+  if (isStaticAsset) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
         if (cachedResponse) {
           return cachedResponse;
         }
-        // Если нет в кеше, загружаем из сети и кешируем
         return fetch(request)
           .then((networkResponse) => {
             return caches.open(CACHE_STATIC).then((cache) => {
@@ -195,7 +204,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then((networkResponse) => {
-        // Кешируем успешные GET запросы в динамический кеш
         if (request.method === 'GET' && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_DYNAMIC).then((cache) => {
@@ -205,16 +213,15 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       })
       .catch(() => {
-        // Если сеть недоступна, пытаемся вернуть из кеша
         return caches.match(request).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // Для навигационных запросов показываем offline страницу
           if (request.mode === 'navigate') {
-            return caches.match('/offline.html');
+            return caches.match(OFFLINE_URL).then((offlineResponse) => {
+              return offlineResponse || caches.match(new URL('./', self.location).pathname);
+            });
           }
-          // Для остальных возвращаем ошибку
           return new Response('Network error', {
             status: 408,
             headers: { 'Content-Type': 'text/plain' },

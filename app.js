@@ -99,7 +99,7 @@ import {
 } from './ui/flashcards.js';
 import { renderShop, SHOP_ITEMS } from './ui/shop.js';
 import { renderStories, openWordBottomSheet, closeWordBottomSheet } from './ui/stories.js';
-import { renderSensei } from './ui/chat.js';
+import { renderSensei, setChatHistory } from './ui/chat.js';
 import { renderSettings } from './ui/settings.js';
 import { renderCrossword } from './ui/crossword.js';
 import { renderParticlesList } from './ui/particles.js';
@@ -130,6 +130,9 @@ const LS_THEME = 'kitsune_theme';
 // ===== WRAPPER ФУНКЦИИ ДЛЯ STATE =====
 async function loadState() {
   await loadStateFromStore();
+  if (state?.chatHistory) {
+    setChatHistory(state.chatHistory);
+  }
 }
 
 function save(immediate = false) {
@@ -853,12 +856,21 @@ async function renderParticlesDictionary() {
   renderParticlesList(dependencies);
 }
 
-// ===== ОБРАБОТЧИК BEFOREUNLOAD =====
-// Гарантируем сохранение данных перед закрытием вкладки/приложения
-window.addEventListener('beforeunload', () => {
-  // Принудительное немедленное сохранение
+// ===== ОБРАБОТЧИКИ ЗАКРЫТИЯ / СВЕРТЫВАНИЯ СТРАНИЦЫ ПРИЛОЖЕНИЯ =====
+// Гарантируем принудительное немедленное сохранение данных в localStorage и IndexedDB
+function handleAppUnload() {
   save(true);
-});
+}
+
+window.addEventListener('beforeunload', handleAppUnload);
+window.addEventListener('pagehide', handleAppUnload);
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      handleAppUnload();
+    }
+  });
+}
 
 // ===== ЗАПУСК =====
 if (document.readyState === 'loading') {

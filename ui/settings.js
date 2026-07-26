@@ -349,19 +349,19 @@ function showImportConfirmDialog(data, state, dependencies, toastFn) {
       <h2>Восстановить прогресс?</h2>
       <div class="modal-content">
         <div class="import-comparison">
-          <div class="import-col">
+          <div class="import-col" id="import-col-current">
             <h3>Текущий прогресс</h3>
-            <p>Уровень: ${currentState.level}</p>
-            <p>XP: ${currentState.xp}</p>
-            <p>Стрик: ${currentState.streak.count} дней</p>
-            <p>Монеты: ${currentState.coins} 🪙</p>
+            <p>Уровень: <span class="val-level"></span></p>
+            <p>XP: <span class="val-xp"></span></p>
+            <p>Стрик: <span class="val-streak"></span> дней</p>
+            <p>Монеты: <span class="val-coins"></span> 🪙</p>
           </div>
-          <div class="import-col">
+          <div class="import-col" id="import-col-imported">
             <h3>Импортируемый</h3>
-            <p>Уровень: ${importState.level || 1}</p>
-            <p>XP: ${importState.xp || 0}</p>
-            <p>Стрик: ${importState.streak?.count || 0} дней</p>
-            <p>Монеты: ${importState.coins || 0} 🪙</p>
+            <p>Уровень: <span class="val-level"></span></p>
+            <p>XP: <span class="val-xp"></span></p>
+            <p>Стрик: <span class="val-streak"></span> дней</p>
+            <p>Монеты: <span class="val-coins"></span> 🪙</p>
           </div>
         </div>
         ${
@@ -382,6 +382,22 @@ function showImportConfirmDialog(data, state, dependencies, toastFn) {
       </div>
     </div>
   `;
+
+  const colCurrent = overlay.querySelector('#import-col-current');
+  if (colCurrent) {
+    colCurrent.querySelector('.val-level').textContent = String(currentState?.level ?? 1);
+    colCurrent.querySelector('.val-xp').textContent = String(currentState?.xp ?? 0);
+    colCurrent.querySelector('.val-streak').textContent = String(currentState?.streak?.count ?? 0);
+    colCurrent.querySelector('.val-coins').textContent = String(currentState?.coins ?? 0);
+  }
+
+  const colImported = overlay.querySelector('#import-col-imported');
+  if (colImported) {
+    colImported.querySelector('.val-level').textContent = String(importState?.level ?? 1);
+    colImported.querySelector('.val-xp').textContent = String(importState?.xp ?? 0);
+    colImported.querySelector('.val-streak').textContent = String(importState?.streak?.count ?? 0);
+    colImported.querySelector('.val-coins').textContent = String(importState?.coins ?? 0);
+  }
 
   document.body.appendChild(overlay);
 

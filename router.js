@@ -38,13 +38,13 @@ export class Router {
    */
   navigate(name, opt, skipHistory = false) {
     // Очищаем рендеры мини-игр при переходе на другие экраны
-    if (this.currentScreen === 'word-search' || name !== 'word-search') {
+    if (this.currentScreen === 'word-search' && name !== 'word-search') {
       if (typeof window.cleanupWordSearch === 'function') {
         window.cleanupWordSearch();
       }
       document.body.classList.remove('ws-focus-mode');
     }
-    if (this.currentScreen === 'crossword' || name !== 'crossword') {
+    if (this.currentScreen === 'crossword' && name !== 'crossword') {
       if (typeof window.cleanupCrossword === 'function') {
         window.cleanupCrossword();
       }

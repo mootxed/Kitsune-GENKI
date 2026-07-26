@@ -25,9 +25,22 @@ const SKILL_PRIORITY = Object.freeze({
 });
 
 /**
+ * Отмечает карточку введённой в систему интервального повторения.
+ * Вызывается при первом реальном рендере или первом принятом ответе.
+ */
+export function markCardIntroduced(card, options = {}) {
+  if (!card) return null;
+  if (!card.introducedOn) {
+    const now = options.now ?? Date.now();
+    const day = options.day ?? studyDay(now);
+    card.introducedOn = day;
+  }
+  return card.introducedOn;
+}
+
+/**
  * Выбирает карточки для сессии: все обычные повторения и ограниченное число новых.
- * Карточка получает introducedOn при попадании в очередь, чтобы дневной лимит
- * сохранялся между сессиями и после перезапуска приложения.
+ * Очередь ограничивает новые карточки, не отмечая их введёнными до фактического показа.
  */
 export function limitNewCardsForSession(dueCards, srsRecords, options = {}) {
   const now = options.now ?? Date.now();
@@ -86,7 +99,6 @@ export function limitNewCardsForSession(dueCards, srsRecords, options = {}) {
       firstIntroductionByItem.set(itemId, day);
     }
 
-    if (!card.introducedOn) card.introducedOn = day;
     selectedNew.push(card);
     selectedItems.add(itemId);
   }
