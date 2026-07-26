@@ -225,6 +225,11 @@ export function completeGrammarTopicWithCheck(
   const occurredAt = options.now ?? Date.now();
   const dateKey = options.dateKey || localDateKey(occurredAt);
 
+  const status = getGrammarTopicStatus(state, chId, topicId, options.chapterMeta);
+  if (status === 'locked') {
+    return { completed: false, changed: false, reason: 'locked' };
+  }
+
   if (!checkResult || checkResult.passed !== true) {
     state.grammarProgress ||= {};
     state.grammarProgress[chId] ||= {};

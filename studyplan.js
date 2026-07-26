@@ -258,6 +258,28 @@ export function generatePlan(params, lessons, completedChapters = []) {
     };
   }
 
+  const capacityMinutes = Number(params?.capacityMinutes || params?.dailyGoalMinutes);
+  if (capacityMinutes > 0) {
+    const totalRequiredMinutes = remainingLessons.reduce(
+      (sum, lesson) => sum + calculateRequiredChapterMinutes(lesson),
+      0
+    );
+    const minRequiredDaysForWorkload = Math.max(
+      remainingLessons.length,
+      Math.ceil(totalRequiredMinutes / capacityMinutes)
+    );
+
+    if (studyDays.length < minRequiredDaysForWorkload) {
+      return {
+        error: `Слишком сжатый срок для выбранной дневной нагрузки (${capacityMinutes} мин/день). Доступно ${studyDays.length} учебных дней, требуется минимум ${minRequiredDaysForWorkload} дней`,
+        code: 'infeasible-workload',
+        availableDays: studyDays.length,
+        requiredDays: minRequiredDaysForWorkload,
+        capacityMinutes,
+      };
+    }
+  }
+
   const segments = buildSegments(remainingLessons, studyDays);
   return {
     createdAt: Date.now(),
@@ -635,8 +657,66 @@ export function getHeuristicAdvice(chapter, daysLeft) {
   };
 }
 
+export function calculateRequiredChapterMinutes(lesson) {
+  const vocabCount = Number(
+    lesson?.vocabCount ?? lesson?.words?.length ?? lesson?.vocabulary?.length ?? 0
+  );
+  const grammarCount = Number(
+    lesson?.grammarCount ??
+      (Array.isArray(lesson?.grammar)
+        ? lesson.grammar.length
+        : Array.isArray(lesson?.notes)
+          ? lesson.notes.length
+          : 0)
+  );
+  const practiceCount = Number(
+    lesson?.practiceCount ?? (Array.isArray(lesson?.practice) ? lesson.practice.length : 0)
+  );
+
+  return vocabCount * 1.0 + grammarCount * 12.0 + practiceCount * 10.0;
+}
+
+export function getPlanDateAvailability(plan, chapterId, dateKey = getTodayDateKey()) {
+  if (!plan) {
+    return { isStudyDay: true, isRestDay: false, isPaused: false, reason: 'no-plan' };
+  }
+
+  if (plan.paused) {
+    return { isStudyDay: false, isRestDay: false, isPaused: true, reason: 'plan-paused' };
+  }
+
+  const chId = Number(chapterId);
+  const segments = Array.isArray(plan.segments) ? plan.segments : [];
+  const activeSeg =
+    segments.find(
+      (s) => s && s.type === 'chapter' && Number(s.chapterId) === chId && s.status !== 'completed'
+    ) || segments.find((s) => s && s.type === 'chapter' && Number(s.chapterId) === chId);
+
+  if (!activeSeg) {
+    return { isStudyDay: false, isRestDay: false, isPaused: false, reason: 'no-segment' };
+  }
+
+  const assigned = segmentDates(activeSeg, plan.studyDaysOfWeek);
+  if (!assigned.includes(dateKey)) {
+    return { isStudyDay: false, isRestDay: false, isPaused: false, reason: 'not-assigned-date' };
+  }
+
+  const status = activeSeg.dateStatuses?.[dateKey];
+  if (status === 'rest-day' || status === 'skipped' || status === 'postponed') {
+    return { isStudyDay: false, isRestDay: status === 'rest-day', isPaused: false, reason: status };
+  }
+
+  const weekdays = normalizedWeekdays(plan.studyDaysOfWeek);
+  if (weekdays.length > 0 && !weekdays.includes(getLocalWeekday(dateKey))) {
+    return { isStudyDay: false, isRestDay: false, isPaused: false, reason: 'non-study-weekday' };
+  }
+
+  return { isStudyDay: true, isRestDay: false, isPaused: false, reason: 'eligible' };
+}
+
 export const StudyPlan = {
   calculateChapterWeight,
+  calculateRequiredChapterMinutes,
   getStudyDaysInRange,
   getStudyDateKeys,
   distributeProportionally,
@@ -648,4 +728,5 @@ export const StudyPlan = {
   markDateStatus,
   getDateStatus,
   getDailyPlanContext,
+  getPlanDateAvailability,
 };

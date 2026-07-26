@@ -43,3 +43,41 @@ export function createVocabularySchedule(totalWords, dateKeys, options = {}) {
     unscheduledWords: Math.max(0, words - scheduledWords),
   };
 }
+
+export function reflowFutureVocabularySchedule({
+  segment,
+  dateKey,
+  scheduledCount: _scheduledCount,
+  actuallyUnlockedCount,
+  remainingLockedWords,
+  options = {},
+}) {
+  if (!segment || !segment.vocabularySchedule) return segment?.vocabularySchedule || {};
+
+  const dates = [...new Set(segment.assignedDates || [])].sort();
+  const pastOrCurrentDates = dates.filter((d) => d <= dateKey);
+  const futureDates = dates.filter(
+    (d) =>
+      d > dateKey &&
+      segment.dateStatuses?.[d] !== 'rest-day' &&
+      segment.dateStatuses?.[d] !== 'skipped' &&
+      segment.dateStatuses?.[d] !== 'postponed'
+  );
+
+  segment.vocabularySchedule[dateKey] = Number(actuallyUnlockedCount) || 0;
+
+  if (futureDates.length === 0) return segment.vocabularySchedule;
+
+  const wordsToDistribute = Math.max(0, Number(remainingLockedWords) || 0);
+
+  const redistributed = distributeVocabularyAcrossDates(wordsToDistribute, futureDates, {
+    reserveDays: Number(segment.vocabularyScheduleReserveDays) || 0,
+    maxPerDay: Number(options.maxPerDay) || 25,
+  });
+
+  for (const d of futureDates) {
+    segment.vocabularySchedule[d] = redistributed[d] || 0;
+  }
+
+  return segment.vocabularySchedule;
+}

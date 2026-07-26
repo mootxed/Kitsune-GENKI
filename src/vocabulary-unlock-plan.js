@@ -2,12 +2,14 @@ import { localDateKey, getLocalWeekday } from './local-date.js';
 import { parseCardIdentity } from './knowledge-model.js';
 import { cardChapter } from './srs-helpers.js';
 import { State } from 'ts-fsrs';
+import { isPriorKnowledge } from './chapter-progress.js';
 import {
   createVocabularySchedule,
   distributeVocabularyAcrossDates,
+  reflowFutureVocabularySchedule,
 } from './vocabulary-schedule.js';
 
-export { distributeVocabularyAcrossDates };
+export { distributeVocabularyAcrossDates, reflowFutureVocabularySchedule };
 
 export const FALLBACK_DAILY_NEW_VOCABULARY_LIMIT = 17;
 export const DEFAULT_DAILY_NEW_VOCABULARY_LIMIT = FALLBACK_DAILY_NEW_VOCABULARY_LIMIT;
@@ -208,12 +210,17 @@ export function normalizeVocabularyLockState(state) {
  * Helper to count remaining locked words in a chapter.
  */
 export function countRemainingLockedWords(state, chapterId, words = null) {
+  const chId = Number(chapterId);
+  const chapterState = state?.chapters?.[chId];
+  if (chapterState?.legacyVocabularyCompleted === true || isPriorKnowledge(state, chId)) {
+    return 0;
+  }
   const chWords = getChapterWords(state, chapterId, words);
   let lockedCount = 0;
   for (const word of chWords) {
     if (!word || !word.id) continue;
     const cards = cardsForWord(state?.srs, word.id);
-    if (cards.length > 0 && cards.every((c) => c.planLocked === true)) {
+    if (cards.length === 0 || cards.every((c) => c.planLocked === true)) {
       lockedCount++;
     }
   }
@@ -642,6 +649,25 @@ export function unlockDailyVocabularyBatch(state, chapterId, options = {}) {
   }
 
   const remainingLockedCount = countRemainingLockedWords(state, chId, words);
+
+  const plan = options.plan ?? state?.studyPlan;
+  if (plan && Array.isArray(plan.segments)) {
+    const segment = plan.segments.find(
+      (s) => s && s.type === 'chapter' && Number(s.chapterId) === chId && s.status !== 'completed'
+    );
+    if (segment && segment.vocabularySchedule) {
+      const scheduledForToday = Number(segment.vocabularySchedule[dateKey]) || decision.target;
+      if (unlockedItemIds.length < scheduledForToday) {
+        reflowFutureVocabularySchedule({
+          segment,
+          dateKey,
+          scheduledCount: scheduledForToday,
+          actuallyUnlockedCount: unlockedItemIds.length,
+          remainingLockedWords: remainingLockedCount,
+        });
+      }
+    }
+  }
 
   return {
     chapterId: chId,

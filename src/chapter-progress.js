@@ -189,14 +189,19 @@ export function hasCompletedChecklist(
 }
 
 export function isChapterCompleted(chapterState, chapterMeta = null, appState = null) {
-  if (chapterState?.completedAt) return true;
   if (!chapterState) return false;
-  return hasCompletedChecklist(
+  const isPrior = appState && isPriorKnowledge(appState, chapterState.id || chapterMeta?.id);
+  if (isPrior) return true;
+
+  const checklistComplete = hasCompletedChecklist(
     chapterState,
     getRequiredChapterSections(chapterMeta),
     appState,
     chapterMeta
   );
+
+  if (chapterState.completedAt && checklistComplete) return true;
+  return checklistComplete;
 }
 
 export function isPriorKnowledge(appState, chapterId) {
@@ -517,22 +522,75 @@ export function completeChapter(
   return { changed: true, rewardGranted, activeChapterId, completedAt: now };
 }
 
-/**
- * Canonical completion evaluator used after vocabulary, grammar and practice
- * events. It always evaluates against the full application state.
- */
-export function evaluateAndCompleteChapter(appState, chapterId, context = {}) {
+export function evaluateChapterCompletion(appState, chapterId, context = {}) {
   const id = normalizedChapterId(chapterId);
   if (!id) return { changed: false, reason: 'invalid-chapter' };
+
   if (isPriorKnowledge(appState, id)) {
     return {
       changed: false,
+      isCompleted: true,
       reason: 'prior-knowledge',
       activeChapterId: ensureActiveChapterId(appState, context.chapters || []),
     };
   }
-  return completeChapter(appState, id, context);
+
+  appState.chapters ||= {};
+  const chapter = (appState.chapters[id] ||= { started: false, checklist: {} });
+  const meta = (context.chapters || []).find((entry) => entry.id === id);
+  const now = context.now || Date.now();
+  const dateKey = formatDateKey(now);
+
+  const checklistComplete = hasCompletedChecklist(
+    chapter,
+    getRequiredChapterSections(meta),
+    appState,
+    meta
+  );
+
+  if (checklistComplete && !chapter.completedAt) {
+    return completeChapter(appState, id, context);
+  }
+
+  if (!checklistComplete && chapter.completedAt) {
+    chapter.completedAt = null;
+    chapter.requiredSectionsCompletedAt = null;
+
+    if (appState.studyPlan) {
+      const plan = appState.studyPlan;
+      if (Array.isArray(plan.completedChapters)) {
+        plan.completedChapters = plan.completedChapters.filter((ch) => ch !== id);
+      }
+      const segment = plan.segments?.find(
+        (entry) => entry.type === 'chapter' && entry.chapterId === id
+      );
+      if (segment && segment.status === 'completed') {
+        segment.status = 'planned';
+        segment.completedAt = null;
+      }
+    }
+
+    appendLearningEvent(appState, {
+      eventId: `chapter-reopened:${id}:${now}`,
+      eventType: 'chapter-reopened',
+      chapterId: id,
+      occurredAt: now,
+      dateKey,
+    });
+
+    const activeChapterId = ensureActiveChapterId(appState, context.chapters || [], dateKey);
+    return { changed: true, reopened: true, isCompleted: false, activeChapterId };
+  }
+
+  return {
+    changed: false,
+    alreadyCompleted: Boolean(checklistComplete && chapter.completedAt),
+    isCompleted: checklistComplete,
+    activeChapterId: ensureActiveChapterId(appState, context.chapters || []),
+  };
 }
+
+export const evaluateAndCompleteChapter = evaluateChapterCompletion;
 
 /**
  * Вычислить канонический максимальный открытый урок на основе state.chapters

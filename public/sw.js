@@ -67,8 +67,9 @@ const STATIC_ASSETS = [
 ];
 
 // ===== КОНТЕНТ ГЛАВ И КАНДЗИ (Stale-While-Revalidate) =====
-const LESSON_FILES = ['data/content-index.json'];
-const CONTENT_CHUNK_RE = /\/data\/((lessons|stories)\/(lesson|story)-\d+|kanji\/.*)\.json$/;
+const LESSON_FILES = ['data/content-index.json', 'data/genki-i-workbook-practice.json'];
+const CONTENT_CHUNK_RE =
+  /\/data\/((lessons|stories)\/(lesson|story)-\d+|kanji\/.*|genki-i-workbook-practice)\.json$/;
 
 // Скомпилированные пути для сопоставления с url.pathname
 const RESOLVED_STATIC_PATHS = STATIC_ASSETS.map((asset) => new URL(asset, self.location).pathname);

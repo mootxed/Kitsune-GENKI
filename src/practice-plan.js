@@ -5,18 +5,28 @@ import { isGrammarTopicCompleted, evaluateAndCompleteChapter } from './chapter-p
 import { isFirstVocabularyBatchCompleted } from './grammar-plan.js';
 import { getNormalizedChapterPracticeTasks, normalizePracticeTask } from './practice-tasks.js';
 
+import { getPlanDateAvailability } from '../studyplan.js';
+
 export { normalizePracticeTask };
 
 export function getChapterPracticeTasks(chapterMeta) {
   return getNormalizedChapterPracticeTasks(chapterMeta);
 }
 
-export function canUnlockPracticeTask(state, chapterId, task, chapterMeta = null) {
+export function canUnlockPracticeTask(state, chapterId, task, chapterMeta = null, options = {}) {
   const chId = Number(chapterId);
   const cs = state?.chapters?.[chId];
 
   if (!cs || !cs.started) {
     return { canUnlock: false, reason: 'chapter-not-started' };
+  }
+
+  const checkDateKey = options.dateKey || (options.now ? null : localDateKey());
+  if (checkDateKey) {
+    const availability = getPlanDateAvailability(state?.studyPlan, chId, checkDateKey);
+    if (!availability.isStudyDay) {
+      return { canUnlock: false, reason: availability.reason };
+    }
   }
 
   // 1. Vocabulary prerequisite check (must have completed at least 1st batch)
@@ -49,13 +59,13 @@ export function canUnlockPracticeTask(state, chapterId, task, chapterMeta = null
   return { canUnlock: true, reason: 'eligible' };
 }
 
-export function getAvailablePracticeTasks(state, chapterId, chapterMeta = null) {
+export function getAvailablePracticeTasks(state, chapterId, chapterMeta = null, options = {}) {
   const tasks = getChapterPracticeTasks(chapterMeta);
   return tasks.filter(
     (task) =>
       (task.section !== 'reading-writing' ||
         state?.workbookSettings?.includeReadingWriting !== false) &&
-      canUnlockPracticeTask(state, chapterId, task, chapterMeta).canUnlock
+      canUnlockPracticeTask(state, chapterId, task, chapterMeta, options).canUnlock
   );
 }
 
@@ -70,6 +80,17 @@ export function completePracticeTask(state, chapterId, taskId, options = {}) {
 
   if (cs.checklist[taskId] === true) {
     return { changed: false, alreadyCompleted: true };
+  }
+
+  const task = getChapterPracticeTasks(options.chapterMeta).find((t) => t.id === taskId) || {
+    id: taskId,
+  };
+  const unlock = canUnlockPracticeTask(state, chId, task, options.chapterMeta, {
+    dateKey: options.dateKey,
+    now: occurredAt,
+  });
+  if (!unlock.canUnlock) {
+    return { completed: false, changed: false, reason: unlock.reason || 'locked' };
   }
 
   cs.checklist[taskId] = true;
@@ -132,11 +153,19 @@ export function undoPracticeTask(state, chapterId, taskId, options = {}) {
     occurredAt,
   });
 
+  const completion = evaluateAndCompleteChapter(state, chId, {
+    chapters: options.chapters || [],
+    now: occurredAt,
+    recalculatePlan: options.recalculatePlan,
+  });
+
   return {
     changed: true,
     chapterId: chId,
     taskId,
     dateKey,
     occurredAt,
+    chapterReopened: completion.reopened === true,
+    chapterCompletion: completion,
   };
 }

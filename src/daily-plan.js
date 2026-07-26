@@ -22,6 +22,10 @@ import {
   unlockDailyGrammarTopic,
 } from './grammar-plan.js';
 import { getAvailablePracticeTasks } from './practice-plan.js';
+import { getPlanDateAvailability } from '../studyplan.js';
+import { isPriorKnowledge } from './chapter-progress.js';
+
+export { getPlanDateAvailability };
 
 export function getDailyCapacity(state) {
   const cap = Number(
@@ -37,19 +41,12 @@ export function generateDailyPlan(state, options = {}) {
   const now = options.now ?? Date.now();
   const capacityMinutes = options.capacityMinutes ?? getDailyCapacity(state);
   const chapterMeta = options.chapterMeta;
+  const activeChapterId = options.activeChapterId ?? state?.activeChapterId ?? 1;
 
   const plan = state?.studyPlan;
-  const isRestDay =
-    plan && Array.isArray(plan.segments)
-      ? (() => {
-          const activeSeg = plan.segments.find((s) => s.assignedDates?.includes(dateKey));
-          if (!activeSeg) return false;
-          const status = activeSeg.dateStatuses?.[dateKey];
-          return status === 'rest-day';
-        })()
-      : false;
+  const availability = getPlanDateAvailability(plan, activeChapterId, dateKey);
+  const isRestOrNonStudyDay = !availability.isStudyDay;
 
-  const activeChapterId = options.activeChapterId ?? state?.activeChapterId ?? 1;
   const tasks = [];
   let currentMinutes = 0;
   let requiredMinutes = 0;
@@ -68,7 +65,7 @@ export function generateDailyPlan(state, options = {}) {
       id: `review-${dateKey}`,
       type: 'review',
       sourceId: 'srs',
-      title: isRestDay ? 'Повторить слабые знания' : 'Повторение слов (SRS)',
+      title: availability.isRestDay ? 'Повторить слабые знания' : 'Повторение слов (SRS)',
       description: `${dueCount} карточек к повторению`,
       estimatedMinutes: est,
       priority: 1,
@@ -82,7 +79,8 @@ export function generateDailyPlan(state, options = {}) {
     requiredMinutes += est;
   }
 
-  if (isRestDay) {
+  // If it's a rest day, paused plan, or non-assigned date, stop after SRS reviews
+  if (isRestOrNonStudyDay) {
     return {
       dateKey,
       chapterId: activeChapterId,
@@ -103,6 +101,53 @@ export function generateDailyPlan(state, options = {}) {
       },
       generatedAt: now,
       isRestDay: true,
+    };
+  }
+
+  // Check if active chapter is started
+  const cs = state?.chapters?.[activeChapterId];
+  const isChapterStarted =
+    cs?.started === true ||
+    state?.completedChapters?.includes(activeChapterId) ||
+    isPriorKnowledge(state, activeChapterId);
+
+  if (!isChapterStarted) {
+    const est = 5;
+    tasks.push({
+      id: `start-chapter-${activeChapterId}`,
+      type: 'start-chapter',
+      sourceId: `chapter-${activeChapterId}`,
+      title: `Начать главу ${activeChapterId}`,
+      description: `Открыть уроки и карточки новой главы`,
+      estimatedMinutes: est,
+      priority: 2,
+      status: 'available',
+      completionMode: 'interactive',
+      action: {
+        type: 'start-chapter',
+        chapterId: activeChapterId,
+      },
+    });
+    currentMinutes += est;
+    requiredMinutes += est;
+
+    return {
+      dateKey,
+      chapterId: activeChapterId,
+      tasks,
+      estimatedMinutes: currentMinutes,
+      requiredMinutes,
+      plannedMinutes: currentMinutes,
+      capacityMinutes,
+      overCapacity: currentMinutes > capacityMinutes,
+      deferredTaskIds,
+      warnings,
+      completion: {
+        completedCount: tasks.filter((task) => task.status === 'completed').length,
+        totalCount: tasks.length,
+      },
+      generatedAt: now,
+      isRestDay: false,
     };
   }
 
@@ -173,7 +218,7 @@ export function generateDailyPlan(state, options = {}) {
     }
   }
 
-  // 4. Priority 4: Grammar Topic (if capacity permits)
+  // 4. Priority 4: Grammar Topic (pure inspection; no side effects during plan generation)
   if (currentMinutes < capacityMinutes) {
     const grammarDecision = canUnlockNextGrammarTopic(state, activeChapterId, {
       dateKey,
@@ -202,20 +247,6 @@ export function generateDailyPlan(state, options = {}) {
       if (status !== 'completed') {
         const est = calculateGrammarMinutes(topicObj);
         if (currentMinutes + est <= capacityMinutes) {
-          if (grammarDecision.canUnlock) {
-            unlockDailyGrammarTopic(state, activeChapterId, {
-              dateKey,
-              plan,
-              now,
-              chapterMeta,
-            });
-          }
-          const resolvedStatus = getGrammarTopicStatus(
-            state,
-            activeChapterId,
-            topicObj.id,
-            chapterMeta
-          );
           tasks.push({
             id: `grammar-${topicObj.id}`,
             type: 'grammar',
@@ -225,9 +256,9 @@ export function generateDailyPlan(state, options = {}) {
             estimatedMinutes: est,
             priority: 4,
             status:
-              resolvedStatus === 'in_progress'
+              status === 'in_progress'
                 ? 'in_progress'
-                : resolvedStatus === 'unlocked'
+                : status === 'unlocked' || grammarDecision.canUnlock
                   ? 'available'
                   : 'planned',
             completionMode: 'interactive',
@@ -245,8 +276,6 @@ export function generateDailyPlan(state, options = {}) {
   // 5. Priority 5: Practice Tasks (if capacity permits)
   if (currentMinutes < capacityMinutes && chapterMeta) {
     const availablePractice = getAvailablePracticeTasks(state, activeChapterId, chapterMeta);
-    const cs = state?.chapters?.[activeChapterId];
-
     for (const pTask of availablePractice) {
       const isDone = cs?.checklist?.[pTask.id] === true;
       if (!isDone) {
@@ -297,6 +326,7 @@ export function generateDailyPlan(state, options = {}) {
   if (overCapacity) {
     warnings.push('Сегодня потребуется больше обычного: накопились обязательные повторения.');
   }
+
   return {
     dateKey,
     chapterId: activeChapterId,
@@ -317,47 +347,76 @@ export function generateDailyPlan(state, options = {}) {
   };
 }
 
+export function applyDailyPlanUnlocks(state, dailyPlan, options = {}) {
+  if (!state || !dailyPlan) return false;
+  let stateChanged = false;
+
+  const chId = dailyPlan.chapterId;
+  const dateKey = dailyPlan.dateKey;
+  const chapterMeta = options.chapterMeta;
+
+  const grammarTask = dailyPlan.tasks?.find((t) => t.type === 'grammar');
+  if (grammarTask && grammarTask.topicId) {
+    const existingUnlocks = state.grammarUnlocks?.[chId]?.[dateKey] || [];
+    if (!existingUnlocks.includes(grammarTask.topicId)) {
+      const res = unlockDailyGrammarTopic(state, chId, { dateKey, now: options.now, chapterMeta });
+      if (res.unlocked) stateChanged = true;
+    }
+  }
+
+  return stateChanged;
+}
+
 export function getOrGenerateDailyPlan(state, options = {}) {
   if (!state) return null;
   const dateKey = options.dateKey || localDateKey(options.now ?? Date.now());
 
   const inputRevision = getDailyPlanInputRevision(state, options);
+  let isCached = false;
+  let planToReturn = null;
+
   if (
     state.dailyPlan &&
     state.dailyPlan.dateKey === dateKey &&
     state.dailyPlan.inputRevision === inputRevision &&
     !options.forceRefresh
   ) {
-    return state.dailyPlan;
+    planToReturn = state.dailyPlan;
+    isCached = true;
+  } else {
+    planToReturn = generateDailyPlan(state, options);
+    planToReturn.inputRevision = inputRevision;
+    state.dailyPlan = planToReturn;
   }
 
-  const newPlan = generateDailyPlan(state, options);
-  newPlan.inputRevision = inputRevision;
-  state.dailyPlan = newPlan;
+  const stateChanged = applyDailyPlanUnlocks(state, planToReturn, options);
 
-  state.dailyPlanHistory ||= [];
-  for (const historical of state.dailyPlanHistory) {
-    if (historical.dateKey < dateKey && !historical.finalizedAt) {
-      historical.finalizedAt = newPlan.generatedAt;
+  if (!isCached) {
+    state.dailyPlanHistory ||= [];
+    for (const historical of state.dailyPlanHistory) {
+      if (historical.dateKey < dateKey && !historical.finalizedAt) {
+        historical.finalizedAt = planToReturn.generatedAt;
+      }
+    }
+    const snapshot = {
+      dateKey,
+      chapterId: planToReturn.chapterId,
+      tasks: planToReturn.tasks.map((task) => ({ ...task })),
+      estimatedMinutes: planToReturn.estimatedMinutes,
+      capacityMinutes: planToReturn.capacityMinutes,
+      generatedAt: planToReturn.generatedAt,
+      finalizedAt: null,
+    };
+    const existingIndex = state.dailyPlanHistory.findIndex((plan) => plan.dateKey === dateKey);
+    if (existingIndex < 0) {
+      state.dailyPlanHistory.push(snapshot);
+    } else if (!state.dailyPlanHistory[existingIndex].finalizedAt) {
+      state.dailyPlanHistory[existingIndex] = snapshot;
     }
   }
-  const snapshot = {
-    dateKey,
-    chapterId: newPlan.chapterId,
-    tasks: newPlan.tasks.map((task) => ({ ...task })),
-    estimatedMinutes: newPlan.estimatedMinutes,
-    capacityMinutes: newPlan.capacityMinutes,
-    generatedAt: newPlan.generatedAt,
-    finalizedAt: null,
-  };
-  const existingIndex = state.dailyPlanHistory.findIndex((plan) => plan.dateKey === dateKey);
-  if (existingIndex < 0) {
-    state.dailyPlanHistory.push(snapshot);
-  } else if (!state.dailyPlanHistory[existingIndex].finalizedAt) {
-    state.dailyPlanHistory[existingIndex] = snapshot;
-  }
 
-  return newPlan;
+  planToReturn._stateChanged = stateChanged;
+  return planToReturn;
 }
 
 function getDailyPlanInputRevision(state, options) {

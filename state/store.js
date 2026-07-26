@@ -335,8 +335,8 @@ function normalizeRuntimeShape(loadedState) {
   for (const chapter of Object.values(normalized.chapters)) {
     chapter.checklist =
       chapter.checklist && typeof chapter.checklist === 'object' ? chapter.checklist : {};
-    const values = Object.values(chapter.checklist);
-    if (!chapter.completedAt && values.length > 0 && values.every((value) => value === true)) {
+    const LEGACY_REQUIRED = ['vocab', 'grammar', 'dialog', 'listening', 'reading'];
+    if (!chapter.completedAt && LEGACY_REQUIRED.every((id) => chapter.checklist?.[id] === true)) {
       const legacyCompletedAt = chapter.updatedAt || chapter.startedAt || Date.now();
       chapter.completedAt = legacyCompletedAt;
       chapter.completionRewardedAt ||= legacyCompletedAt;

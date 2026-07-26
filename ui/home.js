@@ -537,6 +537,10 @@ export function renderHome(_appState = state, dependencies = null) {
     if (batchCreated) save();
   }
 
+  if (dailyPlan?._stateChanged) {
+    save();
+  }
+
   if (batchCreated) {
     dailyPlan = getOrGenerateDailyPlan(state, {
       dateKey: today,
@@ -544,6 +548,7 @@ export function renderHome(_appState = state, dependencies = null) {
       chapterMeta: activeChapter,
       forceRefresh: true,
     });
+    if (dailyPlan?._stateChanged) save();
   }
   const nextAction = getNextStudyAction(dailyPlan);
 
@@ -602,6 +607,12 @@ export function renderHome(_appState = state, dependencies = null) {
 
 function executeHomeDailyTask(task, activeChapterId, dependencies) {
   if (!task) return;
+  if (task.type === 'start-chapter') {
+    const chId = task.action?.chapterId || activeChapterId;
+    startChapter(chId, window.toast);
+    window.nav('chapter', chId);
+    return;
+  }
   if (task.type === 'review') {
     window.nav('srs');
     return;

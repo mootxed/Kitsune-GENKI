@@ -358,6 +358,12 @@ function renderPlanSummary(plan, state) {
 
 function executePlanDailyTask(task, activeChapterId, state) {
   if (!task) return;
+  if (task.type === 'start-chapter') {
+    const chId = task.action?.chapterId || activeChapterId;
+    planRuntimeDependencies.startChapter?.(chId, toast);
+    nav('chapter', chId);
+    return;
+  }
   if (task.type === 'review') {
     nav('srs');
     return;
@@ -409,8 +415,13 @@ function renderTimeline(plan, state, activeChapterId) {
 }
 
 function segmentCard(segment, state, active = false) {
-  const chapter = CONTENT_INDEX.find((entry) => entry.id === segment.chapterId);
-  const progress = chapter ? getChapterProgress(state, chapter.id, chapter) : null;
+  const catalogEntry = CONTENT_INDEX.find((entry) => entry.id === segment.chapterId);
+  const loadedChapter = getLesson(segment.chapterId);
+  const chapterMeta = loadedChapter || catalogEntry;
+
+  const isLoadedOrActive = Boolean(loadedChapter || active || segment.status === 'completed');
+  const progress = chapterMeta ? getChapterProgress(state, chapterMeta.id, chapterMeta) : null;
+
   const statuses = (segment.assignedDates || []).map((dateKey) =>
     StudyPlan.getDateStatus(state.studyPlan, dateKey, {
       learningEvents: state.learningEvents || [],
@@ -418,18 +429,38 @@ function segmentCard(segment, state, active = false) {
     })
   );
   const overdue = statuses.filter((status) => status === 'overdue').length;
-  const remaining = statuses.filter((status) =>
+  const remainingDays = statuses.filter((status) =>
     ['planned', 'today', 'overdue', 'postponed'].includes(status)
   ).length;
+
+  let statusText = '';
+  if (overdue > 0) {
+    statusText = `${overdue} просрочено`;
+  } else if (isLoadedOrActive && progress) {
+    statusText = `${progress.completedCount || 0} из ${progress.totalCount || 0} разделов`;
+  } else {
+    const daysCount = segment.assignedDates?.length || segment.days || 0;
+    statusText = `запланировано ${daysCount} учебных ${pluralizeDays(daysCount)}`;
+  }
+
   return `
     <button class="segment-card ${active ? 'in-progress' : ''}" data-chapter-id="${segment.chapterId}">
       <span class="segment-header">
-        <strong>Глава ${segment.chapterId}: ${chapter?.title || ''}</strong>
-        <span class="segment-badge">${remaining} дн.</span>
+        <strong>Глава ${segment.chapterId}: ${chapterMeta?.title || ''}</strong>
+        <span class="segment-badge">${remainingDays} дн.</span>
       </span>
       <span class="segment-dates">${formatPlanDate(segment.startDate)} — ${formatPlanDate(segment.endDate)}</span>
-      <span class="segment-status ${overdue ? 'overdue' : 'upcoming'}">${overdue ? `${overdue} просрочено` : `${progress?.completedCount || 0} из ${progress?.totalCount || 0} разделов`}</span>
+      <span class="segment-status ${overdue ? 'overdue' : 'upcoming'}">${statusText}</span>
     </button>`;
+}
+
+function pluralizeDays(n) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 19) return 'дней';
+  if (mod10 === 1) return 'день';
+  if (mod10 >= 2 && mod10 <= 4) return 'дня';
+  return 'дней';
 }
 
 function bindCalendarToggle() {
