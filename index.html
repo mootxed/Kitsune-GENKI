@@ -365,7 +365,10 @@
             <h1>План обучения</h1>
           </div>
 
-          <!-- Форма создания плана -->
+          <!-- Уведомления (видны и при форме, и при просмотре) -->
+          <div id="plan-warning" class="plan-warning hidden"></div>
+
+          <!-- Форма создания/редактирования плана -->
           <div id="plan-form-container">
             <h3 id="plan-form-title">Создать новый план</h3>
 
@@ -392,7 +395,7 @@
             </div>
 
             <div id="plan-days-input" class="form-group">
-              <label class="form-label">Срок (дней)</label>
+              <label class="form-label">Количество учебных дней</label>
               <input
                 type="number"
                 id="plan-total-days"
@@ -442,7 +445,7 @@
 
             <!-- Прогресс изученных глав -->
             <div class="plan-progress-widget card">
-              <span class="form-label">Прогресс обучения</span>
+              <span class="form-label">Уже изучено</span>
               <div class="plan-progress-bar-container">
                 <div
                   id="plan-progress-bar-fill"
@@ -499,15 +502,21 @@
 
             <div id="plan-preview-container" class="plan-preview-container card hidden"></div>
 
-            <div id="plan-warning" class="plan-warning hidden"></div>
-
-            <button class="btn btn-primary" id="plan-generate-btn" data-testid="plan-generate-btn">
-              Создать план
-            </button>
+            <div class="plan-form-actions">
+              <button class="btn btn-primary" id="plan-generate-btn" data-testid="plan-generate-btn">
+                Создать план
+              </button>
+              <button class="btn btn-secondary" id="plan-cancel-btn" data-testid="plan-cancel-btn" style="display:none">
+                Отмена
+              </button>
+            </div>
           </div>
 
           <!-- Контейнер плана (показывается после генерации) -->
           <div id="plan-view-container" class="hidden">
+            <!-- Уведомления режима просмотра (диалог дедлайна, ошибки пересчёта) -->
+            <div id="plan-view-warning" class="plan-warning hidden"></div>
+
             <!-- Панель управления планом -->
             <div id="plan-controls" class="plan-controls card hidden">
               <button class="btn btn-secondary" id="plan-edit-btn" data-testid="plan-edit-btn">

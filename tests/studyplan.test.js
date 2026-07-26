@@ -606,4 +606,207 @@ describe('StudyPlan', () => {
       ]);
     });
   });
+
+  // =====================================================================
+  // T1–T4: Regression tests for the P0 bug fixes
+  // =====================================================================
+  describe('mergeUpdatedPlanWithHistory — T1: active segment preserves past dates', () => {
+    it('T1: past dates of an active chapter are preserved after merge', () => {
+      const today = '2026-07-24';
+      // Existing plan with chapter 1 that started in the past but continues today
+      const existingPlan = {
+        startDate: '2026-07-20',
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 1,
+            assignedDates: ['2026-07-20', '2026-07-22', '2026-07-24', '2026-07-27'],
+            startDate: '2026-07-20',
+            endDate: '2026-07-27',
+            days: 4,
+            dateStatuses: { '2026-07-20': 'completed', '2026-07-22': 'completed' },
+            vocabularySchedule: { '2026-07-20': ['word1'], '2026-07-22': ['word2'] },
+          },
+        ],
+        history: [],
+        completedChapters: [],
+        dateStatuses: { '2026-07-20': 'completed', '2026-07-22': 'completed' },
+        vocabularySchedule: {},
+      };
+
+      // New generated plan redistributes future dates
+      const generatedPlan = {
+        startDate: '2026-07-20',
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 1,
+            assignedDates: ['2026-07-24', '2026-07-28', '2026-07-30'],
+            startDate: '2026-07-24',
+            endDate: '2026-07-30',
+            days: 3,
+            dateStatuses: {},
+            vocabularySchedule: {},
+          },
+        ],
+        history: [],
+        completedChapters: [],
+        dateStatuses: {},
+        vocabularySchedule: {},
+      };
+
+      const merged = StudyPlan.mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, { today });
+
+      const seg = merged.segments.find((s) => s.chapterId === 1);
+      expect(seg).toBeDefined();
+      // Past dates must be preserved
+      expect(seg.assignedDates).toContain('2026-07-20');
+      expect(seg.assignedDates).toContain('2026-07-22');
+      // Future dates from new plan must be present
+      expect(seg.assignedDates).toContain('2026-07-28');
+    });
+
+    it('T2: dateStatuses of past dates survive merge', () => {
+      const today = '2026-07-24';
+      const existingPlan = {
+        startDate: '2026-07-20',
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 2,
+            assignedDates: ['2026-07-20', '2026-07-22', '2026-07-24'],
+            startDate: '2026-07-20',
+            endDate: '2026-07-24',
+            days: 3,
+            dateStatuses: { '2026-07-20': 'completed', '2026-07-22': 'completed' },
+            vocabularySchedule: {},
+          },
+        ],
+        history: [],
+        completedChapters: [],
+        dateStatuses: { '2026-07-20': 'completed' },
+        vocabularySchedule: {},
+      };
+      const generatedPlan = {
+        startDate: '2026-07-20',
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 2,
+            assignedDates: ['2026-07-24', '2026-07-29'],
+            startDate: '2026-07-24',
+            endDate: '2026-07-29',
+            days: 2,
+            dateStatuses: {},
+            vocabularySchedule: {},
+          },
+        ],
+        history: [],
+        completedChapters: [],
+        dateStatuses: {},
+        vocabularySchedule: {},
+      };
+
+      const merged = StudyPlan.mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, { today });
+      const seg = merged.segments.find((s) => s.chapterId === 2);
+
+      // dateStatuses of past completed dates must survive
+      expect(seg.dateStatuses['2026-07-20']).toBe('completed');
+      expect(seg.dateStatuses['2026-07-22']).toBe('completed');
+    });
+  });
+
+  describe('getDateStatus — T3: today is not missed, T4: section-completed does not complete day', () => {
+    it('T3: a study day today with no events is not "overdue"', () => {
+      const today = getTodayDateKey();
+      const plan = {
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 1,
+            assignedDates: [today],
+            dateStatuses: {},
+          },
+        ],
+        history: [],
+        dateStatuses: {},
+      };
+
+      const status = StudyPlan.getDateStatus(plan, today, {
+        learningEvents: [],
+        reviewEvents: [],
+      });
+
+      // Without any events the day is 'planned', never 'overdue'
+      expect(status).not.toBe('overdue');
+      expect(['planned', 'today', undefined].includes(status)).toBe(true);
+    });
+
+    it('T4: section-completed alone does NOT mark the study day as completed', () => {
+      const dateKey = '2026-07-20';
+      const plan = {
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 1,
+            assignedDates: [dateKey],
+            dateStatuses: {},
+          },
+        ],
+        history: [],
+        dateStatuses: {},
+      };
+
+      const learningEvents = [
+        {
+          eventId: 'ev1',
+          eventType: 'section-completed',
+          chapterId: 1,
+          dateKey,
+          undoneAt: null,
+        },
+      ];
+
+      const status = StudyPlan.getDateStatus(plan, dateKey, {
+        learningEvents,
+        reviewEvents: [],
+      });
+
+      // section-completed alone must NOT mark the day as 'completed'
+      expect(status).not.toBe('completed');
+    });
+
+    it('T4b: chapter-completed marks the study day as completed', () => {
+      const dateKey = '2026-07-20';
+      const plan = {
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 1,
+            assignedDates: [dateKey],
+            dateStatuses: {},
+          },
+        ],
+        history: [],
+        dateStatuses: {},
+      };
+
+      const learningEvents = [
+        {
+          eventId: 'ev1',
+          eventType: 'chapter-completed',
+          chapterId: 1,
+          dateKey,
+          undoneAt: null,
+        },
+      ];
+
+      const status = StudyPlan.getDateStatus(plan, dateKey, {
+        learningEvents,
+        reviewEvents: [],
+      });
+
+      expect(status).toBe('completed');
+    });
+  });
 });

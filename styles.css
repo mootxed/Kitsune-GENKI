@@ -4321,6 +4321,72 @@ input[type='date']:focus {
   color: #856404;
 }
 
+/* ===== План — preview-блоки ===== */
+.plan-preview-summary {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.plan-preview-warning {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 152, 0, 0.1);
+  border-left: 3px solid #ff9800;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #e65100;
+}
+
+.plan-recommendations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0.5rem 0;
+}
+
+.plan-rec-btn {
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* ===== План — кнопки формы ===== */
+.plan-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+/* ===== План — статус-карточки (семантические классы вместо inline-стилей) ===== */
+.plan-status-card {
+  margin-bottom: 14px;
+  border-left: 4px solid var(--green, #2e7d32);
+}
+
+.plan-status-card--on-track {
+  border-left-color: var(--green, #2e7d32);
+}
+
+.plan-status-card--behind {
+  border-left-color: var(--red, #d32f2f);
+}
+
+.plan-status-card--paused {
+  border-left-color: #888;
+}
+
+.plan-status-card--completed {
+  border-left-color: var(--green, #2e7d32);
+}
+
+.plan-status-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+
 /* ===== План - таймлайн ===== */
 .plan-timeline {
   display: flex;

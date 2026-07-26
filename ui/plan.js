@@ -28,9 +28,21 @@ let planCalendarMonth = new Date();
 let planRuntimeDependencies = {};
 let planEditorOpen = false;
 let planSubmissionPending = false;
+// Черновик формы: форма работает с ним, state мутирует только при commit
+export let planDraft = null;
+// AbortController для удаления старых обработчиков формы при повторном рендеринге
+let formListenersController = null;
+// Debounce-таймер для предварительного просмотра
+let previewDebounceTimer = null;
 
 export function openPlanEditor(state) {
   planEditorOpen = true;
+  // Создаём черновик из текущих настроек — изолируем state от формы
+  planDraft = {
+    priorKnowledgeChapterIds: [...(state?.priorKnowledgeChapterIds || [])],
+    workbookSettings: { ...(state?.workbookSettings || {}) },
+    dailyCapacityMinutes: state?.dailyCapacityMinutes || 30,
+  };
   populateForm(state?.studyPlan, state);
   renderPlanView(state);
   updateLivePreview(state);
@@ -38,6 +50,7 @@ export function openPlanEditor(state) {
 
 export function closePlanEditor(state) {
   planEditorOpen = false;
+  planDraft = null;
   clearPlanWarning();
   renderPlanView(state);
 }
@@ -75,6 +88,8 @@ export function renderPlan(state, dependencies) {
   if (generateButton) {
     generateButton.onclick = async () => {
       setPlanSubmissionPending(true, state);
+      // Фиксируем факт редактирования ДО commit — чтобы toast был правильным
+      const wasEditing = Boolean(state.studyPlan);
       try {
         const workbookData = await loadWorkbookPracticeData();
         const preferences = collectPlanPreferences(state);
@@ -112,11 +127,13 @@ export function renderPlan(state, dependencies) {
         }
 
         planEditorOpen = false;
+        planDraft = null;
         clearPlanWarning();
         await save(true);
         renderPlanView(state);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        toast(state.studyPlan ? 'План обучения сохранён' : 'План обучения создан');
+        // Правильный toast: зафиксировано ДО commit
+        toast(wasEditing ? 'План обучения сохранён' : 'План обучения создан');
 
         if (
           Array.isArray(state.priorKnowledgeChapterIds) &&
@@ -139,6 +156,11 @@ export function renderPlan(state, dependencies) {
         setPlanSubmissionPending(false, state);
       }
     };
+  }
+
+  const cancelButton = $('#plan-cancel-btn');
+  if (cancelButton) {
+    cancelButton.onclick = () => closePlanEditor(state);
   }
 
   const editButton = $('#plan-edit-btn');
@@ -168,7 +190,8 @@ export function renderPlan(state, dependencies) {
         return;
       }
       if (result.error) {
-        showPlanWarning(result.error);
+        // Показываем ошибку в view-warning, видимом даже когда форма скрыта
+        showViewWarning(result.error);
         return;
       }
       state.studyPlan = result;
@@ -234,19 +257,30 @@ function bindWorkbookToggles(state) {
     const updateVisibility = () => {
       subOptions.style.display = enabledCb.checked ? 'block' : 'none';
     };
-    enabledCb.addEventListener('change', () => {
+    // Используем onchange вместо addEventListener — не накапливаются дубли
+    enabledCb.onchange = () => {
       updateVisibility();
-      updateLivePreview(state);
-    });
+      scheduleLivePreview(state);
+    };
     updateVisibility();
   }
-  $('#plan-workbook-conversation-grammar')?.addEventListener('change', () =>
-    updateLivePreview(state)
-  );
-  $('#plan-workbook-reading-writing')?.addEventListener('change', () => updateLivePreview(state));
+  const cgCb = $('#plan-workbook-conversation-grammar');
+  const rwCb = $('#plan-workbook-reading-writing');
+  if (cgCb) cgCb.onchange = () => scheduleLivePreview(state);
+  if (rwCb) rwCb.onchange = () => scheduleLivePreview(state);
+}
+
+function scheduleLivePreview(state) {
+  clearTimeout(previewDebounceTimer);
+  previewDebounceTimer = setTimeout(() => updateLivePreview(state), 200);
 }
 
 function bindFormLiveInputs(state) {
+  // Сбрасываем старые обработчики перед привязкой новых — предотвращаем накопление
+  formListenersController?.abort();
+  formListenersController = new AbortController();
+  const sig = { signal: formListenersController.signal };
+
   const inputs = [
     '#plan-start-date',
     '#plan-total-days',
@@ -254,16 +288,16 @@ function bindFormLiveInputs(state) {
     '#plan-capacity-minutes',
   ];
   inputs.forEach((selector) => {
-    $(selector)?.addEventListener('change', () => updateLivePreview(state));
-    $(selector)?.addEventListener('input', () => updateLivePreview(state));
+    $(selector)?.addEventListener('change', () => scheduleLivePreview(state), sig);
+    $(selector)?.addEventListener('input', () => scheduleLivePreview(state), sig);
   });
 
   document.querySelectorAll('.weekday-btn').forEach((button) => {
-    button.addEventListener('click', () => updateLivePreview(state));
+    button.addEventListener('click', () => scheduleLivePreview(state), sig);
   });
 
   document.querySelectorAll('.plan-deadline-toggle .toggle-btn').forEach((button) => {
-    button.addEventListener('click', () => updateLivePreview(state));
+    button.addEventListener('click', () => scheduleLivePreview(state), sig);
   });
 }
 
@@ -291,32 +325,41 @@ async function updateLivePreview(state) {
   const estDateFormatted = formatPlanDate(preview.estimatedCompletionDate);
   const recDateFormatted = formatPlanDate(preview.recommendedTargetDate);
 
+  // P1: Правильная подпись для режима дедлайна (дата) и режима дней (число)
+  const targetLabel =
+    preferences.targetType === 'deadline'
+      ? `до ${formatPlanDate(preferences.targetValue)} (${preview.requiredStudyDays} уч. дн.)`
+      : `${preferences.targetValue || 0} учебных дней`;
+
   let html = `
-    <div style="font-size:0.9rem; line-height:1.4;">
-      <strong>Предварительный расчёт:</strong><br>
-      • Глав для изучения: ${preview.previewPlan?.segments?.filter((s) => s.type === 'chapter').length || 12}<br>
-      • Учебных дней: ${preview.requiredStudyDays} (по ${preferences.dailyCapacityMinutes} мин/день)<br>
-      • Общее время нового материала: ~${preview.totalRequiredMinutes} минут<br>
-      • Прогноз завершения: <b>${estDateFormatted}</b>
+    <div class="plan-preview-summary">
+      <strong>Ваш будущий график:</strong><br>
+      &bull; Глав для изучения: ${preview.previewPlan?.segments?.filter((s) => s.type === 'chapter').length || 12}<br>
+      &bull; Учебных дней: ${preview.requiredStudyDays} (по ${preferences.dailyCapacityMinutes} мин/день)<br>
+      &bull; Общее время нового материала: ~${preview.totalRequiredMinutes} минут<br>
+      &bull; Прогноз завершения: <b>${estDateFormatted}</b>
     </div>
   `;
 
   if (preview.isTight) {
     const isChecked = preferences.acceptRecommendedDeadline;
+    // P2: Рекомендации как кликабельные кнопки
+    const recsHtml = preview.recommendations
+      .map(
+        (r) =>
+          `<button class="btn-sm btn-outline plan-rec-btn" data-rec-type="${r.type}" data-rec-date="${r.recommendedDate || ''}" data-rec-days="${r.dailyCapacityMinutes || ''}">${r.label}</button>`
+      )
+      .join('');
     html += `
-      <div style="margin-top:0.75rem; padding:0.75rem; background:rgba(255,152,0,0.1); border-left:3px solid #ff9800; border-radius:4px; font-size:0.875rem;">
-        <strong style="color:#e65100;">⚠️ Выбранный срок слишком короткий</strong><br>
-        • Выбранный срок: ${preferences.targetValue || preferences.studyDays.length} учебных дней<br>
-        • Минимально требуется: ${preview.requiredStudyDays} учебных дней<br>
-        • Рекомендуемое завершение: <b>${recDateFormatted}</b><br><br>
-        <strong>Рекомендации:</strong>
-        <ul style="margin:0.25rem 0 0.5rem 1.25rem; padding:0;">
-          ${preview.recommendations.map((r) => `<li>${r.label}</li>`).join('')}
-        </ul>
-        <label class="chapter-checkbox-item" style="margin-top:0.5rem;">
+      <div class="plan-preview-warning">
+        <strong>&bull; Выбранный срок: ${targetLabel}</strong><br>
+        &bull; Минимально требуется: ${preview.requiredStudyDays} уч. дней<br>
+        &bull; Рекомендуемое завершение: <b>${recDateFormatted}</b>
+        <div class="plan-recommendations">${recsHtml}</div>
+        <label class="chapter-checkbox-item">
           <input type="checkbox" id="plan-accept-deadline" data-testid="plan-accept-deadline" ${isChecked ? 'checked' : ''} />
-          <span class="chapter-checkbox-label" style="font-weight:600; color:#e65100;">
-            Использовать рекомендуемый реалистичный срок (${recDateFormatted})
+          <span class="chapter-checkbox-label" style="font-weight:600;">
+            Использовать рекомендуемый срок (${recDateFormatted})
           </span>
         </label>
       </div>
@@ -327,8 +370,48 @@ async function updateLivePreview(state) {
   container.classList.remove('hidden');
 
   $('#plan-accept-deadline')?.addEventListener('change', () => {
-    updateLivePreview(state);
+    scheduleLivePreview(state);
   });
+
+  // P2: Обработчики кликабельных рекомендаций
+  container.querySelectorAll('.plan-rec-btn').forEach((btn) => {
+    btn.onclick = () => applyRecommendation(btn.dataset, state);
+  });
+}
+
+function applyRecommendation(dataset, state) {
+  const type = dataset.recType;
+  if (type === 'extend-deadline') {
+    const dateInput = $('#plan-deadline-date');
+    if (dateInput && dataset.recDate) {
+      dateInput.value = dataset.recDate;
+      // Переключаем в режим дедлайна
+      const dateBtn = document.querySelector('.plan-deadline-toggle .toggle-btn[data-mode="date"]');
+      const daysBtn = document.querySelector('.plan-deadline-toggle .toggle-btn[data-mode="days"]');
+      if (dateBtn && daysBtn) {
+        dateBtn.classList.add('active');
+        daysBtn.classList.remove('active');
+        $('#plan-days-input')?.classList.add('hidden');
+        $('#plan-deadline-input')?.classList.remove('hidden');
+      }
+    }
+  } else if (type === 'add-study-day') {
+    // Активируем все дни недели
+    document.querySelectorAll('.weekday-btn').forEach((b) => b.classList.add('active'));
+  } else if (type === 'increase-time') {
+    const cap = $('#plan-capacity-minutes');
+    if (cap) cap.value = dataset.recDays || '45';
+  } else if (type === 'disable-rw') {
+    const rw = $('#plan-workbook-reading-writing');
+    if (rw) rw.checked = false;
+  } else if (type === 'disable-workbook') {
+    const wb = $('#plan-workbook-enabled');
+    if (wb) {
+      wb.checked = false;
+      wb.dispatchEvent(new window.Event('change'));
+    }
+  }
+  scheduleLivePreview(state);
 }
 
 function renderCompletedChaptersList(state) {
@@ -357,9 +440,9 @@ function renderCompletedChaptersList(state) {
   updateManualProgress();
   container.querySelectorAll('.chapter-checkbox:not([disabled])').forEach((checkbox) => {
     checkbox.addEventListener('change', () => {
-      syncPriorKnowledgeFromForm(state);
+      // Не мутируем state напрямую — черновик читается из формы при commit
       updateManualProgress();
-      updateLivePreview(state);
+      scheduleLivePreview(state);
     });
   });
 }
@@ -373,8 +456,9 @@ function getPriorKnowledgeFromForm(state) {
   return checked.filter((id) => !actualCompleted.has(id)).sort((a, b) => a - b);
 }
 
-function syncPriorKnowledgeFromForm(state) {
-  state.priorKnowledgeChapterIds = getPriorKnowledgeFromForm(state);
+export function syncPriorKnowledgeFromForm() {
+  // Функция сохранена для обратной совместимости.
+  // Форма использует черновик (planDraft); state мутирует только при commit.
 }
 
 function updateManualProgress() {
@@ -412,6 +496,10 @@ function collectPlanPreferences(state) {
 
   const acceptRecommendedDeadline = Boolean($('#plan-accept-deadline')?.checked);
 
+  // P1: allowPastDate=true только при редактировании существующего плана.
+  // При создании нового — прошлая дата запрещена.
+  const allowPastDate = Boolean(state?.studyPlan);
+
   return {
     startDate,
     studyDays,
@@ -421,7 +509,7 @@ function collectPlanPreferences(state) {
     targetType,
     targetValue,
     acceptRecommendedDeadline,
-    allowPastDate: true,
+    allowPastDate,
   };
 }
 
@@ -467,11 +555,14 @@ function renderPlanView(state) {
 
   const title = $('#plan-form-title');
   const btn = $('#plan-generate-btn');
+  const cancelBtn = $('#plan-cancel-btn');
 
   if (title) title.textContent = plan ? 'Редактировать план' : 'Создать новый план';
   if (btn && !planSubmissionPending) {
     btn.textContent = plan ? 'Сохранить изменения' : 'Создать план';
   }
+  // Кнопку «Отмена» показываем только когда редактируем существующий план
+  if (cancelBtn) cancelBtn.style.display = planEditorOpen && plan ? 'inline-flex' : 'none';
 
   if (!plan || plan.error) {
     form?.classList.remove('hidden');
@@ -628,19 +719,32 @@ function renderPlanStatusCard(plan, state) {
     `;
   }
 
-  const pastAndTodayDates = allDates.filter((d) => d <= today);
-  const elapsedStudyDays = pastAndTodayDates.length;
+  // Строго прошлые даты (< today) — кандидаты на отставание.
+  // Сегодня никогда не считается «просроченным»: пользователь ещё может выполнить задачи.
+  const missedDates = allDates.filter((d) => d < today);
+  const isStudyDayToday = allDates.includes(today);
+  const elapsedStudyDays = missedDates.length + (isStudyDayToday ? 1 : 0);
 
-  let completedStudyDays = 0;
-  for (const d of pastAndTodayDates) {
+  let completedMissedDays = 0;
+  for (const d of missedDates) {
     const dateStatus = StudyPlan.getDateStatus(plan, d, {
       learningEvents: state?.learningEvents || [],
       reviewEvents: state?.reviewEvents || [],
     });
-    if (dateStatus === 'completed') completedStudyDays++;
+    if (dateStatus === 'completed') completedMissedDays++;
   }
 
-  const daysBehind = Math.max(0, elapsedStudyDays - completedStudyDays);
+  // Проверяем статус сегодняшнего дня отдельно
+  const todayStatus = isStudyDayToday
+    ? StudyPlan.getDateStatus(plan, today, {
+        learningEvents: state?.learningEvents || [],
+        reviewEvents: state?.reviewEvents || [],
+      })
+    : null;
+  const completedStudyDays = completedMissedDays + (todayStatus === 'completed' ? 1 : 0);
+
+  // Отставание — только по прошлым датам, сегодня не считается просроченным
+  const daysBehind = Math.max(0, missedDates.length - completedMissedDays);
   const expectedProgress = Math.min(100, Math.round((elapsedStudyDays / totalStudyDays) * 100));
   const actualProgress = Math.min(100, Math.round((completedStudyDays / totalStudyDays) * 100));
 
@@ -657,8 +761,6 @@ function renderPlanStatusCard(plan, state) {
     status = 'paused';
   } else if (daysBehind > 0) {
     status = 'behind';
-  } else if (completedStudyDays > elapsedStudyDays) {
-    status = 'ahead';
   }
 
   let statusTitle = 'Вы идёте по плану 🟢';
@@ -763,7 +865,7 @@ function segmentCard(segment, state, active = false) {
     ['planned', 'today', 'overdue', 'postponed'].includes(status)
   ).length;
 
-  let statusText = '';
+  let statusText;
   if (overdue > 0) {
     statusText = `${overdue} просрочено`;
   } else if (isLoadedOrActive && progress) {
@@ -798,6 +900,8 @@ function bindCalendarToggle() {
   const calendarButton = document.querySelector('[data-view="grid"]');
   const calendar = $('#plan-calendar-grid');
   const timeline = $('#plan-timeline');
+
+  // P2: Настоящее взаимоисключающее переключение — при выборе одного вида другой скрывается
   if (timelineButton) {
     timelineButton.textContent = '📋 Сводка';
     timelineButton.onclick = () => {
@@ -808,14 +912,19 @@ function bindCalendarToggle() {
     };
   }
   if (calendarButton) {
-    calendarButton.textContent = '📅 Показать календарь';
+    calendarButton.textContent = '📅 Календарь';
     calendarButton.onclick = () => {
-      calendar?.classList.toggle('hidden');
-      calendarButton.classList.toggle('active', !calendar.classList.contains('hidden'));
-      timelineButton?.classList.add('active');
+      calendar?.classList.remove('hidden');
+      timeline?.classList.add('hidden');
+      calendarButton.classList.add('active');
+      timelineButton?.classList.remove('active');
     };
   }
+  // По умолчанию активен таймлайн
   calendar?.classList.add('hidden');
+  timeline?.classList.remove('hidden');
+  timelineButton?.classList.add('active');
+  calendarButton?.classList.remove('active');
 }
 
 function renderPlanCalendar(plan, state) {
@@ -885,7 +994,8 @@ function renderPlanCalendar(plan, state) {
 }
 
 function showDeadlineExpiredDialog(result, state, save, chaptersList = CONTENT_INDEX) {
-  const warning = $('#plan-warning');
+  // P0: Диалог показываем в plan-view-warning, который виден в режиме просмотра
+  const warning = $('#plan-view-warning') || $('#plan-warning');
   if (!warning) return;
   warning.innerHTML = `
     <div class="deadline-expired-dialog">
@@ -960,11 +1070,29 @@ function showPlanWarning(message) {
   warning.classList.remove('hidden');
 }
 
+// P0: Ошибки в режиме просмотра плана (форма скрыта)
+function showViewWarning(message) {
+  const viewWarn = $('#plan-view-warning');
+  if (viewWarn) {
+    viewWarn.textContent = message;
+    viewWarn.classList.remove('hidden');
+    return;
+  }
+  // Фоллбэк: если plan-view-warning нет — используем общий plan-warning
+  showPlanWarning(message);
+}
+
 function clearPlanWarning() {
   const warning = $('#plan-warning');
-  if (!warning) return;
-  warning.textContent = '';
-  warning.classList.add('hidden');
+  if (warning) {
+    warning.textContent = '';
+    warning.classList.add('hidden');
+  }
+  const viewWarn = $('#plan-view-warning');
+  if (viewWarn) {
+    viewWarn.textContent = '';
+    viewWarn.classList.add('hidden');
+  }
 }
 
 function formatPlanDate(dateKey) {

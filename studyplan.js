@@ -502,12 +502,14 @@ export function getDateStatus(
     LEGACY_STATUS_ALIASES[segment.dateStatuses?.[dateKey]] || segment.dateStatuses?.[dateKey];
   if (stored && VALID_DATE_STATUSES.has(stored)) return stored;
 
+  // День считается завершённым только при явном завершении главы или всего дневного плана,
+  // но не при завершении отдельного раздела (section-completed = прогресс, не завершение дня).
   const hasLearningEvidence = learningEvents.some(
     (event) =>
       !event.undoneAt &&
       event.dateKey === dateKey &&
       event.chapterId === segment.chapterId &&
-      ['section-completed', 'chapter-completed'].includes(event.eventType)
+      ['chapter-completed', 'daily-plan-completed'].includes(event.eventType)
   );
   const hasReviewEvidence = reviewEvents.some(
     (event) =>
@@ -770,25 +772,123 @@ export function mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, options
     }
   }
 
-  const pastExistingSegments = (existingPlan.segments || []).filter((seg) => {
+  // Классифицируем существующие сегменты:
+  // - fully-past: все даты в прошлом (строго < today) или статус completed → берём как есть
+  // - active: хотя бы одна дата >= today → объединяем с новым сегментом по chapterId
+  const fullyPastSegments = (existingPlan.segments || []).filter((seg) => {
     if (seg.status === 'completed') return true;
     const dates = seg.assignedDates || [];
     return dates.length > 0 && dates.every((d) => d < today);
   });
 
-  const pastChapterIds = new Set(
-    pastExistingSegments.filter((s) => s.type === 'chapter').map((s) => s.chapterId)
-  );
-
-  const futureNewSegments = (generatedPlan.segments || []).filter((seg) => {
-    if (seg.type === 'chapter' && pastChapterIds.has(seg.chapterId)) {
-      return false;
-    }
+  const activeExistingSegments = (existingPlan.segments || []).filter((seg) => {
+    if (seg.status === 'completed') return false;
     const dates = seg.assignedDates || [];
-    return dates.length === 0 || dates.some((d) => d >= today);
+    // Сегмент «активный» если у него есть хотя бы одна дата >= today
+    // (начался в прошлом, но продолжается сегодня или в будущем)
+    return dates.length > 0 && dates.some((d) => d >= today);
   });
 
-  const mergedSegments = [...pastExistingSegments, ...futureNewSegments];
+  const fullyPastChapterIds = new Set(
+    fullyPastSegments.filter((s) => s.type === 'chapter').map((s) => s.chapterId)
+  );
+
+  // Строим карту активных существующих сегментов по chapterId
+  const activeExistingByChapterId = new Map(
+    activeExistingSegments.filter((s) => s.type === 'chapter').map((s) => [s.chapterId, s])
+  );
+
+  // Для каждого нового (сгенерированного) сегмента:
+  // - если глава уже полностью в прошлом → пропускаем (будет взята из fullyPastSegments)
+  // - если глава есть в activeExisting → объединяем: прошлые даты из existing + будущие из нового
+  // - иначе → берём новый сегмент целиком
+  const mergedActiveSegments = [];
+  const mergedActiveChapterIds = new Set();
+
+  for (const newSeg of generatedPlan.segments || []) {
+    if (newSeg.type !== 'chapter') {
+      // Не-chapter сегменты (review и т.п.) берём как есть, если не в прошлом
+      const dates = newSeg.assignedDates || [];
+      if (dates.length === 0 || dates.some((d) => d >= today)) {
+        mergedActiveSegments.push(newSeg);
+      }
+      continue;
+    }
+
+    if (fullyPastChapterIds.has(newSeg.chapterId)) {
+      // Эта глава уже полностью в прошлом — пропускаем, возьмём из fullyPastSegments
+      continue;
+    }
+
+    const existingSeg = activeExistingByChapterId.get(newSeg.chapterId);
+    if (existingSeg) {
+      // Объединяем: прошлые даты из existing сегмента + будущие из нового
+      const pastDates = (existingSeg.assignedDates || []).filter((d) => d < today);
+      const futureDates = (newSeg.assignedDates || []).filter((d) => d >= today);
+      const combinedDates = [...new Set([...pastDates, ...futureDates])].sort();
+
+      // Сохраняем dateStatuses: все из existing (прошлое) + будущие из нового
+      const mergedSegDateStatuses = {
+        ...Object.fromEntries(
+          Object.entries(existingSeg.dateStatuses || {}).filter(([dk]) => dk < today)
+        ),
+        ...Object.fromEntries(
+          Object.entries(newSeg.dateStatuses || {}).filter(([dk]) => dk >= today)
+        ),
+      };
+
+      // Сохраняем vocabularySchedule: прошлые из existing + будущие из нового
+      const mergedSegVocab = {
+        ...Object.fromEntries(
+          Object.entries(existingSeg.vocabularySchedule || {}).filter(([dk]) => dk <= today)
+        ),
+        ...Object.fromEntries(
+          Object.entries(newSeg.vocabularySchedule || {}).filter(([dk]) => dk > today)
+        ),
+      };
+
+      mergedActiveSegments.push({
+        ...existingSeg,
+        assignedDates: combinedDates,
+        startDate: combinedDates[0] || existingSeg.startDate,
+        endDate: combinedDates.at(-1) || existingSeg.endDate,
+        days: combinedDates.length,
+        dateStatuses: mergedSegDateStatuses,
+        vocabularySchedule: mergedSegVocab,
+        vocabularyScheduleWarning: newSeg.vocabularyScheduleWarning,
+        estimatedMinutes: existingSeg.estimatedMinutes || newSeg.estimatedMinutes,
+      });
+      mergedActiveChapterIds.add(newSeg.chapterId);
+    } else {
+      // Новая глава без истории → берём целиком
+      mergedActiveSegments.push(newSeg);
+      mergedActiveChapterIds.add(newSeg.chapterId);
+    }
+  }
+
+  // Также добавляем active existing сегменты, которые НЕ попали в generated plan
+  // (например, текущая глава осталась в плане без пересчёта)
+  for (const existingSeg of activeExistingSegments) {
+    if (existingSeg.type !== 'chapter') continue;
+    if (!mergedActiveChapterIds.has(existingSeg.chapterId)) {
+      // Сохраняем только прошлые даты из такого сегмента
+      const pastDates = (existingSeg.assignedDates || []).filter((d) => d < today);
+      if (pastDates.length > 0) {
+        mergedActiveSegments.push({
+          ...existingSeg,
+          assignedDates: pastDates,
+          startDate: pastDates[0],
+          endDate: pastDates.at(-1),
+          days: pastDates.length,
+          dateStatuses: Object.fromEntries(
+            Object.entries(existingSeg.dateStatuses || {}).filter(([dk]) => dk < today)
+          ),
+        });
+      }
+    }
+  }
+
+  const mergedSegments = [...fullyPastSegments, ...mergedActiveSegments];
 
   return {
     ...generatedPlan,
