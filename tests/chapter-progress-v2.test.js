@@ -40,7 +40,7 @@ describe('Task 3: Chapter Progress & 3-Block Redesign', () => {
   it('1. getChapterGrammarTopics извлекает темы с детерминированными ID', () => {
     const topics = getChapterGrammarTopics(MOCK_LESSON);
     expect(topics).toHaveLength(2);
-    expect(topics[0]).toEqual({
+    expect(topics[0]).toMatchObject({
       id: 'L2_g1',
       title: 'Грамматика 1: これ, それ',
       content: '...',

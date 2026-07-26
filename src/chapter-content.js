@@ -9,14 +9,29 @@ export function normalizeChapterContent(rawLesson, workbookMetadata = [], option
   const title = configuredName?.[0] || rawLesson?.title || `Глава ${id}`;
   const normalizeWord = options.normalizeWord || ((word) => word);
   const grammarTopics = asArray(rawLesson?.notes || rawLesson?.grammar).map((note, index) => {
-    const noteId = note.note_id ?? index + 1;
+    const noteId = note.noteId ?? note.note_id ?? index + 1;
     return {
       id: String(note.id || `L${id}_g${noteId}`),
+      noteId: Number(noteId) || noteId,
       note_id: noteId,
       title: note.title || `Тема ${index + 1}`,
       content: note.content || '',
       order: Number(note.order) || index + 1,
+      chapterId: id,
       estimatedMinutes: Number(note.estimatedMinutes) || 10,
+      subtitle: note.subtitle || '',
+      summary: note.summary || '',
+      formula: note.formula || '',
+      explanation: note.explanation || null,
+      examples: Array.isArray(note.examples) ? note.examples : [],
+      requiredVocabularyIds: Array.isArray(note.requiredVocabularyIds)
+        ? note.requiredVocabularyIds
+        : [],
+      prerequisiteGrammarIds: Array.isArray(note.prerequisiteGrammarIds)
+        ? note.prerequisiteGrammarIds
+        : [],
+      quiz: Array.isArray(note.quiz) ? note.quiz : null,
+      workbookReference: note.workbookReference || null,
     };
   });
   const practiceTasks = asArray(workbookMetadata).map((task, index) =>

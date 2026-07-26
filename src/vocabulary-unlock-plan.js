@@ -521,6 +521,44 @@ export function getTodayVocabularyUnlockDecision(state, chapterId, options = {})
 }
 
 /**
+ * Prioritizes required vocabulary of an upcoming grammar topic before remaining locked words.
+ */
+export function prioritizeGrammarPrerequisiteVocabulary({
+  lockedWordIds = [],
+  upcomingGrammarTopic = null,
+  targetCount = 0,
+} = {}) {
+  const count = Math.max(0, Number(targetCount) || 0);
+  if (count === 0 || !Array.isArray(lockedWordIds) || lockedWordIds.length === 0) {
+    return [];
+  }
+
+  const reqIds = new Set(
+    Array.isArray(upcomingGrammarTopic?.requiredVocabularyIds)
+      ? upcomingGrammarTopic.requiredVocabularyIds
+      : []
+  );
+
+  if (reqIds.size === 0) {
+    return lockedWordIds.slice(0, count);
+  }
+
+  const prereqWords = [];
+  const otherWords = [];
+
+  for (const wordOrId of lockedWordIds) {
+    const id = String(typeof wordOrId === 'object' && wordOrId ? wordOrId.id : wordOrId);
+    if (reqIds.has(id)) {
+      prereqWords.push(wordOrId);
+    } else {
+      otherWords.push(wordOrId);
+    }
+  }
+
+  return [...prereqWords, ...otherWords].slice(0, count);
+}
+
+/**
  * Unlocks a daily batch of vocabulary cards for a specific chapter.
  * Idempotent per chapter per dateKey.
  */
@@ -616,7 +654,11 @@ export function unlockDailyVocabularyBatch(state, chapterId, options = {}) {
     lockedWords.push(word);
   }
 
-  const batchToUnlock = lockedWords.slice(0, limit);
+  const batchToUnlock = prioritizeGrammarPrerequisiteVocabulary({
+    lockedWordIds: lockedWords,
+    upcomingGrammarTopic: options.upcomingGrammarTopic || null,
+    targetCount: limit,
+  });
   const unlockedItemIds = [];
 
   for (const word of batchToUnlock) {

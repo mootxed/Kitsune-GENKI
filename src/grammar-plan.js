@@ -6,6 +6,7 @@ import { isGrammarTopicCompleted, isPriorKnowledge } from './chapter-evidence.js
 import {
   getOldestIncompleteVocabularyBatch,
   getVocabularyBatchProgress,
+  isVocabularyItemIntroduced,
 } from './vocabulary-unlock-plan.js';
 import { dueCards } from './srs-helpers.js';
 
@@ -211,6 +212,88 @@ export function unlockDailyGrammarTopic(state, chapterId, options = {}) {
   };
 }
 
+export function getGrammarTopicPrerequisiteStatus(state, chapterId, topic, chapterMeta = null) {
+  const chId = Number(chapterId);
+  const cs = state?.chapters?.[chId];
+  if (!cs || !cs.started) {
+    return {
+      satisfied: false,
+      missingVocabularyIds: [],
+      missingGrammarIds: [],
+      reason: 'chapter-not-started',
+    };
+  }
+
+  const topicId = typeof topic === 'string' ? topic : topic?.id;
+  if (!topicId) {
+    return {
+      satisfied: false,
+      missingVocabularyIds: [],
+      missingGrammarIds: [],
+      reason: 'invalid-topic',
+    };
+  }
+
+  const status = getGrammarTopicStatus(state, chId, topicId, chapterMeta);
+  if (status === 'locked') {
+    return {
+      satisfied: false,
+      missingVocabularyIds: [],
+      missingGrammarIds: [],
+      reason: 'topic-locked',
+    };
+  }
+
+  const prereqGrammarIds = Array.isArray(topic?.prerequisiteGrammarIds)
+    ? topic.prerequisiteGrammarIds
+    : [];
+  const missingGrammarIds = [];
+
+  for (const gId of prereqGrammarIds) {
+    const gStatus = getGrammarTopicStatus(state, chId, gId, chapterMeta);
+    if (gStatus !== 'completed') {
+      missingGrammarIds.push(gId);
+    }
+  }
+
+  const reqVocabIds = Array.isArray(topic?.requiredVocabularyIds)
+    ? topic.requiredVocabularyIds
+    : [];
+  const missingVocabularyIds = [];
+
+  const srs = state?.srs || {};
+  for (const vId of reqVocabIds) {
+    const cards = Object.values(srs).filter((c) => c && (c.itemId === vId || c.wordId === vId));
+    const allLocked = cards.length > 0 && cards.every((c) => c.planLocked === true);
+    const isIntroduced = isVocabularyItemIntroduced(state, vId);
+
+    const isMet =
+      isPriorKnowledge(state, chId) ||
+      cs?.legacyVocabularyCompleted === true ||
+      (isIntroduced && !allLocked);
+
+    if (!isMet) {
+      missingVocabularyIds.push(vId);
+    }
+  }
+
+  const satisfied = missingGrammarIds.length === 0 && missingVocabularyIds.length === 0;
+  let reason = null;
+  if (!satisfied) {
+    reason =
+      missingGrammarIds.length > 0
+        ? 'missing-grammar-prerequisites'
+        : 'missing-vocabulary-prerequisites';
+  }
+
+  return {
+    satisfied,
+    missingVocabularyIds,
+    missingGrammarIds,
+    reason,
+  };
+}
+
 export function completeGrammarTopicWithCheck(
   state,
   chapterId,
@@ -218,6 +301,10 @@ export function completeGrammarTopicWithCheck(
   checkResult,
   options = {}
 ) {
+  if (checkResult?.canceled === true) {
+    return { changed: false, completed: false, canceled: true, reason: 'canceled' };
+  }
+
   const chId = Number(chapterId);
   if (!Number.isInteger(chId) || chId <= 0) {
     return { changed: false, completed: false, reason: 'invalid-chapter-id' };

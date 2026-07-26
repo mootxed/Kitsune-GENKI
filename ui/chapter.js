@@ -33,6 +33,7 @@ import {
 } from '../src/practice-plan.js';
 import { isPracticeTaskEnabled } from '../src/practice-tasks.js';
 import { getOrGenerateDailyPlan } from '../src/daily-plan.js';
+import { openGrammarLesson } from './grammar-lesson.js';
 
 // ---------- Render: Chapter ----------
 export async function renderChapter(id, state, dependencies) {
@@ -442,8 +443,16 @@ export async function renderChapter(id, state, dependencies) {
         }
         if (status === 'completed') return;
 
-        const checkResult = await openGrammarCheck(topic);
-        const result = completeGrammarTopicWithCheck(state, id, itemId, checkResult);
+        const checkResult = await openGrammarLesson({
+          state,
+          chapterId: id,
+          topic,
+        });
+        if (checkResult.canceled) return;
+
+        const result = completeGrammarTopicWithCheck(state, id, itemId, checkResult, {
+          chapterMeta: l,
+        });
         if (!result.completed) {
           toast('Проверка не пройдена. Можно повторить попытку.');
         } else {
@@ -499,111 +508,5 @@ export async function renderChapter(id, state, dependencies) {
       await renderChapter(id, state, dependencies);
       dependencies?.renderHome?.();
     };
-  });
-}
-
-function generateGrammarQuizQuestions(topic) {
-  const title = topic?.title || 'Грамматическая тема';
-  let mainParticle = 'は';
-  if (title.includes('の')) mainParticle = 'の';
-  else if (title.includes('も')) mainParticle = 'も';
-  else if (title.includes('か')) mainParticle = 'か';
-  else if (title.includes('に')) mainParticle = 'に';
-  else if (title.includes('で')) mainParticle = 'で';
-  else if (title.includes('を')) mainParticle = 'を';
-
-  return [
-    {
-      id: 'q1',
-      title: '1. Конструкция темы',
-      question: `Какой элемент лежит в основе темы «${title}»?`,
-      options: [
-        { text: `Частица / модель «${mainParticle}» в предложении`, correct: true },
-        { text: 'Форма глагола на -て и союз から', correct: false },
-        { text: 'Пассивный залог и условная форма -たら', correct: false },
-      ],
-    },
-    {
-      id: 'q2',
-      title: '2. Частицы и связки',
-      question: `Выберите правильную частицу/элемент для структуры «${title}»:`,
-      options: [
-        { text: mainParticle, correct: true },
-        { text: mainParticle === 'は' ? 'に' : 'は', correct: false },
-        { text: mainParticle === 'で' ? 'から' : 'で', correct: false },
-      ],
-    },
-    {
-      id: 'q3',
-      title: '3. Структура предложения',
-      question: 'Укажите верный порядок элементов в японском предложении:',
-      options: [
-        { text: 'Подлежащее + Частица + Сказуемое / Глагол в конце', correct: true },
-        { text: 'Глагол в начале + Подлежащее + Дополнение', correct: false },
-        { text: 'Прилагательное после глагола + Частица в начале', correct: false },
-      ],
-    },
-  ];
-}
-
-function openGrammarCheck(topic) {
-  return new Promise((resolve) => {
-    const questions = generateGrammarQuizQuestions(topic);
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay grammar-check-modal';
-    overlay.innerHTML = `
-      <div class="modal-card" role="dialog" aria-modal="true" aria-label="Проверка грамматики" style="max-width:520px;max-height:90vh;overflow-y:auto;">
-        <h2>${topic?.title || 'Грамматическая тема'}</h2>
-        <div class="grammar-explanation" style="font-size:13px;line-height:1.5;margin-bottom:14px;padding:10px;background:rgba(0,0,0,0.03);border-radius:8px;">${topic?.content || 'Прочитайте объяснение темы и ответьте на мини-тест.'}</div>
-        <h3 style="font-size:15px;margin-bottom:10px;">Проверочные задания (3 вопроса)</h3>
-        <div class="grammar-quiz-container">
-          ${questions
-            .map(
-              (q, qIdx) => `
-            <div class="grammar-quiz-q" style="margin-bottom:14px;padding:10px;border:1px solid rgba(0,0,0,0.08);border-radius:8px;">
-              <strong style="display:block;font-size:13px;margin-bottom:4px;">${q.title}</strong>
-              <p style="font-size:13px;margin:0 0 8px;">${q.question}</p>
-              ${q.options
-                .map(
-                  (opt, oIdx) => `
-                <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:4px;cursor:pointer;">
-                  <input type="radio" name="g_q_${qIdx}" value="${opt.correct ? 'correct' : 'wrong'}">
-                  <span>${opt.text}</span>
-                </label>
-              `
-                )
-                .join('')}
-            </div>
-          `
-            )
-            .join('')}
-        </div>
-        <div class="modal-actions" style="margin-top:16px;">
-          <button type="button" class="btn-secondary" data-cancel>Отмена</button>
-          <button type="button" class="btn-primary" data-submit>Проверить ответы</button>
-        </div>
-      </div>`;
-
-    const finish = (result) => {
-      overlay.remove();
-      resolve(result);
-    };
-
-    overlay.querySelector('[data-cancel]').onclick = () =>
-      finish({ passed: false, score: 0, canceled: true });
-
-    overlay.querySelector('[data-submit]').onclick = () => {
-      let correct = 0;
-      for (let i = 0; i < questions.length; i++) {
-        const selected = overlay.querySelector(`input[name="g_q_${i}"]:checked`);
-        if (selected && selected.value === 'correct') {
-          correct++;
-        }
-      }
-      const score = Math.round((correct / questions.length) * 100);
-      finish({ passed: score >= 67, score });
-    };
-
-    document.body.appendChild(overlay);
   });
 }

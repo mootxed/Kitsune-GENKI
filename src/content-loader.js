@@ -1,7 +1,8 @@
-/* src/content-loader.js — Ленивая загрузка контента глав (уроки + истории) */
+/* src/content-loader.js — Ленивая загрузка контента глав (уроки + истории + грамматика) */
 
 // In-memory кэши: не дёргаем сеть повторно за уже загруженными чанками
 import { clearWorkbookPracticeCache, getWorkbookPracticeForChapter } from './workbook-practice.js';
+import { clearGrammarQuizCache, getGrammarQuizForChapter } from './grammar-quiz-content.js';
 
 let indexPromise = null;
 const chapterPromises = new Map(); // chapterId -> Promise<{ lesson, story }>
@@ -30,10 +31,11 @@ export function loadChapterData(chapterId) {
   const id = Number(chapterId);
   if (!chapterPromises.has(id)) {
     const promise = (async () => {
-      const [lessonRes, storyRes, workbookRes] = await Promise.allSettled([
+      const [lessonRes, storyRes, workbookRes, quizRes] = await Promise.allSettled([
         fetchJson(`data/lessons/lesson-${pad(id)}.json`),
         fetchJson(`data/stories/story-${pad(id)}.json`),
         getWorkbookPracticeForChapter(id),
+        getGrammarQuizForChapter(id),
       ]);
       if (lessonRes.status === 'rejected') {
         chapterPromises.delete(id);
@@ -47,9 +49,34 @@ export function loadChapterData(chapterId) {
           workbookRes.reason
         );
       }
+      if (quizRes.status === 'rejected') {
+        console.warn('[Content] Grammar Quiz data недоступны:', quizRes.reason);
+      }
+
+      const quizData = quizRes.status === 'fulfilled' ? quizRes.value : null;
+      const rawLesson = lessonRes.value.lesson;
+      const rawNotes = rawLesson.notes || rawLesson.grammar || [];
+
+      const mergedNotes = rawNotes.map((note, idx) => {
+        const noteId = note.noteId ?? note.note_id ?? idx + 1;
+        const topicId = String(note.id || `L${id}_g${noteId}`);
+        const quizTopic = quizData?.topics?.find(
+          (qt) => String(qt.id) === topicId || Number(qt.noteId) === Number(noteId)
+        );
+        if (quizTopic) {
+          return {
+            ...note,
+            ...quizTopic,
+          };
+        }
+        return note;
+      });
+
       return {
         lesson: {
-          ...lessonRes.value.lesson,
+          ...rawLesson,
+          notes: mergedNotes,
+          grammar: mergedNotes,
           practice: workbookRes.status === 'fulfilled' ? workbookRes.value : [],
         },
         version: lessonRes.value.version,
@@ -66,4 +93,5 @@ export function clearContentCache() {
   indexPromise = null;
   chapterPromises.clear();
   clearWorkbookPracticeCache();
+  clearGrammarQuizCache();
 }
