@@ -1,6 +1,6 @@
 /* ui/plan.js — экран плана обучения */
 
-import { StudyPlan } from '../studyplan.js';
+import { getAllPlanStudyDates, StudyPlan } from '../studyplan.js';
 import { $ } from '../src/utils.js';
 import { CONTENT_INDEX, ensureLesson, getLesson, renderHomeTodayCard } from './home.js';
 import { nav } from './router.js';
@@ -26,6 +26,34 @@ import { loadWorkbookPracticeData } from '../src/workbook-practice.js';
 
 let planCalendarMonth = new Date();
 let planRuntimeDependencies = {};
+let planEditorOpen = false;
+let planSubmissionPending = false;
+
+export function openPlanEditor(state) {
+  planEditorOpen = true;
+  populateForm(state?.studyPlan, state);
+  renderPlanView(state);
+  updateLivePreview(state);
+}
+
+export function closePlanEditor(state) {
+  planEditorOpen = false;
+  clearPlanWarning();
+  renderPlanView(state);
+}
+
+export function setPlanSubmissionPending(pending, state = null) {
+  planSubmissionPending = pending;
+  const generateBtn = $('#plan-generate-btn');
+  if (generateBtn) {
+    generateBtn.disabled = pending;
+    generateBtn.textContent = pending
+      ? 'Сохранение...'
+      : state?.studyPlan
+        ? 'Сохранить изменения'
+        : 'Создать план';
+  }
+}
 
 export function renderPlan(state, dependencies) {
   planRuntimeDependencies = dependencies || planRuntimeDependencies;
@@ -40,59 +68,75 @@ export function renderPlan(state, dependencies) {
   renderCompletedChaptersList(state);
   bindDeadlineMode();
   bindWeekdays();
+  bindWorkbookToggles(state);
+  bindFormLiveInputs(state);
 
   const generateButton = $('#plan-generate-btn');
   if (generateButton) {
     generateButton.onclick = async () => {
-      const workbookData = await loadWorkbookPracticeData();
-      const preferences = collectPlanPreferences(state);
-      if (!preferences) return;
+      setPlanSubmissionPending(true, state);
+      try {
+        const workbookData = await loadWorkbookPracticeData();
+        const preferences = collectPlanPreferences(state);
+        if (!preferences) return;
 
-      const catalog = buildStudyPlanContentCatalog(
-        CONTENT_INDEX,
-        workbookData,
-        preferences.workbookSettings
-      );
-
-      const preview = previewStudyPlanFromPreferences(preferences, catalog);
-
-      if (!preview.valid) {
-        showPlanWarning(preview.errors?.join(', ') || 'Ошибка при генерации плана');
-        return;
-      }
-
-      const result = commitStudyPlanFromPreferences(state, preferences, preview, {
-        source: 'plan-settings',
-        preserveHistory: true,
-      });
-
-      if (!result.success) {
-        showPlanWarning(result.error || 'Не удалось создать план');
-        return;
-      }
-
-      let reconcileResult = null;
-      if (
-        Array.isArray(state.priorKnowledgeChapterIds) &&
-        state.priorKnowledgeChapterIds.length > 0
-      ) {
-        reconcileResult = await reconcilePriorKnowledgeVocabulary(state, ensureLesson);
-      }
-
-      save();
-      renderPlanView(state);
-
-      if (reconcileResult && !reconcileResult.success) {
-        showPlanWarning(
-          `План создан, но не удалось подгрузить слова из глав: ${reconcileResult.failedChapters.join(
-            ', '
-          )}. Они будут добавлены при загрузке.`
+        const catalog = buildStudyPlanContentCatalog(
+          CONTENT_INDEX,
+          workbookData,
+          preferences.workbookSettings
         );
-        toast('План создан с предупреждениями');
-      } else if (reconcileResult && reconcileResult.addedCards > 0) {
-        toast('План создан. Слова из ранее изученных глав добавлены в SRS');
-      } else {
-        toast('План обучения создан');
+
+        const preview = previewStudyPlanFromPreferences(preferences, catalog);
+
+        if (!preview.valid) {
+          showPlanWarning(formatPlanError(preview.errors?.[0] || 'invalid-preview'));
+          return;
+        }
+
+        const isTightAndNotAccepted =
+          preview.isTight && !preview.feasible && !preferences.acceptRecommendedDeadline;
+        if (isTightAndNotAccepted) {
+          showPlanWarning(formatPlanError('target-deadline-too-tight'));
+          updateLivePreview(state);
+          return;
+        }
+
+        const result = commitStudyPlanFromPreferences(state, preferences, preview, {
+          source: 'plan-settings',
+          preserveHistory: true,
+        });
+
+        if (!result.success) {
+          showPlanWarning(formatPlanError(result.error || 'commit-failed'));
+          return;
+        }
+
+        planEditorOpen = false;
+        clearPlanWarning();
+        await save(true);
+        renderPlanView(state);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast(state.studyPlan ? 'План обучения сохранён' : 'План обучения создан');
+
+        if (
+          Array.isArray(state.priorKnowledgeChapterIds) &&
+          state.priorKnowledgeChapterIds.length > 0
+        ) {
+          void reconcilePriorKnowledgeVocabulary(state, ensureLesson)
+            .then((reconcileResult) => {
+              if (reconcileResult && !reconcileResult.success) {
+                toast('Часть слов загрузится при изучении соответствующих глав');
+              } else if (reconcileResult && reconcileResult.addedCards > 0) {
+                toast('Слова ранее изученных глав добавили в SRS');
+              }
+            })
+            .catch((err) => console.warn('[Plan] Reconcile error:', err));
+        }
+      } catch (err) {
+        console.error('[Plan] Error committing plan:', err);
+        showPlanWarning(err.message || 'Ошибка при сохранении плана');
+      } finally {
+        setPlanSubmissionPending(false, state);
       }
     };
   }
@@ -100,8 +144,7 @@ export function renderPlan(state, dependencies) {
   const editButton = $('#plan-edit-btn');
   if (editButton) {
     editButton.onclick = () => {
-      populateForm(state.studyPlan, state);
-      $('#plan-form-container')?.classList.toggle('hidden');
+      openPlanEditor(state);
     };
   }
 
@@ -155,6 +198,7 @@ export function renderPlan(state, dependencies) {
     deleteButton.onclick = () => {
       if (!confirm('Удалить текущий план? История обучения и FSRS-карточки сохранятся.')) return;
       state.studyPlan = null;
+      planEditorOpen = false;
       ensureActiveChapterId(state, CONTENT_INDEX);
       save();
       renderPlanView(state);
@@ -180,6 +224,110 @@ function bindDeadlineMode() {
 function bindWeekdays() {
   document.querySelectorAll('.weekday-btn').forEach((button) => {
     button.onclick = () => button.classList.toggle('active');
+  });
+}
+
+function bindWorkbookToggles(state) {
+  const enabledCb = $('#plan-workbook-enabled');
+  const subOptions = $('#plan-workbook-sub-options');
+  if (enabledCb && subOptions) {
+    const updateVisibility = () => {
+      subOptions.style.display = enabledCb.checked ? 'block' : 'none';
+    };
+    enabledCb.addEventListener('change', () => {
+      updateVisibility();
+      updateLivePreview(state);
+    });
+    updateVisibility();
+  }
+  $('#plan-workbook-conversation-grammar')?.addEventListener('change', () =>
+    updateLivePreview(state)
+  );
+  $('#plan-workbook-reading-writing')?.addEventListener('change', () => updateLivePreview(state));
+}
+
+function bindFormLiveInputs(state) {
+  const inputs = [
+    '#plan-start-date',
+    '#plan-total-days',
+    '#plan-deadline-date',
+    '#plan-capacity-minutes',
+  ];
+  inputs.forEach((selector) => {
+    $(selector)?.addEventListener('change', () => updateLivePreview(state));
+    $(selector)?.addEventListener('input', () => updateLivePreview(state));
+  });
+
+  document.querySelectorAll('.weekday-btn').forEach((button) => {
+    button.addEventListener('click', () => updateLivePreview(state));
+  });
+
+  document.querySelectorAll('.plan-deadline-toggle .toggle-btn').forEach((button) => {
+    button.addEventListener('click', () => updateLivePreview(state));
+  });
+}
+
+async function updateLivePreview(state) {
+  const container = $('#plan-preview-container');
+  if (!container) return;
+
+  const preferences = collectPlanPreferences(state);
+  if (!preferences) return;
+
+  const workbookData = await loadWorkbookPracticeData();
+  const catalog = buildStudyPlanContentCatalog(
+    CONTENT_INDEX,
+    workbookData,
+    preferences.workbookSettings
+  );
+
+  const preview = previewStudyPlanFromPreferences(preferences, catalog);
+
+  if (!preview.valid) {
+    container.classList.add('hidden');
+    return;
+  }
+
+  const estDateFormatted = formatPlanDate(preview.estimatedCompletionDate);
+  const recDateFormatted = formatPlanDate(preview.recommendedTargetDate);
+
+  let html = `
+    <div style="font-size:0.9rem; line-height:1.4;">
+      <strong>Предварительный расчёт:</strong><br>
+      • Глав для изучения: ${preview.previewPlan?.segments?.filter((s) => s.type === 'chapter').length || 12}<br>
+      • Учебных дней: ${preview.requiredStudyDays} (по ${preferences.dailyCapacityMinutes} мин/день)<br>
+      • Общее время нового материала: ~${preview.totalRequiredMinutes} минут<br>
+      • Прогноз завершения: <b>${estDateFormatted}</b>
+    </div>
+  `;
+
+  if (preview.isTight) {
+    const isChecked = preferences.acceptRecommendedDeadline;
+    html += `
+      <div style="margin-top:0.75rem; padding:0.75rem; background:rgba(255,152,0,0.1); border-left:3px solid #ff9800; border-radius:4px; font-size:0.875rem;">
+        <strong style="color:#e65100;">⚠️ Выбранный срок слишком короткий</strong><br>
+        • Выбранный срок: ${preferences.targetValue || preferences.studyDays.length} учебных дней<br>
+        • Минимально требуется: ${preview.requiredStudyDays} учебных дней<br>
+        • Рекомендуемое завершение: <b>${recDateFormatted}</b><br><br>
+        <strong>Рекомендации:</strong>
+        <ul style="margin:0.25rem 0 0.5rem 1.25rem; padding:0;">
+          ${preview.recommendations.map((r) => `<li>${r.label}</li>`).join('')}
+        </ul>
+        <label class="chapter-checkbox-item" style="margin-top:0.5rem;">
+          <input type="checkbox" id="plan-accept-deadline" data-testid="plan-accept-deadline" ${isChecked ? 'checked' : ''} />
+          <span class="chapter-checkbox-label" style="font-weight:600; color:#e65100;">
+            Использовать рекомендуемый реалистичный срок (${recDateFormatted})
+          </span>
+        </label>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+  container.classList.remove('hidden');
+
+  $('#plan-accept-deadline')?.addEventListener('change', () => {
+    updateLivePreview(state);
   });
 }
 
@@ -211,6 +359,7 @@ function renderCompletedChaptersList(state) {
     checkbox.addEventListener('change', () => {
       syncPriorKnowledgeFromForm(state);
       updateManualProgress();
+      updateLivePreview(state);
     });
   });
 }
@@ -238,11 +387,6 @@ function updateManualProgress() {
   if (label) label.textContent = `Завершено: ${checked.length} из ${all.length} глав`;
 }
 
-function selectedCompletedChapters(state) {
-  const formPrior = getPriorKnowledgeFromForm(state);
-  return getCompletedChapterIds({ ...state, priorKnowledgeChapterIds: formPrior }, CONTENT_INDEX);
-}
-
 function collectPlanPreferences(state) {
   const priorKnowledgeChapterIds = getPriorKnowledgeFromForm(state);
   const startDate = $('#plan-start-date')?.value || getTodayDateKey();
@@ -250,11 +394,14 @@ function collectPlanPreferences(state) {
     Number(button.dataset.day)
   );
   const dailyCapacityMinutes = Number($('#plan-capacity-minutes')?.value || 30);
+
+  const wbEnabled = $('#plan-workbook-enabled')?.checked !== false;
+  const includeCG = $('#plan-workbook-conversation-grammar')?.checked !== false;
   const includeRW = $('#plan-workbook-reading-writing')?.checked !== false;
 
   const workbookSettings = {
-    enabled: state?.workbookSettings?.enabled !== false,
-    includeConversationGrammar: state?.workbookSettings?.includeConversationGrammar !== false,
+    enabled: wbEnabled,
+    includeConversationGrammar: includeCG,
     includeReadingWriting: includeRW,
   };
 
@@ -292,9 +439,19 @@ function populateForm(plan, state) {
   if (deadline) deadline.value = plan.deadline || '';
   if (days) days.value = plan.totalDays || 90;
   if (capacity) capacity.value = plan.capacityMinutes || state?.dailyCapacityMinutes || 30;
-  const readingWriting = $('#plan-workbook-reading-writing');
-  if (readingWriting) {
-    readingWriting.checked = state?.workbookSettings?.includeReadingWriting !== false;
+
+  const wbEnabled = $('#plan-workbook-enabled');
+  if (wbEnabled) wbEnabled.checked = state?.workbookSettings?.enabled !== false;
+
+  const cg = $('#plan-workbook-conversation-grammar');
+  if (cg) cg.checked = state?.workbookSettings?.includeConversationGrammar !== false;
+
+  const rw = $('#plan-workbook-reading-writing');
+  if (rw) rw.checked = state?.workbookSettings?.includeReadingWriting !== false;
+
+  const subOptions = $('#plan-workbook-sub-options');
+  if (subOptions && wbEnabled) {
+    subOptions.style.display = wbEnabled.checked ? 'block' : 'none';
   }
 
   document.querySelectorAll('.weekday-btn').forEach((button) => {
@@ -307,6 +464,15 @@ function renderPlanView(state) {
   const form = $('#plan-form-container');
   const view = $('#plan-view-container');
   const controls = $('#plan-controls');
+
+  const title = $('#plan-form-title');
+  const btn = $('#plan-generate-btn');
+
+  if (title) title.textContent = plan ? 'Редактировать план' : 'Создать новый план';
+  if (btn && !planSubmissionPending) {
+    btn.textContent = plan ? 'Сохранить изменения' : 'Создать план';
+  }
+
   if (!plan || plan.error) {
     form?.classList.remove('hidden');
     view?.classList.add('hidden');
@@ -314,9 +480,16 @@ function renderPlanView(state) {
     return;
   }
 
-  form?.classList.add('hidden');
-  view?.classList.remove('hidden');
-  controls?.classList.remove('hidden');
+  if (planEditorOpen) {
+    form?.classList.remove('hidden');
+    view?.classList.add('hidden');
+    controls?.classList.add('hidden');
+  } else {
+    form?.classList.add('hidden');
+    view?.classList.remove('hidden');
+    controls?.classList.remove('hidden');
+  }
+
   view?.classList.toggle('plan-paused', plan.paused === true);
   const pause = $('#plan-pause-btn');
   if (pause) pause.textContent = plan.paused ? '▶️ Возобновить' : '⏸️ Приостановить';
@@ -432,36 +605,59 @@ export function renderTodayPlan(dailyPlan, state = { studyPlan: {} }) {
 
 function renderPlanStatusCard(plan, state) {
   const today = getTodayDateKey();
-  const allDates = plan?.studyDates || [];
+  const allDates = getAllPlanStudyDates(plan);
+  const startDate = plan?.startDate || (allDates.length > 0 ? allDates[0] : today);
   const totalStudyDays = allDates.length || plan?.totalDays || 1;
 
-  const pastAndTodayDates = allDates.filter((d) => d <= today);
-  const expectedDays = pastAndTodayDates.length;
+  if (today < startDate) {
+    const formattedStartDate = parseDateKey(startDate).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+    });
+    return `
+      <div class="card plan-status-card" style="margin-bottom:14px;border-left:4px solid var(--indigo,#1e224e);" data-testid="plan-status-card">
+        <div class="row-between" style="margin-bottom:6px;">
+          <strong style="font-size:14px;">План начнётся ${formattedStartDate}</strong>
+          <span class="badge" style="background:rgba(30,34,78,0.15);color:var(--indigo,#1e224e);">Не начат</span>
+        </div>
+        <p style="margin:4px 0 6px;font-size:13px;">Всего запланировано <b>${totalStudyDays}</b> учебных дней</p>
+        <div class="row-between" style="font-size:12px;color:var(--muted,#666);">
+          <span>Прогноз завершения: <b style="color:var(--ink,#333);">${plan?.deadline || ''}</b></span>
+        </div>
+      </div>
+    `;
+  }
 
-  const completedChaptersCount = (plan?.completedChapters || []).length;
-  let completedDatesCount = 0;
+  const pastAndTodayDates = allDates.filter((d) => d <= today);
+  const elapsedStudyDays = pastAndTodayDates.length;
+
+  let completedStudyDays = 0;
   for (const d of pastAndTodayDates) {
-    const status = StudyPlan.getDateStatus(plan, d, {
+    const dateStatus = StudyPlan.getDateStatus(plan, d, {
       learningEvents: state?.learningEvents || [],
       reviewEvents: state?.reviewEvents || [],
     });
-    if (status === 'completed') completedDatesCount++;
+    if (dateStatus === 'completed') completedStudyDays++;
   }
 
-  const actualStudyDays = Math.max(completedDatesCount, completedChaptersCount);
-  const daysBehind = Math.max(0, expectedDays - actualStudyDays);
+  const daysBehind = Math.max(0, elapsedStudyDays - completedStudyDays);
+  const expectedProgress = Math.min(100, Math.round((elapsedStudyDays / totalStudyDays) * 100));
+  const actualProgress = Math.min(100, Math.round((completedStudyDays / totalStudyDays) * 100));
 
-  const expectedProgress = Math.min(100, Math.round((expectedDays / totalStudyDays) * 100));
-  const actualProgress = Math.min(100, Math.round((actualStudyDays / totalStudyDays) * 100));
+  const totalChapters = CONTENT_INDEX.length || 12;
+  const completedChaptersCount = (plan?.completedChapters || []).length;
 
   let status = 'on-track';
-  if (completedChaptersCount >= (CONTENT_INDEX.length || 12)) {
+  if (
+    completedChaptersCount >= totalChapters ||
+    (allDates.length > 0 && completedStudyDays >= totalStudyDays)
+  ) {
     status = 'completed';
   } else if (plan?.paused) {
     status = 'paused';
   } else if (daysBehind > 0) {
     status = 'behind';
-  } else if (actualStudyDays > expectedDays) {
+  } else if (completedStudyDays > elapsedStudyDays) {
     status = 'ahead';
   }
 
@@ -490,7 +686,7 @@ function renderPlanStatusCard(plan, state) {
     borderColor = 'var(--blue,#1976d2)';
   }
 
-  const forecastStr = plan?.deadline || '';
+  const forecastStr = plan?.deadline || (allDates.length > 0 ? allDates.at(-1) : '');
 
   const actionsHtml =
     status === 'behind'
@@ -506,7 +702,7 @@ function renderPlanStatusCard(plan, state) {
         <strong style="font-size:14px;">${statusTitle}</strong>
         ${badgeHtml}
       </div>
-      <p style="margin:4px 0 6px;font-size:13px;">Пройдено <b>${actualStudyDays}</b> из <b>${totalStudyDays}</b> учебных дней (${actualProgress}%)</p>
+      <p style="margin:4px 0 6px;font-size:13px;">Пройдено <b>${completedStudyDays}</b> из <b>${totalStudyDays}</b> учебных дней (${actualProgress}%)</p>
       <div class="row-between" style="font-size:12px;color:var(--muted,#666);">
         <span>Прогноз завершения: <b style="color:var(--ink,#333);">${forecastStr}</b></span>
         <span>Ожидалось: ${expectedProgress}%</span>
@@ -744,11 +940,31 @@ function showDeadlineExpiredDialog(result, state, save, chaptersList = CONTENT_I
   });
 }
 
+function formatPlanError(code) {
+  const map = {
+    'target-deadline-too-tight':
+      'Указанный срок слишком короткий. Отметьте согласие с рекомендуемым сроком или скорректируйте параметры.',
+    'start-date-in-past': 'Дата начала не может быть в прошлом.',
+    'no-study-days-selected': 'Выберите хотя бы один учебный день недели.',
+    'invalid-daily-capacity': 'Укажите корректное дневное время обучения.',
+    'all-chapters-marked-as-known': 'Все главы отмечены как изученные. Нечего планировать.',
+    'invalid-preview-result': 'Ошибка параметров плана.',
+  };
+  return map[code] || code || 'Не удалось создать план обучения.';
+}
+
 function showPlanWarning(message) {
   const warning = $('#plan-warning');
   if (!warning) return;
   warning.textContent = message;
   warning.classList.remove('hidden');
+}
+
+function clearPlanWarning() {
+  const warning = $('#plan-warning');
+  if (!warning) return;
+  warning.textContent = '';
+  warning.classList.add('hidden');
 }
 
 function formatPlanDate(dateKey) {

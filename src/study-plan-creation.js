@@ -1,7 +1,7 @@
 /* src/study-plan-creation.js — Unified Study Plan Content Catalog, Preview, and Commit Service */
 
 import { addLocalDays, formatDateKey, getTodayDateKey, parseDateKey } from './local-date.js';
-import { getStudyDateKeys, StudyPlan } from '../studyplan.js';
+import { getStudyDateKeys, mergeUpdatedPlanWithHistory, StudyPlan } from '../studyplan.js';
 import { completeOnboarding } from './onboarding-state.js';
 import { ensureActiveChapterId } from './chapter-progress.js';
 import { getBuiltInPracticeTasks } from './practice-tasks.js';
@@ -322,16 +322,9 @@ export function commitStudyPlanFromPreferences(state, preferences, previewResult
   };
 
   if (isUpdate && state.studyPlan) {
-    const existingPlan = state.studyPlan;
-    const newPlan = previewResult.previewPlan;
-
-    // Preserve history, completed chapters, dateStatuses, vocabulary unlocks
-    newPlan.history = [...(existingPlan.history || []), ...(newPlan.history || [])];
-    newPlan.completedChapters = [
-      ...new Set([...(existingPlan.completedChapters || []), ...(newPlan.completedChapters || [])]),
-    ].sort((a, b) => a - b);
-
-    state.studyPlan = newPlan;
+    state.studyPlan = mergeUpdatedPlanWithHistory(state.studyPlan, previewResult.previewPlan, {
+      today: getTodayDateKey(),
+    });
   } else {
     state.studyPlan = previewResult.previewPlan;
   }

@@ -367,7 +367,7 @@
 
           <!-- Форма создания плана -->
           <div id="plan-form-container">
-            <h3>Создать новый план</h3>
+            <h3 id="plan-form-title">Создать новый план</h3>
 
             <div class="form-group">
               <label class="form-label">Дата начала</label>
@@ -460,17 +460,34 @@
                 <label class="chapter-checkbox-item">
                   <input
                     type="checkbox"
-                    id="plan-workbook-reading-writing"
-                    data-testid="plan-workbook-reading-writing"
+                    id="plan-workbook-enabled"
+                    data-testid="plan-workbook-enabled"
                     checked
                   />
-                  <span class="chapter-checkbox-label">
-                    Включить раздел чтения и письма Workbook
-                  </span>
+                  <span class="chapter-checkbox-label">Включить GENKI Workbook</span>
                 </label>
+                <div id="plan-workbook-sub-options" style="margin-left: 1.5rem; margin-top: 0.5rem">
+                  <label class="chapter-checkbox-item">
+                    <input
+                      type="checkbox"
+                      id="plan-workbook-conversation-grammar"
+                      data-testid="plan-workbook-conversation-grammar"
+                      checked
+                    />
+                    <span class="chapter-checkbox-label">Разговор и грамматика</span>
+                  </label>
+                  <label class="chapter-checkbox-item">
+                    <input
+                      type="checkbox"
+                      id="plan-workbook-reading-writing"
+                      data-testid="plan-workbook-reading-writing"
+                      checked
+                    />
+                    <span class="chapter-checkbox-label">Чтение и письмо</span>
+                  </label>
+                </div>
                 <p style="font-size: 0.875rem; color: #666; margin: 0.5rem 0 1rem">
-                  Добавляет 22 последовательных задания чтения и письма. По умолчанию они
-                  обязательны для завершения соответствующих глав.
+                  Настройки Workbook регулируют включение заданий практики в главы и план.
                 </p>
                 <label class="form-label">Уже изученные главы (ручная корректировка)</label>
                 <p style="font-size: 0.875rem; color: #666; margin-bottom: 1rem">
@@ -479,6 +496,8 @@
                 <div id="completed-chapters-list" class="completed-chapters-list"></div>
               </div>
             </details>
+
+            <div id="plan-preview-container" class="plan-preview-container card hidden"></div>
 
             <div id="plan-warning" class="plan-warning hidden"></div>
 

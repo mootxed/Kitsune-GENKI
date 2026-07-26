@@ -429,7 +429,7 @@ export async function renderChapter(id, state, dependencies) {
       e.preventDefault();
       e.stopPropagation();
 
-      if (isPriorKnowledge) return;
+      if (isPrior) return;
       const itemId = el.dataset.check;
       const chapters = CONTENT_INDEX.map((chapter) => (chapter.id === Number(id) ? l : chapter));
 

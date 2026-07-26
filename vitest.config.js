@@ -20,6 +20,7 @@ export default defineConfig({
 
     // Паттерны для поиска тестовых файлов
     include: ['tests/**/*.test.js'],
+    exclude: ['tests/e2e/**', 'node_modules/**'],
 
     // Таймаут для тестов (в миллисекундах)
     testTimeout: 10000,

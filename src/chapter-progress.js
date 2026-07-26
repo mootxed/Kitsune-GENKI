@@ -53,7 +53,7 @@ export function isVocabularyBlockCompleted(appState, chapterId, chapterMeta = nu
   if (words && Array.isArray(words) && words.length > 0) {
     return getChapterVocabularyProgress(appState, id, chapterMeta).isCompleted;
   }
-  return true;
+  return false;
 }
 
 export function materializeLegacyChapterEvidence(chapterState, chapterMeta) {
@@ -98,12 +98,14 @@ export function isGrammarBlockCompleted(chapterState, chapterMeta) {
 }
 
 export function isPracticeBlockCompleted(chapterState, chapterMeta, appState = null) {
-  const requiredTasks = getRequiredChapterPracticeTasks(chapterMeta, appState?.workbookSettings);
+  const workbookSettings = appState?.workbookSettings || appState || {};
+  const requiredTasks = getRequiredChapterPracticeTasks(chapterMeta, workbookSettings);
   if (requiredTasks.length === 0) return true;
   return requiredTasks.every((task) => isPracticeItemCompleted(chapterState, task.id));
 }
 
-export function getRequiredChapterSections(chapterMeta = null) {
+export function getRequiredChapterSections(chapterMeta = null, appStateOrSettings = null) {
+  const workbookSettings = appStateOrSettings?.workbookSettings || appStateOrSettings || {};
   const configured = chapterMeta?.checklist;
   if (Array.isArray(configured) && configured.length > 0) {
     return configured
@@ -127,7 +129,7 @@ export function getRequiredChapterSections(chapterMeta = null) {
   }
 
   const grammarTopics = getChapterGrammarTopics(chapterMeta);
-  const practiceTasks = getChapterPracticeTasks(chapterMeta);
+  const practiceTasks = getRequiredChapterPracticeTasks(chapterMeta, workbookSettings);
 
   const sections = [];
   sections.push({ id: 'vocab', label: 'Новые слова', type: 'vocabulary' });
@@ -156,10 +158,11 @@ export function hasCompletedChecklist(
   const checklist = chapterState?.checklist;
   if (!checklist || typeof checklist !== 'object') return false;
 
+  const workbookSettings = appState?.workbookSettings || {};
   const sections =
     Array.isArray(requiredSections) && requiredSections.length > 0
       ? requiredSections
-      : getRequiredChapterSections(chapterMeta);
+      : getRequiredChapterSections(chapterMeta, workbookSettings);
 
   if (!sections || sections.length === 0) return false;
 
@@ -179,19 +182,7 @@ export function hasCompletedChecklist(
       return isGrammarTopicCompleted(chapterState, secId);
     }
     if (sec.type === 'practice') {
-      if (sec.task?.required === false) return true;
-      if (
-        sec.task?.section === 'reading-writing' &&
-        appState?.workbookSettings?.includeReadingWriting === false
-      ) {
-        return true;
-      }
-      if (
-        sec.task?.section !== 'reading-writing' &&
-        sec.task?.requiredForChapterCompletion === false
-      ) {
-        return true;
-      }
+      if (!isPracticeTaskRequired(sec.task, workbookSettings)) return true;
     }
     return checklist[secId] === true;
   });

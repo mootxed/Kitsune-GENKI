@@ -129,7 +129,7 @@ export function completePracticeTask(state, chapterId, taskId, options = {}) {
   const occurredAt = options.now ?? Date.now();
   const dateKey = options.dateKey || localDateKey(occurredAt);
 
-  const unlock = canUnlockPracticeTask(state, chId, task, options.chapterMeta, {
+  const unlock = canUnlockPracticeTask(state, chId, task, chapterMeta, {
     dateKey: options.dateKey,
     now: occurredAt,
   });

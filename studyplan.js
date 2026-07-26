@@ -721,6 +721,89 @@ export function getPlanDateAvailability(plan, chapterId, dateKey = getTodayDateK
   return { isStudyDay: true, isRestDay: false, isPaused: false, reason: 'eligible' };
 }
 
+export function getAllPlanStudyDates(plan) {
+  return [
+    ...new Set(
+      (plan?.segments || []).flatMap((segment) => segment?.assignedDates || []).filter(Boolean)
+    ),
+  ].sort();
+}
+
+export function mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, options = {}) {
+  if (!existingPlan) return generatedPlan;
+  if (!generatedPlan) return existingPlan;
+
+  const today = options.today || getTodayDateKey();
+
+  const historyMap = new Map();
+  for (const item of existingPlan.history || []) {
+    if (item && item.eventId) historyMap.set(item.eventId, item);
+  }
+  for (const item of generatedPlan.history || []) {
+    if (item && item.eventId && !historyMap.has(item.eventId)) {
+      historyMap.set(item.eventId, item);
+    }
+  }
+
+  const completedChapters = [
+    ...new Set([
+      ...(existingPlan.completedChapters || []),
+      ...(generatedPlan.completedChapters || []),
+    ]),
+  ].sort((a, b) => a - b);
+
+  const mergedDateStatuses = { ...(generatedPlan.dateStatuses || {}) };
+  if (existingPlan.dateStatuses) {
+    for (const [dateKey, status] of Object.entries(existingPlan.dateStatuses)) {
+      if (dateKey < today) {
+        mergedDateStatuses[dateKey] = status;
+      }
+    }
+  }
+
+  const mergedVocabSchedule = { ...(generatedPlan.vocabularySchedule || {}) };
+  if (existingPlan.vocabularySchedule) {
+    for (const [dateKey, batch] of Object.entries(existingPlan.vocabularySchedule)) {
+      if (dateKey < today) {
+        mergedVocabSchedule[dateKey] = batch;
+      }
+    }
+  }
+
+  const pastExistingSegments = (existingPlan.segments || []).filter((seg) => {
+    if (seg.status === 'completed') return true;
+    const dates = seg.assignedDates || [];
+    return dates.length > 0 && dates.every((d) => d < today);
+  });
+
+  const pastChapterIds = new Set(
+    pastExistingSegments.filter((s) => s.type === 'chapter').map((s) => s.chapterId)
+  );
+
+  const futureNewSegments = (generatedPlan.segments || []).filter((seg) => {
+    if (seg.type === 'chapter' && pastChapterIds.has(seg.chapterId)) {
+      return false;
+    }
+    const dates = seg.assignedDates || [];
+    return dates.length === 0 || dates.some((d) => d >= today);
+  });
+
+  const mergedSegments = [...pastExistingSegments, ...futureNewSegments];
+
+  return {
+    ...generatedPlan,
+    startDate: existingPlan.startDate || generatedPlan.startDate,
+    segments: mergedSegments,
+    dateStatuses: mergedDateStatuses,
+    vocabularySchedule: mergedVocabSchedule,
+    history: Array.from(historyMap.values()),
+    completedChapters,
+    completedAt: existingPlan.completedAt || generatedPlan.completedAt || null,
+    dailyPlanHistory: existingPlan.dailyPlanHistory || generatedPlan.dailyPlanHistory || {},
+    paused: Boolean(existingPlan.paused),
+  };
+}
+
 export const StudyPlan = {
   calculateChapterWeight,
   calculateRequiredChapterMinutes,
@@ -736,4 +819,6 @@ export const StudyPlan = {
   getDateStatus,
   getDailyPlanContext,
   getPlanDateAvailability,
+  getAllPlanStudyDates,
+  mergeUpdatedPlanWithHistory,
 };
