@@ -90,6 +90,7 @@ export const StateSchema = z
     pendingReviewLogs: z.array(z.unknown()).max(5000).optional(),
     priorKnowledgeChapterIds: z.array(z.number()).max(1000).optional(),
     learningEvents: z.array(z.unknown()).max(10000).optional(),
+    vocabularyUnlocks: z.record(z.string(), z.unknown()).optional(),
     unlockedAchievements: z
       .array(z.union([z.string().max(200), z.number()]))
       .max(2000)

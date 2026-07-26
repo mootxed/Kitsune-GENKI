@@ -50,16 +50,22 @@ export function isWordUnlocked(wordId, chaptersOrAppState, maybeAppState = null)
 
 export function dueCards(srsRecords, chapterId, now = Date.now()) {
   const seen = new Set();
-  return Object.values(srsRecords).filter((c) => {
+  return Object.values(srsRecords || {}).filter((c) => {
+    if (!c) return false;
     if (c.suspended === true) return false;
+    if (c.planLocked === true) return false;
     if (chapterId && cardChapter(c.id) !== chapterId) return false;
     if (seen.has(c.id)) return false;
     return SRS.isDue(c, now);
   });
 }
 
-export function allCards(srsRecords, chapterId) {
-  return Object.values(srsRecords).filter((c) => !chapterId || cardChapter(c.id) === chapterId);
+export function allCards(srsRecords, chapterId, includeLocked = false) {
+  return Object.values(srsRecords || {}).filter((c) => {
+    if (!c) return false;
+    if (!includeLocked && c.planLocked === true) return false;
+    return !chapterId || cardChapter(c.id) === chapterId;
+  });
 }
 
 export function getUnlockedParticles(chaptersOrAppState, lessons, maybeAppState = null) {

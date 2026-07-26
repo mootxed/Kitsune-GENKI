@@ -4,11 +4,12 @@ import { SRS } from '../srs.js';
 import { db, STORES } from '../src/db.js';
 import { appendReviewLog } from '../src/review-log.js';
 import { acknowledgeReviewLogs, compactReviewJournal } from '../src/review-journal.js';
+import { normalizeVocabularyLockState } from '../src/vocabulary-unlock-plan.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-export const CURRENT_VERSION = 9;
+export const CURRENT_VERSION = 10;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -189,6 +190,15 @@ const MIGRATIONS = {
       version: 9,
     };
   },
+  10: (oldState) => {
+    const baseState = { ...oldState };
+    baseState.vocabularyUnlocks =
+      baseState.vocabularyUnlocks && typeof baseState.vocabularyUnlocks === 'object'
+        ? baseState.vocabularyUnlocks
+        : {};
+    baseState.version = 10;
+    return normalizeVocabularyLockState(baseState);
+  },
 };
 
 // ---------- Default State ----------
@@ -201,6 +211,7 @@ export function defaultState() {
     priorKnowledgeChapterIds: [], // главы, изученные пользователем вне приложения
     activeChapterId: null, // единый указатель на главу для «Продолжить обучение»
     learningEvents: [], // фактические события разделов/глав для плана, отдельно от dailyCards
+    vocabularyUnlocks: {}, // chapterId -> { dateKey -> { itemIds, occurredAt } }
     srs: {}, // cardId -> SRS record
     reviewEvents: [], // ограниченное окно событий; полные snapshot остаются только для Undo
     masteryArchive: {}, // агрегированные доказательства из свёрнутых review events
@@ -320,6 +331,11 @@ function normalizeRuntimeShape(loadedState) {
         : [],
     },
   };
+  normalized.vocabularyUnlocks =
+    loadedState.vocabularyUnlocks && typeof loadedState.vocabularyUnlocks === 'object'
+      ? loadedState.vocabularyUnlocks
+      : {};
+  normalizeVocabularyLockState(normalized);
   return normalized;
 }
 

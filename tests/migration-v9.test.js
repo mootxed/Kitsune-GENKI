@@ -16,7 +16,6 @@ describe('State Migration v9', () => {
 
     const migrated = runMigrations(v8State);
     expect(migrated.version).toBe(CURRENT_VERSION);
-    expect(migrated.version).toBe(9);
     expect(migrated.settings.notifyEnabled).toBe(true);
     expect(migrated.settings.notifyTime).toBe('09:00');
     expect(migrated.settings.notifyDays).toEqual([1, 2, 3, 4, 5, 6, 0]);
@@ -39,7 +38,7 @@ describe('State Migration v9', () => {
     };
 
     const migrated = runMigrations(v9State);
-    expect(migrated.version).toBe(9);
+    expect(migrated.version).toBe(CURRENT_VERSION);
     expect(migrated.settings.notifyDays).toEqual([1, 2, 3, 4, 5]);
     expect(migrated.settings.notificationState.lastDailyDigestDate).toBe('2026-07-25');
   });

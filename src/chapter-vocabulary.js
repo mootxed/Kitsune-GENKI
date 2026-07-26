@@ -17,9 +17,10 @@ import { shouldChapterHaveVocabularyCards } from './chapter-progress.js';
  *
  * @param {object} appState - Global state object containing srs, reviewEvents, masteryArchive
  * @param {object} word - Normalized word object
+ * @param {object} [options] - Options like planLocked
  * @returns {boolean} True if any card was added or modified in appState.srs
  */
-export function ensureVocabularySkillCards(appState, word) {
+export function ensureVocabularySkillCards(appState, word, options = {}) {
   if (!appState || !appState.srs || !word) return false;
 
   let changed = false;
@@ -31,6 +32,24 @@ export function ensureVocabularySkillCards(appState, word) {
       appState.masteryArchive?.[word.id]
     )
   );
+
+  const existingCards = Object.values(appState.srs).filter((c) => c && c.itemId === word.id);
+  const hasUnlockedCard = existingCards.some(
+    (c) =>
+      c.planLocked !== true ||
+      c.reps > 0 ||
+      c.state !== 0 ||
+      c.lastReview != null ||
+      c.legacyMasteryEstimated === true
+  );
+
+  const isPrior = Array.isArray(appState.priorKnowledgeChapterIds)
+    ? appState.priorKnowledgeChapterIds.some(
+        (chId) => Number(chId) === Number(word.chapterId || word.id?.match(/^L(\d+)_/)?.[1])
+      )
+    : false;
+
+  const shouldBeLocked = options.planLocked === true && !hasUnlockedCard && !isPrior;
 
   for (const skill of Object.values(SKILLS)) {
     const cardId = makeCardId(word.id, skill);
@@ -50,6 +69,7 @@ export function ensureVocabularySkillCards(appState, word) {
         itemId: word.id,
         skill,
         knowledgeType: KNOWLEDGE_TYPES.VOCABULARY,
+        planLocked: shouldBeLocked,
       });
       changed = true;
     }
@@ -64,9 +84,10 @@ export function ensureVocabularySkillCards(appState, word) {
  *
  * @param {object} appState - Global state object
  * @param {object} lesson - Normalized lesson object with words array
+ * @param {object} [options] - Options like planLocked
  * @returns {{ created: number, modified: number, changed: boolean }}
  */
-export function ensureChapterVocabularyCards(appState, lesson) {
+export function ensureChapterVocabularyCards(appState, lesson, options = {}) {
   if (!appState || !lesson || !Array.isArray(lesson.words)) {
     return { created: 0, modified: 0, changed: false };
   }
@@ -79,9 +100,8 @@ export function ensureChapterVocabularyCards(appState, lesson) {
   for (const word of lesson.words) {
     const applicable = vocabularySkills(word);
     const wordCardIds = applicable.map((skill) => makeCardId(word.id, skill));
-    const existBefore = wordCardIds.filter((id) => initialCardIds.has(id)).length;
 
-    const wordChanged = ensureVocabularySkillCards(appState, word);
+    const wordChanged = ensureVocabularySkillCards(appState, word, options);
     if (wordChanged) {
       changed = true;
       for (const cardId of wordCardIds) {

@@ -51,13 +51,14 @@ export function limitNewCardsForSession(dueCards, srsRecords, options = {}) {
   const newCards = [];
 
   for (const card of dueCards) {
+    if (!card || card.planLocked === true) continue;
     if (card.state === State.New) newCards.push(card);
     else reviews.push(card);
   }
 
   const firstIntroductionByItem = new Map();
   for (const card of Object.values(srsRecords || {})) {
-    if (!card.introducedOn) continue;
+    if (!card || card.planLocked === true || !card.introducedOn) continue;
     const itemId = parseCardIdentity(card).itemId;
     const knownDay = firstIntroductionByItem.get(itemId);
     if (!knownDay || card.introducedOn < knownDay) {

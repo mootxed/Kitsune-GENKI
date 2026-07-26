@@ -1,7 +1,6 @@
-/* ui/chapter.js — Chapter screen */
 import { save, chState } from '../state/store.js';
 import { refreshStreakDisplay } from './shared.js';
-import { $, $$ } from '../src/utils.js';
+import { $, $$, todayStr } from '../src/utils.js';
 import { allCards, dueCards } from '../src/srs-helpers.js';
 import { XP_CHECK, XP_CHAPTER_FULL, addXP } from '../src/xp-system.js';
 import {
@@ -15,6 +14,7 @@ import {
 import { countAvailableCardsForSession } from '../src/srs-limits.js';
 import { StudyPlan } from '../studyplan.js';
 import { completeChapter, getChapterProgress, setChapterSection } from '../src/chapter-progress.js';
+import { countRemainingLockedWords } from '../src/vocabulary-unlock-plan.js';
 
 // ---------- Render: Chapter ----------
 export async function renderChapter(id, state, dependencies) {
@@ -41,28 +41,53 @@ export async function renderChapter(id, state, dependencies) {
   const body = $('#chapter-body');
   const items = progress.totalCount;
   const done = progress.completedCount;
-  const total = allCards(state.srs, id).length;
+  const totalCards = allCards(state.srs, id, true).length;
+  const unlockedCards = allCards(state.srs, id, false).length;
   const due = countAvailableCardsForSession(dueCards(state.srs, id), state.srs);
+
+  const totalWords = Array.isArray(l.words) ? l.words.length : 0;
+  const lockedWords = countRemainingLockedWords(state, id, l.words);
+  const unlockedWords = Math.max(0, totalWords - lockedWords);
+
+  const today = todayStr();
+  const todayUnlockEntry = state.vocabularyUnlocks?.[id]?.[today];
+  const todayUnlockedCount = Array.isArray(todayUnlockEntry?.itemIds)
+    ? todayUnlockEntry.itemIds.length
+    : 0;
 
   const isPriorKnowledge = progress.completionSource === 'prior-knowledge';
 
   let startBlock;
   if (cs.started || progress.completionSource === 'app') {
+    const wordStatusMsg =
+      unlockedWords < totalWords
+        ? `${unlockedWords} из ${totalWords} открыто (${lockedWords} будут добавляться постепенно)`
+        : `Все ${totalWords} слов добавлены в обучение`;
+
     startBlock = `<div class="card srs-mini">
-         <div class="m"><b>${total}</b><span>карточек</span></div>
-         <div class="m due"><b>${due}</b><span>к повтору</span></div>
+         <div class="m-row" style="display:flex;justify-content:space-around;text-align:center;margin-bottom:8px;">
+           <div class="m"><b>${totalWords}</b><span>всего слов</span></div>
+           <div class="m"><b>${unlockedWords}</b><span>открыто</span></div>
+           <div class="m due"><b>${due}</b><span>к повтору</span></div>
+         </div>
+         <p class="muted" style="font-size:12px;text-align:center;margin:6px 0;">${wordStatusMsg}</p>
+         ${
+           todayUnlockedCount > 0
+             ? `<p class="badge-today" style="font-size:12px;text-align:center;color:var(--orange);margin-bottom:8px;">Сегодня открыто: ${todayUnlockedCount} новых слов</p>`
+             : ''
+         }
          <button class="btn-study-sm" id="ch-study" ${due === 0 ? 'disabled' : ''} data-testid="chapter-study-btn">Учить →</button>
        </div>`;
   } else if (isPriorKnowledge) {
     const studyBtnText = due > 0 ? 'Повторять слова →' : 'Учить слова →';
-    const hasCards = total > 0;
+    const hasCards = unlockedCards > 0 || totalCards > 0;
     startBlock = `<div class="card prior-knowledge-card">
          <div class="prior-knowledge-header">
            <span class="badge prior-knowledge-badge" data-testid="prior-knowledge-badge">📚 Изучено ранее</span>
            <p class="prior-knowledge-description">Вы отметили эту главу как изученную ранее</p>
          </div>
          <div class="prior-knowledge-stats">
-           <div class="m"><b>${total}</b><span>карточек</span></div>
+           <div class="m"><b>${totalWords}</b><span>всего слов</span></div>
            <div class="m due"><b>${due}</b><span>доступно сейчас</span></div>
          </div>
          <div class="prior-knowledge-action">

@@ -24,6 +24,11 @@ import {
   ensureChapterVocabularyCards as ensureChapterVocabularyCardsImpl,
   reconcilePriorKnowledgeVocabulary,
 } from '../src/chapter-vocabulary.js';
+import {
+  unlockDailyVocabularyBatch,
+  getVocabularyBatchProgress,
+  DEFAULT_DAILY_NEW_VOCABULARY_LIMIT,
+} from '../src/vocabulary-unlock-plan.js';
 
 // ---------- Constants ----------
 export const CH_NAMES = {
@@ -437,10 +442,14 @@ export function startChapter(id, toastFn = null) {
   cs.started = true;
   cs.startedAt ||= Date.now();
   if (!state.activeChapterId) state.activeChapterId = Number(id);
-  ensureChapterVocabularyCardsImpl(state, lesson);
+  ensureChapterVocabularyCardsImpl(state, lesson, { planLocked: true });
+  unlockDailyVocabularyBatch(state, id, {
+    limit: DEFAULT_DAILY_NEW_VOCABULARY_LIMIT,
+    words: lesson.words,
+  });
   save();
   markActivity(toastFn);
-  if (toastFn) toastFn('Глава начата! Слова добавлены в SRS 🎴');
+  if (toastFn) toastFn('Глава начата! Первая порция слов доступна 🎴');
 }
 
 // ---------- Update Main Quests Timer ----------
@@ -464,10 +473,16 @@ export function renderHome() {
   const progress = activeChapter
     ? getChapterProgress(state, activeChapter.id, activeChapter)
     : null;
+
+  const vocabProgress = activeChapterId
+    ? getVocabularyBatchProgress(state, activeChapterId, today)
+    : null;
+  const hasUncompletedVocabBatch =
+    vocabProgress && vocabProgress.total > 0 && !vocabProgress.isCompleted;
+
   const continueButton = $('#btn-continue-learning');
   const continueTitle = $('#continue-learning-title');
   const continueContext = $('#continue-learning-context');
-  const dueFirst = due >= DUE_FIRST_THRESHOLD;
 
   const dateStatus = state.studyPlan
     ? StudyPlan.getDateStatus(state.studyPlan, today, {
@@ -481,9 +496,11 @@ export function renderHome() {
   if (continueTitle) {
     if (isRestDay) {
       continueTitle.textContent = 'День отдыха';
-    } else if (dueFirst || activeChapterId === null) {
+    } else if (due > 0 || activeChapterId === null) {
       continueTitle.textContent =
         activeChapterId === null ? 'Повторить слабые знания' : 'Повторить SRS';
+    } else if (hasUncompletedVocabBatch) {
+      continueTitle.textContent = 'Новые слова';
     } else {
       continueTitle.textContent = 'Продолжить обучение';
     }
@@ -494,10 +511,11 @@ export function renderHome() {
         due > 0
           ? `По плану отдых, но накопилось ${due} повторений`
           : 'Сегодня по плану отдых. Проведите день с пользой!';
-    } else if (dueFirst) {
+    } else if (due > 0) {
       continueContext.textContent = `${due} обязательных повторений накопилось — сначала разберём их`;
+    } else if (hasUncompletedVocabBatch) {
+      continueContext.textContent = `Глава ${activeChapterId} · ${vocabProgress.remaining} новых слов на сегодня`;
     } else if (activeChapter && progress) {
-      // Visual/semantic separation: just show high-level chapter info
       continueContext.textContent = `Глава ${activeChapter.id}: ${activeChapter.title}`;
     } else {
       continueContext.textContent = 'Все главы завершены — закрепите знания по FSRS';
@@ -508,10 +526,12 @@ export function renderHome() {
       if (isRestDay) {
         if (due > 0) window.nav('srs');
         else window.nav('course');
-      } else if (dueFirst || activeChapterId === null) {
+      } else if (due > 0 || activeChapterId === null) {
         window.nav('srs');
-      } else {
+      } else if (hasUncompletedVocabBatch || activeChapterId) {
         window.nav('chapter', activeChapterId);
+      } else {
+        window.nav('srs');
       }
     };
   }
@@ -633,6 +653,23 @@ export function renderHomeTodayCard(appState, activeChapter, progress) {
     });
   }
 
+  const vocabProgress = activeChapter
+    ? getVocabularyBatchProgress(appState, activeChapter.id, today)
+    : null;
+  const hasVocabTask = vocabProgress && vocabProgress.total > 0;
+
+  if (hasVocabTask) {
+    tasksToDisplay.push({
+      id: 'vocab-batch',
+      isMandatory: true,
+      isCompleted: vocabProgress.isCompleted,
+      title: `Новые слова · Глава ${activeChapter.id}`,
+      subtext: `Глава ${activeChapter.id} · ${vocabProgress.total} новых слов`,
+      action: 'chapter',
+      progressHTML: `<div class="today-progress vocab"><i style="width:${Math.round(vocabProgress.ratio * 100)}%"></i></div>`,
+    });
+  }
+
   if (hasChapterTask) {
     const remaining = Math.max(0, (progress?.totalCount || 0) - (progress?.completedCount || 0));
     const duration = activeChapter?.estimatedMinutes
@@ -711,6 +748,7 @@ export function renderHomeTodayCard(appState, activeChapter, progress) {
   // Check if all mandatory tasks are done
   const mandatoryTasks = [];
   if (hasFSRSTask) mandatoryTasks.push({ isCompleted: fsrsCompleted });
+  if (hasVocabTask) mandatoryTasks.push({ isCompleted: vocabProgress.isCompleted });
   if (hasChapterTask) mandatoryTasks.push({ isCompleted: chapterCompleted });
   const allMandatoryDone =
     mandatoryTasks.length === 0 || mandatoryTasks.every((t) => t.isCompleted);

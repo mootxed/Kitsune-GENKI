@@ -170,6 +170,7 @@ function newCard(id, metadata = {}) {
   const now = Date.now();
   const identity = parseCardIdentity({ id, ...metadata });
   return {
+    ...metadata,
     id: String(id),
     itemId: identity.itemId,
     skill: identity.skill || SKILLS.RECOGNITION,
