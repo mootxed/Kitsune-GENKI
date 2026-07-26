@@ -20,6 +20,7 @@ import {
   setKanjiSequence,
   setCurrentKanjiIndex,
   setTotalDrawingMistakes,
+  setDrawingHintUsed,
 } from './state.js';
 
 function monotonicNow() {
@@ -186,6 +187,7 @@ export async function undoLastReview(state, dependencies, renderFlashFn) {
   setKanjiSequence([]);
   setCurrentKanjiIndex(0);
   setTotalDrawingMistakes(0);
+  setDrawingHintUsed(false);
 
   document.getElementById('completion-overlay')?.classList.add('hidden');
   await dependencies.save(true);

@@ -367,9 +367,97 @@ export function applyDailyPlanUnlocks(state, dailyPlan, options = {}) {
   return stateChanged;
 }
 
+function isDailySnapshotTaskComplete(state, task, chapterMeta, dateKey) {
+  if (!task || task.type === 'bonus') return true;
+
+  if (task.type === 'review') {
+    const remaining = dueCards(state?.srs).filter(
+      (card) =>
+        card &&
+        !card.suspended &&
+        !card.planLocked &&
+        (card.reps > 0 || card.state !== 0 || card.lastReview != null)
+    );
+    const hasReviewEvidence = (state?.reviewEvents || []).some(
+      (event) =>
+        !event?.undoneAt &&
+        event?.eventType === 'review' &&
+        Number.isFinite(event.reviewedAt) &&
+        localDateKey(event.reviewedAt) === dateKey
+    );
+    return hasReviewEvidence && countAvailableCardsForSession(remaining, state?.srs) === 0;
+  }
+
+  if (task.type === 'vocabulary') {
+    const progress = getVocabularyBatchProgress(
+      state,
+      task.action?.chapterId ?? task.chapterId,
+      task.batchDateKey ?? task.action?.batchDateKey
+    );
+    return progress.total > 0 && progress.isCompleted;
+  }
+
+  if (task.type === 'grammar') {
+    return (
+      getGrammarTopicStatus(
+        state,
+        task.action?.chapterId ?? task.chapterId,
+        task.topicId ?? task.action?.topicId,
+        chapterMeta
+      ) === 'completed'
+    );
+  }
+
+  if (task.type === 'practice') {
+    const chapterId = task.action?.chapterId ?? task.chapterId;
+    const taskId = task.taskId ?? task.action?.taskId;
+    return state?.chapters?.[chapterId]?.checklist?.[taskId] === true;
+  }
+
+  if (task.type === 'start-chapter') {
+    const chapterId = task.action?.chapterId ?? task.chapterId;
+    return state?.chapters?.[chapterId]?.started === true;
+  }
+
+  return task.status === 'completed';
+}
+
+function recordDailyPlanCompletion(state, snapshot, options = {}) {
+  if (!snapshot || snapshot.finalizedAt) return false;
+  const requiredTasks = (snapshot.tasks || []).filter((task) => task.type !== 'bonus');
+  if (requiredTasks.length === 0) return false;
+  if (
+    !requiredTasks.every((task) =>
+      isDailySnapshotTaskComplete(state, task, options.chapterMeta, snapshot.dateKey)
+    )
+  ) {
+    return false;
+  }
+
+  state.learningEvents ||= [];
+  const eventId = `daily-plan-completed:${snapshot.chapterId}:${snapshot.dateKey}`;
+  if (state.learningEvents.some((event) => event.eventId === eventId)) {
+    return false;
+  }
+
+  const occurredAt = options.now ?? Date.now();
+  state.learningEvents.push({
+    eventId,
+    eventType: 'daily-plan-completed',
+    chapterId: snapshot.chapterId,
+    dateKey: snapshot.dateKey,
+    taskIds: requiredTasks.map((task) => task.id),
+    occurredAt,
+  });
+  snapshot.finalizedAt = occurredAt;
+  return true;
+}
+
 export function getOrGenerateDailyPlan(state, options = {}) {
   if (!state) return null;
   const dateKey = options.dateKey || localDateKey(options.now ?? Date.now());
+  const existingSnapshot = state.dailyPlanHistory?.find((plan) => plan.dateKey === dateKey);
+  const completionRecorded = recordDailyPlanCompletion(state, existingSnapshot, options);
 
   const inputRevision = getDailyPlanInputRevision(state, options);
   let isCached = false;
@@ -389,7 +477,7 @@ export function getOrGenerateDailyPlan(state, options = {}) {
     state.dailyPlan = planToReturn;
   }
 
-  const stateChanged = applyDailyPlanUnlocks(state, planToReturn, options);
+  const stateChanged = applyDailyPlanUnlocks(state, planToReturn, options) || completionRecorded;
 
   if (!isCached) {
     state.dailyPlanHistory ||= [];

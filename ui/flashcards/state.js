@@ -28,6 +28,7 @@ export let currentBatchIndex = 0;
 export let currentWriter = null;
 export let drawingMistakes = 0;
 export let totalDrawingMistakes = 0;
+export let drawingHintUsed = false;
 
 // Переменные для последовательного рисования
 export let kanjiSequence = [];
@@ -67,6 +68,10 @@ export function setDrawingMistakes(val) {
 
 export function setTotalDrawingMistakes(val) {
   totalDrawingMistakes = val;
+}
+
+export function setDrawingHintUsed(val) {
+  drawingHintUsed = val === true;
 }
 
 export function setKanjiSequence(seq) {

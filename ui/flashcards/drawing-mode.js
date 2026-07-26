@@ -15,6 +15,8 @@ import {
   setDrawingMistakes,
   totalDrawingMistakes,
   setTotalDrawingMistakes,
+  drawingHintUsed,
+  setDrawingHintUsed,
   currentWriter,
   setCurrentWriter,
   sessionManager,
@@ -83,6 +85,7 @@ export function initDrawingMode(
     );
     setCurrentKanjiIndex(0);
     setTotalDrawingMistakes(0);
+    setDrawingHintUsed(false);
   }
 
   renderKanjiProgressCells();
@@ -126,9 +129,11 @@ export function initDrawingMode(
     currentWriter.quiz({
       leniency: 1.2,
       onMistake: (strokeData) => {
-        setDrawingMistakes(drawingMistakes + 1);
+        const nextCharacterMistakes = drawingMistakes + 1;
+        setDrawingMistakes(nextCharacterMistakes);
         setTotalDrawingMistakes(totalDrawingMistakes + 1);
-        if (drawingMistakes >= 3) {
+        if (nextCharacterMistakes >= 6 && !drawingHintUsed) {
+          setDrawingHintUsed(true);
           currentWriter.updateColor('outlineColor', '#bbbbbb');
           currentWriter.showOutline();
           toast('💡 Слишком много ошибок. Дорисуйте по контуру');
@@ -162,7 +167,9 @@ export function initDrawingMode(
         }
 
         // Все кандзи нарисованы
-        const quality = SRS.qualityFromDrawingMistakes(totalDrawingMistakes);
+        const quality = SRS.qualityFromDrawingMistakes(totalDrawingMistakes, {
+          hintUsed: drawingHintUsed,
+        });
         const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
         markReviewAnswered(card.id);
 
@@ -178,7 +185,7 @@ export function initDrawingMode(
 
         submitReview(card, quality, state, {
           mistakes: totalDrawingMistakes,
-          hintUsed: totalDrawingMistakes >= 3,
+          hintUsed: drawingHintUsed,
         });
         if (!sessionManager) setFlashIdx(flashIdx + 1);
 

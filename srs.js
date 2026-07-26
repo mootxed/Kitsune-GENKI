@@ -111,15 +111,17 @@ function qualityFromMistakes(mistakeCount) {
   return Quality.Again;
 }
 
-/* Drawing is also an objective retrieval exercise: any wrong stroke means the
- * first reproduction was not correct. Easy is reserved for an ideal drawing. */
-function qualityFromDrawingMistakes(mistakeCount) {
+/* HanziWriter can reject a nearly correct stroke, so drawing uses a graduated
+ * scale. An outline/hint is still a failed unaided retrieval. */
+function qualityFromDrawingMistakes(mistakeCount, { hintUsed = false } = {}) {
   if (!Number.isInteger(mistakeCount) || mistakeCount < 0) {
     throw new Error(`[SRS] Некорректное количество ошибок рисования: ${mistakeCount}`);
   }
 
+  if (hintUsed || mistakeCount >= 6) return Quality.Again;
   if (mistakeCount === 0) return Quality.Easy;
-  return Quality.Again;
+  if (mistakeCount <= 2) return Quality.Good;
+  return Quality.Hard;
 }
 
 function finiteNumber(value, fallback = 0) {

@@ -94,4 +94,60 @@ describe('Unified Study Plan Creation & Catalog Service', () => {
     expect(recalced).not.toBeNull();
     expect(recalced.error).toBeUndefined();
   });
+
+  it('returns available deadline days separately from required study days', () => {
+    const catalog = buildStudyPlanContentCatalog([
+      { id: 1, words: Array(20).fill({}), notes: Array(2).fill({}) },
+    ]);
+    const preview = previewStudyPlanFromPreferences(
+      {
+        startDate: '2026-08-01',
+        studyDays: [0, 1, 2, 3, 4, 5, 6],
+        targetType: 'deadline',
+        targetValue: '2026-08-10',
+        dailyCapacityMinutes: 30,
+      },
+      catalog
+    );
+
+    expect(preview.availableStudyDays).toBe(10);
+    expect(preview.requiredStudyDays).not.toBe(preview.availableStudyDays);
+  });
+
+  it('caps adaptive FSRS reserve at 60% and warns about queue conflict', () => {
+    const now = new Date(2026, 6, 27, 12).getTime();
+    state.srs = Object.fromEntries(
+      Array.from({ length: 100 }, (_, index) => [
+        `L1_V${index}:recognition`,
+        {
+          id: `L1_V${index}:recognition`,
+          itemId: `L1_V${index}`,
+          skill: 'recognition',
+          due: now - 1,
+          reps: 1,
+          state: 2,
+        },
+      ])
+    );
+    const catalog = buildStudyPlanContentCatalog([
+      { id: 1, words: Array(20).fill({}), notes: Array(2).fill({}) },
+    ]);
+
+    const preview = previewStudyPlanFromPreferences(
+      {
+        startDate: '2026-08-01',
+        studyDays: [0, 1, 2, 3, 4, 5, 6],
+        targetType: 'days',
+        targetValue: 30,
+        dailyCapacityMinutes: 30,
+      },
+      catalog,
+      { state, now }
+    );
+
+    expect(preview.queueReviewMinutes).toBe(20);
+    expect(preview.reviewReserveMinutes).toBe(18);
+    expect(preview.reviewLoadExceedsCap).toBe(true);
+    expect(preview.warnings.join(' ')).toContain('очередью FSRS');
+  });
 });

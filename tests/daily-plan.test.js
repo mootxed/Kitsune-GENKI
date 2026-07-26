@@ -184,4 +184,41 @@ describe('Task 6: Atomic Daily Plan & Time Budget (src/daily-plan.js)', () => {
     };
     expect(getNextStudyAction(dailyPlan)?.id).toBe('next');
   });
+
+  it('9. Создаёт daily-plan-completed, когда обязательные задачи снимка выполнены', () => {
+    appState.srs = {};
+    appState.reviewEvents = [
+      {
+        eventId: 'review-finished',
+        eventType: 'review',
+        reviewedAt: new Date(2026, 6, 26, 12).getTime(),
+        undoneAt: null,
+      },
+    ];
+    appState.dailyPlanHistory = [
+      {
+        dateKey: '2026-07-26',
+        chapterId: 2,
+        tasks: [{ id: 'review-2026-07-26', type: 'review' }],
+        generatedAt: 100,
+        finalizedAt: null,
+      },
+    ];
+
+    getOrGenerateDailyPlan(appState, {
+      dateKey: '2026-07-26',
+      now: 200,
+      chapterMeta: MOCK_LESSON,
+    });
+
+    expect(appState.learningEvents).toContainEqual(
+      expect.objectContaining({
+        eventId: 'daily-plan-completed:2:2026-07-26',
+        eventType: 'daily-plan-completed',
+        chapterId: 2,
+        dateKey: '2026-07-26',
+      })
+    );
+    expect(appState.dailyPlanHistory[0].finalizedAt).toBe(200);
+  });
 });

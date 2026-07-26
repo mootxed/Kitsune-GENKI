@@ -290,13 +290,17 @@ describe('SRS Algorithm - FSRS Spaced Repetition', () => {
 
       it.each([
         [0, SRS.Quality.Easy],
-        [1, SRS.Quality.Again],
-        [2, SRS.Quality.Again],
-        [3, SRS.Quality.Again],
-        [5, SRS.Quality.Again],
+        [1, SRS.Quality.Good],
+        [2, SRS.Quality.Good],
+        [3, SRS.Quality.Hard],
+        [5, SRS.Quality.Hard],
         [6, SRS.Quality.Again],
       ])('оценивает рисование с %i ошибками как quality=%i', (mistakes, quality) => {
         expect(SRS.qualityFromDrawingMistakes(mistakes)).toBe(quality);
+      });
+
+      it('контур всегда означает Again независимо от числа ошибок', () => {
+        expect(SRS.qualityFromDrawingMistakes(2, { hintUsed: true })).toBe(SRS.Quality.Again);
       });
 
       it('назначает Easy только за идеальное рисование', () => {

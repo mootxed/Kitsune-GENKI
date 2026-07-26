@@ -489,6 +489,22 @@ let router = null;
 function setupRouter() {
   const dependencies = createDependencies();
 
+  const activateSessionBatch = (batchInfo, chapterId = null) => {
+    if (!batchInfo?.organizedCards?.length) return false;
+
+    setFlashQueue(batchInfo.organizedCards);
+    setFlashCtx(chapterId);
+    setSessionManager(
+      new SessionManager(batchInfo.organizedCards, {
+        srs: SRS,
+        questsManager: QuestsManager,
+        state,
+        onSave: save,
+      })
+    );
+    return true;
+  };
+
   // Функция запуска карточек из конкретной главы
   const startChapterFlashcards = async (chapterId, chapterDue) => {
     await ensureLesson(chapterId);
@@ -533,9 +549,10 @@ function setupRouter() {
     // Инициализируем батчинг (20 карточек на батч)
     const batchInfo = initSessionBatching(sessionCards, LESSONS, 20);
 
-    if (batchInfo && batchInfo.organizedCards) {
-      // Устанавливаем skill-safe очередь 20-карточного батча.
-      setFlashQueue(batchInfo.organizedCards);
+    if (!activateSessionBatch(batchInfo, chapterId)) {
+      toast('Ошибка инициализации батча карточек');
+      if (tabbar) tabbar.style.display = '';
+      return;
     }
 
     // Запускаем карточки (nav('srs') больше не нужен, т.к. мы уже переключили экран)
@@ -601,17 +618,7 @@ function setupRouter() {
         return;
       }
 
-      // Устанавливаем skill-safe очередь 20-карточного батча.
-      setFlashQueue(batchInfo.organizedCards);
-
-      // Создаём SessionManager с батчем карточек
-      const manager = new SessionManager(batchInfo.organizedCards, {
-        srs: SRS,
-        questsManager: QuestsManager,
-        state: state,
-        onSave: save,
-      });
-      setSessionManager(manager);
+      activateSessionBatch(batchInfo);
 
       // Скрываем header и табы SRS во время сессии для полноэкранного интерфейса флэшкарточек
       const srsHeader = document.querySelector('#screen-srs .app-header');

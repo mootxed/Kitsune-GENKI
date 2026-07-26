@@ -5,6 +5,9 @@ import { getStudyDateKeys, mergeUpdatedPlanWithHistory, StudyPlan } from '../stu
 import { completeOnboarding } from './onboarding-state.js';
 import { ensureActiveChapterId } from './chapter-progress.js';
 import { getBuiltInPracticeTasks } from './practice-tasks.js';
+import { dueCards } from './srs-helpers.js';
+import { countAvailableCardsForSession } from './srs-limits.js';
+import { calculateReviewMinutes, TIME_ESTIMATES } from './time-estimates.js';
 
 function dedupeById(tasks) {
   const map = new Map();
@@ -117,7 +120,58 @@ export function buildStudyPlanContentCatalog(
   return { chapters: catalogChapters };
 }
 
-export function previewStudyPlanFromPreferences(preferences, catalog) {
+function median(values) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function estimateAdaptiveReviewReserve(state, dailyCapacityMinutes, now = Date.now()) {
+  const baseReserveMinutes = dailyCapacityMinutes * 0.25;
+  const today = formatDateKey(now);
+  const recentDateKeys = Array.from({ length: 7 }, (_, index) => addLocalDays(today, index - 6));
+  const recentTotals = new Map(recentDateKeys.map((dateKey) => [dateKey, 0]));
+
+  for (const event of state?.reviewEvents || []) {
+    if (event?.undoneAt || !Number.isFinite(event?.reviewedAt)) continue;
+    const dateKey = formatDateKey(event.reviewedAt);
+    if (!recentTotals.has(dateKey)) continue;
+    const minutes =
+      Number.isFinite(event.responseTimeMs) && event.responseTimeMs >= 0
+        ? event.responseTimeMs / 60_000
+        : TIME_ESTIMATES.REVIEW_CARD_MINUTES;
+    recentTotals.set(dateKey, recentTotals.get(dateKey) + minutes);
+  }
+
+  const medianReviewMinutes = median([...recentTotals.values()]);
+  const studiedDueCards = dueCards(state?.srs, undefined, now).filter(
+    (card) =>
+      card &&
+      !card.suspended &&
+      !card.planLocked &&
+      (card.reps > 0 || card.state !== 0 || card.lastReview != null)
+  );
+  const dueCount = countAvailableCardsForSession(studiedDueCards, state?.srs);
+  const queueReviewMinutes = calculateReviewMinutes(dueCount);
+  const requestedReserveMinutes = Math.max(
+    baseReserveMinutes,
+    medianReviewMinutes,
+    queueReviewMinutes
+  );
+  const reserveCapMinutes = dailyCapacityMinutes * 0.6;
+
+  return {
+    reviewReserveMinutes: Math.ceil(Math.min(requestedReserveMinutes, reserveCapMinutes)),
+    requestedReserveMinutes,
+    reserveCapMinutes,
+    medianReviewMinutes,
+    queueReviewMinutes,
+    reviewLoadExceedsCap: requestedReserveMinutes > reserveCapMinutes,
+  };
+}
+
+export function previewStudyPlanFromPreferences(preferences, catalog, options = {}) {
   const errors = [];
   const warnings = [];
   const recommendations = [];
@@ -160,6 +214,7 @@ export function previewStudyPlanFromPreferences(preferences, catalog) {
       previewPlan: null,
       estimatedCompletionDate: startDate,
       requiredStudyDays: 0,
+      availableStudyDays: 0,
       totalRequiredMinutes: 0,
       isTight: false,
       recommendedTargetDate: startDate,
@@ -168,8 +223,12 @@ export function previewStudyPlanFromPreferences(preferences, catalog) {
 
   const totalRequiredMinutes = targetChapters.reduce((sum, ch) => sum + ch.requiredTotalMinutes, 0);
 
-  // Резерв времени на повторения (FSRS): ~25% от дневного бюджета
-  const reviewReserveMinutes = Math.min(15, Math.round(dailyCapacityMinutes * 0.25));
+  const reviewLoad = estimateAdaptiveReviewReserve(
+    options.state,
+    dailyCapacityMinutes,
+    options.now ?? Date.now()
+  );
+  const { reviewReserveMinutes } = reviewLoad;
   const contentCapacityMinutes = Math.max(5, dailyCapacityMinutes - reviewReserveMinutes);
 
   const requiredStudyDays = Math.max(
@@ -192,6 +251,11 @@ export function previewStudyPlanFromPreferences(preferences, catalog) {
   }
 
   const isTight = targetStudyDaysCount < requiredStudyDays;
+  if (reviewLoad.reviewLoadExceedsCap) {
+    warnings.push(
+      `Текущая нагрузка повторений требует около ${Math.ceil(reviewLoad.requestedReserveMinutes)} мин/день и превышает резерв 60%. Выбранный дедлайн может конфликтовать с очередью FSRS.`
+    );
+  }
 
   // Рассчитываем рекомендуемую дату дедлайна
   const recommendedStudyDates = getStudyDateKeys(startDate, requiredStudyDays, studyDays);
@@ -275,8 +339,13 @@ export function previewStudyPlanFromPreferences(preferences, catalog) {
     previewPlan,
     estimatedCompletionDate: scheduledDates.at(-1) || startDate,
     requiredStudyDays,
+    availableStudyDays: targetStudyDaysCount,
     totalRequiredMinutes,
     contentCapacityMinutes,
+    reviewReserveMinutes,
+    medianReviewMinutes: reviewLoad.medianReviewMinutes,
+    queueReviewMinutes: reviewLoad.queueReviewMinutes,
+    reviewLoadExceedsCap: reviewLoad.reviewLoadExceedsCap,
     catalogChapters,
     recommendedTargetDate,
     isTight,
@@ -324,6 +393,9 @@ export function commitStudyPlanFromPreferences(state, preferences, previewResult
   if (isUpdate && state.studyPlan) {
     state.studyPlan = mergeUpdatedPlanWithHistory(state.studyPlan, previewResult.previewPlan, {
       today: getTodayDateKey(),
+      reviewEvents: state.reviewEvents || [],
+      learningEvents: state.learningEvents || [],
+      vocabularyUnlocks: state.vocabularyUnlocks || {},
     });
   } else {
     state.studyPlan = previewResult.previewPlan;

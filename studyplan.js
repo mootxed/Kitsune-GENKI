@@ -357,7 +357,7 @@ export function recalculateFuturePlan(
   currentPlan,
   lessons,
   completedChapters = [],
-  { today = getTodayDateKey(), vocabularyUnlocks = {} } = {}
+  { today = getTodayDateKey(), vocabularyUnlocks = {}, reviewEvents = [], learningEvents = [] } = {}
 ) {
   if (!currentPlan) return { error: 'План не найден' };
   if (currentPlan.deadline && currentPlan.deadline < today) {
@@ -368,10 +368,17 @@ export function recalculateFuturePlan(
   const completed = [...new Set(completedChapters)].sort((a, b) => a - b);
   const remainingLessons = (lessons || []).filter((lesson) => !completed.includes(lesson.id));
   const preserved = [];
+  const preserveToday = hasConfirmedPlanActivity(currentPlan, today, {
+    vocabularyUnlocks,
+    reviewEvents,
+    learningEvents,
+  });
 
   for (const original of currentPlan.segments || []) {
     const dates = segmentDates(original, weekdays);
-    const historicalDates = dates.filter((dateKey) => dateKey <= today);
+    const historicalDates = dates.filter(
+      (dateKey) => dateKey < today || (preserveToday && dateKey === today)
+    );
     if (historicalDates.length === 0) continue;
     preserved.push({
       ...original,
@@ -383,7 +390,7 @@ export function recalculateFuturePlan(
     });
   }
 
-  const futureStart = addLocalDays(today, 1);
+  const futureStart = preserveToday ? addLocalDays(today, 1) : today;
   const futureDates = currentPlan.deadline
     ? getStudyDaysInRange(futureStart, currentPlan.deadline, weekdays)
     : [];
@@ -731,11 +738,40 @@ export function getAllPlanStudyDates(plan) {
   ].sort();
 }
 
+function eventOccurredOnDate(event, dateKey) {
+  if (!event || event.undoneAt) return false;
+  if (event.dateKey === dateKey) return true;
+  const timestamp = event.reviewedAt ?? event.occurredAt;
+  return Number.isFinite(timestamp) && formatDateKey(timestamp) === dateKey;
+}
+
+function hasConfirmedPlanActivity(plan, dateKey, options = {}) {
+  const hasSavedStatus =
+    Object.hasOwn(plan?.dateStatuses || {}, dateKey) ||
+    (plan?.segments || []).some((segment) => Object.hasOwn(segment?.dateStatuses || {}, dateKey));
+  if (hasSavedStatus) return true;
+
+  if ((options.reviewEvents || []).some((event) => eventOccurredOnDate(event, dateKey))) {
+    return true;
+  }
+  if ((options.learningEvents || []).some((event) => eventOccurredOnDate(event, dateKey))) {
+    return true;
+  }
+
+  return Object.values(options.vocabularyUnlocks || {}).some((chapterUnlocks) => {
+    const unlock = chapterUnlocks?.[dateKey];
+    return Array.isArray(unlock?.itemIds) && unlock.itemIds.length > 0;
+  });
+}
+
 export function mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, options = {}) {
   if (!existingPlan) return generatedPlan;
   if (!generatedPlan) return existingPlan;
 
   const today = options.today || getTodayDateKey();
+  const preserveToday = hasConfirmedPlanActivity(existingPlan, today, options);
+  const isHistoricalDate = (dateKey) => dateKey < today || (preserveToday && dateKey === today);
+  const isFutureDate = (dateKey) => dateKey > today || (!preserveToday && dateKey === today);
 
   const historyMap = new Map();
   for (const item of existingPlan.history || []) {
@@ -757,7 +793,7 @@ export function mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, options
   const mergedDateStatuses = { ...(generatedPlan.dateStatuses || {}) };
   if (existingPlan.dateStatuses) {
     for (const [dateKey, status] of Object.entries(existingPlan.dateStatuses)) {
-      if (dateKey < today) {
+      if (isHistoricalDate(dateKey)) {
         mergedDateStatuses[dateKey] = status;
       }
     }
@@ -766,7 +802,7 @@ export function mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, options
   const mergedVocabSchedule = { ...(generatedPlan.vocabularySchedule || {}) };
   if (existingPlan.vocabularySchedule) {
     for (const [dateKey, batch] of Object.entries(existingPlan.vocabularySchedule)) {
-      if (dateKey < today) {
+      if (isHistoricalDate(dateKey)) {
         mergedVocabSchedule[dateKey] = batch;
       }
     }
@@ -778,15 +814,15 @@ export function mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, options
   const fullyPastSegments = (existingPlan.segments || []).filter((seg) => {
     if (seg.status === 'completed') return true;
     const dates = seg.assignedDates || [];
-    return dates.length > 0 && dates.every((d) => d < today);
+    return dates.length > 0 && dates.every(isHistoricalDate);
   });
 
   const activeExistingSegments = (existingPlan.segments || []).filter((seg) => {
     if (seg.status === 'completed') return false;
     const dates = seg.assignedDates || [];
-    // Сегмент «активный» если у него есть хотя бы одна дата >= today
+    // Сегмент активен, если у него осталась хотя бы одна перестраиваемая дата.
     // (начался в прошлом, но продолжается сегодня или в будущем)
-    return dates.length > 0 && dates.some((d) => d >= today);
+    return dates.length > 0 && dates.some(isFutureDate);
   });
 
   const fullyPastChapterIds = new Set(
@@ -809,7 +845,7 @@ export function mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, options
     if (newSeg.type !== 'chapter') {
       // Не-chapter сегменты (review и т.п.) берём как есть, если не в прошлом
       const dates = newSeg.assignedDates || [];
-      if (dates.length === 0 || dates.some((d) => d >= today)) {
+      if (dates.length === 0 || dates.some(isFutureDate)) {
         mergedActiveSegments.push(newSeg);
       }
       continue;
@@ -823,27 +859,29 @@ export function mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, options
     const existingSeg = activeExistingByChapterId.get(newSeg.chapterId);
     if (existingSeg) {
       // Объединяем: прошлые даты из existing сегмента + будущие из нового
-      const pastDates = (existingSeg.assignedDates || []).filter((d) => d < today);
-      const futureDates = (newSeg.assignedDates || []).filter((d) => d >= today);
+      const pastDates = (existingSeg.assignedDates || []).filter(isHistoricalDate);
+      const futureDates = (newSeg.assignedDates || []).filter(isFutureDate);
       const combinedDates = [...new Set([...pastDates, ...futureDates])].sort();
 
       // Сохраняем dateStatuses: все из existing (прошлое) + будущие из нового
       const mergedSegDateStatuses = {
         ...Object.fromEntries(
-          Object.entries(existingSeg.dateStatuses || {}).filter(([dk]) => dk < today)
+          Object.entries(existingSeg.dateStatuses || {}).filter(([dk]) => isHistoricalDate(dk))
         ),
         ...Object.fromEntries(
-          Object.entries(newSeg.dateStatuses || {}).filter(([dk]) => dk >= today)
+          Object.entries(newSeg.dateStatuses || {}).filter(([dk]) => isFutureDate(dk))
         ),
       };
 
       // Сохраняем vocabularySchedule: прошлые из existing + будущие из нового
       const mergedSegVocab = {
         ...Object.fromEntries(
-          Object.entries(existingSeg.vocabularySchedule || {}).filter(([dk]) => dk <= today)
+          Object.entries(existingSeg.vocabularySchedule || {}).filter(([dk]) =>
+            isHistoricalDate(dk)
+          )
         ),
         ...Object.fromEntries(
-          Object.entries(newSeg.vocabularySchedule || {}).filter(([dk]) => dk > today)
+          Object.entries(newSeg.vocabularySchedule || {}).filter(([dk]) => isFutureDate(dk))
         ),
       };
 
@@ -872,7 +910,7 @@ export function mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, options
     if (existingSeg.type !== 'chapter') continue;
     if (!mergedActiveChapterIds.has(existingSeg.chapterId)) {
       // Сохраняем только прошлые даты из такого сегмента
-      const pastDates = (existingSeg.assignedDates || []).filter((d) => d < today);
+      const pastDates = (existingSeg.assignedDates || []).filter(isHistoricalDate);
       if (pastDates.length > 0) {
         mergedActiveSegments.push({
           ...existingSeg,
@@ -881,7 +919,7 @@ export function mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, options
           endDate: pastDates.at(-1),
           days: pastDates.length,
           dateStatuses: Object.fromEntries(
-            Object.entries(existingSeg.dateStatuses || {}).filter(([dk]) => dk < today)
+            Object.entries(existingSeg.dateStatuses || {}).filter(([dk]) => isHistoricalDate(dk))
           ),
         });
       }

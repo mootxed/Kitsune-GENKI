@@ -122,12 +122,12 @@ export function modeSkill(mode) {
   return null;
 }
 
+// These are supplemental exercises, not FSRS cards. They intentionally have no
+// itemId/skill of their own and must never advance a vocabulary card's due date.
+export const SUPPLEMENTAL_PRACTICE_MODES = Object.freeze(['particle-quiz', 'sentence-building']);
+
 export function modeCanSchedule(card, mode) {
-  if (
-    ['preview', 'system-fallback', 'debug-skip', 'particle-quiz', 'sentence-building'].includes(
-      mode
-    )
-  ) {
+  if (['preview', 'system-fallback', 'debug-skip', ...SUPPLEMENTAL_PRACTICE_MODES].includes(mode)) {
     return false;
   }
   const expectedSkill = modeSkill(mode);

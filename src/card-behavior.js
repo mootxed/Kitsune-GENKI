@@ -30,8 +30,10 @@ export function adjustQualityByTime(quality, responseTimeMs, mode) {
   const thresholds = RESPONSE_TIME_THRESHOLDS[mode];
   if (!thresholds) return quality;
 
-  // Скорость не доказывает отсутствие угадывания, поэтому Good никогда не
-  // повышается автоматически до Easy (особенно в multiple choice).
+  // Очень медленный правильный ответ — это явное затруднение: Good становится
+  // Hard. Easy при той же задержке понижается до Good, но скорость никогда не
+  // повышает оценку (особенно в multiple choice).
+  if (responseTimeMs >= thresholds.slow && quality === 4) return 3;
   if (responseTimeMs >= thresholds.slow && quality === 5) return 4;
   return quality;
 }

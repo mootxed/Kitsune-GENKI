@@ -714,6 +714,104 @@ describe('StudyPlan', () => {
       expect(seg.dateStatuses['2026-07-20']).toBe('completed');
       expect(seg.dateStatuses['2026-07-22']).toBe('completed');
     });
+
+    it('сохраняет сегодняшний сегмент и статус при подтверждённом действии', () => {
+      const today = '2026-07-24';
+      const existingPlan = {
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 2,
+            assignedDates: [today, '2026-07-25'],
+            dateStatuses: { [today]: 'completed' },
+            vocabularySchedule: { [today]: ['old-batch'] },
+          },
+        ],
+      };
+      const generatedPlan = {
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 2,
+            assignedDates: [today, '2026-07-26'],
+            dateStatuses: { [today]: 'planned' },
+            vocabularySchedule: { [today]: ['new-batch'] },
+          },
+        ],
+      };
+
+      const merged = StudyPlan.mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, { today });
+      const segment = merged.segments.find((entry) => entry.chapterId === 2);
+
+      expect(segment.assignedDates).toContain(today);
+      expect(segment.dateStatuses[today]).toBe('completed');
+      expect(segment.vocabularySchedule[today]).toEqual(['old-batch']);
+    });
+
+    it('перестраивает сегодняшний день без фактических данных', () => {
+      const today = '2026-07-24';
+      const existingPlan = {
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 2,
+            assignedDates: [today, '2026-07-25'],
+            dateStatuses: {},
+            vocabularySchedule: { [today]: ['old-batch'] },
+          },
+        ],
+      };
+      const generatedPlan = {
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 2,
+            assignedDates: [today, '2026-07-26'],
+            dateStatuses: {},
+            vocabularySchedule: { [today]: ['new-batch'] },
+          },
+        ],
+      };
+
+      const merged = StudyPlan.mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, { today });
+      const segment = merged.segments.find((entry) => entry.chapterId === 2);
+
+      expect(segment.vocabularySchedule[today]).toEqual(['new-batch']);
+    });
+
+    it('сохраняет сегодня по review event, даже если статус ещё не записан', () => {
+      const today = '2026-07-24';
+      const reviewedAt = parseDateKey(today).getTime() + 12 * 60 * 60 * 1000;
+      const existingPlan = {
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 2,
+            assignedDates: [today, '2026-07-25'],
+            dateStatuses: {},
+            vocabularySchedule: { [today]: ['unlocked'] },
+          },
+        ],
+      };
+      const generatedPlan = {
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 2,
+            assignedDates: ['2026-07-26'],
+            dateStatuses: {},
+            vocabularySchedule: {},
+          },
+        ],
+      };
+
+      const merged = StudyPlan.mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, {
+        today,
+        reviewEvents: [{ eventType: 'review', reviewedAt, undoneAt: null }],
+      });
+
+      expect(merged.segments.find((entry) => entry.chapterId === 2).assignedDates).toContain(today);
+    });
   });
 
   describe('getDateStatus — T3: today is not missed, T4: section-completed does not complete day', () => {

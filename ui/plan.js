@@ -101,7 +101,7 @@ export function renderPlan(state, dependencies) {
           preferences.workbookSettings
         );
 
-        const preview = previewStudyPlanFromPreferences(preferences, catalog);
+        const preview = previewStudyPlanFromPreferences(preferences, catalog, { state });
 
         if (!preview.valid) {
           showPlanWarning(formatPlanError(preview.errors?.[0] || 'invalid-preview'));
@@ -315,7 +315,7 @@ async function updateLivePreview(state) {
     preferences.workbookSettings
   );
 
-  const preview = previewStudyPlanFromPreferences(preferences, catalog);
+  const preview = previewStudyPlanFromPreferences(preferences, catalog, { state });
 
   if (!preview.valid) {
     container.classList.add('hidden');
@@ -328,7 +328,7 @@ async function updateLivePreview(state) {
   // P1: Правильная подпись для режима дедлайна (дата) и режима дней (число)
   const targetLabel =
     preferences.targetType === 'deadline'
-      ? `до ${formatPlanDate(preferences.targetValue)} (${preview.requiredStudyDays} уч. дн.)`
+      ? `до ${formatPlanDate(preferences.targetValue)} (${preview.availableStudyDays} уч. дн. доступно)`
       : `${preferences.targetValue || 0} учебных дней`;
 
   let html = `
@@ -781,11 +781,6 @@ function renderPlanStatusCard(plan, state) {
     statusTitle = `Отставание на ${daysBehind} дн. ⚠️`;
     badgeHtml = `<span class="badge" style="background:rgba(244,67,54,0.15);color:var(--red,#d32f2f);">Отставание ${daysBehind} дн.</span>`;
     borderColor = 'var(--red,#d32f2f)';
-  } else if (status === 'ahead') {
-    statusTitle = 'Вы опережаете график 🚀';
-    badgeHtml =
-      '<span class="badge" style="background:rgba(33,150,243,0.15);color:var(--blue,#1976d2);">Опережение</span>';
-    borderColor = 'var(--blue,#1976d2)';
   }
 
   const forecastStr = plan?.deadline || (allDates.length > 0 ? allDates.at(-1) : '');

@@ -317,7 +317,7 @@ export async function renderOnboarding(state, dependencies = {}) {
         workbookData,
         draft.workbookSettings
       );
-      const preview = previewStudyPlanFromPreferences(draft, catalog);
+      const preview = previewStudyPlanFromPreferences(draft, catalog, { state });
 
       let summaryHtml = '';
       if (!preview.valid) {
@@ -445,7 +445,7 @@ export async function renderOnboarding(state, dependencies = {}) {
           workbookData,
           draft.workbookSettings
         );
-        const preview = previewStudyPlanFromPreferences(draft, catalog);
+        const preview = previewStudyPlanFromPreferences(draft, catalog, { state });
         if (preview.valid) {
           const res = commitStudyPlanFromPreferences(state, draft, preview);
           if (res.success) {
@@ -607,7 +607,7 @@ export async function renderOnboarding(state, dependencies = {}) {
             workbookData,
             draft.workbookSettings
           );
-          const preview = previewStudyPlanFromPreferences(draft, catalog);
+          const preview = previewStudyPlanFromPreferences(draft, catalog, { state });
           const rec = preview.recommendations?.find((r) => r.type === type);
           if (rec) {
             if (rec.recommendedDate) {
