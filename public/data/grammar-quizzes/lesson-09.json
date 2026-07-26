@@ -1,0 +1,619 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "title": "GENKI I Workbook, Third Edition",
+    "scope": "Lesson 9 grammar practice",
+    "workbookTocPdfPages": [
+      10,
+      11,
+      12
+    ],
+    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
+  },
+  "chapterId": 9,
+  "passingScorePercent": 67,
+  "topics": [
+    {
+      "id": "L9_g1",
+      "noteId": 1,
+      "title": "Прошедшие краткие формы",
+      "subtitle": "Прошедшие краткие формы",
+      "summary": "Краткие формы выражают прошедшее без です/ます.",
+      "formula": "V-た/だ・V-なかった・Adj-かった・N-だった",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          87
+        ],
+        "pdfPages": [
+          92
+        ],
+        "exerciseTitle": "Прошедшие краткие формы",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Краткие формы выражают прошедшее без です/ます."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "よむ → よんだ",
+          "reading": "よむ → よんだ",
+          "translation": "читать → прочитал",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L9_g1_q1",
+          "type": "single-choice",
+          "prompt": "Какая краткая прошедшая форма のむ?",
+          "options": [
+            {
+              "id": "a",
+              "text": "のんだ"
+            },
+            {
+              "id": "b",
+              "text": "のみた"
+            },
+            {
+              "id": "c",
+              "text": "のんで"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Краткие формы выражают прошедшее без です/ます.",
+          "grammarRefs": [
+            "L9_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L9_g1_q2",
+          "type": "fill-blank",
+          "prompt": "Краткое прошедшее отрицание いく: ___",
+          "acceptedAnswers": [
+            "いかなかった"
+          ],
+          "explanation": "Краткие формы выражают прошедшее без です/ます.",
+          "grammarRefs": [
+            "L9_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L9_g1_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «был студентом».",
+          "tokens": [
+            "がくせい",
+            "だった"
+          ],
+          "correctOrder": [
+            "がくせい",
+            "だった"
+          ],
+          "explanation": "Краткие формы выражают прошедшее без です/ます.",
+          "grammarRefs": [
+            "L9_g1"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L9_g2",
+      "noteId": 2,
+      "title": "Прошедшие краткие формы в разговоре",
+      "subtitle": "Прошедшие краткие формы в разговоре",
+      "summary": "Неформальные вопросы и ответы используют краткие прошедшие формы.",
+      "formula": "Past short + intonation",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          88
+        ],
+        "pdfPages": [
+          93
+        ],
+        "exerciseTitle": "Прошедшие краткие формы в разговоре",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L9_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Неформальные вопросы и ответы используют краткие прошедшие формы."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "けさ、あさごはんをたべた？",
+          "reading": "けさ、あさごはんをたべた？",
+          "translation": "Сегодня утром завтракал?",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L9_g2_q1",
+          "type": "single-choice",
+          "prompt": "Какой вариант — дружеский вопрос «Ты смотрел фильм?»",
+          "options": [
+            {
+              "id": "a",
+              "text": "えいがをみた？"
+            },
+            {
+              "id": "b",
+              "text": "えいがをみましたか。"
+            },
+            {
+              "id": "c",
+              "text": "えいがをみるかでした。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Неформальные вопросы и ответы используют краткие прошедшие формы.",
+          "grammarRefs": [
+            "L9_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L9_g2_q2",
+          "type": "fill-blank",
+          "prompt": "ううん、___。 («не смотрел»)",
+          "acceptedAnswers": [
+            "みなかった"
+          ],
+          "explanation": "Неформальные вопросы и ответы используют краткие прошедшие формы.",
+          "grammarRefs": [
+            "L9_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L9_g2_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Ага, было интересно».",
+          "tokens": [
+            "うん",
+            "おもしろかった"
+          ],
+          "correctOrder": [
+            "うん",
+            "おもしろかった"
+          ],
+          "explanation": "Неформальные вопросы и ответы используют краткие прошедшие формы.",
+          "grammarRefs": [
+            "L9_g2"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L9_g3",
+      "noteId": 3,
+      "title": "Прошедшее в цитировании",
+      "subtitle": "Прошедшее в цитировании",
+      "summary": "Перед цитирующими конструкциями используется краткая прошедшая форма.",
+      "formula": "Past short + と + 思います/言っていました",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          89
+        ],
+        "pdfPages": [
+          94
+        ],
+        "exerciseTitle": "Прошедшее в цитировании",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L9_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Перед цитирующими конструкциями используется краткая прошедшая форма."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "トムさんがたべたとおもいます。",
+          "reading": "トムさんがたべたとおもいます",
+          "translation": "Думаю, Том это съел.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L9_g3_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Думаю, вчера было холодно»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "きのうはさむかったとおもいます。"
+            },
+            {
+              "id": "b",
+              "text": "きのうはさむいでしたとおもいます。"
+            },
+            {
+              "id": "c",
+              "text": "きのうはさむくとおもいました。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Перед цитирующими конструкциями используется краткая прошедшая форма.",
+          "grammarRefs": [
+            "L9_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L9_g3_q2",
+          "type": "fill-blank",
+          "prompt": "ひるごはんをたべなかった ___ いっていました。",
+          "acceptedAnswers": [
+            "と"
+          ],
+          "explanation": "Перед цитирующими конструкциями используется краткая прошедшая форма.",
+          "grammarRefs": [
+            "L9_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L9_g3_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Думаю, он не пришёл».",
+          "tokens": [
+            "かれ",
+            "は",
+            "こなかった",
+            "と",
+            "おもいます"
+          ],
+          "correctOrder": [
+            "かれ",
+            "は",
+            "こなかった",
+            "と",
+            "おもいます"
+          ],
+          "explanation": "Перед цитирующими конструкциями используется краткая прошедшая форма.",
+          "grammarRefs": [
+            "L9_g3"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L9_g4",
+      "noteId": 4,
+      "title": "Определение существительного фразой",
+      "subtitle": "Определение существительного фразой",
+      "summary": "Определяющая фраза ставится непосредственно перед существительным.",
+      "formula": "Short clause + Noun",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          91
+        ],
+        "pdfPages": [
+          96
+        ],
+        "exerciseTitle": "Определение существительного фразой",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Определяющая фраза ставится непосредственно перед существительным."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "ほんをよんでいるひと",
+          "reading": "ほんをよんでいるひと",
+          "translation": "человек, который читает книгу",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L9_g4_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «человек, который любит кошек»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "ねこがすきなひと"
+            },
+            {
+              "id": "b",
+              "text": "ひとがねこをすき"
+            },
+            {
+              "id": "c",
+              "text": "ねこのひとがすき"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Определяющая фраза ставится непосредственно перед существительным.",
+          "grammarRefs": [
+            "L9_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L9_g4_q2",
+          "type": "fill-blank",
+          "prompt": "めがねをかけている ___",
+          "acceptedAnswers": [
+            "ひと"
+          ],
+          "explanation": "Определяющая фраза ставится непосредственно перед существительным.",
+          "grammarRefs": [
+            "L9_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L9_g4_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Студент, который фотографирует там, — Роберт».",
+          "tokens": [
+            "あそこで",
+            "しゃしんを",
+            "とっている",
+            "がくせい",
+            "は",
+            "ロバートさん",
+            "です"
+          ],
+          "correctOrder": [
+            "あそこで",
+            "しゃしんを",
+            "とっている",
+            "がくせい",
+            "は",
+            "ロバートさん",
+            "です"
+          ],
+          "explanation": "Определяющая фраза ставится непосредственно перед существительным.",
+          "grammarRefs": [
+            "L9_g4"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L9_g5",
+      "noteId": 5,
+      "title": "もう～ました／まだ～ていません",
+      "subtitle": "もう～ました／まだ～ていません",
+      "summary": "もう сообщает о завершении, まだ～ていません — о пока не выполненном действии.",
+      "formula": "もう V-ました / まだ V-ていません",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          92
+        ],
+        "pdfPages": [
+          97
+        ],
+        "exerciseTitle": "もう～ました／まだ～ていません",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "もう сообщает о завершении, まだ～ていません — о пока не выполненном действии."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "まだしゅくだいをしていません。",
+          "reading": "まだしゅくだいをしていません",
+          "translation": "Ещё не сделал домашнее задание.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L9_g5_q1",
+          "type": "single-choice",
+          "prompt": "Как ответить «Нет, ещё не сделал»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "いいえ、まだしていません。"
+            },
+            {
+              "id": "b",
+              "text": "いいえ、もうしませんでした。"
+            },
+            {
+              "id": "c",
+              "text": "いいえ、まだしました。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "もう сообщает о завершении, まだ～ていません — о пока не выполненном действии.",
+          "grammarRefs": [
+            "L9_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L9_g5_q2",
+          "type": "fill-blank",
+          "prompt": "___ ひるごはんをたべました。 («уже»)",
+          "acceptedAnswers": [
+            "もう"
+          ],
+          "explanation": "もう сообщает о завершении, まだ～ていません — о пока не выполненном действии.",
+          "grammarRefs": [
+            "L9_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L9_g5_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я ещё не прочитал эту книгу».",
+          "tokens": [
+            "このほん",
+            "は",
+            "まだ",
+            "よんで",
+            "いません"
+          ],
+          "correctOrder": [
+            "このほん",
+            "は",
+            "まだ",
+            "よんで",
+            "いません"
+          ],
+          "explanation": "もう сообщает о завершении, まだ～ていません — о пока не выполненном действии.",
+          "grammarRefs": [
+            "L9_g5"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L9_g6",
+      "noteId": 6,
+      "title": "Причина с から",
+      "subtitle": "Причина с から",
+      "summary": "Краткая причина + から соединяется со следствием.",
+      "formula": "Short reason + から、Result",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          93
+        ],
+        "pdfPages": [
+          98
+        ],
+        "exerciseTitle": "Причина с から",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L9_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Краткая причина + から соединяется со следствием."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "さむかったから、でかけませんでした。",
+          "reading": "さむかったから、でかけませんでした",
+          "translation": "Было холодно, поэтому не выходил.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L9_g6_q1",
+          "type": "single-choice",
+          "prompt": "Какое предложение правильно?",
+          "options": [
+            {
+              "id": "a",
+              "text": "あしたしけんがあるから、べんきょうします。"
+            },
+            {
+              "id": "b",
+              "text": "あしたしけんがあるで、べんきょうします。"
+            },
+            {
+              "id": "c",
+              "text": "あしたしけんがありから、べんきょうします。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Краткая причина + から соединяется со следствием.",
+          "grammarRefs": [
+            "L9_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L9_g6_q2",
+          "type": "fill-blank",
+          "prompt": "いそがしかった ___、いきませんでした。",
+          "acceptedAnswers": [
+            "から"
+          ],
+          "explanation": "Краткая причина + から соединяется со следствием.",
+          "grammarRefs": [
+            "L9_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L9_g6_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я устал, поэтому рано лёг спать».",
+          "tokens": [
+            "つかれた",
+            "から",
+            "はやく",
+            "ねました"
+          ],
+          "correctOrder": [
+            "つかれた",
+            "から",
+            "はやく",
+            "ねました"
+          ],
+          "explanation": "Краткая причина + から соединяется со следствием.",
+          "grammarRefs": [
+            "L9_g6"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    }
+  ]
+}

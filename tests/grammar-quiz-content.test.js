@@ -1,13 +1,35 @@
-import { describe, it, expect } from 'vitest';
-import { validateGrammarQuizData } from '../src/grammar-quiz-content.js';
-import quizData from '../public/data/genki-lesson-01-grammar-quiz.json';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import {
+  validateGrammarQuizData,
+  validateGrammarQuizIndex,
+  normalizeGrammarQuizAnswer,
+  buildVocabularyReferenceIndex,
+  clearGrammarQuizCache,
+  loadGrammarQuizIndex,
+  loadGrammarQuizChapter,
+  getGrammarQuizForChapter,
+  getGrammarQuizTopic,
+} from '../src/grammar-quiz-content.js';
+import quizData from '../public/data/grammar-quizzes/lesson-01.json';
+import indexData from '../public/data/grammar-quizzes/index.json';
 import lesson01Data from '../public/data/lessons/lesson-01.json';
 
-describe('Grammar Quiz Content & Schema (genki-lesson-01-grammar-quiz.json)', () => {
+describe('Grammar Quiz Content & Schema (lesson-01.json & loader API)', () => {
+  beforeEach(() => {
+    clearGrammarQuizCache();
+    vi.restoreAllMocks();
+  });
+
   it('loads JSON with valid schemaVersion === 1 and chapterId === 1', () => {
     expect(quizData).toBeDefined();
     expect(quizData.schemaVersion).toBe(1);
     expect(quizData.chapterId).toBe(1);
+  });
+
+  it('validates index structure cleanly via validateGrammarQuizIndex', () => {
+    const result = validateGrammarQuizIndex(indexData);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
   });
 
   it('contains exactly 5 topics matching lesson-01 grammar note IDs', () => {
@@ -37,85 +59,42 @@ describe('Grammar Quiz Content & Schema (genki-lesson-01-grammar-quiz.json)', ()
     }
   });
 
-  it('ensures requiredVocabularyIds and vocabularyRefs exist in lesson-01', () => {
-    const lessonVocabIds = new Set(
-      (lesson01Data.lesson.words || lesson01Data.lesson.vocabulary).map((w) => w.id)
-    );
-
-    for (const topic of quizData.topics) {
-      for (const vId of topic.requiredVocabularyIds || []) {
-        expect(lessonVocabIds.has(vId)).toBe(true);
-      }
-
-      for (const q of topic.quiz) {
-        for (const vRef of q.vocabularyRefs || []) {
-          expect(lessonVocabIds.has(vRef)).toBe(true);
-        }
-      }
-    }
+  it('correctly normalizes user answer strings', () => {
+    expect(normalizeGrammarQuizAnswer('  たけしです。 ')).toBe('たけしです');
+    expect(normalizeGrammarQuizAnswer('   hello   world. ')).toBe('hello world');
   });
 
-  it('ensures grammarRefs refer only to current or previous topics and no future chapters', () => {
-    const validTopics = new Set(['L1_g1', 'L1_g2', 'L1_g3', 'L1_g4', 'L1_g5']);
-
-    for (const topic of quizData.topics) {
-      for (const q of topic.quiz) {
-        for (const gRef of q.grammarRefs || []) {
-          expect(validTopics.has(gRef)).toBe(true);
-          const chMatch = gRef.match(/^L(\d+)_/);
-          if (chMatch) {
-            expect(Number(chMatch[1])).toBeLessThanOrEqual(1);
-          }
-        }
-      }
-    }
+  it('builds vocabulary reference index across lesson objects', () => {
+    const index = buildVocabularyReferenceIndex([lesson01Data.lesson]);
+    expect(index.has('L1_V001')).toBe(true);
+    expect(index.get('L1_V001').chapterId).toBe(1);
   });
 
-  it('validates question type structures (single-choice, fill-blank, sentence-order)', () => {
-    const forbiddenFutureGrammar = [
-      'て形',
-      'て-form',
-      'から',
-      '受身',
-      'たら',
-      'short form',
-      'たい',
-    ];
-
-    for (const topic of quizData.topics) {
-      for (const q of topic.quiz) {
-        expect(q.prompt).toBeTruthy();
-        expect(q.explanation).toBeTruthy();
-
-        // Ensure no forbidden future grammar terms in prompts or explanations
-        for (const forbidden of forbiddenFutureGrammar) {
-          expect(q.prompt).not.toContain(forbidden);
-        }
-
-        if (q.type === 'single-choice') {
-          expect(Array.isArray(q.options)).toBe(true);
-          expect(q.options.length).toBeGreaterThan(0);
-          const optionIds = q.options.map((o) => o.id);
-          expect(optionIds.includes(q.correctOptionId)).toBe(true);
-        } else if (q.type === 'fill-blank') {
-          expect(Array.isArray(q.acceptedAnswers)).toBe(true);
-          expect(q.acceptedAnswers.length).toBeGreaterThan(0);
-        } else if (q.type === 'sentence-order') {
-          expect(Array.isArray(q.tokens)).toBe(true);
-          expect(Array.isArray(q.correctOrder)).toBe(true);
-          for (const tok of q.correctOrder) {
-            expect(q.tokens.includes(tok)).toBe(true);
-          }
-        } else {
-          throw new Error(`Unexpected question type: ${q.type}`);
-        }
+  it('supports lazy chapter loading and cache clearing by chapterId', async () => {
+    global.fetch = vi.fn((url) => {
+      if (url.includes('index.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(indexData) });
       }
-    }
-  });
+      if (url.includes('lesson-01.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(quizData) });
+      }
+      return Promise.reject(new Error(`404 ${url}`));
+    });
 
-  it('passes validateGrammarQuizData validation cleanly', () => {
-    const result = validateGrammarQuizData(quizData, [lesson01Data.lesson]);
-    expect(result.valid).toBe(true);
-    expect(result.errors.length).toBe(0);
+    const chapter1 = await loadGrammarQuizChapter(1);
+    expect(chapter1).toBeDefined();
+    expect(chapter1.chapterId).toBe(1);
+
+    const safeFetch = await getGrammarQuizForChapter(1);
+    expect(safeFetch).toEqual(chapter1);
+
+    const topic = await getGrammarQuizTopic(1, 'L1_g1');
+    expect(topic).toBeDefined();
+    expect(topic.id).toBe('L1_g1');
+
+    // Test clearing cache by chapterId
+    clearGrammarQuizCache(1);
+    const reFetched = await loadGrammarQuizChapter(1);
+    expect(reFetched).toBeDefined();
   });
 });

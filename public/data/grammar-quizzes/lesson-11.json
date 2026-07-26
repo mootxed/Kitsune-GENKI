@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "title": "GENKI I Workbook, Third Edition",
+    "scope": "Lesson 11 grammar practice",
+    "workbookTocPdfPages": [
+      10,
+      11,
+      12
+    ],
+    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
+  },
+  "chapterId": 11,
+  "passingScorePercent": 67,
+  "topics": [
+    {
+      "id": "L11_g4",
+      "noteId": 4,
+      "title": "～たいです",
+      "subtitle": "～たいです",
+      "summary": "Основа ます-формы + たい выражает желание говорящего.",
+      "formula": "Verb stem + たいです",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          105
+        ],
+        "pdfPages": [
+          110
+        ],
+        "exerciseTitle": "～たいです",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Основа ます-формы + たい выражает желание говорящего."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "にほんにいきたいです。",
+          "reading": "にほんにいきたいです",
+          "translation": "Хочу поехать в Японию.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L11_g4_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Хочу посмотреть фильм»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "えいがをみたいです。"
+            },
+            {
+              "id": "b",
+              "text": "えいがをみるたいです。"
+            },
+            {
+              "id": "c",
+              "text": "えいがをみてほしいです。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Основа ます-формы + たい выражает желание говорящего.",
+          "grammarRefs": [
+            "L11_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L11_g4_q2",
+          "type": "fill-blank",
+          "prompt": "いき ___ です。 («не хочу идти»)",
+          "acceptedAnswers": [
+            "たくない"
+          ],
+          "explanation": "Основа ます-формы + たい выражает желание говорящего.",
+          "grammarRefs": [
+            "L11_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L11_g4_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Когда-нибудь хочу подняться на Фудзи».",
+          "tokens": [
+            "いつか",
+            "ふじさん",
+            "に",
+            "のぼりたい",
+            "です"
+          ],
+          "correctOrder": [
+            "いつか",
+            "ふじさん",
+            "に",
+            "のぼりたい",
+            "です"
+          ],
+          "explanation": "Основа ます-формы + たい выражает желание говорящего.",
+          "grammarRefs": [
+            "L11_g4"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L11_g2",
+      "noteId": 2,
+      "title": "～たり～たりする",
+      "subtitle": "～たり～たりする",
+      "summary": "Конструкция перечисляет примеры действий без строгого порядка.",
+      "formula": "V-た + り、V-た + りする",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          106
+        ],
+        "pdfPages": [
+          111
+        ],
+        "exerciseTitle": "～たり～たりする",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Конструкция перечисляет примеры действий без строгого порядка."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "べんきょうしたり、えいがをみたりしました。",
+          "reading": "べんきょうしたり、えいがをみたりしました",
+          "translation": "Учился, смотрел фильмы и так далее.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L11_g2_q1",
+          "type": "single-choice",
+          "prompt": "Как правильно сказать «читал и писал»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "よんだり、かいたりしました。"
+            },
+            {
+              "id": "b",
+              "text": "よんで、かいてたりしました。"
+            },
+            {
+              "id": "c",
+              "text": "よみたり、かきたりしました。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Конструкция перечисляет примеры действий без строгого порядка.",
+          "grammarRefs": [
+            "L11_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L11_g2_q2",
+          "type": "fill-blank",
+          "prompt": "うたをうたったり、おどっ ___ します。",
+          "acceptedAnswers": [
+            "たり"
+          ],
+          "explanation": "Конструкция перечисляет примеры действий без строгого порядка.",
+          "grammarRefs": [
+            "L11_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L11_g2_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «По воскресеньям я стираю и убираюсь».",
+          "tokens": [
+            "にちようび",
+            "は",
+            "せんたくしたり",
+            "そうじしたり",
+            "します"
+          ],
+          "correctOrder": [
+            "にちようび",
+            "は",
+            "せんたくしたり",
+            "そうじしたり",
+            "します"
+          ],
+          "explanation": "Конструкция перечисляет примеры действий без строгого порядка.",
+          "grammarRefs": [
+            "L11_g2"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L11_g1",
+      "noteId": 1,
+      "title": "～たことがある",
+      "subtitle": "～たことがある",
+      "summary": "Конструкция сообщает жизненный опыт.",
+      "formula": "V-た + ことがある",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          107
+        ],
+        "pdfPages": [
+          112
+        ],
+        "exerciseTitle": "～たことがある",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Конструкция сообщает жизненный опыт."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "ふじさんにのぼったことがあります。",
+          "reading": "ふじさんにのぼったことがあります",
+          "translation": "Мне доводилось подниматься на Фудзи.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L11_g1_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я никогда не был в онсэне»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "おんせんにはいったことがありません。"
+            },
+            {
+              "id": "b",
+              "text": "おんせんにはいりませんでした。"
+            },
+            {
+              "id": "c",
+              "text": "おんせんにはいることがないでした。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Конструкция сообщает жизненный опыт.",
+          "grammarRefs": [
+            "L11_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L11_g1_q2",
+          "type": "fill-blank",
+          "prompt": "にほんにいった ___ があります。",
+          "acceptedAnswers": [
+            "こと"
+          ],
+          "explanation": "Конструкция сообщает жизненный опыт.",
+          "grammarRefs": [
+            "L11_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L11_g1_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Вы когда-нибудь ели суши?»",
+          "tokens": [
+            "すし",
+            "を",
+            "たべた",
+            "こと",
+            "が",
+            "あります",
+            "か"
+          ],
+          "correctOrder": [
+            "すし",
+            "を",
+            "たべた",
+            "こと",
+            "が",
+            "あります",
+            "か"
+          ],
+          "explanation": "Конструкция сообщает жизненный опыт.",
+          "grammarRefs": [
+            "L11_g1"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L11_g3",
+      "noteId": 3,
+      "title": "Союз や",
+      "subtitle": "Союз や",
+      "summary": "や перечисляет примеры и подразумевает другие элементы.",
+      "formula": "N1 や N2",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          108
+        ],
+        "pdfPages": [
+          113
+        ],
+        "exerciseTitle": "Союз や",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "や перечисляет примеры и подразумевает другие элементы."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "きょうとやならにいきました。",
+          "reading": "きょうとやならにいきました",
+          "translation": "Ездил, например, в Киото и Нару.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L11_g3_q1",
+          "type": "single-choice",
+          "prompt": "Как показать неполное перечисление?",
+          "options": [
+            {
+              "id": "a",
+              "text": "りんごやみかんをかいました。"
+            },
+            {
+              "id": "b",
+              "text": "りんごとみかんをかいました。"
+            },
+            {
+              "id": "c",
+              "text": "りんごのみかんをかいました。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "や перечисляет примеры и подразумевает другие элементы.",
+          "grammarRefs": [
+            "L11_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L11_g3_q2",
+          "type": "fill-blank",
+          "prompt": "とうきょう ___ おおさかにいきたいです。",
+          "acceptedAnswers": [
+            "や"
+          ],
+          "explanation": "や перечисляет примеры и подразумевает другие элементы.",
+          "grammarRefs": [
+            "L11_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L11_g3_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я читаю книги, журналы и тому подобное».",
+          "tokens": [
+            "ほん",
+            "や",
+            "ざっし",
+            "など",
+            "を",
+            "よみます"
+          ],
+          "correctOrder": [
+            "ほん",
+            "や",
+            "ざっし",
+            "など",
+            "を",
+            "よみます"
+          ],
+          "explanation": "や перечисляет примеры и подразумевает другие элементы.",
+          "grammarRefs": [
+            "L11_g3"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    }
+  ]
+}

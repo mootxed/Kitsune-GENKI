@@ -67,9 +67,19 @@ const STATIC_ASSETS = [
 ];
 
 // ===== КОНТЕНТ ГЛАВ И КАНДЗИ (Stale-While-Revalidate) =====
-const LESSON_FILES = ['data/content-index.json', 'data/genki-i-workbook-practice.json'];
+const GRAMMAR_QUIZ_FILES = [
+  'data/grammar-quizzes/index.json',
+  ...Array.from({ length: 12 }, (_, i) => `data/grammar-quizzes/lesson-${String(i + 1).padStart(2, '0')}.json`),
+];
+
+const LESSON_FILES = [
+  'data/content-index.json',
+  'data/genki-i-workbook-practice.json',
+  ...GRAMMAR_QUIZ_FILES,
+];
+
 const CONTENT_CHUNK_RE =
-  /\/data\/((lessons|stories)\/(lesson|story)-\d+|kanji\/.*|genki-i-workbook-practice)\.json$/;
+  /\/data\/((lessons|stories)\/(lesson|story)-\d+|kanji\/.*|grammar-quizzes\/.*|genki-i-workbook-practice)\.json$/;
 
 // Скомпилированные пути для сопоставления с url.pathname
 const RESOLVED_STATIC_PATHS = STATIC_ASSETS.map((asset) => new URL(asset, self.location).pathname);

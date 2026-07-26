@@ -1,0 +1,723 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "title": "GENKI I Workbook, Third Edition",
+    "scope": "Lesson 2 grammar practice",
+    "workbookTocPdfPages": [
+      10,
+      11,
+      12
+    ],
+    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
+  },
+  "chapterId": 2,
+  "passingScorePercent": 67,
+  "topics": [
+    {
+      "id": "L2_g9",
+      "noteId": 9,
+      "title": "Японские числа: сотни и тысячи",
+      "subtitle": "Японские числа: сотни и тысячи",
+      "summary": "Особые чтения используются у 300, 600, 800, 3000 и 8000.",
+      "formula": "百・千・万",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          25
+        ],
+        "pdfPages": [
+          30
+        ],
+        "exerciseTitle": "Японские числа: сотни и тысячи",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Особые чтения используются у 300, 600, 800, 3000 и 8000."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "さんびゃく",
+          "reading": "さんびゃく",
+          "translation": "триста",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L2_g9_q1",
+          "type": "single-choice",
+          "prompt": "Как правильно читается 300?",
+          "options": [
+            {
+              "id": "a",
+              "text": "さんびゃく"
+            },
+            {
+              "id": "b",
+              "text": "さんひゃく"
+            },
+            {
+              "id": "c",
+              "text": "さんぴゃく"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Особые чтения используются у 300, 600, 800, 3000 и 8000.",
+          "grammarRefs": [
+            "L2_g9"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g9_q2",
+          "type": "fill-blank",
+          "prompt": "Запишите хираганой 8000: ___",
+          "acceptedAnswers": [
+            "はっせん"
+          ],
+          "explanation": "Особые чтения используются у 300, 600, 800, 3000 и 8000.",
+          "grammarRefs": [
+            "L2_g9"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g9_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите 20 000.",
+          "tokens": [
+            "に",
+            "まん"
+          ],
+          "correctOrder": [
+            "に",
+            "まん"
+          ],
+          "explanation": "Особые чтения используются у 300, 600, 800, 3000 и 8000.",
+          "grammarRefs": [
+            "L2_g9"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L2_g1",
+      "noteId": 1,
+      "title": "これ・それ・あれ・どれ",
+      "subtitle": "これ・それ・あれ・どれ",
+      "summary": "Выбор зависит от расстояния до говорящего и собеседника.",
+      "formula": "これ / それ / あれ / どれ",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          26
+        ],
+        "pdfPages": [
+          31
+        ],
+        "exerciseTitle": "これ・それ・あれ・どれ",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Выбор зависит от расстояния до говорящего и собеседника."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "これはほんです。",
+          "reading": "これはほんです",
+          "translation": "Это книга.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L2_g1_q1",
+          "type": "single-choice",
+          "prompt": "Предмет рядом с говорящим. Как сказать «это»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "これ"
+            },
+            {
+              "id": "b",
+              "text": "それ"
+            },
+            {
+              "id": "c",
+              "text": "あれ"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Выбор зависит от расстояния до говорящего и собеседника.",
+          "grammarRefs": [
+            "L2_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g1_q2",
+          "type": "fill-blank",
+          "prompt": "Предмет рядом с собеседником: ___ はあなたのかさですか。",
+          "acceptedAnswers": [
+            "それ"
+          ],
+          "explanation": "Выбор зависит от расстояния до говорящего и собеседника.",
+          "grammarRefs": [
+            "L2_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g1_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Который — словарь?»",
+          "tokens": [
+            "どれ",
+            "が",
+            "じしょ",
+            "です",
+            "か"
+          ],
+          "correctOrder": [
+            "どれ",
+            "が",
+            "じしょ",
+            "です",
+            "か"
+          ],
+          "explanation": "Выбор зависит от расстояния до говорящего и собеседника.",
+          "grammarRefs": [
+            "L2_g1"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L2_g2",
+      "noteId": 2,
+      "title": "この・その・あの・どの",
+      "subtitle": "この・その・あの・どの",
+      "summary": "Эти слова всегда требуют существительное после себя.",
+      "formula": "この N / その N / あの N / どの N",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          27
+        ],
+        "pdfPages": [
+          32
+        ],
+        "exerciseTitle": "この・その・あの・どの",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L2_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Эти слова всегда требуют существительное после себя."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "このとけいはたかいです。",
+          "reading": "このとけいはたかいです",
+          "translation": "Эти часы дорогие.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L2_g2_q1",
+          "type": "single-choice",
+          "prompt": "Как правильно сказать «эта книга»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "このほん"
+            },
+            {
+              "id": "b",
+              "text": "これほん"
+            },
+            {
+              "id": "c",
+              "text": "ほんこれ"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Эти слова всегда требуют существительное после себя.",
+          "grammarRefs": [
+            "L2_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g2_q2",
+          "type": "fill-blank",
+          "prompt": "Зонт далеко от обоих: ___ かさ",
+          "acceptedAnswers": [
+            "あの"
+          ],
+          "explanation": "Эти слова всегда требуют существительное после себя.",
+          "grammarRefs": [
+            "L2_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g2_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Который студент японец?»",
+          "tokens": [
+            "どの",
+            "がくせい",
+            "が",
+            "にほんじん",
+            "です",
+            "か"
+          ],
+          "correctOrder": [
+            "どの",
+            "がくせい",
+            "が",
+            "にほんじん",
+            "です",
+            "か"
+          ],
+          "explanation": "Эти слова всегда требуют существительное после себя.",
+          "grammarRefs": [
+            "L2_g2"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L2_g3",
+      "noteId": 3,
+      "title": "ここ・そこ・あそこ・どこ",
+      "subtitle": "ここ・そこ・あそこ・どこ",
+      "summary": "Серия указывает на место.",
+      "formula": "ここ / そこ / あそこ / どこ",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          28
+        ],
+        "pdfPages": [
+          33
+        ],
+        "exerciseTitle": "ここ・そこ・あそこ・どこ",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Серия указывает на место."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "トイレはどこですか。",
+          "reading": "トイレはどこですか",
+          "translation": "Где туалет?",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L2_g3_q1",
+          "type": "single-choice",
+          "prompt": "Как спросить «Где библиотека?»",
+          "options": [
+            {
+              "id": "a",
+              "text": "としょかんはどこですか。"
+            },
+            {
+              "id": "b",
+              "text": "としょかんはどれですか。"
+            },
+            {
+              "id": "c",
+              "text": "どのとしょかんです。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Серия указывает на место.",
+          "grammarRefs": [
+            "L2_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g3_q2",
+          "type": "fill-blank",
+          "prompt": "Место рядом с говорящим: ___ です。",
+          "acceptedAnswers": [
+            "ここ"
+          ],
+          "explanation": "Серия указывает на место.",
+          "grammarRefs": [
+            "L2_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g3_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Почта вон там».",
+          "tokens": [
+            "ゆうびんきょく",
+            "は",
+            "あそこ",
+            "です"
+          ],
+          "correctOrder": [
+            "ゆうびんきょく",
+            "は",
+            "あそこ",
+            "です"
+          ],
+          "explanation": "Серия указывает на место.",
+          "grammarRefs": [
+            "L2_g3"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L2_g4",
+      "noteId": 4,
+      "title": "だれの",
+      "subtitle": "だれの",
+      "summary": "だれの означает «чей?» и спрашивает о владельце.",
+      "formula": "だれ + の",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          28
+        ],
+        "pdfPages": [
+          33
+        ],
+        "exerciseTitle": "だれの",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L2_g3"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "だれの означает «чей?» и спрашивает о владельце."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "これはだれのかばんですか。",
+          "reading": "これはだれのかばんですか",
+          "translation": "Чья это сумка?",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L2_g4_q1",
+          "type": "single-choice",
+          "prompt": "Как спросить «Чьи это часы?»",
+          "options": [
+            {
+              "id": "a",
+              "text": "これはだれのとけいですか。"
+            },
+            {
+              "id": "b",
+              "text": "これはどれのとけいですか。"
+            },
+            {
+              "id": "c",
+              "text": "これはだれととけいですか。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "だれの означает «чей?» и спрашивает о владельце.",
+          "grammarRefs": [
+            "L2_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g4_q2",
+          "type": "fill-blank",
+          "prompt": "Вставьте: それは ___ ですか。",
+          "acceptedAnswers": [
+            "だれの"
+          ],
+          "explanation": "だれの означает «чей?» и спрашивает о владельце.",
+          "grammarRefs": [
+            "L2_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g4_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Это сумка Соры».",
+          "tokens": [
+            "それ",
+            "は",
+            "ソラさん",
+            "の",
+            "かばん",
+            "です"
+          ],
+          "correctOrder": [
+            "それ",
+            "は",
+            "ソラさん",
+            "の",
+            "かばん",
+            "です"
+          ],
+          "explanation": "だれの означает «чей?» и спрашивает о владельце.",
+          "grammarRefs": [
+            "L2_g4"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L2_g5",
+      "noteId": 5,
+      "title": "Частица も",
+      "subtitle": "Частица も",
+      "summary": "も заменяет は, が или を и означает «тоже».",
+      "formula": "N も ...",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          29
+        ],
+        "pdfPages": [
+          34
+        ],
+        "exerciseTitle": "Частица も",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "も заменяет は, が или を и означает «тоже»."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "ゆいさんもがくせいです。",
+          "reading": "ゆいさんもがくせいです",
+          "translation": "Юи тоже студентка.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L2_g5_q1",
+          "type": "single-choice",
+          "prompt": "Какую частицу поставить в «Юи тоже студентка»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "も"
+            },
+            {
+              "id": "b",
+              "text": "は"
+            },
+            {
+              "id": "c",
+              "text": "の"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "も заменяет は, が или を и означает «тоже».",
+          "grammarRefs": [
+            "L2_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g5_q2",
+          "type": "fill-blank",
+          "prompt": "わたし ___ がくせいです。",
+          "acceptedAnswers": [
+            "も"
+          ],
+          "explanation": "も заменяет は, が или を и означает «тоже».",
+          "grammarRefs": [
+            "L2_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g5_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Эта книга тоже японская».",
+          "tokens": [
+            "このほん",
+            "も",
+            "にほんのほん",
+            "です"
+          ],
+          "correctOrder": [
+            "このほん",
+            "も",
+            "にほんのほん",
+            "です"
+          ],
+          "explanation": "も заменяет は, が или を и означает «тоже».",
+          "grammarRefs": [
+            "L2_g5"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L2_g6",
+      "noteId": 6,
+      "title": "Noun じゃないです",
+      "subtitle": "Noun じゃないです",
+      "summary": "Это вежливое отрицание с существительными.",
+      "formula": "X は Y じゃないです",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          29
+        ],
+        "pdfPages": [
+          34
+        ],
+        "exerciseTitle": "Noun じゃないです",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L2_g5"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Это вежливое отрицание с существительными."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "これはじしょじゃないです。",
+          "reading": "これはじしょじゃないです",
+          "translation": "Это не словарь.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L2_g6_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Это не словарь»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "これはじしょじゃないです。"
+            },
+            {
+              "id": "b",
+              "text": "これはじしょくないです。"
+            },
+            {
+              "id": "c",
+              "text": "これはじしょません。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Это вежливое отрицание с существительными.",
+          "grammarRefs": [
+            "L2_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g6_q2",
+          "type": "fill-blank",
+          "prompt": "メアリーさんはせんせい ___。",
+          "acceptedAnswers": [
+            "じゃないです",
+            "じゃありません"
+          ],
+          "explanation": "Это вежливое отрицание с существительными.",
+          "grammarRefs": [
+            "L2_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L2_g6_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Тонкацу — не рыба».",
+          "tokens": [
+            "とんかつ",
+            "は",
+            "さかな",
+            "じゃないです"
+          ],
+          "correctOrder": [
+            "とんかつ",
+            "は",
+            "さかな",
+            "じゃないです"
+          ],
+          "explanation": "Это вежливое отрицание с существительными.",
+          "grammarRefs": [
+            "L2_g6"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-/* ui/grammar-lesson.js — Fullscreen Grammar Lesson & Quiz UI */
+import { getGrammarQuizTopic, normalizeGrammarQuizAnswer } from '../src/grammar-quiz-content.js';
 
 function escapeHtml(str) {
   if (typeof str !== 'string') return '';
@@ -10,13 +10,8 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-function normalizeAnswerText(text) {
-  if (typeof text !== 'string') return '';
-  let str = text.trim().normalize('NFC');
-  if (str.endsWith('。')) {
-    str = str.slice(0, -1).trim();
-  }
-  return str;
+function normalizeAnswerText(text, options) {
+  return normalizeGrammarQuizAnswer(text, options);
 }
 
 function renderHighlightedText(text, highlights = []) {
@@ -36,7 +31,7 @@ function renderHighlightedText(text, highlights = []) {
 
 export function openGrammarLesson({ state: _state, chapterId, topic, onComplete, onClose }) {
   return new Promise((resolve) => {
-    const questions = Array.isArray(topic?.quiz) ? topic.quiz : [];
+    let questions = Array.isArray(topic?.quiz) ? topic.quiz : [];
     const passingScorePercent = Number(topic?.passingScorePercent) || 67;
 
     let screen = 'explanation'; // 'explanation' | 'quiz' | 'result'
@@ -190,7 +185,8 @@ export function openGrammarLesson({ state: _state, chapterId, topic, onComplete,
             ${
               hasQuiz
                 ? `<button type="button" class="btn-primary grammar-action-btn" data-start-quiz>Перейти к проверке</button>`
-                : `<div class="grammar-quiz-unavailable">Проверочные задания для этой темы ещё не подготовлены.</div>
+                : `<div class="grammar-quiz-unavailable">Проверочные задания временно недоступны или опущены.</div>
+                   <button type="button" class="btn-secondary grammar-action-btn" data-retry-quiz-load>Повторить загрузку</button>
                    <button type="button" class="btn-secondary grammar-action-btn" data-close>Закрыть</button>`
             }
           </div>
@@ -209,6 +205,20 @@ export function openGrammarLesson({ state: _state, chapterId, topic, onComplete,
           currentQuestionIndex = 0;
           userAnswers = [];
           resetQuestionState();
+          render();
+        };
+      }
+
+      const retryLoadBtn = overlay.querySelector('[data-retry-quiz-load]');
+      if (retryLoadBtn) {
+        retryLoadBtn.onclick = async () => {
+          retryLoadBtn.disabled = true;
+          retryLoadBtn.textContent = 'Загрузка...';
+          const freshTopic = await getGrammarQuizTopic(chapterId, topic?.id);
+          if (freshTopic && Array.isArray(freshTopic.quiz) && freshTopic.quiz.length > 0) {
+            topic.quiz = freshTopic.quiz;
+            questions = freshTopic.quiz;
+          }
           render();
         };
       }

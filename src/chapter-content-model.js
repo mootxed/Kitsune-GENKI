@@ -41,6 +41,9 @@ export function getChapterGrammarTopics(chapterMeta) {
         ? note.prerequisiteGrammarIds
         : [],
       quiz: Array.isArray(note.quiz) ? note.quiz : null,
+      kind:
+        note.kind ||
+        (Array.isArray(note.quiz) && note.quiz.length > 0 ? 'core-grammar' : 'usage-note'),
       workbookReference: note.workbookReference || null,
     };
   });

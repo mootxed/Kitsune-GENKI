@@ -1,0 +1,628 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "title": "GENKI I Workbook, Third Edition",
+    "scope": "Lesson 7 grammar practice",
+    "workbookTocPdfPages": [
+      10,
+      11,
+      12
+    ],
+    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
+  },
+  "chapterId": 7,
+  "passingScorePercent": 67,
+  "topics": [
+    {
+      "id": "L7_g1",
+      "noteId": 1,
+      "title": "～ている: действие в процессе",
+      "subtitle": "～ている: действие в процессе",
+      "summary": "Конструкция описывает действие, происходящее сейчас.",
+      "formula": "Verb-て + います",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          70
+        ],
+        "pdfPages": [
+          75
+        ],
+        "exerciseTitle": "～ている: действие в процессе",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Конструкция описывает действие, происходящее сейчас."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "いまほんをよんでいます。",
+          "reading": "いまほんをよんでいます",
+          "translation": "Сейчас читаю книгу.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L7_g1_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Мэри сейчас учится»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "メアリーさんはいまべんきょうしています。"
+            },
+            {
+              "id": "b",
+              "text": "メアリーさんはいまべんきょうしました。"
+            },
+            {
+              "id": "c",
+              "text": "メアリーさんはいまべんきょうするです。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Конструкция описывает действие, происходящее сейчас.",
+          "grammarRefs": [
+            "L7_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L7_g1_q2",
+          "type": "fill-blank",
+          "prompt": "たけしさんはいまテレビをみ ___。",
+          "acceptedAnswers": [
+            "ています"
+          ],
+          "explanation": "Конструкция описывает действие, происходящее сейчас.",
+          "grammarRefs": [
+            "L7_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L7_g1_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Что вы сейчас делаете?»",
+          "tokens": [
+            "いま",
+            "なに",
+            "を",
+            "して",
+            "います",
+            "か"
+          ],
+          "correctOrder": [
+            "いま",
+            "なに",
+            "を",
+            "して",
+            "います",
+            "か"
+          ],
+          "explanation": "Конструкция описывает действие, происходящее сейчас.",
+          "grammarRefs": [
+            "L7_g1"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L7_g2",
+      "noteId": 2,
+      "title": "～ている: результат изменения",
+      "subtitle": "～ている: результат изменения",
+      "summary": "Некоторые глаголы в ～ている описывают устойчивое состояние.",
+      "formula": "Change verb-て + いる",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          71
+        ],
+        "pdfPages": [
+          76
+        ],
+        "exerciseTitle": "～ている: результат изменения",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L7_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Некоторые глаголы в ～ている описывают устойчивое состояние."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "とうきょうにすんでいます。",
+          "reading": "とうきょうにすんでいます",
+          "translation": "Живу в Токио.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L7_g2_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я знаю этого человека»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "そのひとをしっています。"
+            },
+            {
+              "id": "b",
+              "text": "そのひとをしっていません。"
+            },
+            {
+              "id": "c",
+              "text": "そのひとをしります。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Некоторые глаголы в ～ている описывают устойчивое состояние.",
+          "grammarRefs": [
+            "L7_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L7_g2_q2",
+          "type": "fill-blank",
+          "prompt": "わたしはおおさかにすん ___。",
+          "acceptedAnswers": [
+            "でいます"
+          ],
+          "explanation": "Некоторые глаголы в ～ている описывают устойчивое состояние.",
+          "grammarRefs": [
+            "L7_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L7_g2_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Мой брат женат».",
+          "tokens": [
+            "あに",
+            "は",
+            "けっこんして",
+            "います"
+          ],
+          "correctOrder": [
+            "あに",
+            "は",
+            "けっこんして",
+            "います"
+          ],
+          "explanation": "Некоторые глаголы в ～ている описывают устойчивое состояние.",
+          "grammarRefs": [
+            "L7_g2"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L7_g3",
+      "noteId": 3,
+      "title": "Описание внешности",
+      "subtitle": "Описание внешности",
+      "summary": "Человек задаётся как тема, часть тела — как подлежащее с が.",
+      "formula": "Person は Body が Adjective",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          72
+        ],
+        "pdfPages": [
+          77
+        ],
+        "exerciseTitle": "Описание внешности",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Человек задаётся как тема, часть тела — как подлежащее с が."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "トムさんはかみがながいです。",
+          "reading": "トムさんはかみがながいです",
+          "translation": "У Тома длинные волосы.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L7_g3_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «У Мэри большие глаза»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "メアリーさんはめがおおきいです。"
+            },
+            {
+              "id": "b",
+              "text": "メアリーさんがめはおおきいです。"
+            },
+            {
+              "id": "c",
+              "text": "メアリーさんのめをおおきいです。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Человек задаётся как тема, часть тела — как подлежащее с が.",
+          "grammarRefs": [
+            "L7_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L7_g3_q2",
+          "type": "fill-blank",
+          "prompt": "たけしさんはせ ___ たかいです。",
+          "acceptedAnswers": [
+            "が"
+          ],
+          "explanation": "Человек задаётся как тема, часть тела — как подлежащее с が.",
+          "grammarRefs": [
+            "L7_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L7_g3_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «У меня плохое зрение».",
+          "tokens": [
+            "わたし",
+            "は",
+            "め",
+            "が",
+            "わるい",
+            "です"
+          ],
+          "correctOrder": [
+            "わたし",
+            "は",
+            "め",
+            "が",
+            "わるい",
+            "です"
+          ],
+          "explanation": "Человек задаётся как тема, часть тела — как подлежащее с が.",
+          "grammarRefs": [
+            "L7_g3"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L7_g4",
+      "noteId": 4,
+      "title": "て-формы прилагательных и существительных",
+      "subtitle": "て-формы прилагательных и существительных",
+      "summary": "Формы соединяют несколько качеств в одном предложении.",
+      "formula": "い→くて / な→で / N→で",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          73
+        ],
+        "pdfPages": [
+          78
+        ],
+        "exerciseTitle": "て-формы прилагательных и существительных",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Формы соединяют несколько качеств в одном предложении."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "やすくて、おいしいです。",
+          "reading": "やすくて、おいしいです",
+          "translation": "Дешёвая и вкусная.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L7_g4_q1",
+          "type": "single-choice",
+          "prompt": "Как соединить やすい и おいしい?",
+          "options": [
+            {
+              "id": "a",
+              "text": "やすくて、おいしい"
+            },
+            {
+              "id": "b",
+              "text": "やすいで、おいしい"
+            },
+            {
+              "id": "c",
+              "text": "やすく、おいしいて"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Формы соединяют несколько качеств в одном предложении.",
+          "grammarRefs": [
+            "L7_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L7_g4_q2",
+          "type": "fill-blank",
+          "prompt": "ホテルはきれい ___、しずかです。",
+          "acceptedAnswers": [
+            "で"
+          ],
+          "explanation": "Формы соединяют несколько качеств в одном предложении.",
+          "grammarRefs": [
+            "L7_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L7_g4_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Ямашита — японец, ему около пятидесяти».",
+          "tokens": [
+            "やましたせんせい",
+            "は",
+            "にほんじん",
+            "で",
+            "ごじゅっさいぐらい",
+            "です"
+          ],
+          "correctOrder": [
+            "やましたせんせい",
+            "は",
+            "にほんじん",
+            "で",
+            "ごじゅっさいぐらい",
+            "です"
+          ],
+          "explanation": "Формы соединяют несколько качеств в одном предложении.",
+          "grammarRefs": [
+            "L7_g4"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L7_g5",
+      "noteId": 5,
+      "title": "Основа глагола + に行く／来る／帰る",
+      "subtitle": "Основа глагола + に行く／来る／帰る",
+      "summary": "Основа глагола показывает цель движения.",
+      "formula": "Verb stem + に + Movement",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          74
+        ],
+        "pdfPages": [
+          79
+        ],
+        "exerciseTitle": "Основа глагола + に行く／来る／帰る",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Основа глагола показывает цель движения."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "かばんをかいにいきました。",
+          "reading": "かばんをかいにいきました",
+          "translation": "Ходил купить сумку.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L7_g5_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я пришёл учить японский»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "にほんごをべんきょうしにきました。"
+            },
+            {
+              "id": "b",
+              "text": "にほんごをべんきょうするにきました。"
+            },
+            {
+              "id": "c",
+              "text": "にほんごをべんきょうしてきました。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Основа глагола показывает цель движения.",
+          "grammarRefs": [
+            "L7_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L7_g5_q2",
+          "type": "fill-blank",
+          "prompt": "としょかんにほんをかり ___ いきます。",
+          "acceptedAnswers": [
+            "に"
+          ],
+          "explanation": "Основа глагола показывает цель движения.",
+          "grammarRefs": [
+            "L7_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L7_g5_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я вернулся домой поесть».",
+          "tokens": [
+            "うち",
+            "に",
+            "たべ",
+            "に",
+            "かえりました"
+          ],
+          "correctOrder": [
+            "うち",
+            "に",
+            "たべ",
+            "に",
+            "かえりました"
+          ],
+          "explanation": "Основа глагола показывает цель движения.",
+          "grammarRefs": [
+            "L7_g5"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L7_g6",
+      "noteId": 6,
+      "title": "Счёт людей ～人",
+      "subtitle": "Счёт людей ～人",
+      "summary": "Один и два человека имеют особые чтения.",
+      "formula": "一人・二人・三人…",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          75
+        ],
+        "pdfPages": [
+          80
+        ],
+        "exerciseTitle": "Счёт людей ～人",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Один и два человека имеют особые чтения."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "クラスにがくせいがふたりいます。",
+          "reading": "クラスにがくせいがふたりいます",
+          "translation": "В классе два студента.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L7_g6_q1",
+          "type": "single-choice",
+          "prompt": "Как читается «два человека»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "ふたり"
+            },
+            {
+              "id": "b",
+              "text": "ににん"
+            },
+            {
+              "id": "c",
+              "text": "ふたつ"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Один и два человека имеют особые чтения.",
+          "grammarRefs": [
+            "L7_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L7_g6_q2",
+          "type": "fill-blank",
+          "prompt": "Запишите «четыре человека»: ___",
+          "acceptedAnswers": [
+            "よにん",
+            "四人"
+          ],
+          "explanation": "Один и два человека имеют особые чтения.",
+          "grammarRefs": [
+            "L7_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L7_g6_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «В семье пять человек».",
+          "tokens": [
+            "かぞく",
+            "は",
+            "ごにん",
+            "です"
+          ],
+          "correctOrder": [
+            "かぞく",
+            "は",
+            "ごにん",
+            "です"
+          ],
+          "explanation": "Один и два человека имеют особые чтения.",
+          "grammarRefs": [
+            "L7_g6"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    }
+  ]
+}

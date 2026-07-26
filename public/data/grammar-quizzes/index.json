@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "title": "GENKI I Workbook, Third Edition",
+    "scope": "Lessons 1-12 grammar practice",
+    "workbookTocPdfPages": [
+      10,
+      11,
+      12
+    ],
+    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
+  },
+  "chapters": [
+    {
+      "chapterId": 1,
+      "path": "data/grammar-quizzes/lesson-01.json",
+      "topicCount": 5,
+      "questionCount": 15,
+      "contentVersion": 1
+    },
+    {
+      "chapterId": 2,
+      "path": "data/grammar-quizzes/lesson-02.json",
+      "topicCount": 7,
+      "questionCount": 21,
+      "contentVersion": 1
+    },
+    {
+      "chapterId": 3,
+      "path": "data/grammar-quizzes/lesson-03.json",
+      "topicCount": 6,
+      "questionCount": 18,
+      "contentVersion": 1
+    },
+    {
+      "chapterId": 4,
+      "path": "data/grammar-quizzes/lesson-04.json",
+      "topicCount": 8,
+      "questionCount": 24,
+      "contentVersion": 1
+    },
+    {
+      "chapterId": 5,
+      "path": "data/grammar-quizzes/lesson-05.json",
+      "topicCount": 5,
+      "questionCount": 15,
+      "contentVersion": 1
+    },
+    {
+      "chapterId": 6,
+      "path": "data/grammar-quizzes/lesson-06.json",
+      "topicCount": 7,
+      "questionCount": 21,
+      "contentVersion": 1
+    },
+    {
+      "chapterId": 7,
+      "path": "data/grammar-quizzes/lesson-07.json",
+      "topicCount": 6,
+      "questionCount": 18,
+      "contentVersion": 1
+    },
+    {
+      "chapterId": 8,
+      "path": "data/grammar-quizzes/lesson-08.json",
+      "topicCount": 8,
+      "questionCount": 24,
+      "contentVersion": 1
+    },
+    {
+      "chapterId": 9,
+      "path": "data/grammar-quizzes/lesson-09.json",
+      "topicCount": 6,
+      "questionCount": 18,
+      "contentVersion": 1
+    },
+    {
+      "chapterId": 10,
+      "path": "data/grammar-quizzes/lesson-10.json",
+      "topicCount": 8,
+      "questionCount": 24,
+      "contentVersion": 1
+    },
+    {
+      "chapterId": 11,
+      "path": "data/grammar-quizzes/lesson-11.json",
+      "topicCount": 4,
+      "questionCount": 12,
+      "contentVersion": 1
+    },
+    {
+      "chapterId": 12,
+      "path": "data/grammar-quizzes/lesson-12.json",
+      "topicCount": 6,
+      "questionCount": 18,
+      "contentVersion": 1
+    }
+  ]
+}

@@ -1,0 +1,842 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "title": "GENKI I Workbook, Third Edition",
+    "scope": "Lesson 10 grammar practice",
+    "workbookTocPdfPages": [
+      10,
+      11,
+      12
+    ],
+    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
+  },
+  "chapterId": 10,
+  "passingScorePercent": 67,
+  "topics": [
+    {
+      "id": "L10_g1",
+      "noteId": 1,
+      "title": "Сравнение двух предметов",
+      "subtitle": "Сравнение двух предметов",
+      "summary": "A обладает качеством сильнее, чем B.",
+      "formula": "A のほうが B より Adj",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          96
+        ],
+        "pdfPages": [
+          101
+        ],
+        "exerciseTitle": "Сравнение двух предметов",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "A обладает качеством сильнее, чем B."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "でんしゃのほうがバスよりはやいです。",
+          "reading": "でんしゃのほうがバスよりはやいです",
+          "translation": "Поезд быстрее автобуса.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L10_g1_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Поезд быстрее автобуса»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "でんしゃのほうがバスよりはやいです。"
+            },
+            {
+              "id": "b",
+              "text": "でんしゃよりバスのほうがはやいです。"
+            },
+            {
+              "id": "c",
+              "text": "でんしゃがバスをはやいです。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "A обладает качеством сильнее, чем B.",
+          "grammarRefs": [
+            "L10_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g1_q2",
+          "type": "fill-blank",
+          "prompt": "にほん ___ カナダ ___ どちらのほうがさむいですか。",
+          "acceptedAnswers": [
+            "と",
+            "と と"
+          ],
+          "explanation": "A обладает качеством сильнее, чем B.",
+          "grammarRefs": [
+            "L10_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g1_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Собака милее кошки».",
+          "tokens": [
+            "いぬ",
+            "のほうが",
+            "ねこ",
+            "より",
+            "かわいい",
+            "です"
+          ],
+          "correctOrder": [
+            "いぬ",
+            "のほうが",
+            "ねこ",
+            "より",
+            "かわいい",
+            "です"
+          ],
+          "explanation": "A обладает качеством сильнее, чем B.",
+          "grammarRefs": [
+            "L10_g1"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L10_g2",
+      "noteId": 2,
+      "title": "Сравнение трёх и более предметов",
+      "subtitle": "Сравнение трёх и более предметов",
+      "summary": "Самая высокая степень внутри группы выражается いちばん.",
+      "formula": "Group の中で X が いちばん Adj",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          97
+        ],
+        "pdfPages": [
+          102
+        ],
+        "exerciseTitle": "Сравнение трёх и более предметов",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Самая высокая степень внутри группы выражается いちばん."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "きせつのなかであきがいちばんすきです。",
+          "reading": "きせつのなかであきがいちばんすきです",
+          "translation": "Из времён года больше всего люблю осень.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L10_g2_q1",
+          "type": "single-choice",
+          "prompt": "Как спросить «Кто самый высокий в классе?»",
+          "options": [
+            {
+              "id": "a",
+              "text": "クラスのなかでだれがいちばんせがたかいですか。"
+            },
+            {
+              "id": "b",
+              "text": "クラスのなかでどっちがせがたかいですか。"
+            },
+            {
+              "id": "c",
+              "text": "クラスよりだれのほうがたかいですか。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Самая высокая степень внутри группы выражается いちばん.",
+          "grammarRefs": [
+            "L10_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g2_q2",
+          "type": "fill-blank",
+          "prompt": "すしが ___ すきです。 («больше всего»)",
+          "acceptedAnswers": [
+            "いちばん"
+          ],
+          "explanation": "Самая высокая степень внутри группы выражается いちばん.",
+          "grammarRefs": [
+            "L10_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g2_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Среди этих трёх какой самый дешёвый?»",
+          "tokens": [
+            "このみっつ",
+            "の",
+            "なか",
+            "で",
+            "どれ",
+            "が",
+            "いちばん",
+            "やすい",
+            "です",
+            "か"
+          ],
+          "correctOrder": [
+            "このみっつ",
+            "の",
+            "なか",
+            "で",
+            "どれ",
+            "が",
+            "いちばん",
+            "やすい",
+            "です",
+            "か"
+          ],
+          "explanation": "Самая высокая степень внутри группы выражается いちばん.",
+          "grammarRefs": [
+            "L10_g2"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L10_g3",
+      "noteId": 3,
+      "title": "Прилагательное + の",
+      "subtitle": "Прилагательное + の",
+      "summary": "の заменяет понятное неодушевлённое существительное.",
+      "formula": "Adjective + の",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          98
+        ],
+        "pdfPages": [
+          103
+        ],
+        "exerciseTitle": "Прилагательное + の",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "の заменяет понятное неодушевлённое существительное."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "あかいのももっています。",
+          "reading": "あかいのももっています",
+          "translation": "Красный тоже есть.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L10_g3_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я куплю дешёвый»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "やすいのをかいます。"
+            },
+            {
+              "id": "b",
+              "text": "やすいをかいます。"
+            },
+            {
+              "id": "c",
+              "text": "やすくのをかいます。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "の заменяет понятное неодушевлённое существительное.",
+          "grammarRefs": [
+            "L10_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g3_q2",
+          "type": "fill-blank",
+          "prompt": "きれい ___ をえらびました。",
+          "acceptedAnswers": [
+            "なの"
+          ],
+          "explanation": "の заменяет понятное неодушевлённое существительное.",
+          "grammarRefs": [
+            "L10_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g3_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «У меня есть большой и маленький».",
+          "tokens": [
+            "おおきい",
+            "の",
+            "と",
+            "ちいさい",
+            "の",
+            "が",
+            "あります"
+          ],
+          "correctOrder": [
+            "おおきい",
+            "の",
+            "と",
+            "ちいさい",
+            "の",
+            "が",
+            "あります"
+          ],
+          "explanation": "の заменяет понятное неодушевлённое существительное.",
+          "grammarRefs": [
+            "L10_g3"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L10_g4",
+      "noteId": 4,
+      "title": "Притяжательное Noun の без повторения",
+      "subtitle": "Притяжательное Noun の без повторения",
+      "summary": "После притяжательной частицы можно опустить понятное существительное.",
+      "formula": "Noun の Noun → Noun の",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          98
+        ],
+        "pdfPages": [
+          103
+        ],
+        "exerciseTitle": "Притяжательное Noun の без повторения",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L10_g3"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "После притяжательной частицы можно опустить понятное существительное."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "それはメアリーさんのです。",
+          "reading": "それはメアリーさんのです",
+          "translation": "Это Мэрино.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L10_g4_q1",
+          "type": "single-choice",
+          "prompt": "Как ответить «Нет, это моё»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "いいえ、わたしのです。"
+            },
+            {
+              "id": "b",
+              "text": "いいえ、わたしですの。"
+            },
+            {
+              "id": "c",
+              "text": "いいえ、わたしのか。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "После притяжательной частицы можно опустить понятное существительное.",
+          "grammarRefs": [
+            "L10_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g4_q2",
+          "type": "fill-blank",
+          "prompt": "このかばんはソラさん ___ です。",
+          "acceptedAnswers": [
+            "の"
+          ],
+          "explanation": "После притяжательной частицы можно опустить понятное существительное.",
+          "grammarRefs": [
+            "L10_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g4_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Американская машина больше японской».",
+          "tokens": [
+            "アメリカのくるま",
+            "のほうが",
+            "にほん",
+            "の",
+            "より",
+            "おおきい",
+            "です"
+          ],
+          "correctOrder": [
+            "アメリカのくるま",
+            "のほうが",
+            "にほん",
+            "の",
+            "より",
+            "おおきい",
+            "です"
+          ],
+          "explanation": "После притяжательной частицы можно опустить понятное существительное.",
+          "grammarRefs": [
+            "L10_g4"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L10_g5",
+      "noteId": 5,
+      "title": "～つもりです",
+      "subtitle": "～つもりです",
+      "summary": "Краткая непрошедшая форма + つもり выражает твёрдый план.",
+      "formula": "V-short + つもりです",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          99
+        ],
+        "pdfPages": [
+          104
+        ],
+        "exerciseTitle": "～つもりです",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Краткая непрошедшая форма + つもり выражает твёрдый план."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "テニスをするつもりです。",
+          "reading": "テニスをするつもりです",
+          "translation": "Собираюсь играть в теннис.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L10_g5_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я не собираюсь идти»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "いかないつもりです。"
+            },
+            {
+              "id": "b",
+              "text": "いきませんつもりです。"
+            },
+            {
+              "id": "c",
+              "text": "いかなかったつもりです。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Краткая непрошедшая форма + つもり выражает твёрдый план.",
+          "grammarRefs": [
+            "L10_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g5_q2",
+          "type": "fill-blank",
+          "prompt": "にほんにりゅうがくする ___ です。",
+          "acceptedAnswers": [
+            "つもり"
+          ],
+          "explanation": "Краткая непрошедшая форма + つもり выражает твёрдый план.",
+          "grammarRefs": [
+            "L10_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g5_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я собирался посмотреть храм».",
+          "tokens": [
+            "おてら",
+            "を",
+            "みにいく",
+            "つもり",
+            "でした"
+          ],
+          "correctOrder": [
+            "おてら",
+            "を",
+            "みにいく",
+            "つもり",
+            "でした"
+          ],
+          "explanation": "Краткая непрошедшая форма + つもり выражает твёрдый план.",
+          "grammarRefs": [
+            "L10_g5"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L10_g6",
+      "noteId": 6,
+      "title": "～くなる／～になる",
+      "subtitle": "～くなる／～になる",
+      "summary": "Конструкция выражает изменение состояния.",
+      "formula": "い→くなる / な・N→になる",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          100
+        ],
+        "pdfPages": [
+          105
+        ],
+        "exerciseTitle": "～くなる／～になる",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Конструкция выражает изменение состояния."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "あたたかくなりました。",
+          "reading": "あたたかくなりました",
+          "translation": "Стало тепло.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L10_g6_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «стало холодно»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "さむくなりました。"
+            },
+            {
+              "id": "b",
+              "text": "さむいになりました。"
+            },
+            {
+              "id": "c",
+              "text": "さむくにしました。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Конструкция выражает изменение состояния.",
+          "grammarRefs": [
+            "L10_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g6_q2",
+          "type": "fill-blank",
+          "prompt": "げんき ___ なりました。",
+          "acceptedAnswers": [
+            "に"
+          ],
+          "explanation": "Конструкция выражает изменение состояния.",
+          "grammarRefs": [
+            "L10_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g6_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я стал учителем».",
+          "tokens": [
+            "せんせい",
+            "に",
+            "なりました"
+          ],
+          "correctOrder": [
+            "せんせい",
+            "に",
+            "なりました"
+          ],
+          "explanation": "Конструкция выражает изменение состояния.",
+          "grammarRefs": [
+            "L10_g6"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L10_g7",
+      "noteId": 7,
+      "title": "どこかに／どこにも",
+      "subtitle": "どこかに／どこにも",
+      "summary": "Падежная частица ставится между вопросительным словом и か/も.",
+      "formula": "Question word + particle + か/も",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          101
+        ],
+        "pdfPages": [
+          106
+        ],
+        "exerciseTitle": "どこかに／どこにも",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Падежная частица ставится между вопросительным словом и か/も."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "どこへもいきませんでした。",
+          "reading": "どこへもいきませんでした",
+          "translation": "Никуда не ездил.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L10_g7_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я ни с кем не встретился»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "だれにもあいませんでした。"
+            },
+            {
+              "id": "b",
+              "text": "だれもにあいませんでした。"
+            },
+            {
+              "id": "c",
+              "text": "だれかにあいませんでした。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Падежная частица ставится между вопросительным словом и か/も.",
+          "grammarRefs": [
+            "L10_g7"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g7_q2",
+          "type": "fill-blank",
+          "prompt": "___ へいきたいです。 («куда-нибудь»)",
+          "acceptedAnswers": [
+            "どこか"
+          ],
+          "explanation": "Падежная частица ставится между вопросительным словом и か/も.",
+          "grammarRefs": [
+            "L10_g7"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g7_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Вы с кем-нибудь разговаривали?»",
+          "tokens": [
+            "だれか",
+            "と",
+            "はなしました",
+            "か"
+          ],
+          "correctOrder": [
+            "だれか",
+            "と",
+            "はなしました",
+            "か"
+          ],
+          "explanation": "Падежная частица ставится между вопросительным словом и か/も.",
+          "grammarRefs": [
+            "L10_g7"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L10_g8",
+      "noteId": 8,
+      "title": "Частица で: инструмент и транспорт",
+      "subtitle": "Частица で: инструмент и транспорт",
+      "summary": "で отмечает инструмент, язык, канал или транспорт.",
+      "formula": "Tool/Vehicle/Language で V",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          101
+        ],
+        "pdfPages": [
+          106
+        ],
+        "exerciseTitle": "Частица で: инструмент и транспорт",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "で отмечает инструмент, язык, канал или транспорт."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "バスでえきまでいきました。",
+          "reading": "バスでえきまでいきました",
+          "translation": "Доехал до станции на автобусе.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L10_g8_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я говорю по-японски»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "にほんごではなします。"
+            },
+            {
+              "id": "b",
+              "text": "にほんごをはなします。"
+            },
+            {
+              "id": "c",
+              "text": "にほんごにはなします。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "で отмечает инструмент, язык, канал или транспорт.",
+          "grammarRefs": [
+            "L10_g8"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g8_q2",
+          "type": "fill-blank",
+          "prompt": "でんしゃ ___ とうきょうにいきます。",
+          "acceptedAnswers": [
+            "で"
+          ],
+          "explanation": "で отмечает инструмент, язык, канал или транспорт.",
+          "grammarRefs": [
+            "L10_g8"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L10_g8_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я написал письмо ручкой».",
+          "tokens": [
+            "ペン",
+            "で",
+            "てがみ",
+            "を",
+            "かきました"
+          ],
+          "correctOrder": [
+            "ペン",
+            "で",
+            "てがみ",
+            "を",
+            "かきました"
+          ],
+          "explanation": "で отмечает инструмент, язык, канал или транспорт.",
+          "grammarRefs": [
+            "L10_g8"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,831 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "title": "GENKI I Workbook, Third Edition",
+    "scope": "Lesson 8 grammar practice",
+    "workbookTocPdfPages": [
+      10,
+      11,
+      12
+    ],
+    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
+  },
+  "chapterId": 8,
+  "passingScorePercent": 67,
+  "topics": [
+    {
+      "id": "L8_g1",
+      "noteId": 1,
+      "title": "Краткие формы настоящего времени",
+      "subtitle": "Краткие формы настоящего времени",
+      "summary": "Краткие формы используются в неформальной речи и сложных конструкциях.",
+      "formula": "V dictionary / V-ない / Adj / Nだ",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          78
+        ],
+        "pdfPages": [
+          83
+        ],
+        "exerciseTitle": "Краткие формы настоящего времени",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Краткие формы используются в неформальной речи и сложных конструкциях."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "よむ／よまない",
+          "reading": "よむ／よまない",
+          "translation": "читать / не читать",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L8_g1_q1",
+          "type": "single-choice",
+          "prompt": "Какая краткая отрицательная форма かう?",
+          "options": [
+            {
+              "id": "a",
+              "text": "かわない"
+            },
+            {
+              "id": "b",
+              "text": "かうない"
+            },
+            {
+              "id": "c",
+              "text": "かあない"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Краткие формы используются в неформальной речи и сложных конструкциях.",
+          "grammarRefs": [
+            "L8_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g1_q2",
+          "type": "fill-blank",
+          "prompt": "Краткая форма べんきょうします: ___",
+          "acceptedAnswers": [
+            "べんきょうする"
+          ],
+          "explanation": "Краткие формы используются в неформальной речи и сложных конструкциях.",
+          "grammarRefs": [
+            "L8_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g1_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «не студент».",
+          "tokens": [
+            "がくせい",
+            "じゃない"
+          ],
+          "correctOrder": [
+            "がくせい",
+            "じゃない"
+          ],
+          "explanation": "Краткие формы используются в неформальной речи и сложных конструкциях.",
+          "grammarRefs": [
+            "L8_g1"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L8_g2",
+      "noteId": 2,
+      "title": "Неформальная речь",
+      "subtitle": "Неформальная речь",
+      "summary": "Вопросы теряют か, はい/いいえ часто заменяются на うん/ううん.",
+      "formula": "Short form + intonation",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          79
+        ],
+        "pdfPages": [
+          84
+        ],
+        "exerciseTitle": "Неформальная речь",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L8_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Вопросы теряют か, はい/いいえ часто заменяются на うん/ううん."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "きょう、がっこうにいく？",
+          "reading": "きょう、がっこうにいく？",
+          "translation": "Сегодня пойдёшь в школу?",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L8_g2_q1",
+          "type": "single-choice",
+          "prompt": "Какой вариант — дружеский вопрос?",
+          "options": [
+            {
+              "id": "a",
+              "text": "あしたくる？"
+            },
+            {
+              "id": "b",
+              "text": "あしたきますか。"
+            },
+            {
+              "id": "c",
+              "text": "あしたきませんでした。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Вопросы теряют か, はい/いいえ часто заменяются на うん/ううん.",
+          "grammarRefs": [
+            "L8_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g2_q2",
+          "type": "fill-blank",
+          "prompt": "Разговорное «нет»: ___",
+          "acceptedAnswers": [
+            "ううん"
+          ],
+          "explanation": "Вопросы теряют か, はい/いいえ часто заменяются на うん/ううん.",
+          "grammarRefs": [
+            "L8_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g2_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите дружеский ответ «Ага, посмотрю».",
+          "tokens": [
+            "うん",
+            "みる"
+          ],
+          "correctOrder": [
+            "うん",
+            "みる"
+          ],
+          "explanation": "Вопросы теряют か, はい/いいえ часто заменяются на うん/ううん.",
+          "grammarRefs": [
+            "L8_g2"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L8_g3",
+      "noteId": 3,
+      "title": "～と思います",
+      "subtitle": "～と思います",
+      "summary": "Краткая форма передаёт мнение или предположение.",
+      "formula": "Short clause + と思います",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          80
+        ],
+        "pdfPages": [
+          85
+        ],
+        "exerciseTitle": "～と思います",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L8_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Краткая форма передаёт мнение или предположение."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "あしたあめがふるとおもいます。",
+          "reading": "あしたあめがふるとおもいます",
+          "translation": "Думаю, завтра пойдёт дождь.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L8_g3_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Думаю, эта книга интересная»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "このほんはおもしろいとおもいます。"
+            },
+            {
+              "id": "b",
+              "text": "このほんはおもしろいですとおもいます。"
+            },
+            {
+              "id": "c",
+              "text": "このほんはおもしろくとおもいます。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Краткая форма передаёт мнение или предположение.",
+          "grammarRefs": [
+            "L8_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g3_q2",
+          "type": "fill-blank",
+          "prompt": "たけしさんはこない ___ おもいます。",
+          "acceptedAnswers": [
+            "と"
+          ],
+          "explanation": "Краткая форма передаёт мнение или предположение.",
+          "grammarRefs": [
+            "L8_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g3_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Думаю, Мэри не студентка».",
+          "tokens": [
+            "メアリーさん",
+            "は",
+            "がくせい",
+            "じゃない",
+            "と",
+            "おもいます"
+          ],
+          "correctOrder": [
+            "メアリーさん",
+            "は",
+            "がくせい",
+            "じゃない",
+            "と",
+            "おもいます"
+          ],
+          "explanation": "Краткая форма передаёт мнение или предположение.",
+          "grammarRefs": [
+            "L8_g3"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L8_g4",
+      "noteId": 4,
+      "title": "～と言っていました",
+      "subtitle": "～と言っていました",
+      "summary": "Конструкция передаёт чужие слова.",
+      "formula": "Short clause + と言っていました",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          81
+        ],
+        "pdfPages": [
+          86
+        ],
+        "exerciseTitle": "～と言っていました",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L8_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Конструкция передаёт чужие слова."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "あしたしけんがあるといっていました。",
+          "reading": "あしたしけんがあるといっていました",
+          "translation": "Сказал, что завтра будет экзамен.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L8_g4_q1",
+          "type": "single-choice",
+          "prompt": "Как передать «Юи сказала, что занята»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "ゆいさんはいそがしいといっていました。"
+            },
+            {
+              "id": "b",
+              "text": "ゆいさんはいそがしいですをいっていました。"
+            },
+            {
+              "id": "c",
+              "text": "ゆいさんはいそがしくとおもいました。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Конструкция передаёт чужие слова.",
+          "grammarRefs": [
+            "L8_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g4_q2",
+          "type": "fill-blank",
+          "prompt": "らいしゅういく ___ いっていました。",
+          "acceptedAnswers": [
+            "と"
+          ],
+          "explanation": "Конструкция передаёт чужие слова.",
+          "grammarRefs": [
+            "L8_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g4_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Такэси сказал, что не придёт».",
+          "tokens": [
+            "たけしさん",
+            "は",
+            "こない",
+            "と",
+            "いっていました"
+          ],
+          "correctOrder": [
+            "たけしさん",
+            "は",
+            "こない",
+            "と",
+            "いっていました"
+          ],
+          "explanation": "Конструкция передаёт чужие слова.",
+          "grammarRefs": [
+            "L8_g4"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L8_g5",
+      "noteId": 5,
+      "title": "～ないでください",
+      "subtitle": "～ないでください",
+      "summary": "Мягкая вежливая просьба не делать действие.",
+      "formula": "V-ない + でください",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          82
+        ],
+        "pdfPages": [
+          87
+        ],
+        "exerciseTitle": "～ないでください",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L8_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Мягкая вежливая просьба не делать действие."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "ここでしゃしんをとらないでください。",
+          "reading": "ここでしゃしんをとらないでください",
+          "translation": "Пожалуйста, не фотографируйте здесь.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L8_g5_q1",
+          "type": "single-choice",
+          "prompt": "Как попросить «Не входите»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "はいらないでください。"
+            },
+            {
+              "id": "b",
+              "text": "はいってはいけませんか。"
+            },
+            {
+              "id": "c",
+              "text": "はいりませんか。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Мягкая вежливая просьба не делать действие.",
+          "grammarRefs": [
+            "L8_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g5_q2",
+          "type": "fill-blank",
+          "prompt": "ここでたばこをすわ ___。",
+          "acceptedAnswers": [
+            "ないでください"
+          ],
+          "explanation": "Мягкая вежливая просьба не делать действие.",
+          "grammarRefs": [
+            "L8_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g5_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Не забывайте учебник».",
+          "tokens": [
+            "きょうかしょ",
+            "を",
+            "わすれないで",
+            "ください"
+          ],
+          "correctOrder": [
+            "きょうかしょ",
+            "を",
+            "わすれないで",
+            "ください"
+          ],
+          "explanation": "Мягкая вежливая просьба не делать действие.",
+          "grammarRefs": [
+            "L8_g5"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L8_g6",
+      "noteId": 6,
+      "title": "Verb のが好きです／上手です",
+      "subtitle": "Verb のが好きです／上手です",
+      "summary": "の превращает глагольную фразу в именную группу.",
+      "formula": "Short Verb + のが + 好き/上手",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          83
+        ],
+        "pdfPages": [
+          88
+        ],
+        "exerciseTitle": "Verb のが好きです／上手です",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L8_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "の превращает глагольную фразу в именную группу."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "にほんごをべんきょうするのがすきです。",
+          "reading": "にほんごをべんきょうするのがすきです",
+          "translation": "Люблю изучать японский.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L8_g6_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я хорошо готовлю»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "りょうりするのがじょうずです。"
+            },
+            {
+              "id": "b",
+              "text": "りょうりをじょうずします。"
+            },
+            {
+              "id": "c",
+              "text": "りょうりするがじょうずのです。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "の превращает глагольную фразу в именную группу.",
+          "grammarRefs": [
+            "L8_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g6_q2",
+          "type": "fill-blank",
+          "prompt": "ほんをよむ ___ すきです。",
+          "acceptedAnswers": [
+            "のが"
+          ],
+          "explanation": "の превращает глагольную фразу в именную группу.",
+          "grammarRefs": [
+            "L8_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g6_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я плохо пою».",
+          "tokens": [
+            "うたを",
+            "うたう",
+            "の",
+            "が",
+            "へた",
+            "です"
+          ],
+          "correctOrder": [
+            "うたを",
+            "うたう",
+            "の",
+            "が",
+            "へた",
+            "です"
+          ],
+          "explanation": "の превращает глагольную фразу в именную группу.",
+          "grammarRefs": [
+            "L8_g6"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L8_g7",
+      "noteId": 7,
+      "title": "Частица が как подлежащее",
+      "subtitle": "Частица が как подлежащее",
+      "summary": "Вопросительное слово и ответ на него получают が.",
+      "formula": "Question word が ...",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          84
+        ],
+        "pdfPages": [
+          89
+        ],
+        "exerciseTitle": "Частица が как подлежащее",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Вопросительное слово и ответ на него получают が."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "だれがおきなわにいきましたか。",
+          "reading": "だれがおきなわにいきましたか",
+          "translation": "Кто ездил на Окинаву?",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L8_g7_q1",
+          "type": "single-choice",
+          "prompt": "Какая частица после だれ?",
+          "options": [
+            {
+              "id": "a",
+              "text": "が"
+            },
+            {
+              "id": "b",
+              "text": "は"
+            },
+            {
+              "id": "c",
+              "text": "を"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Вопросительное слово и ответ на него получают が.",
+          "grammarRefs": [
+            "L8_g7"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g7_q2",
+          "type": "fill-blank",
+          "prompt": "ロバートさん ___ いきました。",
+          "acceptedAnswers": [
+            "が"
+          ],
+          "explanation": "Вопросительное слово и ответ на него получают が.",
+          "grammarRefs": [
+            "L8_g7"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g7_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Что находится на столе?»",
+          "tokens": [
+            "なに",
+            "が",
+            "つくえ",
+            "の",
+            "うえ",
+            "に",
+            "あります",
+            "か"
+          ],
+          "correctOrder": [
+            "なに",
+            "が",
+            "つくえ",
+            "の",
+            "うえ",
+            "に",
+            "あります",
+            "か"
+          ],
+          "explanation": "Вопросительное слово и ответ на него получают が.",
+          "grammarRefs": [
+            "L8_g7"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L8_g8",
+      "noteId": 8,
+      "title": "何か и 何も",
+      "subtitle": "何か и 何も",
+      "summary": "何か означает «что-то», 何も требует отрицательной формы.",
+      "formula": "何か + affirmative / 何も + negative",
+      "estimatedMinutes": 8,
+      "workbookReference": {
+        "printedPages": [
+          84
+        ],
+        "pdfPages": [
+          89
+        ],
+        "exerciseTitle": "何か и 何も",
+        "skillTypes": [
+          "grammar-practice"
+        ]
+      },
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L8_g7"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "何か означает «что-то», 何も требует отрицательной формы."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "なにもたべませんでした。",
+          "reading": "なにもたべませんでした",
+          "translation": "Ничего не ел.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L8_g8_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я ничего не купил»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "なにもかいませんでした。"
+            },
+            {
+              "id": "b",
+              "text": "なにかかいませんでした。"
+            },
+            {
+              "id": "c",
+              "text": "なにもかいました。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "何か означает «что-то», 何も требует отрицательной формы.",
+          "grammarRefs": [
+            "L8_g8"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g8_q2",
+          "type": "fill-blank",
+          "prompt": "___ のみますか。 («что-нибудь»)",
+          "acceptedAnswers": [
+            "なにか"
+          ],
+          "explanation": "何か означает «что-то», 何も требует отрицательной формы.",
+          "grammarRefs": [
+            "L8_g8"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L8_g8_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Кошка что-то принесла».",
+          "tokens": [
+            "ねこ",
+            "が",
+            "なにか",
+            "もってきました"
+          ],
+          "correctOrder": [
+            "ねこ",
+            "が",
+            "なにか",
+            "もってきました"
+          ],
+          "explanation": "何か означает «что-то», 何も требует отрицательной формы.",
+          "grammarRefs": [
+            "L8_g8"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    }
+  ]
+}
