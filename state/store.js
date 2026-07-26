@@ -5,11 +5,12 @@ import { db, STORES } from '../src/db.js';
 import { appendReviewLog } from '../src/review-log.js';
 import { acknowledgeReviewLogs, compactReviewJournal } from '../src/review-journal.js';
 import { normalizeVocabularyLockState } from '../src/vocabulary-unlock-plan.js';
+import { hasMeaningfulUserProgress } from '../src/onboarding-state.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-export const CURRENT_VERSION = 11;
+export const CURRENT_VERSION = 12;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -236,6 +237,58 @@ const MIGRATIONS = {
       version: 11,
     };
   },
+  12: (oldState) => {
+    const baseState = { ...oldState };
+    const chapters = { ...(baseState.chapters || {}) };
+    for (const [chapterId, chapterValue] of Object.entries(chapters)) {
+      const chapter = { ...(chapterValue || {}) };
+      chapter.checklist = { ...(chapter.checklist || {}) };
+      if (chapter.checklist.grammar === true) {
+        chapter.legacyCompletionEvidence = {
+          ...(chapter.legacyCompletionEvidence || {}),
+          grammar: true,
+        };
+        delete chapter.checklist.grammar;
+      }
+      if (chapter.checklist.dialog === true) {
+        chapter.checklist[`L${chapterId}_p_dialog`] = true;
+        delete chapter.checklist.dialog;
+      }
+      if (chapter.checklist.listening === true) {
+        chapter.checklist[`L${chapterId}_p_listening`] = true;
+        delete chapter.checklist.listening;
+      }
+      if (chapter.checklist.reading === true) {
+        chapter.checklist[`L${chapterId}_p_reading`] = true;
+        delete chapter.checklist.reading;
+      }
+      chapters[chapterId] = chapter;
+    }
+
+    const hasProgress = hasMeaningfulUserProgress(baseState);
+    const onboarding = {
+      schemaVersion: 1,
+      completed: hasProgress,
+      currentStep: 0,
+      draft: null,
+      completedAt: hasProgress ? baseState.updatedAt || Date.now() : null,
+      ...(baseState.onboarding || {}),
+    };
+    if (hasProgress) onboarding.completed = true;
+
+    return {
+      ...baseState,
+      chapters,
+      onboarding,
+      workbookSettings: {
+        enabled: baseState.workbookSettings?.enabled !== false,
+        includeConversationGrammar:
+          baseState.workbookSettings?.includeConversationGrammar !== false,
+        includeReadingWriting: baseState.workbookSettings?.includeReadingWriting !== false,
+      },
+      version: 12,
+    };
+  },
 };
 
 // ---------- Default State ----------
@@ -244,6 +297,13 @@ export function defaultState() {
     version: CURRENT_VERSION,
     updatedAt: Date.now(),
     initialized: false,
+    onboarding: {
+      schemaVersion: 1,
+      completed: false,
+      currentStep: 0,
+      draft: null,
+      completedAt: null,
+    },
     chapters: {}, // id -> {started, checklist:{}}
     priorKnowledgeChapterIds: [], // главы, изученные пользователем вне приложения
     activeChapterId: null, // единый указатель на главу для «Продолжить обучение»
@@ -255,7 +315,11 @@ export function defaultState() {
     dailyPlan: null,
     dailyPlanHistory: [],
     dailyCapacityMinutes: 30,
-    workbookSettings: { includeReadingWriting: true },
+    workbookSettings: {
+      enabled: true,
+      includeConversationGrammar: true,
+      includeReadingWriting: true,
+    },
     srs: {}, // cardId -> SRS record
     reviewEvents: [], // ограниченное окно событий; полные snapshot остаются только для Undo
     masteryArchive: {}, // агрегированные доказательства из свёрнутых review events
@@ -637,6 +701,87 @@ async function persistSnapshot(snapshot) {
 // НЕ персистится в localStorage и не входит в схему прогресса:
 // только отслеживает, какие главы загружены в текущей сессии.
 export const loadedChapters = new Map(); // chapterId -> { lesson, story }
+
+// ---------- Cancel Pending Saves & Reset Data ----------
+export function cancelPendingSaves() {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+    saveTimeout = null;
+  }
+  pendingSaveResolvers.forEach((r) => {
+    try {
+      r.resolve({ cancelled: true });
+    } catch {
+      // ignore
+    }
+  });
+  pendingSaveResolvers = [];
+}
+
+export async function resetApplicationData(options = {}) {
+  const preservedDarkMode = state?.settings?.darkMode || 'auto';
+  const preservedTheme = state?.currentTheme || 'default';
+
+  cancelPendingSaves();
+  loadedChapters.clear();
+
+  try {
+    await db.set(STORES.APP_STATE, 'state', null);
+  } catch (err) {
+    console.warn('[Store] Ошибка очистки IndexedDB при reset:', err);
+  }
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (
+          key &&
+          (key.startsWith('kitsune') ||
+            key.includes('state') ||
+            key.includes('genki') ||
+            key.includes('srs'))
+        ) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+      localStorage.removeItem(LS_STATE);
+    }
+  } catch (e) {
+    console.warn('[Store] Ошибка очистки localStorage при reset:', e);
+  }
+
+  const fresh = defaultState();
+  if (options.preserveTheme !== false) {
+    fresh.settings.darkMode = preservedDarkMode;
+    fresh.currentTheme = preservedTheme;
+  }
+
+  state = fresh;
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(LS_STATE, JSON.stringify(fresh));
+    }
+    await db.set(STORES.APP_STATE, 'state', fresh);
+  } catch (e) {
+    console.warn('[Store] Ошибка сохранения свежего состояния при reset:', e);
+  }
+
+  if (options.skipReload !== true) {
+    if (
+      typeof window !== 'undefined' &&
+      window.location &&
+      typeof window.location.reload === 'function'
+    ) {
+      window.location.reload();
+    }
+  }
+
+  return fresh;
+}
 
 // ---------- Chapter State Helper ----------
 export function chState(id) {

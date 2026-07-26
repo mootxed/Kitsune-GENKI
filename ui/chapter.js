@@ -9,6 +9,7 @@ import { StudyPlan } from '../studyplan.js';
 import {
   evaluateAndCompleteChapter,
   getChapterProgress,
+  getChapterProgressSnapshot,
   isGrammarTopicCompleted,
   isPracticeItemCompleted,
   isVocabularyBlockCompleted,
@@ -171,6 +172,8 @@ export async function renderChapter(id, state, dependencies) {
        <p class="muted" style="text-align:center;margin:10px 0 18px;font-size:13px">Слова и грамматика заблокированы до старта главы 🔒</p>`;
   }
 
+  const snapshot = getChapterProgressSnapshot(state, id, l);
+
   const rawCategories = Array.isArray(l.words) ? l.words.map((w) => w?.category) : [];
   const validCategories = [
     ...new Set(rawCategories.filter((c) => Boolean(c) && c !== 'undefined')),
@@ -183,43 +186,81 @@ export async function renderChapter(id, state, dependencies) {
   const grammarTopics = progress.grammarTopics || [];
   const practiceTasks = progress.practiceTasks || [];
 
-  const completedGrammarCount = grammarTopics.filter(
-    (g) => isPriorKnowledge || isGrammarTopicCompleted(cs, g.id)
-  ).length;
-  const completedPracticeCount = practiceTasks.filter(
-    (p) => isPriorKnowledge || isPracticeItemCompleted(cs, p.id)
-  ).length;
   const isVocabDone = isVocabularyBlockCompleted(state, id, l);
-
   const vocabBlockStatusHtml = isVocabDone
     ? `<span class="badge" style="background:rgba(76,175,80,0.15);color:var(--green,#2e7d32);font-weight:600;">✓ Все слова встроены</span>`
     : `<span class="badge" style="background:rgba(255,152,0,0.15);color:var(--orange,#e65100);font-weight:600;">${unlockedWords}/${totalWords} открыто</span>`;
 
   const targetLabel = decision.target > 0 ? decision.target : todayUnlockedCount;
 
+  const warningHtml = decision.insufficientDays
+    ? `<div class="warning-banner card-warning" style="margin-top:8px;padding:10px;background:rgba(255,152,0,0.1);border-left:3px solid var(--orange,#ff9800);font-size:12px;color:var(--ink,#333);text-align:left;">
+        Чтобы завершить главу вовремя, требуется около ${decision.requiredDailyTarget} новых слов в день. Текущий безопасный максимум — 25. Пересчитайте план или продлите срок.
+      </div>`
+    : '';
+
   body.innerHTML = `
+    <!-- Верхний прогресс главы (3 блока сводки) -->
     <div class="card">
-      <div class="row-between"><span class="card-h" style="margin:0">Прогресс главы</span><b style="color:var(--orange)" data-testid="chapter-progress-text">${done}/${items}</b></div>
-      <div class="prog-dash">
-        ${Array.from({ length: items }, (_, i) => `<i class="segment ${i < done ? 'active' : ''}"></i>`).join('')}
+      <div class="row-between" style="margin-bottom:8px;">
+        <span class="card-h" style="margin:0">Прогресс главы</span>
+        <b style="color:var(--orange)" data-testid="chapter-progress-text">${snapshot.isCompleted ? 100 : Math.round(snapshot.overallRatio * 100)}%</b>
+      </div>
+      <div class="chapter-summary-3blocks" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;font-size:12px;">
+        <div style="background:rgba(255,122,26,0.08);padding:8px;border-radius:8px;">
+          <span style="display:block;color:var(--muted,#666);margin-bottom:2px;">Слова</span>
+          <b>${snapshot.vocabulary.unlocked}/${snapshot.vocabulary.total}</b>
+        </div>
+        <div style="background:rgba(33,150,243,0.08);padding:8px;border-radius:8px;">
+          <span style="display:block;color:var(--muted,#666);margin-bottom:2px;">Грамматика</span>
+          <b>${snapshot.grammar.completed}/${snapshot.grammar.total}</b>
+        </div>
+        <div style="background:rgba(156,39,176,0.08);padding:8px;border-radius:8px;">
+          <span style="display:block;color:var(--muted,#666);margin-bottom:2px;">Практика</span>
+          <b>${snapshot.practice.completed}/${snapshot.practice.required}</b>
+        </div>
       </div>
     </div>
 
     <!-- 1. Блок: Новые слова -->
+    ${isPrior ? startBlock : ''}
     <details class="card progress-card-block" open style="margin-bottom:12px;">
       <summary class="row-between" style="cursor:pointer;list-style:none;">
         <h3 class="card-h" style="margin:0">1. Новые слова</h3>
         ${vocabBlockStatusHtml}
       </summary>
-      <div style="margin-top:12px;">
-        <div class="m-row" style="display:flex;justify-content:space-around;text-align:center;margin-bottom:8px;">
-          <div class="m"><b>${totalWords}</b><span>всего</span></div>
-          <div class="m"><b>${unlockedWords}</b><span>открыто</span></div>
-          <div class="m"><b>${todayBatchProgress.completed}</b><span>в порции</span></div>
-          <div class="m"><b>${lockedWords}</b><span>заблокировано</span></div>
+      <div class="vocab-progress-panel" style="margin-top:12px;">
+        <div class="vocab-metrics-grid">
+          <div class="vocab-metric">
+            <b>${snapshot.vocabulary.total}</b>
+            <span>всего</span>
+          </div>
+          <div class="vocab-metric">
+            <b>${snapshot.vocabulary.unlocked}</b>
+            <span>открыто</span>
+          </div>
+          <div class="vocab-metric">
+            <b>${todayBatchProgress.completed}</b>
+            <span>в порции</span>
+          </div>
+          <div class="vocab-metric">
+            <b>${snapshot.vocabulary.locked}</b>
+            <span>пока закрыто</span>
+          </div>
         </div>
-        ${targetLabel > 0 ? `<p class="badge-today" style="font-size:12px;text-align:center;color:var(--orange);margin:6px 0;">Дневная норма: ${targetLabel} новых слов</p>` : ''}
-        ${startBlock}
+        ${targetLabel > 0 ? `<p class="badge-today" style="font-size:12px;text-align:center;color:var(--orange);margin:8px 0;">Дневная норма: ${targetLabel} новых слов</p>` : ''}
+        ${warningHtml}
+        <div class="vocab-progress-actions" style="margin-top:10px;">
+          ${
+            cs.started || progress.completionSource === 'app' || isPrior
+              ? `
+                ${hasBatchToStudy ? `<button class="btn-primary vocab-primary-action" id="ch-batch-session" style="width:100%;margin-bottom:6px;" data-testid="chapter-batch-session-btn">${batchBtnText}</button>` : ''}
+                ${due > 0 ? `<button class="btn-study-sm vocab-primary-action" id="ch-study" style="width:100%;" data-testid="chapter-study-btn">Повторить ${due} карточек</button>` : ''}
+                `
+              : `<button class="btn-primary vocab-primary-action" id="ch-start" style="width:100%;" data-testid="start-chapter-btn">▶ Начать главу</button>
+                 <p class="muted" style="text-align:center;margin:10px 0 6px;font-size:13px">Слова и грамматика заблокированы до старта главы 🔒</p>`
+          }
+        </div>
       </div>
     </details>
 
@@ -227,7 +268,7 @@ export async function renderChapter(id, state, dependencies) {
     <details class="card progress-card-block" open style="margin-bottom:12px;">
       <summary class="row-between" style="cursor:pointer;list-style:none;">
         <h3 class="card-h" style="margin:0">2. Грамматика</h3>
-        <span class="badge" style="background:rgba(33,150,243,0.15);color:var(--blue,#1976d2);font-weight:600;">${completedGrammarCount}/${grammarTopics.length} пройдено</span>
+        <span class="badge" style="background:rgba(33,150,243,0.15);color:var(--blue,#1976d2);font-weight:600;">${snapshot.grammar.completed}/${snapshot.grammar.total} пройдено</span>
       </summary>
       <div style="margin-top:12px;">
         ${grammarTopics
@@ -253,7 +294,7 @@ export async function renderChapter(id, state, dependencies) {
     <details class="card progress-card-block" open style="margin-bottom:12px;">
       <summary class="row-between" style="cursor:pointer;list-style:none;">
         <h3 class="card-h" style="margin:0">3. Практика</h3>
-        <span class="badge" style="background:rgba(156,39,176,0.15);color:var(--purple,#7b1fa2);font-weight:600;">${completedPracticeCount}/${practiceTasks.length} выполнено</span>
+        <span class="badge" style="background:rgba(156,39,176,0.15);color:var(--purple,#7b1fa2);font-weight:600;">${snapshot.practice.completed}/${snapshot.practice.required} выполнено</span>
       </summary>
       <div style="margin-top:12px;">
         ${practiceTasks

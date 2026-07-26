@@ -90,7 +90,7 @@ export function completePracticeTask(state, chapterId, taskId, options = {}) {
     now: occurredAt,
   });
   if (!unlock.canUnlock) {
-    return { completed: false, changed: false, reason: unlock.reason || 'locked' };
+    return { completed: false, changed: false, reason: 'task-locked' };
   }
 
   cs.checklist[taskId] = true;

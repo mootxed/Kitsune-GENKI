@@ -53,6 +53,13 @@ function normalizedWeekdays(daysOfWeek) {
 }
 
 export function calculateChapterWeight(lesson) {
+  if (Number(lesson?.requiredTotalMinutes) > 0) {
+    const importance = Number(
+      lesson?.importanceWeight ?? lesson?.importance_weight ?? CHAPTER_IMPORTANCE[lesson?.id] ?? 1
+    );
+    return Math.max(1, Number(lesson.requiredTotalMinutes)) * Math.max(0.1, importance);
+  }
+
   const vocabCount = Number(
     lesson?.vocabCount ?? lesson?.words?.length ?? lesson?.vocabulary?.length ?? 0
   );
@@ -64,7 +71,7 @@ export function calculateChapterWeight(lesson) {
           ? lesson.notes.length
           : 0)
   );
-  const estimatedItems = Number(lesson?.estimatedItems || 0);
+  const estimatedItems = Number(lesson?.estimatedItems || lesson?.estimatedMinutes || 0);
   const measuredWeight = vocabCount * WEIGHT_VOCAB + grammarCount * WEIGHT_GRAMMAR;
   const baseWeight = measuredWeight > 0 ? measuredWeight : estimatedItems;
   const importance = Number(

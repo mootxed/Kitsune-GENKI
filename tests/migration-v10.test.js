@@ -11,7 +11,6 @@ describe('State Migration v10', () => {
     };
 
     const migrated = runMigrations(v9State);
-    expect(migrated.version).toBe(11);
     expect(migrated.version).toBe(CURRENT_VERSION);
     expect(migrated.vocabularyUnlocks).toEqual({});
     expect(migrated.srs['L1_word_1'].planLocked).toBe(false);

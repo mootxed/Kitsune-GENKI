@@ -227,7 +227,7 @@ export function completeGrammarTopicWithCheck(
 
   const status = getGrammarTopicStatus(state, chId, topicId, options.chapterMeta);
   if (status === 'locked') {
-    return { completed: false, changed: false, reason: 'locked' };
+    return { completed: false, changed: false, reason: 'topic-locked' };
   }
 
   if (!checkResult || checkResult.passed !== true) {

@@ -59,20 +59,36 @@ export function isVocabularyBlockCompleted(appState, chapterId, chapterMeta = nu
   return false;
 }
 
+export function materializeLegacyChapterEvidence(chapterState, chapterMeta) {
+  if (!chapterState || !chapterMeta) return;
+
+  if (
+    chapterState.legacyCompletionEvidence?.grammar === true ||
+    chapterState.checklist?.grammar === true
+  ) {
+    const topics = getChapterGrammarTopics(chapterMeta);
+    chapterState.checklist ||= {};
+    for (const topic of topics) {
+      if (chapterState.checklist[topic.id] !== false) {
+        chapterState.checklist[topic.id] = true;
+      }
+    }
+    if (chapterState.legacyCompletionEvidence) {
+      chapterState.legacyCompletionEvidence.grammar = false;
+    }
+    delete chapterState.checklist.grammar;
+  }
+}
+
 export function isGrammarTopicCompleted(chapterState, topicId) {
   if (!chapterState) return false;
-  if (chapterState.checklist?.[topicId] === true) return true;
-  if (chapterState.checklist?.grammar === true && chapterState.checklist?.[topicId] !== false)
-    return true;
-  return false;
+  return chapterState.checklist?.[topicId] === true;
 }
 
 export function isGrammarBlockCompleted(chapterState, chapterMeta) {
-  if (chapterState?.checklist?.grammar === true) return true;
+  materializeLegacyChapterEvidence(chapterState, chapterMeta);
   const topics = getChapterGrammarTopics(chapterMeta);
-  if (topics.length === 0) {
-    return chapterState?.checklist?.grammar === true;
-  }
+  if (topics.length === 0) return true;
   return topics.every((topic) => isGrammarTopicCompleted(chapterState, topic.id));
 }
 
@@ -289,6 +305,120 @@ export function getChapterProgress(appState, chapterId, chapterMeta = null) {
     ratio,
     grammarTopics,
     practiceTasks,
+  };
+}
+
+export function getChapterProgressSnapshot(appState, chapterId, chapterMeta = null) {
+  const id = normalizedChapterId(chapterId);
+  const chapterState = appState?.chapters?.[id] || { started: false, checklist: {} };
+
+  if (chapterMeta) {
+    materializeLegacyChapterEvidence(chapterState, chapterMeta);
+  }
+
+  const prior = isPriorKnowledge(appState, id);
+  const isComp = prior || isChapterCompleted(chapterState, chapterMeta, appState);
+
+  const words = chapterMeta?.words || chapterMeta?.vocabulary || [];
+  const vocabTotal = words.length;
+
+  let vocabUnlocked = 0;
+  let vocabLocked = 0;
+  if (prior || isComp) {
+    vocabUnlocked = vocabTotal;
+    vocabLocked = 0;
+  } else if (words.length > 0) {
+    const vocabProg = getChapterVocabularyProgress(appState, id, chapterMeta);
+    vocabUnlocked = Number(vocabProg?.unlockedCount) || 0;
+    vocabLocked = Number(vocabProg?.lockedCount) || 0;
+  }
+  const vocabCompleted = vocabUnlocked;
+  const vocabRatio = vocabTotal > 0 ? Math.min(1, vocabCompleted / vocabTotal) : 1;
+
+  const topics = getChapterGrammarTopics(chapterMeta);
+  const grammarTotal = topics.length;
+  const grammarCompleted =
+    prior || isComp
+      ? grammarTotal
+      : topics.filter((t) => isGrammarTopicCompleted(chapterState, t.id)).length;
+  const grammarRatio = grammarTotal > 0 ? grammarCompleted / grammarTotal : 1;
+
+  const practiceTasks = getChapterPracticeTasks(chapterMeta);
+  const requiredPracticeTasks = practiceTasks.filter((task) => {
+    if (appState?.workbookSettings?.enabled === false && task.type === 'workbook') {
+      return false;
+    }
+    if (task.section === 'reading-writing') {
+      return appState?.workbookSettings?.includeReadingWriting !== false && task.required !== false;
+    }
+    return task.requiredForChapterCompletion !== false && task.required !== false;
+  });
+
+  const practiceTotal = practiceTasks.length;
+  const practiceRequired = requiredPracticeTasks.length;
+  const practiceCompleted =
+    prior || isComp
+      ? practiceRequired
+      : requiredPracticeTasks.filter((t) => isPracticeItemCompleted(chapterState, t.id)).length;
+  const practiceRatio = practiceRequired > 0 ? practiceCompleted / practiceRequired : 1;
+
+  const vocabMinutes = vocabTotal * 1;
+  const grammarMinutes = grammarTotal * 10;
+  const requiredPracticeMinutes = requiredPracticeTasks.reduce(
+    (sum, t) => sum + Number(t.estimatedMinutes || 10),
+    0
+  );
+
+  const requiredTotalMinutes = Math.max(1, vocabMinutes + grammarMinutes + requiredPracticeMinutes);
+
+  const completedVocabMinutes = (prior || isComp ? vocabTotal : vocabCompleted) * 1;
+  const completedGrammarMinutes = grammarCompleted * 10;
+  const completedPracticeMinutes = (
+    prior || isComp
+      ? requiredPracticeTasks
+      : requiredPracticeTasks.filter((t) => isPracticeItemCompleted(chapterState, t.id))
+  ).reduce((sum, t) => sum + Number(t.estimatedMinutes || 10), 0);
+
+  const completedRequiredMinutes =
+    prior || isComp
+      ? requiredTotalMinutes
+      : completedVocabMinutes + completedGrammarMinutes + completedPracticeMinutes;
+
+  const overallRatio = isComp
+    ? 1
+    : Math.min(1, Math.max(0, completedRequiredMinutes / requiredTotalMinutes));
+
+  return {
+    chapterId: id,
+    vocabulary: {
+      total: vocabTotal,
+      completed: prior || isComp ? vocabTotal : vocabUnlocked,
+      unlocked: vocabUnlocked,
+      locked: vocabLocked,
+      ratio: vocabRatio,
+    },
+    grammar: {
+      total: grammarTotal,
+      completed: grammarCompleted,
+      available: Math.max(0, grammarTotal - grammarCompleted),
+      locked: Math.max(0, grammarTotal - grammarCompleted),
+      ratio: grammarRatio,
+    },
+    practice: {
+      total: practiceTotal,
+      required: practiceRequired,
+      completed: practiceCompleted,
+      available: Math.max(0, practiceRequired - practiceCompleted),
+      locked: Math.max(0, practiceRequired - practiceCompleted),
+      ratio: practiceRatio,
+    },
+    completedRequiredMinutes,
+    requiredTotalMinutes,
+    overallRatio,
+    requiredCompleted:
+      (prior || isComp ? vocabTotal : vocabUnlocked) + grammarCompleted + practiceCompleted,
+    requiredTotal: vocabTotal + grammarTotal + practiceRequired,
+    isCompleted: isComp,
   };
 }
 

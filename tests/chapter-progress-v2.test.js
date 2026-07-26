@@ -63,8 +63,8 @@ describe('Task 3: Chapter Progress & 3-Block Redesign', () => {
       checklist: { vocab: true, grammar: true, dialog: true, listening: true, reading: true },
     };
 
-    expect(isGrammarTopicCompleted(appState.chapters[2], 'L2_g1')).toBe(true);
     expect(isGrammarBlockCompleted(appState.chapters[2], MOCK_LESSON)).toBe(true);
+    expect(isGrammarTopicCompleted(appState.chapters[2], 'L2_g1')).toBe(true);
     expect(isPracticeBlockCompleted(appState.chapters[2], MOCK_LESSON)).toBe(true);
     expect(isChapterCompleted(appState.chapters[2], MOCK_LESSON, appState)).toBe(true);
   });

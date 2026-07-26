@@ -11637,3 +11637,180 @@ body.ws-focus-mode .tabbar {
   background: var(--bg-main, #f5f5f5);
   border-color: var(--orange, #ff9800);
 }
+
+/* ===== Vocabulary Progress Panel & Mobile Layout ===== */
+.vocab-progress-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.vocab-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.vocab-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 8px 4px;
+  border-radius: 8px;
+  text-align: center;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.vocab-metric b {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--orange, #ff9800);
+  line-height: 1.2;
+}
+
+.vocab-metric span {
+  font-size: 11px;
+  color: var(--muted, #666);
+  margin-top: 2px;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.vocab-progress-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.vocab-primary-action {
+  width: 100% !important;
+  box-sizing: border-box;
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 479px) {
+  .vocab-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ===== Onboarding Wizard Styles ===== */
+.onboarding-card {
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.onboarding-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--orange, #ff9800);
+  background: rgba(255, 152, 0, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.onboarding-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.onboarding-desc {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--muted, #666);
+  line-height: 1.5;
+}
+
+.onboarding-features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.onboarding-features-list li {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.onboarding-subtext {
+  font-size: 13px;
+  color: var(--muted, #666);
+  margin-bottom: 20px;
+}
+
+.radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.radio-card.active {
+  border-color: var(--orange, #ff9800);
+  background: rgba(255, 152, 0, 0.05);
+}
+
+.day-toggle-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 8px 4px;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.15s ease;
+}
+
+.day-toggle-pill input {
+  display: none;
+}
+
+.day-toggle-pill.active {
+  background: var(--orange, #ff9800);
+  color: #fff;
+  border-color: var(--orange, #ff9800);
+}
+
+.btn-capacity {
+  padding: 10px 6px;
+  border: 1px solid var(--border, #ccc);
+  background: var(--bg-card, #fff);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-capacity.active {
+  background: var(--orange, #ff9800);
+  color: #fff;
+  border-color: var(--orange, #ff9800);
+}

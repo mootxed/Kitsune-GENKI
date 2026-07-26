@@ -142,7 +142,7 @@ describe('Critical Issues & Domain Fixes', () => {
       { passed: true, score: 100 },
       { chapterMeta: { notes: [topic] } }
     );
-    expect(grammarRes.reason).toBe('locked');
+    expect(grammarRes.reason).toBe('topic-locked');
 
     // Locked practice task (vocabulary not completed)
     const practiceTask = { id: 'p1', section: 'conversation-grammar' };

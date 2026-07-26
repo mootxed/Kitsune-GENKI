@@ -107,6 +107,8 @@ import { renderParticlesList } from './ui/particles.js';
 import { renderPlan } from './ui/plan.js';
 import { renderAIStory } from './ui/ai-story.js';
 import { renderWordSearch } from './ui/word-search.js';
+import { renderOnboarding } from './ui/onboarding.js';
+import { shouldShowOnboarding } from './src/onboarding-state.js';
 
 // ===== ГЛОБАЛЬНЫЕ ЭКСПОРТЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ =====
 window.SRS = SRS;
@@ -707,6 +709,7 @@ function setupRouter() {
     'ai-story': () => renderAIStory(state, dependencies),
     crossword: () => renderCrossword(state, dependencies),
     'word-search': () => renderWordSearch(state, dependencies),
+    onboarding: () => renderOnboarding(state, dependencies),
   });
 
   // Глобальные алиасы для обратной совместимости
@@ -749,16 +752,16 @@ async function init() {
     // Настройка роутера
     setupRouter();
 
-    // Первичный рендер главного экрана: роутер при старте сам обработчик не вызывает,
-    // без этого список глав остаётся пустым до первого клика по табам
-    history.replaceState({ screen: 'home' }, '', '');
-    nav('home', null, true);
-
-    // Начальная отрисовка
-    if (!state.initialized) {
-      state.initialized = true;
-      save();
+    // Первичная маршрутизация: проверяем необходимость показа Onboarding
+    if (shouldShowOnboarding(state)) {
+      history.replaceState({ screen: 'onboarding' }, '', '');
+      nav('onboarding', null, true);
+    } else {
+      history.replaceState({ screen: 'home' }, '', '');
+      nav('home', null, true);
     }
+
+    state.initialized = true;
 
     // Синхронизация аватаров
     syncAvatars();
