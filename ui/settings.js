@@ -8,11 +8,10 @@ import {
   shareJSON,
   downloadJSON,
 } from '../src/backup-manager.js';
-import { db, STORES } from '../src/db.js';
-import { clearReviewLogs } from '../src/review-log.js';
 import { localDateKey } from '../src/local-date.js';
 import { getDailyStudyDigest } from '../src/daily-study-digest.js';
-import { resetApplicationData } from '../state/store.js';
+import { resetApplicationData, commitState } from '../state/store.js';
+import { updateThemeCommand } from '../src/domain-commands.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -240,18 +239,18 @@ export function renderSettings(state, dependencies) {
   bindEvent('#btn-import-full', 'click', () => handleFullImport(state, dependencies, toast));
 }
 
-// Функция сохранения темы
-function saveTheme(theme, state, save) {
-  state.settings.darkMode = theme;
-  localStorage.setItem(LS_THEME, theme);
-  save();
-}
-
 // Функция установки темы с сохранением
-function setThemeAndSave(theme, state, dependencies) {
-  const { save, applyTheme, applyCustomTheme, applyStreakSkin } = dependencies;
+async function setThemeAndSave(theme, state, dependencies) {
+  const { applyTheme, applyCustomTheme, applyStreakSkin } = dependencies;
 
-  saveTheme(theme, state, save);
+  const cmd = updateThemeCommand(
+    state,
+    theme === 'custom' ? state.currentTheme : state.currentTheme,
+    theme
+  );
+  await commitState(cmd.events);
+  localStorage.setItem(LS_THEME, theme);
+
   if (theme === 'custom') {
     applyCustomTheme();
   } else {
@@ -259,7 +258,7 @@ function setThemeAndSave(theme, state, dependencies) {
     if (state.currentStreakSkin !== 'default') {
       state.currentStreakSkin = 'default';
       applyStreakSkin();
-      save();
+      await commitState([]);
     }
   }
   renderSettings(state, dependencies);

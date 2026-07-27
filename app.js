@@ -3,14 +3,12 @@
 // ===== ИМПОРТЫ МОДУЛЕЙ =====
 
 // Базовые модули
-import { Router } from './router.js';
-import { ACHIEVEMENTS, AchievementSystem } from './achievements.js';
+import { AchievementSystem } from './achievements.js';
 import { QuestsManager } from './quests.js';
 import { StudyPlan } from './studyplan.js';
 import { API } from './services.js';
 import { SRS } from './srs.js';
 import { SessionManager } from './session-manager.js';
-import { State } from 'ts-fsrs';
 
 // IndexedDB модули
 import { initializeDB } from './src/db.js';
@@ -21,15 +19,7 @@ import { evaluateAndCompleteChapter } from './src/chapter-progress.js';
 import { initTabSync } from './src/tab-sync.js';
 
 // Утилиты
-import {
-  $,
-  $$,
-  todayStr,
-  formatTimeUntilReset,
-  pluralDays,
-  monthLabel,
-  heatmapLevel,
-} from './src/utils.js';
+import { $, $$, todayStr, formatTimeUntilReset } from './src/utils.js';
 import {
   XP_PER_LEVEL,
   XP_CARD,
@@ -40,7 +30,7 @@ import {
   getUserRankData,
 } from './src/xp-system.js';
 import { cardChapter, wordById, isWordUnlocked, dueCards, allCards } from './src/srs-helpers.js';
-import { countAvailableCardsForSession, limitNewCardsForSession } from './src/srs-limits.js';
+import { limitNewCardsForSession } from './src/srs-limits.js';
 import {
   exportFullProgress,
   validateImportData,
@@ -53,12 +43,10 @@ import { speakJapanese, stopSpeaking } from './src/audio-helper.js';
 // State модуль
 import {
   state,
-  defaultState,
   loadState as loadStateFromStore,
   save as saveToStore,
   chState,
   isStorageDegraded,
-  getStorageDegradedReason,
 } from './state/store.js';
 
 // UI модули
@@ -81,7 +69,6 @@ import {
   ensureLesson,
   ensureLessonsForSrs,
   markActivity,
-  resetDailyGoalFlag,
   startChapter,
   updateMainQuestsTimer,
   renderHome,
@@ -99,7 +86,6 @@ import {
   setFlashCtx,
   setSessionManager,
   initSessionBatching,
-  resetSessionBatching,
 } from './ui/flashcards.js';
 import { renderShop, SHOP_ITEMS } from './ui/shop.js';
 import { renderStories, openWordBottomSheet, closeWordBottomSheet } from './ui/stories.js';
@@ -127,10 +113,6 @@ window.applyTheme = null; // будет назначен после опреде
 window.showNotification = null; // будет назначен после определения функции
 
 // ===== КОНСТАНТЫ =====
-const LS_STATE = 'kitsune_state_v1';
-const LS_LESSONS = 'kitsune_lessons_v1';
-const LS_LESSON_VERSION = 'kitsune_lessons_version_v1';
-const LS_LAST_ACTIVITY_DAY = 'kitsune_last_activity_day';
 const LS_THEME = 'kitsune_theme';
 
 // ===== WRAPPER ФУНКЦИИ ДЛЯ STATE =====

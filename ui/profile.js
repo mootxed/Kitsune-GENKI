@@ -3,6 +3,8 @@
 import { $, $$, monthLabel } from '../src/utils.js';
 import { getUserRankData } from '../src/xp-system.js';
 import { localDateKey } from '../src/local-date.js';
+import { commitState } from '../state/store.js';
+import { claimQuestRewardCommand, claimAchievementRewardCommand } from '../src/domain-commands.js';
 
 // Глобальные переменные профиля
 let heatmapMonth = null;
@@ -15,9 +17,6 @@ let achievementsExpanded = false;
  * @param {Object} dependencies - Зависимости (AchievementSystem, QuestsManager, toast, save и т.д.)
  */
 export function renderProfile(state, dependencies) {
-  const { toast, save, showCompletionScreen, refreshStreakDisplay, XP_PER_LEVEL, COINS_PER_LEVEL } =
-    dependencies;
-
   if (!heatmapMonth) {
     const now = new Date();
     heatmapMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -387,20 +386,24 @@ export function renderQuests(state, dependencies) {
 /**
  * Обрабатывает получение награды за квест
  */
-export function claimQuest(questId, state, dependencies) {
+export async function claimQuest(questId, state, dependencies) {
   if (!window.QuestsManager || !questId) return;
 
-  const { toast, save, refreshStreakDisplay, renderProfile, XP_PER_LEVEL, COINS_PER_LEVEL } =
+  const { toast, refreshStreakDisplay, renderProfile, XP_PER_LEVEL, COINS_PER_LEVEL } =
     dependencies;
 
   const reward = window.QuestsManager.claimQuestReward(state, questId);
   if (!reward) return;
 
-  // Начисляем награды
-  state.xp += reward.xp;
-  state.coins += reward.coins;
+  const cmd = claimQuestRewardCommand(state, questId, reward);
+  if (!cmd.changed) {
+    toast('Награда за квест уже получена');
+    return;
+  }
 
-  // Проверяем повышение уровня
+  await commitState(cmd.events);
+
+  // Проверяем повышение уровня после зачисления XP/монет в reducer
   while (state.xp >= XP_PER_LEVEL) {
     state.xp -= XP_PER_LEVEL;
     state.level += 1;
@@ -408,7 +411,6 @@ export function claimQuest(questId, state, dependencies) {
     toast(`🎉 Уровень ${state.level}! +${COINS_PER_LEVEL} 🪙`);
   }
 
-  save();
   toast(`🎉 Получено: +${reward.xp} XP, +${reward.coins} 🪙`);
 
   // Обновляем отображение
@@ -419,24 +421,17 @@ export function claimQuest(questId, state, dependencies) {
 /**
  * Обрабатывает получение награды за достижение
  */
-export function claimAchievementReward(achievementId, state, dependencies) {
+export async function claimAchievementReward(achievementId, state, dependencies) {
   if (!window.Achievements || !achievementId) return;
 
   const {
     toast,
-    save,
     showCompletionScreen,
     refreshStreakDisplay,
     renderProfile,
     XP_PER_LEVEL,
     COINS_PER_LEVEL,
   } = dependencies;
-
-  // Проверяем, не забрали ли награду уже
-  if (state.claimedAchievements.includes(achievementId)) {
-    toast('Награда уже получена');
-    return;
-  }
 
   // Находим достижение
   const achievement = window.Achievements.getAll().find((a) => a.id === achievementId);
@@ -451,10 +446,16 @@ export function claimAchievementReward(achievementId, state, dependencies) {
     return;
   }
 
-  // Начисляем награды
-  const { xp, coins } = achievement.rewards;
+  const { xp = 0, coins = 0 } = achievement.rewards;
+  const cmd = claimAchievementRewardCommand(state, achievementId, coins);
+
+  if (!cmd.changed) {
+    toast('Награда уже получена');
+    return;
+  }
+
+  await commitState(cmd.events);
   state.xp += xp;
-  state.coins += coins;
 
   // Проверяем повышение уровня
   while (state.xp >= XP_PER_LEVEL) {
@@ -463,10 +464,6 @@ export function claimAchievementReward(achievementId, state, dependencies) {
     state.coins += COINS_PER_LEVEL;
     toast(`🎉 Уровень ${state.level}! +${COINS_PER_LEVEL} 🪙`);
   }
-
-  // Отмечаем награду как полученную
-  state.claimedAchievements.push(achievementId);
-  save();
 
   // Показываем экран успеха
   showCompletionScreen({

@@ -545,6 +545,114 @@ export function getStorageDegradedReason() {
   return storageDegradedReason;
 }
 
+// ---------- State Reducer & Domain Event Processor ----------
+export function reduceState(currentState, event) {
+  if (!currentState || !event || !event.type) return currentState;
+
+  switch (event.type) {
+    case 'STUDY_PLAN_TOGGLE_PAUSE': {
+      if (!currentState.studyPlan) return currentState;
+      const paused =
+        typeof event.payload?.paused === 'boolean'
+          ? event.payload.paused
+          : !currentState.studyPlan.paused;
+      return {
+        ...currentState,
+        studyPlan: {
+          ...currentState.studyPlan,
+          paused,
+        },
+      };
+    }
+    case 'STUDY_PLAN_UPDATE': {
+      return {
+        ...currentState,
+        studyPlan: event.payload?.plan ?? null,
+      };
+    }
+    case 'SETTINGS_UPDATE': {
+      return {
+        ...currentState,
+        settings: {
+          ...(currentState.settings || {}),
+          ...(event.payload?.settings || {}),
+        },
+      };
+    }
+    case 'THEME_UPDATE': {
+      const nextSettings = event.payload?.darkMode
+        ? { ...(currentState.settings || {}), darkMode: event.payload.darkMode }
+        : currentState.settings;
+      return {
+        ...currentState,
+        settings: nextSettings,
+        currentTheme: event.payload?.theme ?? currentState.currentTheme,
+      };
+    }
+    case 'QUEST_REWARD_CLAIMED': {
+      const { questId, xp = 0, coins = 0 } = event.payload || {};
+      const claimedQuests = currentState.quests?.claimed || [];
+      if (claimedQuests.includes(questId)) return currentState;
+
+      const questsState = currentState.quests
+        ? {
+            ...currentState.quests,
+            claimed: [...claimedQuests, questId],
+          }
+        : currentState.quests;
+
+      return {
+        ...currentState,
+        xp: (currentState.xp || 0) + xp,
+        coins: (currentState.coins || 0) + coins,
+        quests: questsState,
+      };
+    }
+    case 'ACHIEVEMENT_REWARD_CLAIMED': {
+      const { achievementId, reward = 0 } = event.payload || {};
+      const claimed = currentState.claimedAchievements || [];
+      if (claimed.includes(achievementId)) return currentState;
+
+      return {
+        ...currentState,
+        coins: (currentState.coins || 0) + reward,
+        claimedAchievements: [...claimed, achievementId],
+      };
+    }
+    case 'ONBOARDING_UPDATE': {
+      return {
+        ...currentState,
+        onboarding: {
+          ...(currentState.onboarding || {}),
+          ...(event.payload?.onboarding || {}),
+        },
+      };
+    }
+    case 'AVATAR_EQUIPPED': {
+      return {
+        ...currentState,
+        currentAvatar: event.payload?.avatar ?? currentState.currentAvatar,
+      };
+    }
+    default:
+      return currentState;
+  }
+}
+
+export async function commitState(events, options = {}) {
+  if (!state) state = defaultState();
+  const eventList = Array.isArray(events) ? events : events ? [events] : [];
+
+  let nextState = state;
+  for (const event of eventList) {
+    nextState = reduceState(nextState, event);
+  }
+
+  state = nextState;
+  await save(options.immediate ?? false);
+  return state;
+}
+
 // ---------- Load State ----------
 export async function loadState() {
   let idbState = null;

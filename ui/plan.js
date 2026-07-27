@@ -23,6 +23,12 @@ import {
   commitStudyPlanFromPreferences,
 } from '../src/study-plan-creation.js';
 import { loadWorkbookPracticeData } from '../src/workbook-practice.js';
+import { commitState } from '../state/store.js';
+import {
+  pauseStudyPlanCommand,
+  deleteStudyPlanCommand,
+  updateStudyPlanCommand,
+} from '../src/domain-commands.js';
 
 let planCalendarMonth = new Date();
 let planRuntimeDependencies = {};
@@ -194,10 +200,10 @@ export function renderPlan(state, dependencies) {
         showViewWarning(result.error);
         return;
       }
-      state.studyPlan = result;
+      const cmdResult = updateStudyPlanCommand(state, result);
+      await commitState(cmdResult.events);
       ensureActiveChapterId(state, catalog.chapters);
 
-      save();
       renderPlanView(state);
       toast('Будущая часть плана пересчитана');
     };
@@ -205,27 +211,30 @@ export function renderPlan(state, dependencies) {
 
   const pauseButton = $('#plan-pause-btn');
   if (pauseButton) {
-    pauseButton.onclick = () => {
-      if (!state.studyPlan) return;
-      state.studyPlan.paused = !state.studyPlan.paused;
-      ensureActiveChapterId(state, CONTENT_INDEX);
+    pauseButton.onclick = async () => {
+      const result = pauseStudyPlanCommand(state);
+      if (result.changed) {
+        await commitState(result.events);
+        ensureActiveChapterId(state, CONTENT_INDEX);
 
-      save();
-      renderPlanView(state);
-      toast(state.studyPlan.paused ? 'План приостановлен' : 'План возобновлён');
+        renderPlanView(state);
+        toast(result.paused ? 'План приостановлен' : 'План возобновлён');
+      }
     };
   }
 
   const deleteButton = $('#plan-delete-btn');
   if (deleteButton) {
-    deleteButton.onclick = () => {
+    deleteButton.onclick = async () => {
       if (!confirm('Удалить текущий план? История обучения и FSRS-карточки сохранятся.')) return;
-      state.studyPlan = null;
-      planEditorOpen = false;
-      ensureActiveChapterId(state, CONTENT_INDEX);
-      save();
-      renderPlanView(state);
-      toast('План удалён; прогресс курса сохранён');
+      const result = deleteStudyPlanCommand(state);
+      if (result.changed) {
+        await commitState(result.events);
+        planEditorOpen = false;
+        ensureActiveChapterId(state, CONTENT_INDEX);
+        renderPlanView(state);
+        toast('План удалён; прогресс курса сохранён');
+      }
     };
   }
 
