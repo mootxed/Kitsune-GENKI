@@ -56,6 +56,8 @@ export default [
         clients: 'readonly',
         importScripts: 'readonly',
         skipWaiting: 'readonly',
+        Response: 'readonly',
+        BroadcastChannel: 'readonly',
         // Vitest globals for tests
         describe: 'readonly',
         test: 'readonly',
@@ -94,6 +96,6 @@ export default [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'public/**', '.vscode/**'],
+    ignores: ['dist/**', 'node_modules/**', '.vscode/**'],
   },
 ];

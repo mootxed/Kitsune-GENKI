@@ -1,7 +1,7 @@
 /* src/db.js — Promise-based обёртка над IndexedDB с graceful degradation */
 
 const DB_NAME = 'KitsuneGenkiDB';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 // Object Stores
 const STORES = {
@@ -181,7 +181,11 @@ class IndexedDBWrapper {
             });
             reviewLogStore.createIndex('cardId', 'cardId', { unique: false });
             reviewLogStore.createIndex('timestamp', 'timestamp', { unique: false });
+            reviewLogStore.createIndex('reviewedAt', 'reviewedAt', { unique: false });
             reviewLogStore.createIndex('cardId_timestamp', ['cardId', 'timestamp'], {
+              unique: false,
+            });
+            reviewLogStore.createIndex('cardId_reviewedAt', ['cardId', 'reviewedAt'], {
               unique: false,
             });
             reviewLogStore.createIndex('eventId', 'eventId', { unique: true });
@@ -190,6 +194,14 @@ class IndexedDBWrapper {
             reviewLogStore = event.target.transaction.objectStore(STORES.REVIEW_LOG);
             if (!reviewLogStore.indexNames.contains('eventId')) {
               reviewLogStore.createIndex('eventId', 'eventId', { unique: true });
+            }
+            if (!reviewLogStore.indexNames.contains('reviewedAt')) {
+              reviewLogStore.createIndex('reviewedAt', 'reviewedAt', { unique: false });
+            }
+            if (!reviewLogStore.indexNames.contains('cardId_reviewedAt')) {
+              reviewLogStore.createIndex('cardId_reviewedAt', ['cardId', 'reviewedAt'], {
+                unique: false,
+              });
             }
           }
         };
@@ -344,6 +356,31 @@ class IndexedDBWrapper {
         transaction.onabort = () => reject(transaction.error || lookup.error);
       } catch (error) {
         console.error(`[DB] Исключение при добавлении в ${storeName}:`, error);
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * Получить записи по индексу из store.
+   * @param {string} storeName - имя Object Store
+   * @param {string} indexName - имя индекса
+   * @param {any} [query=null] - ключ или IDBKeyRange
+   * @returns {Promise<Array>}
+   */
+  async getAllByIndex(storeName, indexName, query = null) {
+    await this.ensureInitialized();
+
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = this.db.transaction([storeName], 'readonly');
+        const store = transaction.objectStore(storeName);
+        const idx = store.index(indexName);
+        const request = query !== null ? idx.getAll(query) : idx.getAll();
+
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error);
+      } catch (error) {
         reject(error);
       }
     });

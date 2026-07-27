@@ -183,13 +183,15 @@ export function initDrawingMode(
                 : '📝 Нарисовано с подсказками';
         toast(resultText);
 
-        submitReview(card, quality, state, {
+        const reviewRes = submitReview(card, quality, state, {
           mistakes: totalDrawingMistakes,
           hintUsed: drawingHintUsed,
         });
         if (!sessionManager) setFlashIdx(flashIdx + 1);
 
-        appAddXP(XP_CARD);
+        if (reviewRes?.xpEligible) {
+          appAddXP(XP_CARD);
+        }
         save(true);
         markActivity(toast);
         setFlashRevealed(false);

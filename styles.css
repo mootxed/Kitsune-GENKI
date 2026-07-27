@@ -12415,8 +12415,32 @@ mark.grammar-highlight {
     inset: 0;
     width: 100%;
     max-width: none;
-    height: 100dvh;
-    max-height: none;
     border-radius: 0;
   }
+}
+
+.storage-warning-banner {
+  background: var(--color-warning-bg, #fff3cd);
+  color: var(--color-warning-text, #856404);
+  border: 1px solid var(--color-warning-border, #ffeeba);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 8px;
+}
+
+.storage-warning-banner button {
+  background: #856404;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
 }

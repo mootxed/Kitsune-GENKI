@@ -128,6 +128,18 @@ export async function getReviewLogs() {
 }
 
 export async function getReviewLogsForCard(cardId) {
+  await writeQueue.catch(() => undefined);
+  const database = db || (await initializeDB());
+  if (typeof database.getAllByIndex === 'function') {
+    try {
+      const entries = await database.getAllByIndex(STORES.REVIEW_LOG, 'cardId', cardId);
+      return entries.sort(
+        (a, b) => (a.reviewedAt ?? a.timestamp) - (b.reviewedAt ?? b.timestamp) || a.id - b.id
+      );
+    } catch (_) {
+      /* fallback */
+    }
+  }
   const entries = await getReviewLogs();
   return entries.filter((entry) => entry.cardId === cardId);
 }

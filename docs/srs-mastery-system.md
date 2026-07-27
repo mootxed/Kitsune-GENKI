@@ -45,7 +45,7 @@ Recognition сохраняет исторический ID слова. Оста�
 только для слова с явной структурой `contextProduction`; recall не подменяет эту
 ось. Ошибочные `demo` и `totemo` в каталоге исправлены на `でも` и `とても`.
 
-## Схема FSRS Card
+## Схема FSRS Card (Текущая версия схемы состояния: 13)
 
 `SRS.serializeCard()` сохраняет все поля `Card` из `ts-fsrs` 5.4.1:
 `due`, `stability`, `difficulty`, `elapsed_days`, `scheduled_days`,
@@ -54,7 +54,7 @@ Timestamps хранятся числами. `SRS.hydrate()` создаёт `Date
 библиотеки.
 
 Старая запись без `learning_steps` получает детерминированное значение `0`. Legacy
-`due` не сдвигается.
+`due` не сдвигается. Текущая схема данных приведена к версии **13** (с миграциями 1 → 13).
 
 ## Rating policy
 

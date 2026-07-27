@@ -3,6 +3,7 @@ import { $ } from '../src/utils.js';
 import { API } from '../services.js';
 import { wordById } from '../src/srs-helpers.js';
 import { parseAndValidateAIStory } from '../src/ai-story-parser.js';
+import { getWeakVocabularyItems } from '../src/vocabulary-weakness-service.js';
 
 function escapeHtml(str) {
   if (typeof str !== 'string') return '';
@@ -25,24 +26,17 @@ function escapeHtml(str) {
 }
 
 /**
-  Extract weak words from SRS records based on lapses and low stability
+  Extract weak words from SRS records using unified weakness service
  */
 export function getWeakWords(state, limit = 10, lessons = []) {
-  if (!state || !state.srs) return [];
-  const cards = Object.values(state.srs);
-
-  // Filter cards with lapses or low stability/learning states
-  const weakCards = cards
-    .filter((c) => (c.lapses && c.lapses > 0) || c.state === 1 || c.state === 3)
-    .sort((a, b) => (b.lapses || 0) - (a.lapses || 0));
-
+  if (!state) return [];
+  const profiles = getWeakVocabularyItems(state, { purpose: 'ai-story', lessons, maxCount: limit });
   const words = [];
   const seen = new Set();
 
-  for (const c of weakCards) {
-    if (words.length >= limit) break;
-    const w = wordById(c.id, lessons);
-    const text = w?.kanji || w?.kana || w?.word || c.id;
+  for (const p of profiles) {
+    const w = wordById(p.itemId, lessons);
+    const text = w?.kanji || w?.kana || w?.word || p.itemId;
     if (text && !seen.has(text)) {
       seen.add(text);
       words.push(text);

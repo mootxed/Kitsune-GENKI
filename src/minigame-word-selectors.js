@@ -53,34 +53,38 @@ export function getAvailableChapterCount(state) {
 export function isWordAccessible(word, lessonChapterId, state) {
   if (!word || !word.id || !state) return false;
 
-  const chId = Number(lessonChapterId);
-
-  // 1. Started chapter
-  if (chId && state.chapters && state.chapters[chId]?.started === true) {
-    return true;
-  }
-
-  // 2. Completed chapter
-  if (chId && state.chapters && isChapterCompleted(state.chapters[chId])) {
-    return true;
-  }
-
-  // 3. Prior knowledge chapter
-  if (chId && isPriorKnowledge(state, chId)) {
-    return true;
-  }
-
-  // 4. Card exists in state.srs (matching either exact key, baseId prefix, or parsed itemId)
+  // Check SRS cards for this word: if SRS cards exist, at least one must be unlocked (!planLocked)
   if (state.srs && typeof state.srs === 'object') {
-    for (const key in state.srs) {
+    const wordCards = Object.entries(state.srs).filter(([key]) => {
       if (key === word.id) return true;
       const baseId = key.includes('::') ? key.split('::')[0] : key;
       if (baseId === word.id) return true;
       const { itemId } = parseCardIdentity(key);
-      if (itemId === word.id) {
-        return true;
-      }
+      return itemId === word.id;
+    });
+
+    if (wordCards.length > 0) {
+      const hasUnlockedCard = wordCards.some(([_, card]) => card && card.planLocked !== true);
+      if (!hasUnlockedCard) return false;
+      return true;
     }
+  }
+
+  const chId = Number(lessonChapterId);
+
+  // 1. Completed chapter
+  if (chId && state.chapters && isChapterCompleted(state.chapters[chId])) {
+    return true;
+  }
+
+  // 2. Prior knowledge chapter
+  if (chId && isPriorKnowledge(state, chId)) {
+    return true;
+  }
+
+  // 3. Started chapter
+  if (chId && state.chapters && state.chapters[chId]?.started === true) {
+    return true;
   }
 
   return false;

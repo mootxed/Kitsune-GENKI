@@ -6,6 +6,7 @@ import { appendReviewLog, clearReviewLogs } from '../src/review-log.js';
 import { acknowledgeReviewLogs, compactReviewJournal } from '../src/review-journal.js';
 import { normalizeVocabularyLockState } from '../src/vocabulary-unlock-plan.js';
 import { hasMeaningfulUserProgress } from '../src/onboarding-state.js';
+import { isPrimaryTab } from '../src/tab-sync.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
@@ -533,6 +534,17 @@ function notify() {
   });
 }
 
+let storageDegraded = false;
+let storageDegradedReason = '';
+
+export function isStorageDegraded() {
+  return storageDegraded;
+}
+
+export function getStorageDegradedReason() {
+  return storageDegradedReason;
+}
+
 // ---------- Load State ----------
 export async function loadState() {
   let idbState = null;
@@ -552,6 +564,9 @@ export async function loadState() {
     }
   } catch (err) {
     console.error('[Store] Ошибка загрузки state из IndexedDB:', err);
+    storageDegraded = true;
+    storageDegradedReason =
+      'IndexedDB недоступен. Прогресс не будет сохранён в постоянном хранилище.';
   }
 
   try {
@@ -646,6 +661,10 @@ export function save(immediate = false) {
 }
 
 function performSave() {
+  if (!isPrimaryTab()) {
+    console.warn('[Store] Сохранение пропущено: вкладка работает в режиме чтения');
+    return Promise.resolve();
+  }
   if (state) {
     state.updatedAt = Date.now();
   }
@@ -709,6 +728,9 @@ async function persistSnapshot(snapshot, generation) {
       return;
     }
     console.warn('[Store] Ошибка сохранения в IndexedDB:', e);
+    storageDegraded = true;
+    storageDegradedReason =
+      'Ошибка сохранения в IndexedDB. Прогресс сохраняется в аварийном режиме.';
 
     // Обработка переполнения квоты
     if (e.name === 'QuotaExceededError') {

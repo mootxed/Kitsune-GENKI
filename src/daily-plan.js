@@ -9,6 +9,7 @@ import {
   calculateGrammarMinutes,
   calculatePracticeMinutes,
 } from './time-estimates.js';
+import { SRS } from '../srs.js';
 import { countAvailableCardsForSession } from './srs-limits.js';
 import { dueCards } from './srs-helpers.js';
 import {
@@ -74,6 +75,9 @@ export function generateDailyPlan(state, options = {}) {
       action: { type: 'review' },
       overCapacity: currentMinutes + est > capacityMinutes,
       count: dueCount,
+      reviewCardIds: studiedDueCards.map((c) => c.id),
+      generatedAt: now,
+      dueCutoffAt: now,
     });
     currentMinutes += est;
     requiredMinutes += est;
@@ -371,13 +375,6 @@ function isDailySnapshotTaskComplete(state, task, chapterMeta, dateKey) {
   if (!task || task.type === 'bonus') return true;
 
   if (task.type === 'review') {
-    const remaining = dueCards(state?.srs).filter(
-      (card) =>
-        card &&
-        !card.suspended &&
-        !card.planLocked &&
-        (card.reps > 0 || card.state !== 0 || card.lastReview != null)
-    );
     const hasReviewEvidence = (state?.reviewEvents || []).some(
       (event) =>
         !event?.undoneAt &&
@@ -385,7 +382,24 @@ function isDailySnapshotTaskComplete(state, task, chapterMeta, dateKey) {
         Number.isFinite(event.reviewedAt) &&
         localDateKey(event.reviewedAt) === dateKey
     );
-    return hasReviewEvidence && countAvailableCardsForSession(remaining, state?.srs) === 0;
+    if (!hasReviewEvidence) return false;
+
+    if (Array.isArray(task.reviewCardIds) && task.reviewCardIds.length > 0) {
+      const remainingInitial = task.reviewCardIds.filter((cardId) => {
+        const card = state?.srs?.[cardId];
+        return card && !card.suspended && !card.planLocked && SRS.isDue(card);
+      });
+      return remainingInitial.length === 0;
+    }
+
+    const remaining = dueCards(state?.srs).filter(
+      (card) =>
+        card &&
+        !card.suspended &&
+        !card.planLocked &&
+        (card.reps > 0 || card.state !== 0 || card.lastReview != null)
+    );
+    return countAvailableCardsForSession(remaining, state?.srs) === 0;
   }
 
   if (task.type === 'vocabulary') {
@@ -461,7 +475,7 @@ export function getOrGenerateDailyPlan(state, options = {}) {
 
   const inputRevision = getDailyPlanInputRevision(state, options);
   let isCached = false;
-  let planToReturn = null;
+  let planToReturn;
 
   if (
     state.dailyPlan &&

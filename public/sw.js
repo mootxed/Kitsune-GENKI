@@ -85,23 +85,39 @@ const CONTENT_CHUNK_RE =
 const RESOLVED_STATIC_PATHS = STATIC_ASSETS.map((asset) => new URL(asset, self.location).pathname);
 const LESSON_FILE_PATHS = LESSON_FILES.map((file) => new URL(file, self.location).pathname);
 
+// ===== CORE SHELL & DYNAMIC CACHE LIMITS =====
+const CORE_SHELL_ASSETS = ['./', 'index.html', 'manifest.json', 'styles.css', 'app.js'];
+
+function limitCacheSize(cacheName, maxItems = 50) {
+  caches.open(cacheName).then((cache) => {
+    cache.keys().then((keys) => {
+      if (keys.length > maxItems) {
+        cache.delete(keys[0]).then(() => limitCacheSize(cacheName, maxItems));
+      }
+    });
+  });
+}
+
 // ===== INSTALL EVENT =====
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing...');
   event.waitUntil(
     Promise.all([
-      // Кэшируем статические ресурсы относительно расположения SW
+      // Кэшируем ядро приложения АТОМАРНО
       caches.open(CACHE_STATIC).then((cache) => {
-        return Promise.allSettled(
-          STATIC_ASSETS.map((url) => {
-            const resolvedUrl = new URL(url, self.location).href;
-            return cache.add(resolvedUrl).catch((err) => {
-              console.warn(`[SW] Failed to cache ${url}:`, err);
-            });
-          })
+        const coreUrls = CORE_SHELL_ASSETS.map((url) => new URL(url, self.location).href);
+        const optionalUrls = STATIC_ASSETS.filter((url) => !CORE_SHELL_ASSETS.includes(url)).map(
+          (url) => new URL(url, self.location).href
         );
+        return cache.addAll(coreUrls).then(() => {
+          return Promise.allSettled(
+            optionalUrls.map((url) =>
+              cache.add(url).catch((err) => console.warn(`[SW] Failed to cache ${url}:`, err))
+            )
+          );
+        });
       }),
-      // Кэшируем файлы уроков
+      // Кэшируем файлы уроков по best-effort
       caches.open(CACHE_LESSON).then((cache) => {
         return Promise.allSettled(
           LESSON_FILES.map((url) => {
@@ -166,7 +182,9 @@ self.addEventListener('fetch', (event) => {
         return cache.match(request).then((cachedResponse) => {
           const fetchPromise = fetch(request)
             .then((networkResponse) => {
-              cache.put(request, networkResponse.clone());
+              if (networkResponse && networkResponse.ok) {
+                cache.put(request, networkResponse.clone());
+              }
               return networkResponse;
             })
             .catch((err) => {
@@ -197,10 +215,13 @@ self.addEventListener('fetch', (event) => {
         }
         return fetch(request)
           .then((networkResponse) => {
-            return caches.open(CACHE_STATIC).then((cache) => {
-              cache.put(request, networkResponse.clone());
-              return networkResponse;
-            });
+            if (networkResponse && networkResponse.ok) {
+              return caches.open(CACHE_STATIC).then((cache) => {
+                cache.put(request, networkResponse.clone());
+                return networkResponse;
+              });
+            }
+            return networkResponse;
           })
           .catch((err) => {
             console.warn('[SW] Failed to fetch static asset:', err);
@@ -215,10 +236,11 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then((networkResponse) => {
-        if (request.method === 'GET' && networkResponse.status === 200) {
+        if (request.method === 'GET' && networkResponse && networkResponse.ok) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_DYNAMIC).then((cache) => {
             cache.put(request, responseToCache);
+            limitCacheSize(CACHE_DYNAMIC, 50);
           });
         }
         return networkResponse;

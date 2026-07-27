@@ -18,6 +18,7 @@ import { migrateFromLocalStorage } from './src/migration.js';
 import { localDateKey } from './src/local-date.js';
 import { getDailyStudyDigest } from './src/daily-study-digest.js';
 import { evaluateAndCompleteChapter } from './src/chapter-progress.js';
+import { initTabSync } from './src/tab-sync.js';
 
 // Утилиты
 import {
@@ -56,6 +57,8 @@ import {
   loadState as loadStateFromStore,
   save as saveToStore,
   chState,
+  isStorageDegraded,
+  getStorageDegradedReason,
 } from './state/store.js';
 
 // UI модули
@@ -724,6 +727,34 @@ function setupRouter() {
   window.updateTabIndicator = updateTabIndicator;
 }
 
+export function checkStorageDegradedBanner() {
+  if (!isStorageDegraded()) return;
+  let banner = document.getElementById('storage-warning-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'storage-warning-banner';
+    banner.className = 'storage-warning-banner';
+    banner.setAttribute('role', 'alert');
+    banner.innerHTML = `
+      <span>⚠️ Хранилище недоступно. Прогресс не будет сохранён при очистке браузера.</span>
+      <button id="storage-warning-export-btn" class="btn-sm">Скачать экспорт</button>
+    `;
+    const appElem = document.getElementById('app');
+    if (appElem) appElem.insertBefore(banner, appElem.firstChild);
+  }
+  const btn = document.getElementById('storage-warning-export-btn');
+  if (btn) {
+    btn.onclick = async () => {
+      try {
+        const data = await exportFullProgress();
+        downloadJSON(data, `kitsune-backup-${new Date().toISOString().slice(0, 10)}.json`);
+      } catch (err) {
+        toast('Ошибка экспорта: ' + err.message);
+      }
+    };
+  }
+}
+
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 async function init() {
   try {
@@ -738,6 +769,13 @@ async function init() {
 
     // 3. Загрузка состояния из IndexedDB
     await loadState();
+
+    // Инициализация синхронизации вкладок
+    initTabSync(() => {
+      toast('⚠️ Приложение уже открыто в другой вкладке. Автосохранение отключено.', {
+        duration: 8000,
+      });
+    });
 
     // Инициализация глобальных систем
     window.QuestsManager = QuestsManager;
@@ -769,6 +807,7 @@ async function init() {
     }
 
     state.initialized = true;
+    checkStorageDegradedBanner();
 
     // Синхронизация аватаров
     syncAvatars();

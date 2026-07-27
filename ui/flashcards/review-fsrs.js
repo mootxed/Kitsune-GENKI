@@ -76,7 +76,14 @@ export function submitReview(card, quality, state, context = null) {
   const mode = activePracticeMode === 'preview' ? 'preview' : reviewContext.mode;
   if (!srsCard || !modeCanSchedule(srsCard, mode)) {
     sessionManager?.skipCard(card.id);
-    return quality;
+    return {
+      accepted: false,
+      firstAttempt: false,
+      cardCompleted: false,
+      reviewEvent: null,
+      xpEligible: false,
+      quality,
+    };
   }
 
   markCardIntroduced(srsCard);
@@ -91,7 +98,9 @@ export function submitReview(card, quality, state, context = null) {
   const wasLeech = isLeech(srsCard);
   const sessionSnapshot = sessionManager?.createSnapshot() || null;
   const previousCard = SRS.serializeCard(srsCard);
-  const isFirstAttempt = sessionManager?.getCardState(card.id)?.isFirstAttempt ?? true;
+  const cardStateBefore = sessionManager?.getCardState(card.id);
+  const isFirstAttempt = cardStateBefore?.isFirstAttempt ?? true;
+  const wasCompletedBefore = cardStateBefore?.completed ?? false;
   const identity = parseCardIdentity(srsCard);
   const fullContext = {
     ...reviewContext,
@@ -135,7 +144,18 @@ export function submitReview(card, quality, state, context = null) {
     );
   }
 
-  return adjustedQuality;
+  const cardStateAfter = sessionManager ? sessionManager.getCardState(card.id) : null;
+  const cardCompleted = sessionManager ? cardStateAfter === null || cardStateAfter.completed : true;
+  const xpEligible = !wasCompletedBefore && cardCompleted;
+
+  return {
+    accepted: true,
+    firstAttempt: isFirstAttempt,
+    cardCompleted,
+    reviewEvent: result?.event || null,
+    xpEligible,
+    quality: adjustedQuality,
+  };
 }
 
 export function latestUndoableEvent(state) {

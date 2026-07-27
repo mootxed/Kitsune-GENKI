@@ -37,6 +37,51 @@ export const ReviewLogEntrySchema = z
   })
   .passthrough();
 
+export const FSRSCardSchema = z
+  .object({
+    id: z.string().min(1).max(300),
+    due: z.union([z.number(), z.string(), z.date()]).optional(),
+    stability: z.number().optional(),
+    difficulty: z.number().optional(),
+    elapsed_days: z.number().optional(),
+    scheduled_days: z.number().optional(),
+    reps: z.number().int().min(0).optional(),
+    lapses: z.number().int().min(0).optional(),
+    state: z.number().int().min(0).max(10).optional(),
+    lastReview: z.union([z.number(), z.string(), z.date(), z.null()]).optional(),
+    suspended: z.boolean().optional(),
+    planLocked: z.boolean().optional(),
+  })
+  .passthrough();
+
+export const LearningEventSchema = z
+  .object({
+    eventId: z.string().max(300),
+    eventType: z.string().max(100),
+    chapterId: z.union([z.number(), z.string()]).optional(),
+    dateKey: z.string().max(100).optional(),
+    occurredAt: z.number().optional(),
+  })
+  .passthrough();
+
+export const ChapterProgressSchema = z
+  .object({
+    started: z.boolean().optional(),
+    completed: z.boolean().optional(),
+    checklist: z.record(z.string(), z.boolean()).optional(),
+  })
+  .passthrough();
+
+export const DailyPlanSnapshotSchema = z
+  .object({
+    dateKey: z.string().max(100),
+    chapterId: z.union([z.number(), z.string()]).optional(),
+    tasks: z.array(z.unknown()).optional(),
+    generatedAt: z.number().optional(),
+    finalizedAt: z.union([z.number(), z.null()]).optional(),
+  })
+  .passthrough();
+
 export const StateSchema = z
   .object({
     level: z.number().int().min(0).max(100000).optional().default(1),
@@ -86,10 +131,10 @@ export const StateSchema = z
       )
       .max(1000)
       .optional(),
-    reviewEvents: z.array(z.unknown()).max(10000).optional(),
-    pendingReviewLogs: z.array(z.unknown()).max(5000).optional(),
+    reviewEvents: z.array(ReviewLogEntrySchema).max(50000).optional(),
+    pendingReviewLogs: z.array(ReviewLogEntrySchema).max(50000).optional(),
     priorKnowledgeChapterIds: z.array(z.number()).max(1000).optional(),
-    learningEvents: z.array(z.unknown()).max(10000).optional(),
+    learningEvents: z.array(LearningEventSchema).max(50000).optional(),
     vocabularyUnlocks: z.record(z.string(), z.unknown()).optional(),
     unlockedAchievements: z
       .array(z.union([z.string().max(200), z.number()]))
@@ -104,8 +149,9 @@ export const StateSchema = z
     unlockedThemes: z.array(z.string().max(200)).max(200).optional(),
     unlockedTitles: z.array(z.string().max(200)).max(200).optional(),
     history: z.record(z.string(), z.number()).optional(),
-    srs: z.record(z.string(), z.unknown()).optional(),
-    chapters: z.record(z.string(), z.unknown()).optional(),
+    srs: z.record(z.string(), FSRSCardSchema).optional(),
+    chapters: z.record(z.string(), ChapterProgressSchema).optional(),
+    dailyPlanHistory: z.array(DailyPlanSnapshotSchema).max(1000).optional(),
   })
   .passthrough();
 
@@ -136,10 +182,13 @@ export const BackupSchema = z
   .passthrough();
 
 /**
- * Экспортирует все данные из IndexedDB (с фоллбэком на localStorage)
+ * Экспортирует весь прогресс в структурированный JSON
+ * @param {Object} [options]
+ * @param {boolean} [options.includeApiKey=false] Включать ли API-ключ в экспорт
  * @returns {Promise<Object>} Структурированные данные для экспорта
  */
-export async function exportFullProgress() {
+export async function exportFullProgress(options = {}) {
+  const includeApiKey = options.includeApiKey === true;
   try {
     const database = db || (await initializeDB());
     // Читаем данные из IndexedDB
@@ -179,12 +228,25 @@ export async function exportFullProgress() {
       throw new Error('Нет данных для экспорта. Попробуйте сначала пройти хотя бы один урок.');
     }
 
+    // Исключаем API-ключ из экспорта по умолчанию
+    let exportedState = state;
+    if (!includeApiKey && state.settings?.openrouterKey) {
+      exportedState = {
+        ...state,
+        settings: {
+          ...state.settings,
+          openrouterKey: '',
+        },
+      };
+    }
+
     console.log('[Export] Данные для экспорта:', {
-      hasState: !!state,
-      stateKeys: state ? Object.keys(state) : [],
+      hasState: !!exportedState,
+      stateKeys: exportedState ? Object.keys(exportedState) : [],
       lessonVersion,
       lastActivityDay,
       theme,
+      includeApiKey,
     });
 
     const exportData = {
@@ -193,7 +255,7 @@ export async function exportFullProgress() {
       schemaVersion: SCHEMA_VERSION,
       timestamp: new Date().toISOString(),
       data: {
-        state,
+        state: exportedState,
         lessonVersion,
         lastActivityDay,
         theme,
@@ -238,7 +300,7 @@ export function validateImportData(data) {
  * @param {boolean} preserveApiKey Сохранить текущий API-ключ
  * @returns {Promise<Object>} { success: boolean, error?: string }
  */
-export async function importFullProgress(data, preserveApiKey = false) {
+export async function importFullProgress(data, preserveApiKey = true) {
   try {
     const database = db || (await initializeDB());
 

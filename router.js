@@ -105,6 +105,17 @@ export class Router {
     if (typeof window.syncAvatars === 'function') {
       window.syncAvatars();
     }
+
+    // Перенос фокуса на заголовок нового экрана для доступности (screen readers)
+    setTimeout(() => {
+      const heading = targetScreen.querySelector('h1, h2, [role="heading"]');
+      if (heading) {
+        if (!heading.hasAttribute('tabindex')) {
+          heading.setAttribute('tabindex', '-1');
+        }
+        heading.focus({ preventScroll: true });
+      }
+    }, 50);
   }
 
   /**

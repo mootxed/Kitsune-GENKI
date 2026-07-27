@@ -402,13 +402,15 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, ren
   const handleRating = (quality) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-    submitReview(card, quality, state, {
+    const result = submitReview(card, quality, state, {
       mistakes: typingMistakes,
       hintUsed: typingMistakes > 0,
     });
     if (!sessionManager) setFlashIdx(flashIdx + 1);
 
-    appAddXP(XP_CARD);
+    if (result?.xpEligible) {
+      appAddXP(XP_CARD);
+    }
     save(true);
     markActivity();
     setFlashRevealed(false);
@@ -581,13 +583,15 @@ export function renderMultipleChoiceMode(
   const handleRating = (quality) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-    submitReview(card, quality, state, {
+    const result = submitReview(card, quality, state, {
       mistakes: mistakeCount,
       hintUsed: false,
     });
     if (!sessionManager) setFlashIdx(flashIdx + 1);
 
-    appAddXP(XP_CARD);
+    if (result?.xpEligible) {
+      appAddXP(XP_CARD);
+    }
     save(true);
     markActivity();
     setFlashRevealed(false);
@@ -830,13 +834,15 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
   const handleRating = (quality) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-    submitReview(card, quality, state, {
+    const result = submitReview(card, quality, state, {
       mistakes: mistakeCount,
       hintUsed: mistakeCount > 0,
     });
     if (!sessionManager) setFlashIdx(flashIdx + 1);
 
-    appAddXP(XP_CARD);
+    if (result?.xpEligible) {
+      appAddXP(XP_CARD);
+    }
     save(true);
     markActivity();
     setFlashRevealed(false);
@@ -1020,13 +1026,15 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
   const handleRating = (quality) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
-    submitReview(card, quality, state, {
+    const result = submitReview(card, quality, state, {
       mistakes: mistakeCount,
       hintUsed: mistakeCount > 0,
     });
     if (!sessionManager) setFlashIdx(flashIdx + 1);
 
-    appAddXP(XP_CARD);
+    if (result?.xpEligible) {
+      appAddXP(XP_CARD);
+    }
     save(true);
     markActivity();
     setFlashRevealed(false);

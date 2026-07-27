@@ -214,13 +214,15 @@ describe('IndexedDB review_log', () => {
     await initializeDB();
 
     expect(fakeIndexedDB.factory.open).toHaveBeenCalledWith(DB_NAME, DB_VERSION);
-    expect(DB_VERSION).toBe(3);
+    expect(DB_VERSION).toBe(4);
     const store = fakeIndexedDB.stores.get(STORES.REVIEW_LOG);
     expect(store.options).toEqual({ keyPath: 'id', autoIncrement: true });
     expect([...store.indexes.keys()]).toEqual([
       'cardId',
       'timestamp',
+      'reviewedAt',
       'cardId_timestamp',
+      'cardId_reviewedAt',
       'eventId',
     ]);
     expect(fakeIndexedDB.stores.get(STORES.APP_STATE)).toBe(existingAppState);

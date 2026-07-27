@@ -1,9 +1,13 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: ['CI Tests']
+    types:
+      - completed
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -11,6 +15,7 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout code

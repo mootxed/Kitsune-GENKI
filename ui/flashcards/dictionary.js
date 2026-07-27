@@ -187,11 +187,15 @@ export function getLessonsLabel(lessonIds) {
 export function renderSkillRow(skillKey, skillLabel, mastery, appSkills) {
   const isApplicable = appSkills.includes(skillKey);
   if (!isApplicable) {
+    const isProduction = skillKey === 'context-production';
+    const notRequiredLabel = isProduction
+      ? 'Не проверен (Освоено ограничено до «Уверенно»)'
+      : 'Не требуется';
     return `
       <div class="dict-skill-row skill-disabled">
         <div class="dict-skill-header">
           <span class="dict-skill-name">${skillLabel}</span>
-          <span class="dict-skill-status-badge badge-not-required">Не требуется</span>
+          <span class="dict-skill-status-badge badge-not-required" title="${isProduction ? 'Для данного слова нет контекстных production-заданий' : ''}">${notRequiredLabel}</span>
         </div>
       </div>
     `;
