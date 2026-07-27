@@ -46,7 +46,7 @@ describe('AI Chat History Restoration', () => {
     renderSensei(state, deps);
 
     const body = document.getElementById('sensei-body');
-    expect(body.textContent).toContain('Kitsune Sensei');
+    expect(body.textContent).toContain('KotoKitsu Sensei');
   });
 });
 

@@ -75,15 +75,15 @@ export async function renderOnboarding(state, dependencies = {}) {
       stepHtml = `
         <div class="onboarding-card card">
           <div class="onboarding-badge">Шаг 1 из 7</div>
-          <h2 class="onboarding-title">Добро пожаловать в Kitsune Genki 🦊</h2>
+          <h2 class="onboarding-title">Добро пожаловать в KotoKitsu 🦊</h2>
           <p class="onboarding-desc">
-            Приложение поможет пройти курс GENKI постепенно и эффективнее:
+            Приложение поможет пройти курс японского языка постепенно и эффективно:
           </p>
           <ul class="onboarding-features-list">
             <li>✨ Новые слова небольшими порциями</li>
             <li>🧠 Повторения по алгоритму FSRS</li>
             <li>📚 Грамматика строго по порядку</li>
-            <li>📝 Задания и упражнения из Workbook</li>
+            <li>📝 Дополнительная грамматическая практика</li>
           </ul>
           <p class="onboarding-subtext">Давайте настроим ваш персональный учебный план.</p>
           <div class="onboarding-actions">
@@ -284,25 +284,25 @@ export async function renderOnboarding(state, dependencies = {}) {
           </div>
 
           <div class="card-nested" style="padding:12px;background:rgba(0,0,0,0.03);border-radius:10px;margin-bottom:16px;">
-            <h4 style="margin:0 0 8px;font-size:14px;">Интеграция GENKI Workbook:</h4>
+            <h4 style="margin:0 0 8px;font-size:14px;">Интеграция дополнительной практики:</h4>
 
             <label class="checkbox-option-block" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
               <input type="checkbox" id="wb-enabled" ${wb.enabled !== false ? 'checked' : ''} />
-              <b>Включить задания GENKI Workbook</b>
+              <b>Включить дополнительную практику</b>
             </label>
 
             <div id="wb-sub-options" style="margin-left:24px;display:${wb.enabled !== false ? 'block' : 'none'};">
               <label class="checkbox-option-block" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;">
                 <input type="checkbox" id="wb-cg" ${wb.includeConversationGrammar !== false ? 'checked' : ''} />
-                <span>Раздел разговор и грамматика</span>
+                <span>Грамматические задания</span>
               </label>
 
               <label class="checkbox-option-block" style="display:flex;align-items:center;gap:8px;font-size:13px;">
                 <input type="checkbox" id="wb-rw" ${wb.includeReadingWriting !== false ? 'checked' : ''} />
-                <span>Раздел чтение и письмо</span>
+                <span>Чтение и письмо</span>
               </label>
             </div>
-            <p class="muted" style="font-size:11px;margin:8px 0 0;">Workbook выполняется в отдельной рабочей тетради и отмечается вручную.</p>
+            <p class="muted" style="font-size:11px;margin:8px 0 0;">Дополнительная практика включает расширенные грамматические упражнения по темам.</p>
           </div>
 
           <div class="onboarding-actions row-between">
@@ -330,10 +330,10 @@ export async function renderOnboarding(state, dependencies = {}) {
 
         const wbStatusText =
           draft.workbookSettings?.enabled === false
-            ? 'Отключен'
+            ? 'Отключена'
             : draft.workbookSettings?.includeReadingWriting !== false
-              ? 'Включен (Разговор, Грамматика, Чтение, Письмо)'
-              : 'Включен (Разговор и Грамматика)';
+              ? 'Включена (Грамматика, Чтение, Письмо)'
+              : 'Включена (Грамматические задания)';
 
         let warningBanner = '';
         if (preview.warnings?.length > 0) {
@@ -367,7 +367,7 @@ export async function renderOnboarding(state, dependencies = {}) {
             <div class="row-between"><span>Учебные дни:</span><b>${studyDaysText || 'Не выбраны'}</b></div>
             <div class="row-between"><span>Дневная нагрузка:</span><b>${draft.dailyCapacityMinutes} минут</b></div>
             <div class="row-between"><span>Стартовая глава:</span><b>Глава ${draft.startChapterId || 1}</b></div>
-            <div class="row-between"><span>Workbook:</span><b>${wbStatusText}</b></div>
+            <div class="row-between"><span>Дополнительная практика:</span><b>${wbStatusText}</b></div>
             <div class="row-between"><span>Количество учебных дней:</span><b>${preview.requiredStudyDays} дней</b></div>
             <div class="row-between" style="border-top:1px dashed #ccc;padding-top:6px;margin-top:2px;">
               <span style="font-weight:600;">Примерное завершение:</span>

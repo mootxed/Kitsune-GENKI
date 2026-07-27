@@ -43,8 +43,8 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_M
 
 function getSystemPrompt(userLevel) {
   const level = userLevel || 'N5';
-  return `Ты — Kitsune Sensei, дружелюбный учитель японского языка. 
-Твоя задача — помогать ученикам уровня ${level} изучать японский язык по учебнику Genki.
+  return `Ты — KotoKitsu Sensei, дружелюбный учитель японского языка. 
+Твоя задача — помогать ученикам уровня ${level} изучать японский язык.
 
 Правила ответов:
 - Объясняй понятно и коротко
@@ -84,11 +84,15 @@ async function askSensei(history, settings, options = {}) {
         Authorization: 'Bearer ' + key,
         'Content-Type': 'application/json',
         'HTTP-Referer': location.origin,
-        'X-Title': 'Kitsune Genki',
+        'X-Title': 'KotoKitsu',
       },
       body: JSON.stringify({
         model: settings.model || 'deepseek/deepseek-v4-flash',
         messages,
+        provider: {
+          data_collection: 'deny',
+          zdr: true,
+        },
       }),
       signal: options.signal,
     },
@@ -183,6 +187,7 @@ ${
         Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': location.origin,
+        'X-Title': 'KotoKitsu',
       },
       body: JSON.stringify({
         model,
@@ -190,6 +195,10 @@ ${
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
+        provider: {
+          data_collection: 'deny',
+          zdr: true,
+        },
       }),
       signal: options.signal,
     },

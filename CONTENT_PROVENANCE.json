@@ -1,0 +1,163 @@
+{
+  "$schema": "./schema/content-provenance.schema.json",
+  "version": "1.0.0",
+  "description": "Registry of educational content provenance for KotoKitsu",
+  "provenance": [
+    {
+      "path": "public/data/grammar-quizzes/lesson-01.json",
+      "contentType": "grammar-practice",
+      "author": "Mootxed",
+      "sourceType": "mixed",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "partially-reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
+      "path": "public/data/grammar-quizzes/lesson-02.json",
+      "contentType": "grammar-practice",
+      "author": "Mootxed",
+      "sourceType": "mixed",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "partially-reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
+      "path": "public/data/grammar-quizzes/lesson-03.json",
+      "contentType": "grammar-practice",
+      "author": "Mootxed",
+      "sourceType": "mixed",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "partially-reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
+      "path": "public/data/grammar-quizzes/lesson-04.json",
+      "contentType": "grammar-practice",
+      "author": "Mootxed",
+      "sourceType": "mixed",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "partially-reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
+      "path": "public/data/grammar-quizzes/lesson-05.json",
+      "contentType": "grammar-practice",
+      "author": "Mootxed",
+      "sourceType": "mixed",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "partially-reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
+      "path": "public/data/grammar-quizzes/lesson-06.json",
+      "contentType": "grammar-practice",
+      "author": "Mootxed",
+      "sourceType": "mixed",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "partially-reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
+      "path": "public/data/grammar-quizzes/lesson-07.json",
+      "contentType": "grammar-practice",
+      "author": "Mootxed",
+      "sourceType": "mixed",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "partially-reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
+      "path": "public/data/grammar-quizzes/lesson-08.json",
+      "contentType": "grammar-practice",
+      "author": "Mootxed",
+      "sourceType": "mixed",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "partially-reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
+      "path": "public/data/grammar-quizzes/lesson-09.json",
+      "contentType": "grammar-practice",
+      "author": "Mootxed",
+      "sourceType": "mixed",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "partially-reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
+      "path": "public/data/grammar-quizzes/lesson-10.json",
+      "contentType": "grammar-practice",
+      "author": "Mootxed",
+      "sourceType": "mixed",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "partially-reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
+      "path": "public/data/grammar-quizzes/lesson-11.json",
+      "contentType": "grammar-practice",
+      "author": "Mootxed",
+      "sourceType": "mixed",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "partially-reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
+      "path": "public/data/grammar-quizzes/lesson-12.json",
+      "contentType": "grammar-practice",
+      "author": "Mootxed",
+      "sourceType": "mixed",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "partially-reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
+      "path": "public/data/particles-dictionary.json",
+      "contentType": "particles-dictionary",
+      "author": "Mootxed",
+      "sourceType": "generic-language-fact",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "reviewed",
+      "productionEligibility": "eligible"
+    }
+  ]
+}

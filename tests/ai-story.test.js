@@ -21,6 +21,7 @@ describe('AI-Story UI Renderer', () => {
     state = {
       settings: {
         openrouterKey: 'sk-or-v1-mock-key',
+        aiPrivacyAccepted: true,
       },
       srs: {},
       savedNotes: [],
@@ -84,6 +85,7 @@ describe('AI-Story UI Renderer', () => {
 
     const generateBtn = container.querySelector('#generate-story-btn');
     generateBtn.click();
+    await new Promise(process.nextTick);
 
     expect(generateBtn.disabled).toBe(true);
     expect(generateBtn.textContent).toContain('Генерация');

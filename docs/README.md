@@ -21,6 +21,7 @@
 | 📚 [**Content System**](content/content-system.md)             | Структура глав Genki, схема JSON-контента, валидаторы и пошаговые руководства по добавлению материалов.                            |
 | 🎮 [**Minigames**](minigames/overview.md)                      | Вспомогательные мини-игры (Crossword, Word Search, Particles), алгоритмы выбора слабых слов и accessibility.                       |
 | ✨ [**Features**](features/dictionary.md)                      | Интерактивный словарь, экран статистики, настройки, AI Story, TTS Audio, Onboarding.                                               |
+| ⚖️ [**Legal & Licensing**](legal/README.md)                    | Модель лицензирования, происхождение ресурсов (RhosGFX, AI covers), third-party notices и disclaimers.                             |
 | 📱 [**PWA & SW**](pwa/pwa-overview.md)                         | Service Worker, стратегии кеширования, offline-first fallback, жизненный цикл обновлений PWA.                                      |
 | 📖 [**Reference**](reference/routes.md)                        | Справочники по маршрутам, конфигурации, npm-скриптам, схемам State/Events/Cards и Known Limitations.                               |
 | 🏛️ [**Decisions (ADRs)**](decisions/README.md)                 | Архитектурные решения (ADR) по выбору технологии, хранилища, алгоритмов SRS и независимости мини-игр.                              |

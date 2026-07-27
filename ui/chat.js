@@ -4,6 +4,7 @@ import { $, todayStr as getTodayStr } from '../src/utils.js';
 import { syncAvatars } from './shared.js';
 import { API } from '../services.js';
 import { getAvailableChapterCount } from '../src/minigame-word-selectors.js';
+import { ensureAIPrivacyDisclosure } from '../src/ai-disclosure.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -42,6 +43,9 @@ export function renderSensei(state, dependencies) {
 
   body.innerHTML = `
     <div class="chat-area" id="chat-area" data-testid="chat-area"></div>
+    <div style="padding: 4px 12px; font-size: 11px; color: var(--text-muted); background: var(--bg-card); border-top: 1px solid var(--border); text-align: center;">
+      🔒 Для генерации ответа текст отправляется провайдеру OpenRouter. Не отправляйте персональные данные.
+    </div>
     <div class="chat-input-bar">
       <input type="text" id="chat-input" class="chat-input" placeholder="質問してください… Задайте вопрос" data-testid="chat-input" />
       <button class="chat-send" id="chat-send" data-testid="chat-send-btn" aria-label="Отправить">➤</button>
@@ -51,7 +55,7 @@ export function renderSensei(state, dependencies) {
   const area = $('#chat-area');
   if (chatHistory.length === 0) {
     addBotMessage(
-      'こんにちは！Я — Kitsune Sensei 🦊 Спросите что угодно про японский язык или учебник Genki!',
+      'こんにちは！Я — KotoKitsu Sensei 🦊 Спросите что угодно про японский язык!',
       state,
       dependencies
     );
@@ -293,6 +297,9 @@ async function sendChat(state, dependencies) {
     toast('⚠️ Укажите API-ключ OpenRouter в настройках');
     return;
   }
+
+  const accepted = await ensureAIPrivacyDisclosure(state, save);
+  if (!accepted) return;
 
   chatSending = true;
   addUserMessage(text);

@@ -7,7 +7,7 @@
 # Test info
 
 - Name: accessibility.spec.js >> Accessibility: axe-core WCAG A/AA checks >> Study plan screen: no critical structural axe violations
-- Location: tests/e2e/accessibility.spec.js:82:3
+- Location: tests/e2e/accessibility.spec.js:88:3
 
 # Error details
 
@@ -126,187 +126,193 @@ Received array:  [{"description": "Ensure every form element has a label", "help
   10  |
   11  | // Helper: prepare app environment for testing
   12  | async function prepareHomeScreen(page) {
-  13  |   await page.waitForFunction(() => typeof window.nav === 'function' || document.readyState === 'complete', { timeout: 10000 }).catch(() => {});
-  14  |   await page.evaluate(() => {
-  15  |     try {
-  16  |       localStorage.setItem('kitsune_onboarding_completed', 'true');
-  17  |     } catch (_e) {}
-  18  |     if (typeof window.nav === 'function') {
-  19  |       window.nav('home');
-  20  |     } else {
-  21  |       const onboarding = document.getElementById('screen-onboarding');
-  22  |       if (onboarding) onboarding.classList.add('hidden');
-  23  |       const loader = document.getElementById('app-loader');
-  24  |       if (loader) loader.style.display = 'none';
-  25  |       const home = document.getElementById('screen-home');
-  26  |       if (home) home.classList.remove('hidden');
-  27  |     }
-  28  |   });
-  29  |   await page.waitForSelector('#screen-home:not(.hidden)', { timeout: 5000 }).catch(() => {});
-  30  | }
-  31  |
-  32  | // Helper: navigate programmatically between screens for isolated testing
-  33  | async function navigateTo(page, screenId) {
-  34  |   await page.evaluate((target) => {
-  35  |     if (typeof window.nav === 'function') {
-  36  |       window.nav(target);
-  37  |     } else {
-  38  |       document.querySelectorAll('.screen').forEach((s) => s.classList.add('hidden'));
-  39  |       const sc = document.getElementById(`screen-${target}`);
-  40  |       if (sc) sc.classList.remove('hidden');
-  41  |     }
-  42  |   }, screenId);
-  43  |   await page.waitForSelector(`#screen-${screenId}:not(.hidden)`, { timeout: 5000 });
-  44  | }
-  45  |
-  46  | // ===== AXE TESTS =====
-  47  |
-  48  | test.describe('Accessibility: axe-core WCAG A/AA checks', () => {
-  49  |   test.beforeEach(async ({ page }) => {
-  50  |     await page.goto('./');
-  51  |     await prepareHomeScreen(page);
-  52  |   });
+  13  |   await page
+  14  |     .waitForFunction(() => typeof window.nav === 'function' || document.readyState === 'complete', {
+  15  |       timeout: 10000,
+  16  |     })
+  17  |     .catch(() => {});
+  18  |   await page.evaluate(() => {
+  19  |     try {
+  20  |       localStorage.setItem('kitsune_onboarding_completed', 'true');
+  21  |     } catch (_e) {
+  22  |       /* ignore storage error */
+  23  |     }
+  24  |     if (typeof window.nav === 'function') {
+  25  |       window.nav('home');
+  26  |     } else {
+  27  |       const onboarding = document.getElementById('screen-onboarding');
+  28  |       if (onboarding) onboarding.classList.add('hidden');
+  29  |       const loader = document.getElementById('app-loader');
+  30  |       if (loader) loader.style.display = 'none';
+  31  |       const home = document.getElementById('screen-home');
+  32  |       if (home) home.classList.remove('hidden');
+  33  |     }
+  34  |   });
+  35  |   await page.waitForSelector('#screen-home:not(.hidden)', { timeout: 5000 }).catch(() => {});
+  36  | }
+  37  |
+  38  | // Helper: navigate programmatically between screens for isolated testing
+  39  | async function navigateTo(page, screenId) {
+  40  |   await page.evaluate((target) => {
+  41  |     if (typeof window.nav === 'function') {
+  42  |       window.nav(target);
+  43  |     } else {
+  44  |       document.querySelectorAll('.screen').forEach((s) => s.classList.add('hidden'));
+  45  |       const sc = document.getElementById(`screen-${target}`);
+  46  |       if (sc) sc.classList.remove('hidden');
+  47  |     }
+  48  |   }, screenId);
+  49  |   await page.waitForSelector(`#screen-${screenId}:not(.hidden)`, { timeout: 5000 });
+  50  | }
+  51  |
+  52  | // ===== AXE TESTS =====
   53  |
-  54  |   test('Home screen: no critical structural axe violations', async ({ page }) => {
-  55  |     const results = await new AxeBuilder({ page })
-  56  |       .include('#screen-home')
-  57  |       .withTags(['wcag2a', 'wcag2aa'])
-  58  |       .disableRules(['color-contrast'])
-  59  |       .analyze();
-  60  |
-  61  |     const criticalViolations = results.violations.filter(
-  62  |       (v) => v.impact === 'critical' || v.impact === 'serious'
-  63  |     );
-  64  |     expect(criticalViolations).toHaveLength(0);
-  65  |   });
+  54  | test.describe('Accessibility: axe-core WCAG A/AA checks', () => {
+  55  |   test.beforeEach(async ({ page }) => {
+  56  |     await page.goto('./');
+  57  |     await prepareHomeScreen(page);
+  58  |   });
+  59  |
+  60  |   test('Home screen: no critical structural axe violations', async ({ page }) => {
+  61  |     const results = await new AxeBuilder({ page })
+  62  |       .include('#screen-home')
+  63  |       .withTags(['wcag2a', 'wcag2aa'])
+  64  |       .disableRules(['color-contrast'])
+  65  |       .analyze();
   66  |
-  67  |   test('Settings screen: no critical structural axe violations', async ({ page }) => {
-  68  |     await navigateTo(page, 'settings');
-  69  |
-  70  |     const results = await new AxeBuilder({ page })
-  71  |       .include('#screen-settings')
-  72  |       .withTags(['wcag2a', 'wcag2aa'])
-  73  |       .disableRules(['color-contrast'])
-  74  |       .analyze();
+  67  |     const criticalViolations = results.violations.filter(
+  68  |       (v) => v.impact === 'critical' || v.impact === 'serious'
+  69  |     );
+  70  |     expect(criticalViolations).toHaveLength(0);
+  71  |   });
+  72  |
+  73  |   test('Settings screen: no critical structural axe violations', async ({ page }) => {
+  74  |     await navigateTo(page, 'settings');
   75  |
-  76  |     const criticalViolations = results.violations.filter(
-  77  |       (v) => v.impact === 'critical' || v.impact === 'serious'
-  78  |     );
-  79  |     expect(criticalViolations).toHaveLength(0);
-  80  |   });
+  76  |     const results = await new AxeBuilder({ page })
+  77  |       .include('#screen-settings')
+  78  |       .withTags(['wcag2a', 'wcag2aa'])
+  79  |       .disableRules(['color-contrast'])
+  80  |       .analyze();
   81  |
-  82  |   test('Study plan screen: no critical structural axe violations', async ({ page }) => {
-  83  |     await navigateTo(page, 'plan');
-  84  |
-  85  |     const results = await new AxeBuilder({ page })
-  86  |       .include('#screen-plan')
-  87  |       .withTags(['wcag2a', 'wcag2aa'])
-  88  |       .disableRules(['color-contrast'])
-  89  |       .analyze();
+  82  |     const criticalViolations = results.violations.filter(
+  83  |       (v) => v.impact === 'critical' || v.impact === 'serious'
+  84  |     );
+  85  |     expect(criticalViolations).toHaveLength(0);
+  86  |   });
+  87  |
+  88  |   test('Study plan screen: no critical structural axe violations', async ({ page }) => {
+  89  |     await navigateTo(page, 'plan');
   90  |
-  91  |     const criticalViolations = results.violations.filter(
-  92  |       (v) => v.impact === 'critical' || v.impact === 'serious'
-  93  |     );
-> 94  |     expect(criticalViolations).toHaveLength(0);
-      |                                ^ Error: expect(received).toHaveLength(expected)
-  95  |   });
+  91  |     const results = await new AxeBuilder({ page })
+  92  |       .include('#screen-plan')
+  93  |       .withTags(['wcag2a', 'wcag2aa'])
+  94  |       .disableRules(['color-contrast'])
+  95  |       .analyze();
   96  |
-  97  |   test('SRS/Flashcards screen: no critical structural axe violations', async ({ page }) => {
-  98  |     await navigateTo(page, 'srs');
-  99  |
-  100 |     const results = await new AxeBuilder({ page })
-  101 |       .include('#screen-srs')
-  102 |       .withTags(['wcag2a', 'wcag2aa'])
-  103 |       .disableRules(['color-contrast'])
-  104 |       .analyze();
+  97  |     const criticalViolations = results.violations.filter(
+  98  |       (v) => v.impact === 'critical' || v.impact === 'serious'
+  99  |     );
+> 100 |     expect(criticalViolations).toHaveLength(0);
+      |                                ^ Error: expect(received).toHaveLength(expected)
+  101 |   });
+  102 |
+  103 |   test('SRS/Flashcards screen: no critical structural axe violations', async ({ page }) => {
+  104 |     await navigateTo(page, 'srs');
   105 |
-  106 |     const criticalViolations = results.violations.filter(
-  107 |       (v) => v.impact === 'critical' || v.impact === 'serious'
-  108 |     );
-  109 |     expect(criticalViolations).toHaveLength(0);
-  110 |   });
+  106 |     const results = await new AxeBuilder({ page })
+  107 |       .include('#screen-srs')
+  108 |       .withTags(['wcag2a', 'wcag2aa'])
+  109 |       .disableRules(['color-contrast'])
+  110 |       .analyze();
   111 |
-  112 |   test('Statistics screen: no critical structural axe violations', async ({ page }) => {
-  113 |     await navigateTo(page, 'statistics');
-  114 |
-  115 |     const results = await new AxeBuilder({ page })
-  116 |       .include('#screen-statistics')
-  117 |       .withTags(['wcag2a', 'wcag2aa'])
-  118 |       .disableRules(['color-contrast'])
-  119 |       .analyze();
+  112 |     const criticalViolations = results.violations.filter(
+  113 |       (v) => v.impact === 'critical' || v.impact === 'serious'
+  114 |     );
+  115 |     expect(criticalViolations).toHaveLength(0);
+  116 |   });
+  117 |
+  118 |   test('Statistics screen: no critical structural axe violations', async ({ page }) => {
+  119 |     await navigateTo(page, 'statistics');
   120 |
-  121 |     const criticalViolations = results.violations.filter(
-  122 |       (v) => v.impact === 'critical' || v.impact === 'serious'
-  123 |     );
-  124 |     expect(criticalViolations).toHaveLength(0);
-  125 |   });
+  121 |     const results = await new AxeBuilder({ page })
+  122 |       .include('#screen-statistics')
+  123 |       .withTags(['wcag2a', 'wcag2aa'])
+  124 |       .disableRules(['color-contrast'])
+  125 |       .analyze();
   126 |
-  127 |   test('Shop modal: has role=dialog, aria-modal, aria-labelledby', async ({ page }) => {
-  128 |     await page.evaluate(() => {
-  129 |       const modal = document.getElementById('shop-modal');
-  130 |       if (modal) {
-  131 |         modal.classList.remove('hidden');
-  132 |         modal.style.display = 'block';
-  133 |       }
-  134 |     });
-  135 |     await page.waitForTimeout(100);
-  136 |
-  137 |     const modal = page.locator('#shop-modal');
-  138 |     await expect(modal).toHaveAttribute('role', 'dialog');
-  139 |     await expect(modal).toHaveAttribute('aria-modal', 'true');
-  140 |     await expect(modal).toHaveAttribute('aria-labelledby', 'shop-modal-title');
-  141 |
-  142 |     const results = await new AxeBuilder({ page })
-  143 |       .include('#shop-modal')
-  144 |       .withTags(['wcag2a', 'wcag2aa'])
-  145 |       .disableRules(['color-contrast'])
-  146 |       .analyze();
+  127 |     const criticalViolations = results.violations.filter(
+  128 |       (v) => v.impact === 'critical' || v.impact === 'serious'
+  129 |     );
+  130 |     expect(criticalViolations).toHaveLength(0);
+  131 |   });
+  132 |
+  133 |   test('Shop modal: has role=dialog, aria-modal, aria-labelledby', async ({ page }) => {
+  134 |     await page.evaluate(() => {
+  135 |       const modal = document.getElementById('shop-modal');
+  136 |       if (modal) {
+  137 |         modal.classList.remove('hidden');
+  138 |         modal.style.display = 'block';
+  139 |       }
+  140 |     });
+  141 |     await page.waitForTimeout(100);
+  142 |
+  143 |     const modal = page.locator('#shop-modal');
+  144 |     await expect(modal).toHaveAttribute('role', 'dialog');
+  145 |     await expect(modal).toHaveAttribute('aria-modal', 'true');
+  146 |     await expect(modal).toHaveAttribute('aria-labelledby', 'shop-modal-title');
   147 |
-  148 |     const criticalViolations = results.violations.filter(
-  149 |       (v) => v.impact === 'critical' || v.impact === 'serious'
-  150 |     );
-  151 |     expect(criticalViolations).toHaveLength(0);
-  152 |   });
+  148 |     const results = await new AxeBuilder({ page })
+  149 |       .include('#shop-modal')
+  150 |       .withTags(['wcag2a', 'wcag2aa'])
+  151 |       .disableRules(['color-contrast'])
+  152 |       .analyze();
   153 |
-  154 |   test('Document has lang="ru" on html element', async ({ page }) => {
-  155 |     const lang = await page.getAttribute('html', 'lang');
-  156 |     expect(lang).toBe('ru');
-  157 |   });
-  158 |
-  159 |   test('Viewport allows user scaling', async ({ page }) => {
-  160 |     const viewport = await page.$eval(
-  161 |       'meta[name="viewport"]',
-  162 |       (el) => el.getAttribute('content')
-  163 |     );
-  164 |     expect(viewport).not.toContain('user-scalable=no');
-  165 |     expect(viewport).not.toMatch(/maximum-scale=1(?:[^.]|$)/);
-  166 |   });
-  167 |
-  168 |   test('Live region elements exist in DOM', async ({ page }) => {
-  169 |     await expect(page.locator('#a11y-announce')).toBeAttached();
-  170 |     const politeRole = await page.getAttribute('#a11y-announce', 'aria-live');
-  171 |     expect(politeRole).toBe('polite');
-  172 |
-  173 |     await expect(page.locator('#a11y-alert')).toBeAttached();
-  174 |     const alertRole = await page.getAttribute('#a11y-alert', 'role');
-  175 |     expect(alertRole).toBe('alert');
-  176 |   });
-  177 | });
-  178 |
-  179 | // ===== KEYBOARD NAVIGATION TESTS =====
-  180 |
-  181 | test.describe('Keyboard Navigation', () => {
-  182 |   test.beforeEach(async ({ page }) => {
-  183 |     await page.goto('./');
-  184 |     await prepareHomeScreen(page);
-  185 |   });
-  186 |
-  187 |   test('Navigation to SRS screen moves focus to heading or screen', async ({ page }) => {
-  188 |     await navigateTo(page, 'srs');
+  154 |     const criticalViolations = results.violations.filter(
+  155 |       (v) => v.impact === 'critical' || v.impact === 'serious'
+  156 |     );
+  157 |     expect(criticalViolations).toHaveLength(0);
+  158 |   });
+  159 |
+  160 |   test('Document has lang="ru" on html element', async ({ page }) => {
+  161 |     const lang = await page.getAttribute('html', 'lang');
+  162 |     expect(lang).toBe('ru');
+  163 |   });
+  164 |
+  165 |   test('Viewport allows user scaling', async ({ page }) => {
+  166 |     const viewport = await page.$eval('meta[name="viewport"]', (el) => el.getAttribute('content'));
+  167 |     expect(viewport).not.toContain('user-scalable=no');
+  168 |     expect(viewport).not.toMatch(/maximum-scale=1(?:[^.]|$)/);
+  169 |   });
+  170 |
+  171 |   test('Live region elements exist in DOM', async ({ page }) => {
+  172 |     await expect(page.locator('#a11y-announce')).toBeAttached();
+  173 |     const politeRole = await page.getAttribute('#a11y-announce', 'aria-live');
+  174 |     expect(politeRole).toBe('polite');
+  175 |
+  176 |     await expect(page.locator('#a11y-alert')).toBeAttached();
+  177 |     const alertRole = await page.getAttribute('#a11y-alert', 'role');
+  178 |     expect(alertRole).toBe('alert');
+  179 |   });
+  180 | });
+  181 |
+  182 | // ===== KEYBOARD NAVIGATION TESTS =====
+  183 |
+  184 | test.describe('Keyboard Navigation', () => {
+  185 |   test.beforeEach(async ({ page }) => {
+  186 |     await page.goto('./');
+  187 |     await prepareHomeScreen(page);
+  188 |   });
   189 |
-  190 |     const isSrsActive = await page.evaluate(() => {
-  191 |       const srs = document.getElementById('screen-srs');
-  192 |       return srs && !srs.classList.contains('hidden');
-  193 |     });
-  194 |
+  190 |   test('Navigation to SRS screen moves focus to heading or screen', async ({ page }) => {
+  191 |     await navigateTo(page, 'srs');
+  192 |
+  193 |     const isSrsActive = await page.evaluate(() => {
+  194 |       const srs = document.getElementById('screen-srs');
+  195 |       return srs && !srs.classList.contains('hidden');
+  196 |     });
+  197 |
+  198 |     expect(isSrsActive).toBe(true);
+  199 |   });
+  200 |
 ```

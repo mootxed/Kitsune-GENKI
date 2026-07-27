@@ -70,6 +70,21 @@ function loadCharData(char) {
 
 // ── Шаг 3: сборка и запись ────────────────────────────────────────────────
 function build() {
+  // Guard check: stroke data requires mandatory licenses in public/licenses/
+  const reqLic = [
+    join(ROOT, 'public', 'licenses', 'hanzi-writer', 'LICENSE.txt'),
+    join(ROOT, 'public', 'licenses', 'hanzi-writer-data-jp', 'LICENSES.md'),
+  ];
+  for (const lPath of reqLic) {
+    if (!existsSync(lPath)) {
+      console.error(`[build-kanji-data] ❌ ERROR: Mandatory stroke data license missing: ${lPath}`);
+      console.error(
+        '[build-kanji-data] Please run `npm run legal:prepare` before building kanji data.'
+      );
+      process.exit(1);
+    }
+  }
+
   console.log('[build-kanji-data] Collecting kanji from lessons…');
   const kanji = collectKanji();
   console.log(`[build-kanji-data] Found ${kanji.length} unique kanji`);

@@ -4,7 +4,7 @@
   "chapters": [
     {
       "id": 1,
-      "title": "Урок 1",
+      "title": "Модуль 1 — Знакомство и базовые предложения",
       "lesson": "data/lessons/lesson-01.json",
       "story": "data/stories/story-01.json",
       "vocabCount": 60,
@@ -25,7 +25,7 @@
     },
     {
       "id": 2,
-      "title": "Урок 2",
+      "title": "Модуль 2 — Указательные слова и покупки",
       "lesson": "data/lessons/lesson-02.json",
       "story": "data/stories/story-02.json",
       "vocabCount": 57,
@@ -46,7 +46,7 @@
     },
     {
       "id": 3,
-      "title": "Урок 3",
+      "title": "Модуль 3 — Повседневные действия",
       "lesson": "data/lessons/lesson-03.json",
       "story": "data/stories/story-03.json",
       "vocabCount": 56,
@@ -67,7 +67,7 @@
     },
     {
       "id": 4,
-      "title": "Урок 4",
+      "title": "Модуль 4 — Дни недели и время",
       "lesson": "data/lessons/lesson-04.json",
       "story": "data/stories/story-04.json",
       "vocabCount": 62,
@@ -88,7 +88,7 @@
     },
     {
       "id": 5,
-      "title": "Урок 5",
+      "title": "Модуль 5 — Описание предмета и места",
       "lesson": "data/lessons/lesson-05.json",
       "story": "data/stories/story-05.json",
       "vocabCount": 52,
@@ -109,7 +109,7 @@
     },
     {
       "id": 6,
-      "title": "Урок 6",
+      "title": "Модуль 6 — Приглашение и поездки",
       "lesson": "data/lessons/lesson-06.json",
       "story": "data/stories/story-06.json",
       "vocabCount": 47,
@@ -130,7 +130,7 @@
     },
     {
       "id": 7,
-      "title": "Урок 7",
+      "title": "Модуль 7 — Семья и внешний вид",
       "lesson": "data/lessons/lesson-07.json",
       "story": "data/stories/story-07.json",
       "vocabCount": 52,
@@ -151,7 +151,7 @@
     },
     {
       "id": 8,
-      "title": "Урок 8",
+      "title": "Модуль 8 — Бытовые ситуации",
       "lesson": "data/lessons/lesson-08.json",
       "story": "data/stories/story-08.json",
       "vocabCount": 56,
@@ -172,7 +172,7 @@
     },
     {
       "id": 9,
-      "title": "Урок 9",
+      "title": "Модуль 9 — Прошлое и впечатления",
       "lesson": "data/lessons/lesson-09.json",
       "story": "data/stories/story-09.json",
       "vocabCount": 55,
@@ -189,7 +189,7 @@
     },
     {
       "id": 10,
-      "title": "Урок 10",
+      "title": "Модуль 10 — Сравнение и планирование",
       "lesson": "data/lessons/lesson-10.json",
       "story": "data/stories/story-10.json",
       "vocabCount": 56,
@@ -206,7 +206,7 @@
     },
     {
       "id": 11,
-      "title": "Урок 11",
+      "title": "Модуль 11 — Желания и просьбы",
       "lesson": "data/lessons/lesson-11.json",
       "story": "data/stories/story-11.json",
       "vocabCount": 68,
@@ -223,7 +223,7 @@
     },
     {
       "id": 12,
-      "title": "Урок 12",
+      "title": "Модуль 12 — Мечты и намерения",
       "lesson": "data/lessons/lesson-12.json",
       "story": "data/stories/story-12.json",
       "vocabCount": 53,

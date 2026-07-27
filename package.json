@@ -1,17 +1,20 @@
 {
-  "name": "kitsune-genki",
+  "name": "kotokitsu",
+  "productName": "KotoKitsu",
   "version": "0.1.0-alpha",
   "type": "module",
   "engines": {
     "node": ">=22"
   },
-  "description": "PWA приложение для изучения японского языка",
+  "description": "Offline-first Japanese learning PWA with spaced repetition",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:kanji": "node scripts/build-kanji-data.js",
+    "legal:prepare": "node scripts/copy-third-party-licenses.js",
+    "legal:check": "node scripts/check-legal-metadata.js",
     "validate:grammar-quizzes": "node scripts/validate-grammar-quizzes.js",
-    "prebuild": "node scripts/validate-grammar-quizzes.js && node scripts/build-kanji-data.js",
+    "prebuild": "node scripts/copy-third-party-licenses.js && node scripts/validate-grammar-quizzes.js && node scripts/build-kanji-data.js && node scripts/check-legal-metadata.js",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

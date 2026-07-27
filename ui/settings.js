@@ -141,6 +141,16 @@ export function renderSettings(state, dependencies) {
     </div>
 
     <div class="set-group">
+      <div class="set-item settings-destination">
+        <div>
+          <label>⚖️ Правовая информация</label>
+          <div class="set-hint">Лицензия GPL-3.0, сторонние компоненты, происхождение ресурсов и отказ от аффилиации.</div>
+        </div>
+        <button class="btn-ghost" id="btn-legal-info" data-testid="settings-legal-btn">Открыть</button>
+      </div>
+    </div>
+
+    <div class="set-group">
       <div class="set-item"><button class="btn-ghost" id="btn-reset" style="color:var(--danger)" data-testid="reset-btn">Сбросить весь прогресс</button></div>
     </div>
     <div class="bottom-pad"></div>`;
@@ -203,7 +213,7 @@ export function renderSettings(state, dependencies) {
       ? 'Тест: на сегодня всё выполнено 🎉'
       : `Тест: ${digest.summaryText} — ${digest.durationText}`;
     if (showNotification) {
-      showNotification('Kitsune Genki 🦊', text, { isTest: true });
+      showNotification('KotoKitsu 🦊', text, { isTest: true });
     }
   });
 
@@ -216,6 +226,7 @@ export function renderSettings(state, dependencies) {
   });
   bindEvent('#btn-study-plan', 'click', () => nav('plan'));
   bindEvent('#btn-course', 'click', () => nav('course'));
+  bindEvent('#btn-legal-info', 'click', () => showLegalInfoModal());
   bindEvent('#set-hide-romaji', 'change', (e) => {
     s.hideRomaji = e.target.checked;
     save();
@@ -269,7 +280,7 @@ async function handleFullExport(state, toastFn) {
   try {
     const includeApiKey = $('#export-include-key')?.checked === true;
     const data = await exportFullProgress({ includeApiKey });
-    const filename = `kitsune_genki_full_${localDateKey()}.json`;
+    const filename = `kotokitsu_full_${localDateKey()}.json`;
 
     const shared = await shareJSON(data, filename);
 
@@ -409,4 +420,67 @@ function showImportConfirmDialog(data, state, dependencies, toastFn) {
       overlay.remove();
     }
   };
+}
+
+// Модальное окно правовой информации
+function showLegalInfoModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-labelledby', 'legal-modal-title');
+  overlay.innerHTML = `
+    <div class="modal-dialog" style="max-width: 600px; max-height: 85vh; overflow-y: auto;">
+      <h2 id="legal-modal-title">⚖️ Правовая информация — KotoKitsu</h2>
+      <div class="modal-content" style="text-align: left; font-size: 13px; line-height: 1.6;">
+        <div style="background: var(--bg-secondary, rgba(0,0,0,0.04)); padding: 12px; border-radius: 8px; margin-bottom: 14px;">
+          <h4 style="margin: 0 0 6px;">📢 Отказ от аффилиации / Non-Affiliation Disclaimer</h4>
+          <p style="margin: 0 0 6px;"><b>RU:</b> KotoKitsu — независимый open-source тренажёр японского языка. Приложение можно использовать самостоятельно или параллельно с внешними учебными материалами.</p>
+          <p style="margin: 0;"><b>EN:</b> KotoKitsu is an independent open-source project for Japanese language learning.</p>
+        </div>
+
+        <h4 style="margin: 12px 0 4px;">💻 Лицензия кода</h4>
+        <p style="margin: 0 0 10px;">Программный код приложения распространяется под лицензией <b>GNU General Public License v3.0 or later (GPL-3.0-or-later)</b>. Автор: Mootxed. Версия: <code>v0.1.0-alpha</code> (Разработка: Российская Федерация).</p>
+
+        <h4 style="margin: 12px 0 4px;">🎨 Сторонние ресурсы и графика</h4>
+        <ul style="margin: 0 0 10px; padding-left: 20px;">
+          <li><b>Vector Ranks</b> (иконки рангов): RhosGFX — <a href="https://rhosgfx.itch.io/vector-ranks" target="_blank" rel="noopener">CC0 1.0 Universal</a>. Преобразованы из PNG в WebP.</li>
+          <li><b>Обложки историй</b>: Сгенерированы ИИ по коммиссионным запросам автора Mootxed. Не являются иллюстрациями GENKI.</li>
+          <li><b>Данные кандзи</b>: hanzi-writer (MIT / Arphic PL) и @k1low/hanzi-writer-data-jp (LGPL-3.0 / Arphic PL / Unicode / OFL).</li>
+        </ul>
+
+        <h4 style="margin: 12px 0 4px;">🔒 Данные и Конфиденциальность</h4>
+        <p style="margin: 0 0 10px;">Все данные обучения и настройки хранятся локально в вашем браузере. Аналитика и следящие трекеры отсутствуют. Запросы к ИИ (OpenRouter) выполняются только по вашему прямому действию.</p>
+
+        <div id="legal-notices-expand" class="hidden" style="margin-top: 10px; padding: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
+          <h4 style="margin: 0 0 6px;">📜 THIRD_PARTY_NOTICES</h4>
+          <pre style="white-space: pre-wrap; font-size: 11px; max-height: 200px; overflow-y: auto; background: var(--bg-secondary); padding: 8px; border-radius: 4px;">Vector Ranks — RhosGFX (CC0 1.0)
+hanzi-writer v3.7.3 — David Chanin (MIT)
+@k1low/hanzi-writer-data-jp v0.8.0 — (LGPL-3.0 / Arphic PL / Unicode / OFL)
+ts-fsrs v5.4.1 — (MIT)
+zod v4.4.3 — (MIT)</pre>
+        </div>
+      </div>
+
+      <div class="modal-buttons" style="margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn-ghost" id="btn-toggle-notices" style="flex: 1;">📜 Сторонние уведомления</button>
+        <button class="btn-primary" id="btn-close-legal" style="flex: 1;">Закрыть</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const closeBtn = overlay.querySelector('#btn-close-legal');
+  closeBtn.focus();
+  closeBtn.onclick = () => overlay.remove();
+
+  const toggleBtn = overlay.querySelector('#btn-toggle-notices');
+  const noticesDiv = overlay.querySelector('#legal-notices-expand');
+  toggleBtn.onclick = () => {
+    noticesDiv.classList.toggle('hidden');
+  };
+
+  overlay.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') overlay.remove();
+  });
 }

@@ -337,7 +337,7 @@ function renderWorkloadSection(wl) {
       <!-- Календарь активности (Heatmap) -->
       <div class="heatmap-container">
         <h3 class="sub-heading">Календарь активности (последние 16 недель)</h3>
-        <div class="heatmap-grid" role="grid" aria-label="Матрица активности по дням">
+        <div class="heatmap-grid" role="region" aria-label="Матрица активности по дням">
           ${heatmapCells}
         </div>
       </div>

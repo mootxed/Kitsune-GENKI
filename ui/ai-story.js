@@ -4,6 +4,7 @@ import { API } from '../services.js';
 import { wordById } from '../src/srs-helpers.js';
 import { parseAndValidateAIStory } from '../src/ai-story-parser.js';
 import { getWeakVocabularyItems } from '../src/vocabulary-weakness-service.js';
+import { ensureAIPrivacyDisclosure } from '../src/ai-disclosure.js';
 
 function escapeHtml(str) {
   if (typeof str !== 'string') return '';
@@ -81,6 +82,9 @@ export function renderAIStory(state, dependencies) {
     <div style="padding: 16px; display: flex; flex-direction: column; gap: 16px;">
       <div class="card" data-testid="ai-story-form">
         <h3 style="margin: 0 0 12px; font-size: 18px;">✨ Генератор историй</h3>
+        <p class="muted" style="margin: 0 0 12px; font-size: 12px;">
+          🔒 Для генерации ответа выбранный текст будет отправлен внешнему провайдеру OpenRouter. Не отправляйте персональные или конфиденциальные данные.
+        </p>
 
         <div style="margin-bottom: 12px;">
           <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 13px;">Тема или сюжет истории</label>
@@ -143,6 +147,9 @@ export function renderAIStory(state, dependencies) {
       toast('⚠️ Введите промпт или тему для генерации');
       return;
     }
+
+    const accepted = await ensureAIPrivacyDisclosure(st, deps?.save);
+    if (!accepted) return;
 
     const style = styleSelect ? styleSelect.value : 'narrative';
     const length = lengthSelect ? lengthSelect.value : 'medium';

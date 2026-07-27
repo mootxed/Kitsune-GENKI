@@ -1,14 +1,14 @@
 {
-  "name": "Kitsune Genki",
-  "short_name": "Kitsune Genki",
-  "description": "Тренажёр по учебнику Genki для изучения японского языка",
-  "start_url": "/Kitsune-GENKI/",
+  "name": "KotoKitsu",
+  "short_name": "KotoKitsu",
+  "description": "Offline-first Japanese learning PWA with spaced repetition",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FFF9F0",
   "theme_color": "#FF7A1A",
   "lang": "ru",
-  "scope": "/Kitsune-GENKI/",
+  "scope": "./",
   "icons": [
     {
       "src": "icon.svg",

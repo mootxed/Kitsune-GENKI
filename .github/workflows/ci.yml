@@ -33,6 +33,9 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
+      - name: Check legal metadata & compliance
+        run: npm run legal:check
+
       # Unit tests: includes sw-helpers.test.js and a11y-helpers.test.js
       - name: Run unit tests (SW helpers + accessibility helpers)
         run: npm test

@@ -16,7 +16,6 @@
   "russian": "студент",
   "category": "noun",
   "chapter": 1,
-  "audio": "audio/genki1/l1/gakusei.mp3",
   "examples": [
     {
       "japanese": "わたしは学生です。",

@@ -1,15 +1,15 @@
-# Content Provenance & Licensing Audit — Kitsune-GENKI
+# Content Provenance & Licensing Audit — KotoKitsu
 
-Этот документ содержит аудит происхождения учебных материалов, мультимедиа и графических ресурсов в проекте **Kitsune-GENKI**.
+Этот документ содержит аудит происхождения учебных материалов, мультимедиа и графических ресурсов в проекте **KotoKitsu**.
 
 ## Таблица происхождения контента
 
-| Файл / Каталог                        | Источник                      | Автор / Лицензиар        | Лицензия                  | Статус проверки | Примечания                           |
-| ------------------------------------- | ----------------------------- | ------------------------ | ------------------------- | --------------- | ------------------------------------ |
-| `data/content-index.json`             | Составительский словарь GENKI | Команда Kitsune-GENKI    | CC BY-SA 4.0              | Проверено       | Словарь и структура Genki I/II       |
-| `data/genki-i-workbook-practice.json` | Упражнения учебной программы  | Команда Kitsune-GENKI    | CC BY-SA 4.0              | Проверено       | Тексты оригинальных упражнений       |
-| `data/grammar-quizzes/*.json`         | Грамматические квизы          | Команда Kitsune-GENKI    | CC BY-SA 4.0              | Проверено       | Проверено автовалидатором            |
-| `public/kanji-stroke-data/`           | HanziWriter JP / KanjiVG      | @k1low / KanjiVG Project | CC BY-SA 3.0 / Apache-2.0 | Проверено       | Анимации порядка черт кандзи         |
-| `public/assets/avatars/`              | Оригинальная графика проекта  | Художники Kitsune-GENKI  | Proprietary / Embedded    | Проверено       | Иконки лисицы и аватаров             |
-| `public/assets/streak-skins/`         | Графика пламени и скинов      | Команда Kitsune-GENKI    | CC BY-SA 4.0              | Проверено       | Скины стрика                         |
-| `public/audio/`                       | Web Speech API & TTS assets   | Browser Native TTS       | N/A (Client side)         | Проверено       | Произношение генерируется на клиенте |
+| Файл / Каталог                        | Источник                          | Автор / Лицензиар                   | Лицензия                                   | Статус проверки       | Примечания                                                     |
+| ------------------------------------- | --------------------------------- | ----------------------------------- | ------------------------------------------ | --------------------- | -------------------------------------------------------------- |
+| `public/data/content-index.json`      | Составительский словарь курса     | Команда KotoKitsu                   | Rights Reserved / Pending Author Selection | Проверено             | См. [CONTENT_LICENSE.md](../../CONTENT_LICENSE.md)             |
+| `public/data/grammar-quizzes/*.json`  | Дополнительная грамматическая практика | Mootxed                            | Rights Reserved / Pending Author Selection | Частично проверено    | См. [CONTENT_PROVENANCE.json](../../CONTENT_PROVENANCE.json)    |
+| `public/data/particles-dictionary.json` | Справочник частиц                 | Mootxed                             | Generic Language Fact                      | Проверено             | Языковые факты японского языка                                 |
+| `public/data/kanji/`                  | HanziWriter JP / AnimCJK / Arphic | @k1low / Francois Mizessyn / Arphic | LGPL-3.0 / Arphic PL / Unicode / OFL       | Проверено             | Включены в [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md) |
+| `public/rank/`                        | Vector Ranks Asset Pack           | RhosGFX                             | CC0 1.0 Universal                          | Проверено             | См. [public/rank/SOURCE.md](../../public/rank/SOURCE.md)       |
+| `public/image/Story*.webp`            | AI-сгенерированные обложки        | Mootxed (запрос ИИ)                 | Needs Author Confirmation                  | Требует подтверждения | См. [ASSET_PROVENANCE.json](../../ASSET_PROVENANCE.json)       |
+| `Audio Subsystem`                     | Web Speech API                    | Browser Native TTS                  | N/A (Client side)                          | Проверено             | Произношение генерируется локально                             |

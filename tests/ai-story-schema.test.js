@@ -269,6 +269,7 @@ describe('AI Story API Repair Retry & UI Integration', () => {
   const settings = {
     openrouterKey: 'sk-or-v1-1234567890123456789012345678901234567890',
     model: 'deepseek/deepseek-v4-flash',
+    aiPrivacyAccepted: true,
   };
 
   beforeEach(() => {

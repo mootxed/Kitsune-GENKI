@@ -33,6 +33,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Check legal metadata & compliance
+        run: npm run legal:check
+
       - name: Build project
         run: npm run build
 
