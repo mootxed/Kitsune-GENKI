@@ -1,5 +1,27 @@
 /* router.js — Navigation and routing controller */
 
+import { focusScreenHeading, announceNavigation, setScreenInert } from './src/a11y-helpers.js';
+
+// Human-readable screen titles for screen reader announcements
+const SCREEN_TITLES = {
+  home: 'Главная',
+  onboarding: 'Введение',
+  course: 'Все главы',
+  profile: 'Профиль',
+  chapter: 'Глава',
+  srs: 'Карточки',
+  sensei: 'Инструменты',
+  library: 'Учебник',
+  settings: 'Настройки',
+  plan: 'План обучения',
+  story: 'История',
+  quests: 'Квесты',
+  'ai-story': 'История ИИ',
+  crossword: 'Кроссворд',
+  'word-search': 'Поиск слов',
+  statistics: 'Статистика',
+};
+
 export class Router {
   constructor() {
     this.screens = [
@@ -65,11 +87,20 @@ export class Router {
       if (tabbar) tabbar.style.display = '';
     }
 
+    // Accessibility: шаг 1 — сбросить фокус на body перед скрытием старого экрана
+    // (aria-hidden нельзя ставить на контейнер с активным фокусом)
+    if (document.activeElement && document.activeElement !== document.body) {
+      document.activeElement.blur();
+    }
+
     this.currentScreen = name;
 
-    // Переключение видимости экранов
+    // Шаг 2: скрыть старые экраны и поставить inert
     document.querySelectorAll('.screen').forEach((screen) => {
-      screen.classList.toggle('hidden', screen.id !== targetId);
+      const isTarget = screen.id === targetId;
+      screen.classList.toggle('hidden', !isTarget);
+      // Шаг 3: активировать/деактивировать inert
+      setScreenInert(screen, !isTarget);
     });
 
     const visibleScreens = [...document.querySelectorAll('.screen:not(.hidden)')];
@@ -107,16 +138,15 @@ export class Router {
       window.syncAvatars();
     }
 
-    // Перенос фокуса на заголовок нового экрана для доступности (screen readers)
-    setTimeout(() => {
-      const heading = targetScreen.querySelector('h1, h2, [role="heading"]');
-      if (heading) {
-        if (!heading.hasAttribute('tabindex')) {
-          heading.setAttribute('tabindex', '-1');
-        }
-        heading.focus({ preventScroll: true });
-      }
-    }, 50);
+    // Шаг 4: перенести фокус на заголовок нового экрана
+    // Используем rAF для того, чтобы render handler успел обновить DOM
+    requestAnimationFrame(() => {
+      focusScreenHeading(targetScreen);
+    });
+
+    // Объявить навигацию скринридеру
+    const title = SCREEN_TITLES[name] || name;
+    announceNavigation(title);
   }
 
   /**

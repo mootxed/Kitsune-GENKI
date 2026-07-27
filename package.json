@@ -33,6 +33,7 @@
   "author": "",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.50.0",
     "@vitest/coverage-v8": "^4.1.10",

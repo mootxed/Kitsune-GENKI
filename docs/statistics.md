@@ -16,14 +16,14 @@
 
 ## Определения и таблицы метрик
 
-| Метрика | Источник данных | Формула | Исключения | Минимальный объём |
-|---|---|---|---|---|
-| **Observed Retention** | `state.reviewEvents` | `успешные первые попытки (Hard/Good/Easy) / все первые попытки` | Undone события, внутрисессионные retries, supplemental practice (`particle-quiz`, `sentence-building`), `system-fallback` | ≥ 1 первая попытка в выбранном периоде |
-| **Review Lapses** | `state.reviewEvents` & `state.srs` | Оценка `Again (0)` на карточках в стадии `Review` (state = 2) | Ошибки при первоначальном изучении (state = 0, 1), внутрисессионные доучивания в Relearning | ≥ 1 review попытка |
-| **Lapse Rate** | `state.reviewEvents` | `число review lapses / общее число review попыток на стадии Review` | Не-review карточки | ≥ 1 review попытка |
-| **Problem Cards Risk Score** | `state.srs` & `state.reviewEvents` | `RECENT_AGAIN(30) + LAPSES*10 + RELEARNING(25) + LOW_STABILITY(15) + LOW_RETENTION(15) + HARDS(5) + HINTS(5)` | `planLocked` карточки | ≥ 1 lapse или risk score ≥ 20 |
-| **Workload (Active Time)** | `state.reviewEvents` | `Σ responseTimeMs` по событиям с фильтрацией выбросов (0–120 000 мс) | Отрицательное время, свернутые вкладки (> 120 с), нечисловые значения | 0 событие |
-| **Repetition Forecast** | `state.srs` & `state.reviewEvents` | Группировка `due` активных FSRS-карточек по локальным дням; `время = due count × median response time` | `suspended` и `planLocked` карточки | 0 карточек |
+| Метрика                      | Источник данных                    | Формула                                                                                                       | Исключения                                                                                                                | Минимальный объём                      |
+| ---------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| **Observed Retention**       | `state.reviewEvents`               | `успешные первые попытки (Hard/Good/Easy) / все первые попытки`                                               | Undone события, внутрисессионные retries, supplemental practice (`particle-quiz`, `sentence-building`), `system-fallback` | ≥ 1 первая попытка в выбранном периоде |
+| **Review Lapses**            | `state.reviewEvents` & `state.srs` | Оценка `Again (0)` на карточках в стадии `Review` (state = 2)                                                 | Ошибки при первоначальном изучении (state = 0, 1), внутрисессионные доучивания в Relearning                               | ≥ 1 review попытка                     |
+| **Lapse Rate**               | `state.reviewEvents`               | `число review lapses / общее число review попыток на стадии Review`                                           | Не-review карточки                                                                                                        | ≥ 1 review попытка                     |
+| **Problem Cards Risk Score** | `state.srs` & `state.reviewEvents` | `RECENT_AGAIN(30) + LAPSES*10 + RELEARNING(25) + LOW_STABILITY(15) + LOW_RETENTION(15) + HARDS(5) + HINTS(5)` | `planLocked` карточки                                                                                                     | ≥ 1 lapse или risk score ≥ 20          |
+| **Workload (Active Time)**   | `state.reviewEvents`               | `Σ responseTimeMs` по событиям с фильтрацией выбросов (0–120 000 мс)                                          | Отрицательное время, свернутые вкладки (> 120 с), нечисловые значения                                                     | 0 событие                              |
+| **Repetition Forecast**      | `state.srs` & `state.reviewEvents` | Группировка `due` активных FSRS-карточек по локальным дням; `время = due count × median response time`        | `suspended` и `planLocked` карточки                                                                                       | 0 карточек                             |
 
 ## Разделение Retention и Accuracy
 
@@ -41,6 +41,7 @@
 ## Учёт Undo и отменённых событий
 
 `getEffectiveReviewEvents(state, options)` производит строгий отбор:
+
 - Исключает записи с `undoneAt !== null`;
 - Убирает дубликаты по `eventId`;
 - Учитывает только завершённые и подтверждённые записи;
@@ -49,6 +50,7 @@
 ## Локальный учебный день (Day Boundary)
 
 Все группировки по дням используют функцию `getStudyDayKey(timestamp, { dayBoundaryHour })` из `src/local-date.js`.
+
 - По умолчанию учитывается локальный часовой пояс пользователя;
 - При наличии сдвига начала учебного дня (например, в 04:00 утра) события, происшедшие до 04:00, автоматически относятся к предыдущему учебному дню.
 

@@ -11,6 +11,7 @@ export function initRouter(handlers) {
 
   // Создаём экземпляр роутера
   router = new Router();
+  window.router = router;
 
   // Регистрируем обработчики рендера для каждого экрана
   router.registerRenderHandler('home', handlers.home);
@@ -50,11 +51,12 @@ export function initRouter(handlers) {
 // ---------- Navigation function ----------
 export function nav(name, opt, skipHistory) {
   if (!router) {
-    console.error('Router not initialized. Call initRouter first.');
+    console.warn('⚡ Роутер не инициализирован для навигации');
     return;
   }
   router.navigate(name, opt, skipHistory);
 }
+window.nav = nav;
 
 // ---------- Update tab indicator ----------
 export function updateTabIndicator() {

@@ -32,6 +32,7 @@ import {
   sessionManager,
   setSessionManager,
 } from './state.js';
+import { announce } from '../../src/a11y-helpers.js';
 
 // Конвертер Хирагана → Катакана
 const HIRAGANA_TO_KATAKANA = {
@@ -1095,6 +1096,7 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
           feedback.className = 'sentence-feedback correct';
           feedback.classList.remove('hidden');
         }
+        announce('Правильно!');
 
         const quality = SRS.qualityFromMistakes(mistakeCount);
         markReviewAnswered(particleCard.id);
@@ -1108,12 +1110,14 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
             feedback.className = 'sentence-feedback incorrect';
             feedback.classList.remove('hidden');
           }
+          announce(`Неправильно. Попробуйте ещё раз. Подсказка: ${correctWords[0]} — первое слово`);
         } else {
           if (feedback) {
-            feedback.innerHTML = `❌ Неправильно.<br>Правильный порядок: <strong>${correctAnswer}</strong>`;
+            feedback.innerHTML = `❌ Неправильно.<br>Правильный порядок: <strong lang="ja">${correctAnswer}</strong>`;
             feedback.className = 'sentence-feedback incorrect';
             feedback.classList.remove('hidden');
           }
+          announce(`Неправильно. Правильный порядок: ${correctAnswer}`);
 
           if (checkBtn) checkBtn.disabled = true;
           if (clearBtn) clearBtn.disabled = true;

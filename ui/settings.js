@@ -75,7 +75,7 @@ export function renderSettings(state, dependencies) {
           Экспорт всех данных обучения, карточек, истории повторений и настроек.
         </div>
         <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px">
-          <input type="checkbox" id="export-include-key" data-testid="export-include-key" />
+          <input type="checkbox" id="export-include-key" aria-label="Включить API-ключ в резервную копию" data-testid="export-include-key" />
           <span>Включить API-ключ в резервную копию</span>
         </label>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
@@ -87,12 +87,12 @@ export function renderSettings(state, dependencies) {
 
     <div class="set-group">
       <div class="set-item row-between">
-        <div><label style="margin:0">🔔 Ежедневное напоминание</label><div class="set-hint">Напомнить продолжить учёбу, если стрик под угрозой.</div></div>
-        <label class="switch"><input type="checkbox" id="set-notify" ${s.notifyEnabled ? 'checked' : ''} data-testid="set-notify" /><span class="slider"></span></label>
+        <div><label for="set-notify" style="margin:0">🔔 Ежедневное напоминание</label><div class="set-hint">Напомнить продолжить учёбу, если стрик под угрозой.</div></div>
+        <label class="switch"><input type="checkbox" id="set-notify" ${s.notifyEnabled ? 'checked' : ''} aria-label="Включить напоминания об учёбе" data-testid="set-notify" /><span class="slider"></span></label>
       </div>
       <div class="set-item">
-        <label>Время напоминания</label>
-        <input type="time" id="set-notify-time" value="${s.notifyTime || '12:00'}" data-testid="set-notify-time" />
+        <label for="set-notify-time">Время напоминания</label>
+        <input type="time" id="set-notify-time" value="${s.notifyTime || '12:00'}" aria-label="Время напоминаний" data-testid="set-notify-time" />
         <div class="set-hint">Напоминание работает, пока приложение открыто или доступно в фоне. Для гарантированных уведомлений при полностью закрытом приложении потребуется серверный Web Push.</div>
       </div>
       <div class="set-item">

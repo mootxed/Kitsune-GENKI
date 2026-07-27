@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#FF7A1A" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#12121E" media="(prefers-color-scheme: dark)" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap"
-      rel="stylesheet"
-    />
+
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🦊</text></svg>"
@@ -624,11 +619,24 @@
 
       <div id="toast" data-testid="toast" aria-live="polite" role="status"></div>
 
+      <!-- ===== ACCESSIBILITY LIVE REGIONS ===== -->
+      <!-- Polite region: navigation announcements, card results, save confirmations -->
+      <div id="a11y-announce" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+      <!-- Alert region: urgent errors only -->
+      <div id="a11y-alert" role="alert" aria-atomic="true" class="sr-only"></div>
+
       <!-- ===== SHOP MODAL ===== -->
-      <div id="shop-modal" class="modal-overlay hidden" data-testid="shop-modal">
+      <div
+        id="shop-modal"
+        class="modal-overlay hidden"
+        data-testid="shop-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shop-modal-title"
+      >
         <div class="modal-content">
           <div class="modal-header">
-            <h2 class="modal-title">🦊 Магазин Кицунэ</h2>
+            <h2 class="modal-title" id="shop-modal-title">🦊 Магазин Кицунэ</h2>
             <button class="modal-close" id="shop-modal-close" aria-label="Закрыть магазин">
               ✕
             </button>
@@ -644,16 +652,22 @@
       </div>
 
       <!-- ===== WORD BOTTOM SHEET ===== -->
-      <div id="word-bottom-sheet" class="bottom-sheet">
+      <div
+        id="word-bottom-sheet"
+        class="bottom-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-kanji"
+      >
         <div class="bottom-sheet-backdrop"></div>
         <div class="bottom-sheet-content">
           <div class="bottom-sheet-handle"></div>
           <div class="bottom-sheet-body">
             <div class="bottom-sheet-header">
-              <h2 id="modal-kanji" class="word-kanji"></h2>
+              <h2 id="modal-kanji" class="word-kanji" lang="ja"></h2>
               <span id="modal-type" class="word-type-badge"></span>
             </div>
-            <p id="modal-reading" class="word-reading"></p>
+            <p id="modal-reading" class="word-reading" lang="ja"></p>
             <p id="modal-translation" class="word-translation"></p>
           </div>
         </div>

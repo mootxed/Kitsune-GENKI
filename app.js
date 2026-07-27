@@ -39,6 +39,8 @@ import {
   shareJSON,
 } from './src/backup-manager.js';
 import { speakJapanese, stopSpeaking } from './src/audio-helper.js';
+import { registerAndManageSW, activateWaitingWorker } from './src/sw-update-manager.js';
+import { announce } from './src/a11y-helpers.js';
 
 // State модуль
 import {
@@ -838,65 +840,96 @@ async function init() {
 }
 
 // ===== SERVICE WORKER РЕГИСТРАЦИЯ =====
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register(`${import.meta.env.BASE_URL}sw.js`)
-      .then((registration) => {
-        // Отслеживание обновлений SW
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
+// Использует src/sw-update-manager.js для чистой координации обновлений.
+// Защита от бесконечного reload loop — через sessionStorage флаг.
+// Автоматического reload при controllerchange НЕТ — только по действию пользователя.
 
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Новая версия доступна!
-              showUpdateNotification(newWorker);
-            }
-          });
-        });
-      })
-      .catch((err) => {
-        console.error('❌ Ошибка регистрации Service Worker:', err);
-      });
+window.addEventListener('load', async () => {
+  const swUrl = `${import.meta.env.BASE_URL}sw.js`;
+  await registerAndManageSW(swUrl, {
+    onUpdateAvailable(waitingWorker) {
+      showUpdateNotification(waitingWorker);
+    },
+    onUpdateActivated() {
+      announce('Приложение обновлено');
+    },
+    onStatusChange(status) {
+      if (status === 'ready') {
+        console.log('[App] Service Worker: приложение готово к офлайн-работе');
+      } else if (status === 'failed') {
+        console.warn('[App] Service Worker: регистрация не удалась — офлайн недоступен');
+      } else if (status === 'unsupported') {
+        console.info('[App] Service Worker не поддерживается этим браузером');
+      } else if (status === 'updated') {
+        console.log('[App] Service Worker: новая версия активирована');
+      }
+    },
   });
+});
 
-  // Автоматическая перезагрузка при активации нового SW
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    window.location.reload();
-  });
-}
-
-// Показ уведомления об обновлении
-function showUpdateNotification(worker) {
+/**
+ * Показывает ненавязчивое уведомление об обновлении с кнопками «Обновить» и «Позже».
+ * Не перезагружает страницу автоматически — только по явному действию пользователя.
+ */
+function showUpdateNotification(waitingWorker) {
   const message = `
-    <span style="flex: 1;">Доступна новая версия приложения</span>
+    <span style="flex: 1;">🔄 Доступна новая версия</span>
     <button id="sw-update-btn" style="
-      margin-left: 12px;
-      padding: 6px 16px;
-      background: var(--accent, #FF7A1A);
+      margin-left: 8px;
+      padding: 6px 14px;
+      background: var(--primary, #FF4B2B);
       border: none;
       border-radius: 8px;
       color: white;
       font-weight: 600;
       cursor: pointer;
-      font-size: 14px;
-    ">
+      font-size: 13px;
+    " aria-label="Обновить приложение до новой версии">
       Обновить
+    </button>
+    <button id="sw-later-btn" style="
+      margin-left: 6px;
+      padding: 6px 10px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 8px;
+      color: inherit;
+      cursor: pointer;
+      font-size: 13px;
+    " aria-label="Обновить позже, продолжить работу">
+      Позже
     </button>
   `;
 
-  toast(message, { html: true, duration: 0 }); // duration: 0 = не исчезает автоматически
+  toast(message, { html: true, duration: 0 }); // duration: 0 = не закрывается автоматически
+  announce('Доступна новая версия приложения');
 
-  // Обработчик клика на кнопку обновления
   setTimeout(() => {
     const updateBtn = document.getElementById('sw-update-btn');
+    const laterBtn = document.getElementById('sw-later-btn');
+
     if (updateBtn) {
       updateBtn.addEventListener('click', () => {
-        worker.postMessage({ type: 'SKIP_WAITING' });
+        // Отправляем SKIP_WAITING ожидающему SW
+        // controllerchange отлавливает sw-update-manager и выполнит reload
+        activateWaitingWorker(waitingWorker);
 
-        // Закрываем toast
+        // Закрываем toast, показываем индикатор загрузки
+        const t = $('#toast');
+        if (t) {
+          t.textContent = 'Обновление...';
+          // toast закроется при перезагрузке страницы
+        }
+      });
+    }
+
+    if (laterBtn) {
+      laterBtn.addEventListener('click', () => {
+        // Пользователь выбрал «Позже» — просто закрываем уведомление
+        // При следующем запуске updatefound снова сработает
         const t = $('#toast');
         if (t) t.classList.remove('show');
+        console.log('[App] SW update deferred by user');
       });
     }
   }, 100);

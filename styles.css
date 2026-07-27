@@ -418,7 +418,20 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 body {
-  font-family: 'Inter', 'Nunito', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+  /* System font stack — no external network dependency.
+   * Inter will be used if already installed (many systems have it).
+   * Noto Sans JP / Yu Gothic / Hiragino provide Japanese glyph support. */
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Noto Sans JP',
+    'Yu Gothic',
+    'Hiragino Kaku Gothic ProN',
+    'Hiragino Sans',
+    sans-serif;
   background: var(--bg);
   color: var(--text);
   overflow: hidden;
@@ -430,6 +443,49 @@ body {
   -ms-user-select: none;
   user-select: none;
 }
+
+/* ===== ACCESSIBILITY UTILITIES ===== */
+
+/* Visually hidden but accessible to screen readers and keyboard */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border-width: 0 !important;
+}
+
+/* ===== GLOBAL FOCUS STYLES ===== */
+/* Rule: Never use bare `outline: none` without a :focus-visible replacement.
+ * We define a global focus indicator and then allow component-level overrides
+ * ONLY when the component provides an equivalent visible indicator. */
+
+*:focus {
+  outline: none; /* Suppress browser default for mouse users */
+}
+
+*:focus-visible {
+  outline: 2px solid var(--primary, #ff4b2b);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Dark theme: use a lighter ring so it's visible on dark backgrounds */
+[data-theme='dark'] *:focus-visible {
+  outline-color: #ff8c42;
+}
+
+/* Ensure focus rings are not clipped by overflow:hidden containers */
+.screen-scroll,
+.modal-content,
+.bottom-sheet-content {
+  overflow: auto; /* Allows outline to remain visible without clipping */
+}
+
 input,
 textarea {
   -webkit-user-select: text;
@@ -1070,7 +1126,6 @@ p {
   }
 }
 
-/* Fallback for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .deck-card.card-1 {
     background: linear-gradient(135deg, #ffc837 0%, #ff8008 100%);
@@ -1110,6 +1165,25 @@ p {
   .btn-primary.btn-study:hover .deck-card.card-3 {
     transform: translate(10px, -6px) rotate(12deg);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Disable decorative animations and transitions globally */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Exception: keep theme transition for readability */
+  /* (Intentionally not overriding --transition-theme since it's instant anyway) */
+
+  /* Particles should not animate */
+  .grid-background,
+  canvas.particles-canvas {
+    display: none;
   }
 }
 

@@ -41,6 +41,10 @@ export default [
         global: 'readonly',
         AbortController: 'readonly',
         AbortSignal: 'readonly',
+        KeyboardEvent: 'readonly',
+        MouseEvent: 'readonly',
+        CustomEvent: 'readonly',
+        Event: 'readonly',
         indexedDB: 'readonly',
         IDBDatabase: 'readonly',
         IDBTransaction: 'readonly',
@@ -93,6 +97,49 @@ export default [
       'no-dupe-keys': 'error',
       'no-control-regex': 'warn',
       'preserve-caught-error': 'off',
+    },
+  },
+  // ===== SERVICE WORKER OVERRIDE =====
+  // public/sw.js runs as a classic script (NOT an ES module) in the SW global scope.
+  // We keep all quality rules active but adjust the environment.
+  {
+    files: ['public/sw.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'script', // SW is a classic script, not an ES module
+      globals: {
+        // Service Worker global scope — these are NOT the same as window.*
+        self: 'readonly',
+        caches: 'readonly',
+        clients: 'readonly',
+        fetch: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
+        URL: 'readonly',
+        Headers: 'readonly',
+        importScripts: 'readonly',
+        skipWaiting: 'readonly',
+        console: 'readonly',
+        Promise: 'readonly',
+        Array: 'readonly',
+        Set: 'readonly',
+        Map: 'readonly',
+        // SW lifecycle events
+        addEventListener: 'readonly',
+        removeEventListener: 'readonly',
+      },
+    },
+    plugins: {
+      prettier,
+    },
+    rules: {
+      'prettier/prettier': 'error',
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-console': 'off',
+      'no-debugger': 'warn',
+      // no-undef is still active, but SW globals are declared above
+      'no-undef': 'error',
+      'no-useless-catch': 'warn',
     },
   },
   {
