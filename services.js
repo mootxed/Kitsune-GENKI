@@ -67,6 +67,28 @@ export const PRIVATE_PROVIDER_ROUTING = Object.freeze({
   zdr: true,
 });
 
+export async function openRouterRequest({ model, messages, key, signal, timeoutMs }) {
+  return fetchWithTimeout(
+    OR_URL,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + key,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': location.origin,
+        'X-Title': 'KotoKitsu',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        provider: PRIVATE_PROVIDER_ROUTING,
+      }),
+      signal,
+    },
+    timeoutMs ?? DEFAULT_TIMEOUT_MS
+  );
+}
+
 async function askSensei(history, settings, options = {}) {
   if (!settings?.openrouterKey) {
     throw new Error('Не задан API-ключ OpenRouter. Откройте Настройки.');
@@ -81,25 +103,16 @@ async function askSensei(history, settings, options = {}) {
   }
   const systemPrompt = getSystemPrompt(settings.userLevel || 'N5');
   const messages = [{ role: 'system', content: systemPrompt }, ...history];
-  const res = await fetchWithTimeout(
-    OR_URL,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + key,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': location.origin,
-        'X-Title': 'KotoKitsu',
-      },
-      body: JSON.stringify({
-        model: settings.model || 'deepseek/deepseek-v4-flash',
-        messages,
-        provider: PRIVATE_PROVIDER_ROUTING,
-      }),
-      signal: options.signal,
-    },
-    options.timeoutMs ?? DEFAULT_TIMEOUT_MS
-  );
+  const model = settings.model || 'deepseek/deepseek-v4-flash';
+
+  const res = await openRouterRequest({
+    model,
+    messages,
+    key,
+    signal: options.signal,
+    timeoutMs: options.timeoutMs,
+  });
+
   if (!res.ok) {
     const t = await res.text();
     throw new Error('OpenRouter ' + res.status + ': ' + t.slice(0, 160));
@@ -181,28 +194,16 @@ ${
 
   const model = settings.model || 'deepseek/deepseek-v4-flash';
 
-  const res = await fetchWithTimeout(
-    OR_URL,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': location.origin,
-        'X-Title': 'KotoKitsu',
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        provider: PRIVATE_PROVIDER_ROUTING,
-      }),
-      signal: options.signal,
-    },
-    options.timeoutMs ?? DEFAULT_TIMEOUT_MS
-  );
+  const res = await openRouterRequest({
+    model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    key,
+    signal: options.signal,
+    timeoutMs: options.timeoutMs,
+  });
 
   if (!res.ok) {
     const t = await res.text();
@@ -258,27 +259,16 @@ ${errorDetails || firstAttemptResult.message}
   ]
 }`;
 
-  const repairRes = await fetchWithTimeout(
-    OR_URL,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': location.origin,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: repairSystemPrompt },
-          { role: 'user', content: repairUserPrompt },
-        ],
-        provider: PRIVATE_PROVIDER_ROUTING,
-      }),
-      signal: options.signal,
-    },
-    options.timeoutMs ?? DEFAULT_TIMEOUT_MS
-  );
+  const repairRes = await openRouterRequest({
+    model,
+    messages: [
+      { role: 'system', content: repairSystemPrompt },
+      { role: 'user', content: repairUserPrompt },
+    ],
+    key,
+    signal: options.signal,
+    timeoutMs: options.timeoutMs,
+  });
 
   if (!repairRes.ok) {
     const t = await repairRes.text();
@@ -311,4 +301,10 @@ ${errorDetails || firstAttemptResult.message}
   throw finalError;
 }
 
-export const API = { askSensei, generateAIStory, SYSTEM_PROMPT, getSystemPrompt };
+export const API = {
+  askSensei,
+  generateAIStory,
+  openRouterRequest,
+  SYSTEM_PROMPT,
+  getSystemPrompt,
+};

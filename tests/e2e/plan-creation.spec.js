@@ -6,12 +6,16 @@ test.describe('E2E Plan Creation & Form Flow', () => {
     await page.evaluate(() => {
       localStorage.clear();
       sessionStorage.clear();
+      if (window.indexedDB) window.indexedDB.deleteDatabase('KitsuneGenkiDB');
       // Set onboarding as completed to open regular plan form directly
       localStorage.setItem(
-        'kitsune_genki_state',
+        'kitsune_state_v1',
         JSON.stringify({
-          onboardingCompleted: true,
+          version: 13,
+          onboarding: { completed: true, schemaVersion: 1 },
           studyPlan: null,
+          chapters: {},
+          settings: { darkMode: 'auto' },
         })
       );
     });

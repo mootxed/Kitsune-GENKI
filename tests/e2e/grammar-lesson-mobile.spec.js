@@ -49,7 +49,7 @@ test.describe('E2E Grammar Lesson & Mobile Responsiveness', () => {
             { eventType: 'review', itemId: 'L1_V026' },
           ],
         };
-        localStorage.setItem('kitsune_genki_state', JSON.stringify(state));
+        localStorage.setItem('kitsune_state_v1', JSON.stringify(state));
       });
 
       // Go to Chapter 1

@@ -302,17 +302,17 @@ export async function importFullProgress(data, preserveApiKey = true) {
       reviewLog: await database.getAll(STORES.REVIEW_LOG),
     };
 
-    // Получаем текущий API-ключ если нужно сохранить
-    let currentApiKey = null;
-    if (preserveApiKey) {
-      currentApiKey = snapshot.state?.settings?.openrouterKey;
-    }
+    // Импортированный API-ключ всегда игнорируется (безопасность):
+    // сохраняем текущий локальный ключ (если preserveApiKey === true) или сбрасываем в пустую строку
+    const currentApiKey = preserveApiKey ? snapshot.state?.settings?.openrouterKey || '' : '';
 
     const stateToImport = data.data?.state ? { ...data.data.state } : null;
 
-    if (stateToImport && preserveApiKey && currentApiKey) {
-      if (!stateToImport.settings) stateToImport.settings = {};
-      stateToImport.settings.openrouterKey = currentApiKey;
+    if (stateToImport) {
+      stateToImport.settings = {
+        ...stateToImport.settings,
+        openrouterKey: currentApiKey,
+      };
     }
 
     const payload = {

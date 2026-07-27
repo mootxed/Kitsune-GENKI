@@ -1,7 +1,7 @@
 /* src/db.js — Promise-based обёртка над IndexedDB с graceful degradation */
 
 const DB_NAME = 'KitsuneGenkiDB';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 // Object Stores
 const STORES = {
@@ -9,6 +9,7 @@ const STORES = {
   CONTENT_CACHE: 'content_cache', // Кэш контента (уроки)
   UI_PREFERENCES: 'ui_preferences', // UI настройки (тема)
   REVIEW_LOG: 'review_log', // Append-only история FSRS review
+  ACTIVE_SESSION: 'active_session', // Незавершённая учебная сессия для авто-восстановления
 };
 
 /**
@@ -171,6 +172,11 @@ class IndexedDBWrapper {
           if (!db.objectStoreNames.contains(STORES.UI_PREFERENCES)) {
             db.createObjectStore(STORES.UI_PREFERENCES, { keyPath: 'key' });
             console.log('[DB] Создан store:', STORES.UI_PREFERENCES);
+          }
+
+          if (!db.objectStoreNames.contains(STORES.ACTIVE_SESSION)) {
+            db.createObjectStore(STORES.ACTIVE_SESSION, { keyPath: 'id' });
+            console.log('[DB] Создан store:', STORES.ACTIVE_SESSION);
           }
 
           let reviewLogStore;

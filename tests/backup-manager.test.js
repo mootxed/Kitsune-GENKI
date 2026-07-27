@@ -196,6 +196,54 @@ describe('Backup Manager Validation & Security', () => {
     expect(updatedState.settings.openrouterKey).toBe('sk-existing-secret-key');
   });
 
+  it('always ignores imported openrouterKey from backup payload if preserveApiKey is false', async () => {
+    // Current state has a key
+    const initial = { ...validState, settings: { openrouterKey: 'sk-existing-secret-key' } };
+    await db.set(STORES.APP_STATE, 'state', initial);
+
+    // Backup to import has an old key
+    const backupToImport = {
+      ...validBackup,
+      data: {
+        ...validBackup.data,
+        state: {
+          ...validState,
+          settings: { openrouterKey: 'sk-imported-old-key' },
+        },
+      },
+    };
+
+    const res = await importFullProgress(backupToImport, false);
+    expect(res.success).toBe(true);
+
+    const updatedState = await db.get(STORES.APP_STATE, 'state');
+    expect(updatedState.settings.openrouterKey).toBe('');
+  });
+
+  it('clears openrouterKey if current state has no key even if imported backup contains one', async () => {
+    // Current state has NO key
+    const initial = { ...validState, settings: { openrouterKey: '' } };
+    await db.set(STORES.APP_STATE, 'state', initial);
+
+    // Backup to import has an old key from prior version
+    const backupToImport = {
+      ...validBackup,
+      data: {
+        ...validBackup.data,
+        state: {
+          ...validState,
+          settings: { openrouterKey: 'sk-imported-old-key' },
+        },
+      },
+    };
+
+    const res = await importFullProgress(backupToImport, true);
+    expect(res.success).toBe(true);
+
+    const updatedState = await db.get(STORES.APP_STATE, 'state');
+    expect(updatedState.settings.openrouterKey).toBe('');
+  });
+
   it('performs rollback to snapshot if atomic transaction fails', async () => {
     // Set initial state
     const initialState = { ...validState, level: 99, xp: 9999 };

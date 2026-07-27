@@ -10,7 +10,7 @@
 public/data/
 ├── content-index.json              # Манифест контента и метаданные глав
 ├── curated-word-examples.json      # Примерные предложения для слов
-├── genki-i-workbook-practice.json  # Упражнения из рабочей тетради
+├── supplemental-practice.json      # Внешние сопроводительные упражнения
 ├── particles-dictionary.json       # Справочник частиц
 ├── lessons/                        # Файлы уроков по главам (genki-lesson-01.json ...)
 ├── grammar-quizzes/                # Грамматические интерактивные тесты

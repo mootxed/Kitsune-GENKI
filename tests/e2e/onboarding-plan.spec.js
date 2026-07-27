@@ -9,6 +9,7 @@ test.describe('E2E Onboarding & Chapter Flow', () => {
     await page.evaluate(() => {
       localStorage.clear();
       sessionStorage.clear();
+      if (window.indexedDB) window.indexedDB.deleteDatabase('KitsuneGenkiDB');
     });
     await page.reload();
 

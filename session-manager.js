@@ -1,4 +1,41 @@
-/* session-manager.js — Intra-session learning logic for SRS */
+/* session-manager.js — Intra-session learning logic for SRS & active session persistence */
+
+import { db, STORES } from './src/db.js';
+import { broadcastSessionStarted, broadcastSessionEnded } from './src/tab-sync.js';
+
+export async function saveSessionToDB(sessionData) {
+  if (!db || typeof db.set !== 'function') return;
+  try {
+    await db.set(STORES.ACTIVE_SESSION, 'current', {
+      id: 'current',
+      data: sessionData,
+      updatedAt: Date.now(),
+    });
+  } catch (err) {
+    console.warn('[SessionManager] Failed to save active session to DB:', err);
+  }
+}
+
+export async function loadSessionFromDB() {
+  if (!db || typeof db.get !== 'function') return null;
+  try {
+    const record = await db.get(STORES.ACTIVE_SESSION, 'current');
+    return record ? record.data : null;
+  } catch (err) {
+    console.warn('[SessionManager] Failed to load active session from DB:', err);
+    return null;
+  }
+}
+
+export async function clearSessionFromDB() {
+  broadcastSessionEnded();
+  if (!db || typeof db.delete !== 'function') return;
+  try {
+    await db.delete(STORES.ACTIVE_SESSION, 'current');
+  } catch (err) {
+    console.warn('[SessionManager] Failed to clear active session from DB:', err);
+  }
+}
 
 /**
  * SessionManager управляет очередью карточек внутри одной сессии обучения.
@@ -309,6 +346,27 @@ class SessionManager {
   getProgress() {
     if (this.stats.total === 0) return 100;
     return Math.round((this.stats.reviewed / this.stats.total) * 100);
+  }
+
+  toSerializableState() {
+    return {
+      queue: this.queue.map((item) => ({
+        card: item.card,
+        forcedMode: item.forcedMode,
+        sessionLapses: item.sessionLapses,
+        isFirstAttempt: item.isFirstAttempt,
+        completed: item.completed,
+      })),
+      stats: { ...this.stats },
+      currentIndex: this.currentIndex,
+    };
+  }
+
+  restoreFromSerializableState(serialized) {
+    if (!serialized || !Array.isArray(serialized.queue)) return;
+    this.queue = serialized.queue;
+    this.stats = { ...serialized.stats };
+    this.currentIndex = serialized.currentIndex || 0;
   }
 }
 

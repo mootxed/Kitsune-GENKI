@@ -6,7 +6,7 @@ import { appendReviewLog, clearReviewLogs } from '../src/review-log.js';
 import { acknowledgeReviewLogs, compactReviewJournal } from '../src/review-journal.js';
 import { normalizeVocabularyLockState } from '../src/vocabulary-unlock-plan.js';
 import { hasMeaningfulUserProgress } from '../src/onboarding-state.js';
-import { isPrimaryTab } from '../src/tab-sync.js';
+import { isPrimaryTab, broadcastStateUpdated } from '../src/tab-sync.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
@@ -333,8 +333,10 @@ const MIGRATIONS = {
 export function defaultState() {
   return {
     version: CURRENT_VERSION,
+    revision: 1,
     updatedAt: Date.now(),
     initialized: false,
+    lastErrors: [],
     onboarding: {
       schemaVersion: 1,
       completed: false,
@@ -774,6 +776,7 @@ function performSave() {
     return Promise.resolve();
   }
   if (state) {
+    state.revision = (Number(state.revision) || 0) + 1;
     state.updatedAt = Date.now();
   }
   compactReviewJournal(state);
@@ -808,14 +811,27 @@ async function persistSnapshot(snapshot, generation) {
   }
   let primaryStatePersisted = false;
   try {
+    const existing = await db.get(STORES.APP_STATE, 'state');
+    if (existing && existing.revision && existing.revision > snapshot.revision) {
+      console.warn(
+        `[Store] Ошибка оптимистичной блокировки: ревизия в БД (${existing.revision}) новее снимка (${snapshot.revision}). Перезапись заблокирована.`
+      );
+      recordDiagnosticError({
+        type: 'CONCURRENCY_CONFLICT',
+        message: `Отклонено сохранение: в БД запись с ревизией ${existing.revision} (текущая: ${snapshot.revision})`,
+      });
+      return;
+    }
+
     console.log(
-      '[Store] Сохранение состояния. XP:',
+      '[Store] Сохранение состояния (rev ' + snapshot.revision + '). XP:',
       snapshot.xp,
       'Chapters:',
       Object.keys(snapshot.chapters).length
     );
     await db.set(STORES.APP_STATE, 'state', snapshot);
     primaryStatePersisted = true;
+    broadcastStateUpdated(snapshot.revision);
     console.log('[Store] ✅ Состояние сохранено в IndexedDB');
 
     const pendingLogs = Array.isArray(snapshot.pendingReviewLogs) ? snapshot.pendingReviewLogs : [];
@@ -831,6 +847,7 @@ async function persistSnapshot(snapshot, generation) {
       acknowledgeReviewLogs(state, acknowledgedIds);
     }
   } catch (e) {
+    recordDiagnosticError(e);
     if (primaryStatePersisted) {
       console.warn('[Store] Review log остаётся в transactional outbox для повтора:', e);
       return;
@@ -1002,4 +1019,41 @@ export function chState(id) {
   if (!state.chapters) state.chapters = {};
   if (!state.chapters[id]) state.chapters[id] = { started: false, checklist: {} };
   return state.chapters[id];
+}
+
+// ---------- Diagnostic & Storage Helpers ----------
+let storagePersistedState = false;
+
+export async function checkAndRequestStoragePersistence() {
+  if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
+    try {
+      storagePersistedState = await navigator.storage.persist();
+      console.log('[Store] Persistent storage result:', storagePersistedState);
+      return storagePersistedState;
+    } catch (e) {
+      console.warn('[Store] Failed to request storage persistence:', e);
+      storagePersistedState = false;
+      return false;
+    }
+  }
+  return false;
+}
+
+export function isStoragePersisted() {
+  return storagePersistedState;
+}
+
+export function recordDiagnosticError(err) {
+  if (!state) return;
+  if (!Array.isArray(state.lastErrors)) state.lastErrors = [];
+  const entry = {
+    timestamp: Date.now(),
+    message: typeof err === 'string' ? err : err?.message || String(err),
+    type: err?.type || 'ERROR',
+    stack: err?.stack ? String(err.stack).slice(0, 300) : null,
+  };
+  state.lastErrors.unshift(entry);
+  if (state.lastErrors.length > 100) {
+    state.lastErrors = state.lastErrors.slice(0, 100);
+  }
 }

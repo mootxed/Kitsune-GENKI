@@ -8,7 +8,7 @@ import {
   commitStudyPlanFromPreferences,
 } from '../src/study-plan-creation.js';
 import { CONTENT_INDEX } from './home.js';
-import { loadWorkbookPracticeData } from '../src/workbook-practice.js';
+import { loadSupplementalPracticeData } from '../src/supplemental-practice.js';
 import { addLocalDays, getTodayDateKey } from '../src/local-date.js';
 
 export function setAppChromeVisibility({ tabbar = true, header = true } = {}) {
@@ -61,7 +61,7 @@ export async function renderOnboarding(state, dependencies = {}) {
 
   let workbookData = null;
   try {
-    workbookData = await loadWorkbookPracticeData();
+    workbookData = await loadSupplementalPracticeData();
   } catch (e) {
     console.warn('[Onboarding] Ошибка загрузки Workbook metadata:', e);
   }

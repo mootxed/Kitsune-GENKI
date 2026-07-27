@@ -8,9 +8,9 @@ import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
 import { normalizeWord } from '../src/normalize-word.js';
 import { normalizeChapterContent } from '../src/chapter-content.js';
 import {
-  loadWorkbookPracticeData,
-  WORKBOOK_PRACTICE_SCHEMA_VERSION,
-} from '../src/workbook-practice.js';
+  loadSupplementalPracticeData,
+  SUPPLEMENTAL_PRACTICE_SCHEMA_VERSION,
+} from '../src/supplemental-practice.js';
 import { db, STORES } from '../src/db.js';
 import { ExamplesDB } from '../src/examples-db.js';
 import { formatDateKey, parseDateKey } from '../src/local-date.js';
@@ -107,7 +107,7 @@ export async function loadLessons() {
   }
   let workbookSchemaVersion = 0;
   try {
-    const workbook = await loadWorkbookPracticeData();
+    const workbook = await loadSupplementalPracticeData();
     workbookSchemaVersion = workbook.schemaVersion;
   } catch (e) {
     console.warn('Не удалось загрузить Workbook metadata:', e);
@@ -122,7 +122,7 @@ export async function loadLessons() {
   const schemaVersionMatches = cachedSchemaVersion === NORMALIZED_WORD_SCHEMA_VERSION;
   const workbookVersionMatches =
     workbookSchemaVersion === 0 ||
-    (cachedWorkbookSchemaVersion === WORKBOOK_PRACTICE_SCHEMA_VERSION &&
+    (cachedWorkbookSchemaVersion === SUPPLEMENTAL_PRACTICE_SCHEMA_VERSION &&
       cachedWorkbookSchemaVersion === workbookSchemaVersion);
 
   const raw = await db.get(STORES.CONTENT_CACHE, 'lessons');

@@ -310,7 +310,7 @@ function renderWorkloadSection(wl) {
   const heatmapCells = (wl.heatmap || [])
     .map(
       (cell) => `
-    <div class="heatmap-cell level-${cell.level}" title="${cell.label}" aria-label="${cell.label}"></div>
+    <div class="heatmap-cell level-${cell.level}" role="img" title="${cell.label}" aria-label="${cell.label}"></div>
   `
     )
     .join('');

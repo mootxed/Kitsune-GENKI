@@ -1,7 +1,10 @@
 /* src/content-loader.js — Ленивая загрузка контента глав (уроки + истории + грамматика) */
 
 // In-memory кэши: не дёргаем сеть повторно за уже загруженными чанками
-import { clearWorkbookPracticeCache, getWorkbookPracticeForChapter } from './workbook-practice.js';
+import {
+  clearSupplementalPracticeCache,
+  getSupplementalPracticeForChapter,
+} from './supplemental-practice.js';
 import { clearGrammarQuizCache, getGrammarQuizForChapter } from './grammar-quiz-content.js';
 
 let indexPromise = null;
@@ -34,7 +37,7 @@ export function loadChapterData(chapterId) {
       const [lessonRes, storyRes, workbookRes, quizRes] = await Promise.allSettled([
         fetchJson(`data/lessons/lesson-${pad(id)}.json`),
         fetchJson(`data/stories/story-${pad(id)}.json`),
-        getWorkbookPracticeForChapter(id),
+        getSupplementalPracticeForChapter(id),
         getGrammarQuizForChapter(id),
       ]);
       if (lessonRes.status === 'rejected') {
@@ -92,6 +95,6 @@ export function loadChapterData(chapterId) {
 export function clearContentCache() {
   indexPromise = null;
   chapterPromises.clear();
-  clearWorkbookPracticeCache();
+  clearSupplementalPracticeCache();
   clearGrammarQuizCache();
 }

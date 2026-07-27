@@ -17,7 +17,7 @@ describe('Service Worker and Vite Build Alignment', () => {
 
     // Проверяем, что LESSON_FILES использует относительный путь без слэша в начале
     expect(swContent).toContain("'data/content-index.json'");
-    expect(swContent).toContain("'data/genki-i-workbook-practice.json'");
+    expect(swContent).toContain("'data/supplemental-practice.json'");
     expect(swContent).toContain('GRAMMAR_QUIZ_FILES');
 
     // Проверяем наличие плейсхолдеров для замещения при сборке

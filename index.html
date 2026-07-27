@@ -379,7 +379,7 @@
             <h3 id="plan-form-title">Создать новый план</h3>
 
             <div class="form-group">
-              <label class="form-label">Дата начала</label>
+              <label class="form-label" for="plan-start-date">Дата начала</label>
               <input
                 type="date"
                 id="plan-start-date"
@@ -401,7 +401,7 @@
             </div>
 
             <div id="plan-days-input" class="form-group">
-              <label class="form-label">Количество учебных дней</label>
+              <label class="form-label" for="plan-total-days">Количество учебных дней</label>
               <input
                 type="number"
                 id="plan-total-days"
@@ -413,7 +413,7 @@
             </div>
 
             <div id="plan-deadline-input" class="form-group hidden">
-              <label class="form-label">Дата дедлайна</label>
+              <label class="form-label" for="plan-deadline-date">Дата дедлайна</label>
               <input
                 type="date"
                 id="plan-deadline-date"
@@ -436,11 +436,12 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">Сколько времени вы готовы заниматься в учебный день?</label>
+              <label class="form-label" id="label-plan-capacity-minutes" for="plan-capacity-minutes">Сколько времени вы готовы заниматься в учебный день?</label>
               <select
                 id="plan-capacity-minutes"
                 class="form-input"
                 data-testid="plan-capacity-select"
+                aria-labelledby="label-plan-capacity-minutes"
               >
                 <option value="15">15 минут</option>
                 <option value="30" selected>30 минут</option>

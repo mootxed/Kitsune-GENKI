@@ -65,13 +65,13 @@ const GRAMMAR_QUIZ_FILES = [
 
 const LESSON_FILES = [
   'data/content-index.json',
-  'data/genki-i-workbook-practice.json',
+  'data/supplemental-practice.json',
   ...GRAMMAR_QUIZ_FILES,
 ];
 
 // Паттерн для динамических chunk-файлов контента
 const CONTENT_CHUNK_RE =
-  /\/data\/((lessons|stories)\/(lesson|story)-\d+|kanji\/.*|grammar-quizzes\/.*|genki-i-workbook-practice)\.json$/;
+  /\/data\/((lessons|stories)\/(lesson|story)-\d+|kanji\/.*|grammar-quizzes\/.*|supplemental-practice)\.json$/;
 
 // Паттерны для определения типа ресурса
 const IMAGE_EXT_RE = /\.(webp|png|jpg|jpeg|gif|svg|ico)(\?.*)?$/i;

@@ -10,26 +10,25 @@ import AxeBuilder from '@axe-core/playwright';
 
 // Helper: prepare app environment for testing
 async function prepareHomeScreen(page) {
-  await page
-    .waitForFunction(() => typeof window.nav === 'function' || document.readyState === 'complete', {
-      timeout: 10000,
-    })
-    .catch(() => {});
   await page.evaluate(() => {
     try {
-      localStorage.setItem('kitsune_onboarding_completed', 'true');
+      if (window.indexedDB) window.indexedDB.deleteDatabase('KitsuneGenkiDB');
+      localStorage.setItem(
+        'kitsune_state_v1',
+        JSON.stringify({
+          version: 13,
+          onboarding: { completed: true, schemaVersion: 1 },
+          settings: { darkMode: 'auto' },
+        })
+      );
     } catch (_e) {
       /* ignore storage error */
     }
+  });
+  await page.reload();
+  await page.evaluate(() => {
     if (typeof window.nav === 'function') {
       window.nav('home');
-    } else {
-      const onboarding = document.getElementById('screen-onboarding');
-      if (onboarding) onboarding.classList.add('hidden');
-      const loader = document.getElementById('app-loader');
-      if (loader) loader.style.display = 'none';
-      const home = document.getElementById('screen-home');
-      if (home) home.classList.remove('hidden');
     }
   });
   await page.waitForSelector('#screen-home:not(.hidden)', { timeout: 5000 }).catch(() => {});

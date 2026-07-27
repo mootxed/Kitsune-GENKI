@@ -170,5 +170,25 @@ describe('OpenRouter Services API', () => {
       expect(capturedBodies[0].provider).toEqual({ data_collection: 'deny', zdr: true });
       expect(capturedBodies[1].provider).toEqual({ data_collection: 'deny', zdr: true });
     });
+
+    it('exports openRouterRequest which injects PRIVATE_PROVIDER_ROUTING', async () => {
+      let capturedBody;
+      globalThis.fetch = vi.fn().mockImplementation(async (url, options) => {
+        capturedBody = JSON.parse(options.body);
+        return {
+          ok: true,
+          json: async () => ({ choices: [{ message: { content: 'OK' } }] }),
+        };
+      });
+
+      await API.openRouterRequest({
+        model: 'test-model',
+        messages: [{ role: 'user', content: 'test' }],
+        key: 'sk-or-v1-1234567890123456789012345678901234567890',
+      });
+
+      expect(capturedBody.provider).toEqual({ data_collection: 'deny', zdr: true });
+      expect(capturedBody.model).toBe('test-model');
+    });
   });
 });

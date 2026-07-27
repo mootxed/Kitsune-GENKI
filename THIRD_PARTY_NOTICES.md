@@ -43,6 +43,7 @@ This document lists the third-party software components, datasets, and media ass
 - **Changes Made**: Individual character JSON stroke files filtered by unique kanji in lesson vocabulary are extracted by `scripts/build-kanji-data.js` and served as individual static files; JSON structure per character is preserved without modification.
 - **Attribution Requirements**: Include applicable LGPL, Arphic PL, Unicode, and OFL notices with distributed data files.
 - **Full License Location**: [public/licenses/hanzi-writer-data-jp/](public/licenses/hanzi-writer-data-jp/)
+- **Note on Upstream License Metadata**: License files in `public/licenses/hanzi-writer-data-jp/` (including `LICENSES.md`, `COPYING.txt`, `ARPHICPL.TXT`, `LGPL.txt`, `OFL.txt`, and `APL`) are copied verbatim from version 0.8.0 of upstream `@k1low/hanzi-writer-data-jp`. Upstream `LICENSES.md` states that `COPYING.txt` contains a Unicode Copyright Notice, while the actual `COPYING.txt` text describes AnimCJK, LGPL, and Arphic PL licenses. License mapping across dataset components is based on upstream package metadata.
 
 ---
 

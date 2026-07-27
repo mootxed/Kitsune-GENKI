@@ -1,12 +1,14 @@
 import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { normalizeChapterContent } from '../src/chapter-content.js';
-import { validateWorkbookPracticeData } from '../src/workbook-practice.js';
+import { validateSupplementalPracticeData } from '../src/supplemental-practice.js';
 
-const workbook = JSON.parse(fs.readFileSync('public/data/genki-i-workbook-practice.json', 'utf8'));
+const supplementalData = JSON.parse(
+  fs.readFileSync('public/data/supplemental-practice.json', 'utf8')
+);
 
 function loadNormalizedChapters() {
-  return workbook.chapters.map(({ chapterId, practice }) => {
+  return supplementalData.chapters.map(({ chapterId, practice }) => {
     const raw = JSON.parse(
       fs.readFileSync(
         `public/data/lessons/lesson-${String(chapterId).padStart(2, '0')}.json`,
@@ -17,9 +19,9 @@ function loadNormalizedChapters() {
   });
 }
 
-describe('GENKI Workbook metadata integration', () => {
+describe('Supplemental practice metadata integration', () => {
   it('validates all 12 chapters, 119 tasks and every grammar reference', () => {
-    const validation = validateWorkbookPracticeData(workbook, loadNormalizedChapters());
+    const validation = validateSupplementalPracticeData(supplementalData, loadNormalizedChapters());
 
     expect(validation).toEqual({
       valid: true,
@@ -30,7 +32,7 @@ describe('GENKI Workbook metadata integration', () => {
     });
   });
 
-  it('preserves stable grammar IDs and safe task metadata', () => {
+  it('preserves stable grammar IDs and safe task metadata with type external-practice', () => {
     const chapter = loadNormalizedChapters()[0];
 
     expect(chapter.grammarTopics[0]).toMatchObject({
@@ -40,6 +42,7 @@ describe('GENKI Workbook metadata integration', () => {
     });
     expect(chapter.practiceTasks[0]).toMatchObject({
       id: 'L01-wb-cg-01',
+      type: 'external-practice',
       section: 'conversation-grammar',
       completionMode: 'manual',
       relatedGrammarIds: ['L1_g1'],

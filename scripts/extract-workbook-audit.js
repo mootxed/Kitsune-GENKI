@@ -11,12 +11,12 @@ const auditMap = {
   files: {},
 };
 
-// 1. Process genki-i-workbook-practice.json
-const practicePath = join(ROOT, 'public/data/genki-i-workbook-practice.json');
+// 1. Process supplemental-practice.json
+const practicePath = join(ROOT, 'public/data/supplemental-practice.json');
 if (existsSync(practicePath)) {
   const practiceData = JSON.parse(readFileSync(practicePath, 'utf8'));
 
-  auditMap.files['genki-i-workbook-practice.json'] = {
+  auditMap.files['supplemental-practice.json'] = {
     source: practiceData.source || null,
     items: {},
   };
@@ -28,7 +28,7 @@ if (existsSync(practicePath)) {
   for (const chapter of practiceData.chapters || []) {
     for (const item of chapter.practice || []) {
       if (item.source || item.page !== undefined) {
-        auditMap.files['genki-i-workbook-practice.json'].items[item.id] = {
+        auditMap.files['supplemental-practice.json'].items[item.id] = {
           source: item.source,
           page: item.page,
         };
@@ -39,7 +39,7 @@ if (existsSync(practicePath)) {
   }
 
   writeFileSync(practicePath, JSON.stringify(practiceData, null, 2), 'utf8');
-  console.log('[extract-workbook-audit] Processed genki-i-workbook-practice.json');
+  console.log('[extract-workbook-audit] Processed supplemental-practice.json');
 }
 
 // 2. Process grammar-quizzes/index.json

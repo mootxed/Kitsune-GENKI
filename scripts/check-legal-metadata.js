@@ -292,12 +292,18 @@ export function checkLegalMetadata() {
         "services.js missing OpenRouter provider settings: data_collection: 'deny' or zdr: true"
       );
     }
-    // Count occurrences of provider: PRIVATE_PROVIDER_ROUTING to ensure all calls (including repair) include it
-    const matches = srv.match(/provider:\s*PRIVATE_PROVIDER_ROUTING/g);
-    if (!matches || matches.length < 3) {
+    if (!srv.includes('export async function openRouterRequest')) {
+      errors.push('services.js must export centralized openRouterRequest helper function');
+    }
+    // Verify that fetchWithTimeout to OR_URL happens strictly inside openRouterRequest function
+    const fetchOrUrlMatches = srv.match(/fetchWithTimeout\s*\(\s*OR_URL/g);
+    if (!fetchOrUrlMatches || fetchOrUrlMatches.length !== 1) {
       errors.push(
-        `services.js must include provider: PRIVATE_PROVIDER_ROUTING in all OpenRouter requests (initial & repair). Found ${matches ? matches.length : 0}`
+        `services.js must make all OpenRouter requests via openRouterRequest helper. Found ${fetchOrUrlMatches ? fetchOrUrlMatches.length : 0} direct fetch calls to OR_URL`
       );
+    }
+    if (!srv.includes('provider: PRIVATE_PROVIDER_ROUTING')) {
+      errors.push('services.js openRouterRequest must specify provider: PRIVATE_PROVIDER_ROUTING');
     }
   }
 

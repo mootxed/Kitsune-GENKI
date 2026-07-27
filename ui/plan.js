@@ -22,7 +22,7 @@ import {
   previewStudyPlanFromPreferences,
   commitStudyPlanFromPreferences,
 } from '../src/study-plan-creation.js';
-import { loadWorkbookPracticeData } from '../src/workbook-practice.js';
+import { loadSupplementalPracticeData } from '../src/supplemental-practice.js';
 import { commitState } from '../state/store.js';
 import {
   pauseStudyPlanCommand,
@@ -97,7 +97,7 @@ export function renderPlan(state, dependencies) {
       // Фиксируем факт редактирования ДО commit — чтобы toast был правильным
       const wasEditing = Boolean(state.studyPlan);
       try {
-        const workbookData = await loadWorkbookPracticeData();
+        const workbookData = await loadSupplementalPracticeData();
         const preferences = collectPlanPreferences(state);
         if (!preferences) return;
 
@@ -180,7 +180,7 @@ export function renderPlan(state, dependencies) {
   if (recalcButton) {
     recalcButton.onclick = async () => {
       if (!state.studyPlan) return;
-      const workbookData = await loadWorkbookPracticeData();
+      const workbookData = await loadSupplementalPracticeData();
       const catalog = buildStudyPlanContentCatalog(
         CONTENT_INDEX,
         workbookData,
@@ -317,7 +317,7 @@ async function updateLivePreview(state) {
   const preferences = collectPlanPreferences(state);
   if (!preferences) return;
 
-  const workbookData = await loadWorkbookPracticeData();
+  const workbookData = await loadSupplementalPracticeData();
   const catalog = buildStudyPlanContentCatalog(
     CONTENT_INDEX,
     workbookData,

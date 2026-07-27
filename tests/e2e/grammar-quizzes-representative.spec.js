@@ -34,6 +34,7 @@ test.describe('Representative E2E Grammar Quizzes (Chapters 2, 6, 8, 12)', () =>
         ({ chId, topId }) => {
           localStorage.clear();
           sessionStorage.clear();
+          if (window.indexedDB) window.indexedDB.deleteDatabase('KitsuneGenkiDB');
 
           const state = {
             version: 13,
@@ -56,7 +57,7 @@ test.describe('Representative E2E Grammar Quizzes (Chapters 2, 6, 8, 12)', () =>
             srs: {},
             reviewEvents: [],
           };
-          localStorage.setItem('kitsune_genki_state', JSON.stringify(state));
+          localStorage.setItem('kitsune_state_v1', JSON.stringify(state));
         },
         { chId: item.chapterId, topId: item.topicId }
       );

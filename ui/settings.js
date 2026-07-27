@@ -59,7 +59,7 @@ export function renderSettings(state, dependencies) {
         <label>🔑 API-ключ OpenRouter</label>
         <input type="password" id="set-key" value="${s.openrouterKey || ''}" placeholder="sk-or-v1-..." data-testid="set-openrouter-key" />
         <div class="set-hint">Получите ключ на openrouter.ai. Хранится только на этом устройстве.</div>
-        <div class="set-warning">⚠️ Ключ хранится в браузере. Не делитесь файлом бэкапа, если используете платный ключ.</div>
+        <div class="set-warning">⚠️ Ключ хранится локально в браузере. Не сохраняйте его на общем или чужом устройстве.</div>
       </div>
       <div class="set-item">
         <label>🤖 Модель</label>
@@ -327,7 +327,6 @@ function showImportConfirmDialog(data, state, dependencies, toastFn) {
   const currentState = state;
   const importState = data.data.state;
 
-  const hasApiKey = importState?.settings?.openrouterKey;
   const hasCurrentApiKey = currentState.settings.openrouterKey;
 
   const overlay = document.createElement('div');
@@ -353,7 +352,7 @@ function showImportConfirmDialog(data, state, dependencies, toastFn) {
           </div>
         </div>
         ${
-          hasApiKey && hasCurrentApiKey
+          hasCurrentApiKey
             ? `
           <label class="import-checkbox">
             <input type="checkbox" id="preserve-api-key" checked />
