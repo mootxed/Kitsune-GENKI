@@ -29,6 +29,10 @@ export function normalizeGrammarState(state) {
 
 export function isFirstVocabularyBatchCompleted(state, chapterId, _dateKey = localDateKey()) {
   const chId = Number(chapterId);
+  const cs = state?.chapters?.[chId];
+  if (cs?.legacyVocabularyCompleted || cs?.checklist?.vocab) return true;
+  if (isPriorKnowledge(state, chId)) return true;
+
   const unlocks = state?.vocabularyUnlocks?.[chId];
   if (!unlocks || typeof unlocks !== 'object') return false;
 
@@ -37,12 +41,14 @@ export function isFirstVocabularyBatchCompleted(state, chapterId, _dateKey = loc
 
   const firstDate = dates[0];
   const progress = getVocabularyBatchProgress(state, chId, firstDate);
-  return progress.total > 0 && progress.isCompleted;
+  if (progress.total > 0 && progress.isCompleted) return true;
+
+  return Boolean(cs?.started && dates.length > 0);
 }
 
 export function getUnlockedGrammarTopicIds(state, chapterId) {
   const chId = Number(chapterId);
-  const unlocks = state?.grammarUnlocks?.[chId] || {};
+  const unlocks = state?.grammarUnlocks?.[chId] || state?.grammarUnlocks?.[String(chId)] || {};
   const topicIds = new Set();
 
   for (const list of Object.values(unlocks)) {
@@ -50,12 +56,13 @@ export function getUnlockedGrammarTopicIds(state, chapterId) {
       list.forEach((id) => topicIds.add(id));
     }
   }
+
   return topicIds;
 }
 
 export function getGrammarTopicStatus(state, chapterId, topicId, _chapterMeta = null) {
   const chId = Number(chapterId);
-  const cs = state?.chapters?.[chId];
+  const cs = state?.chapters?.[chId] || state?.chapters?.[String(chId)];
 
   if (isPriorKnowledge(state, chId) || isGrammarTopicCompleted(cs, topicId)) {
     return 'completed';
@@ -320,21 +327,14 @@ export function completeGrammarTopicWithCheck(
     (Array.isArray(options.chapters)
       ? options.chapters.find((c) => Number(c.id || c.lesson_id) === chId)
       : null);
-  let topicFound = false;
-
-  if (chapterMeta) {
-    const topics = getChapterGrammarTopics(chapterMeta);
-    topicFound = topics.some((t) => t.id === topicId);
-  } else {
-    const isUnlocked = Object.values(state?.grammarUnlocks?.[chId] || {}).some(
-      (arr) => Array.isArray(arr) && arr.includes(topicId)
-    );
-    const isPatternMatch =
-      typeof topicId === 'string' &&
-      (topicId.startsWith(`L${chId}_g`) || topicId.startsWith(`g${chId}_`));
-    topicFound =
-      isUnlocked || isPatternMatch || Boolean(state?.chapters?.[chId]?.checklist?.[topicId]);
-  }
+  const topicFound = chapterMeta
+    ? getChapterGrammarTopics(chapterMeta).some((t) => t.id === topicId)
+    : Object.values(state?.grammarUnlocks?.[chId] || {}).some(
+        (arr) => Array.isArray(arr) && arr.includes(topicId)
+      ) ||
+      (typeof topicId === 'string' &&
+        (topicId.startsWith(`L${chId}_g`) || topicId.startsWith(`g${chId}_`))) ||
+      Boolean(state?.chapters?.[chId]?.checklist?.[topicId]);
 
   if (!topicFound) {
     return { changed: false, completed: false, reason: 'topic-not-found' };

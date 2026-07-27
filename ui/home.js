@@ -159,12 +159,22 @@ export async function loadLessons() {
     }
   } else {
     LESSONS = cachedLessons;
-    // Ensure if we don't have cache but version matches, we set the schema version anyway
-    if (cachedLessons.length === 0 && indexData) {
-      await db.set(STORES.CONTENT_CACHE, 'lesson_version', String(fileVersion));
-      await db.set(STORES.CONTENT_CACHE, 'schema_version', NORMALIZED_WORD_SCHEMA_VERSION);
-      if (workbookSchemaVersion > 0) {
-        await db.set(STORES.CONTENT_CACHE, 'workbook_schema_version', workbookSchemaVersion);
+    if (cachedLessons.length === 0) {
+      try {
+        const { lesson } = await loadChapterData(1);
+        if (lesson) {
+          LESSONS = [normalizeLesson(lesson)];
+          await db.set(STORES.CONTENT_CACHE, 'lessons', LESSONS);
+        }
+      } catch {
+        /* ignore lesson pre-cache error */
+      }
+      if (indexData) {
+        await db.set(STORES.CONTENT_CACHE, 'lesson_version', String(fileVersion));
+        await db.set(STORES.CONTENT_CACHE, 'schema_version', NORMALIZED_WORD_SCHEMA_VERSION);
+        if (workbookSchemaVersion > 0) {
+          await db.set(STORES.CONTENT_CACHE, 'workbook_schema_version', workbookSchemaVersion);
+        }
       }
     }
   }
@@ -289,6 +299,7 @@ async function persistLessonsCache() {
 
 // Ленивая загрузка полного контента главы (урок + история)
 export async function ensureLesson(id) {
+  window.ensureLesson = ensureLesson;
   id = Number(id);
   let entry = loadedChapters.get(id);
   if (entry && entry.story !== undefined) return entry;

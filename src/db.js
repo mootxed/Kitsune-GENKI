@@ -29,7 +29,7 @@ class IndexedDBWrapper {
     if (this.db) {
       try {
         this.db.close();
-      } catch (_) {
+      } catch {
         /* ignore */
       }
     }
@@ -108,7 +108,7 @@ class IndexedDBWrapper {
               if (request.result) {
                 request.result.close();
               }
-            } catch (_) {
+            } catch {
               /* ignore */
             }
             reject(new Error('IndexedDB open timeout'));
@@ -127,7 +127,7 @@ class IndexedDBWrapper {
           if (isSettled) {
             try {
               if (request.result) request.result.close();
-            } catch (_) {
+            } catch {
               /* ignore */
             }
             return;
@@ -536,7 +536,8 @@ class IndexedDBWrapper {
 
         if (Array.isArray(reviewLog)) {
           for (const entry of reviewLog) {
-            const { id: _id, ...cleanEntry } = entry;
+            const cleanEntry = { ...entry };
+            delete cleanEntry.id;
             reviewLogStore.add(cleanEntry);
           }
         }
@@ -731,6 +732,7 @@ export async function initializeDB() {
       db = new InMemoryFallback();
     }
   }
+  window.db = db;
   return db;
 }
 

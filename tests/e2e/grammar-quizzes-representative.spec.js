@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { seedAppState, waitForAppReady } from './helpers/reset-app-state.js';
 
 test.describe('Representative E2E Grammar Quizzes (Chapters 2, 6, 8, 12)', () => {
   const representativeChapters = [
@@ -28,62 +29,97 @@ test.describe('Representative E2E Grammar Quizzes (Chapters 2, 6, 8, 12)', () =>
     test(`Chapter ${item.chapterId}: open topic ${item.topicId}, complete quiz flow, and verify persistence after reload`, async ({
       page,
     }) => {
-      // 1. Setup localStorage state with chapter unlocked & started
-      await page.goto('/');
-      await page.evaluate(
-        ({ chId, topId }) => {
-          localStorage.clear();
-          sessionStorage.clear();
-          if (window.indexedDB) window.indexedDB.deleteDatabase('KitsuneGenkiDB');
+      const chId = item.chapterId;
+      const vocabId = chId === 6 ? 'L6_V002' : `L${chId}_V001`;
+      const today = new Date();
+      const dateKeyUTC = today.toISOString().slice(0, 10);
+      const dateKeyLocal = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const now = Date.now();
 
-          const state = {
-            version: 13,
-            chapters: {
-              [chId]: {
-                started: true,
-                checklist: {},
-              },
-            },
-            grammarUnlocks: {
-              [chId]: {
-                '2026-07-26': [topId],
-              },
-            },
-            vocabularyUnlocks: {
-              [chId]: {
-                '2026-07-26': { itemIds: ['L1_V001'] },
-              },
-            },
-            srs: {},
-            reviewEvents: [],
-          };
-          localStorage.setItem('kitsune_state_v1', JSON.stringify(state));
+      // 1. Setup localStorage & IndexedDB state with chapter unlocked, started, active, & vocab batch present
+      const state = {
+        version: 13,
+        activeChapterId: chId,
+        onboarding: { completed: true, schemaVersion: 1 },
+        studyPlan: {
+          generatedAt: new Date().toISOString(),
+          dailyCapMinutes: 30,
+          targetDate: new Date(Date.now() + 30 * 86400000).toISOString(),
         },
-        { chId: item.chapterId, topId: item.topicId }
-      );
+        chapters: {
+          [chId]: {
+            started: true,
+            startedAt: now,
+            checklist: { [vocabId]: true },
+          },
+        },
+        grammarUnlocks: {
+          [chId]: {
+            [dateKeyUTC]: [item.topicId],
+            [dateKeyLocal]: [item.topicId],
+          },
+        },
+        vocabularyUnlocks: {
+          [chId]: {
+            [dateKeyUTC]: { itemIds: [vocabId] },
+            [dateKeyLocal]: { itemIds: [vocabId] },
+          },
+        },
+        srs: {
+          [`c_${chId}_1`]: {
+            id: `c_${chId}_1`,
+            itemId: vocabId,
+            planLocked: false,
+            reps: 1,
+            state: 1,
+          },
+        },
+        reviewEvents: [{ eventType: 'review', itemId: vocabId }],
+      };
 
-      // 2. Open chapter view
-      await page.goto(`/#chapter/${item.chapterId}`);
-      await page.waitForSelector('#chapter-title');
-      await expect(page.locator('#chapter-title')).toContainText(`Глава ${item.chapterId}`);
+      await seedAppState(page, state);
 
-      // 3. Find and click the grammar topic item
-      const topicCard = page.locator(`[data-kind="grammar"][data-check="${item.topicId}"]`);
-      await expect(topicCard).toBeVisible();
+      // 2. Open chapter view via nav and await lesson preloading
+      await page.evaluate(async (cId) => {
+        if (typeof window.nav === 'function') {
+          window.nav('chapter', cId);
+        }
+        if (typeof window.ensureLesson === 'function') {
+          await window.ensureLesson(cId);
+        }
+      }, chId);
+
+      const chapterTitle = page.locator('#chapter-title');
+      await expect(chapterTitle).toBeVisible();
+      // Wait for ensureLesson to complete and populate the lesson title with colon ":"
+      await expect(chapterTitle).toContainText(':', { timeout: 10000 });
+
+      // 3. Ensure all <details> sections are open programmatically
+      await page.evaluate(() => {
+        document.querySelectorAll('details').forEach((el) => {
+          el.open = true;
+        });
+      });
+
+      // 4. Find grammar topic item and ensure it is not locked before clicking
+      const topicCard = page.locator(`[data-kind="grammar"][data-check="${item.topicId}"]`).first();
+      await expect(topicCard).toBeVisible({ timeout: 10000 });
+      await expect(topicCard).not.toHaveClass(/locked/, { timeout: 10000 });
+
+      await topicCard.scrollIntoViewIfNeeded();
       await topicCard.click();
 
-      // 4. Verify Explanation Screen
+      // 5. Verify Explanation Screen
       const overlay = page.locator('.grammar-lesson-overlay');
-      await expect(overlay).toBeVisible();
+      await expect(overlay).toBeVisible({ timeout: 10000 });
       await expect(page.locator('.grammar-explanation-content')).toBeVisible();
 
-      // 5. Start Quiz
+      // 6. Start Quiz
       const startQuizBtn = page.locator('[data-start-quiz]');
       await expect(startQuizBtn).toBeVisible();
       await startQuizBtn.click();
 
-      // 6. Complete Questions Flow (Single Choice, Fill Blank, Sentence Order)
-      // Loop through all questions in quiz until result screen
+      // 7. Complete Questions Flow (Single Choice, Fill Blank, Sentence Order)
       while (await page.locator('[data-submit-answer]').isVisible()) {
         const singleChoiceOption = page.locator('.grammar-option').first();
         const fillInput = page.locator('.grammar-input');
@@ -109,7 +145,7 @@ test.describe('Representative E2E Grammar Quizzes (Chapters 2, 6, 8, 12)', () =>
         await nextBtn.click();
       }
 
-      // 7. Result Screen
+      // 8. Result Screen
       const completeBtn = page.locator('[data-complete-topic]');
       const retryBtn = page.locator('[data-retry-quiz]');
       const closeBtn = page.locator('[data-close]').first();
@@ -122,14 +158,23 @@ test.describe('Representative E2E Grammar Quizzes (Chapters 2, 6, 8, 12)', () =>
 
       await expect(overlay).toBeHidden();
 
-      // 8. Verify topic is completed or updated on chapter page
-      await page.goto(`/#chapter/${item.chapterId}`);
-      await page.waitForSelector('#chapter-title');
+      // 9. Verify topic is completed or updated on chapter page
+      await page.evaluate((cId) => {
+        if (typeof window.nav === 'function') {
+          window.nav('chapter', cId);
+        }
+      }, chId);
+      await waitForAppReady(page);
 
-      // 9. Reload page and check state persistence
+      // 10. Reload page and check state persistence
       await page.reload();
-      await page.waitForSelector('#chapter-title');
-      await expect(page.locator('#chapter-title')).toContainText(`Глава ${item.chapterId}`);
+      await waitForAppReady(page);
+      await page.evaluate((cId) => {
+        if (typeof window.nav === 'function') {
+          window.nav('chapter', cId);
+        }
+      }, chId);
+      await expect(page.locator('#chapter-title')).toContainText(':', { timeout: 10000 });
     });
   }
 });

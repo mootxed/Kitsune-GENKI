@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { seedAppState } from './helpers/reset-app-state.js';
 
 test.describe('E2E Grammar Lesson & Mobile Responsiveness', () => {
   const viewports = [
@@ -14,56 +15,97 @@ test.describe('E2E Grammar Lesson & Mobile Responsiveness', () => {
       page,
     }) => {
       await page.setViewportSize(vp);
+      const today = new Date();
+      const dateKeyUTC = today.toISOString().slice(0, 10);
+      const dateKeyLocal = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const now = Date.now();
 
-      // Open app and initialize state
-      await page.goto('/');
+      // Setup state with chapter 1 started and vocabulary batch unlocked
+      const state = {
+        version: 13,
+        activeChapterId: 1,
+        onboarding: { completed: true, schemaVersion: 1 },
+        studyPlan: {
+          generatedAt: new Date().toISOString(),
+          dailyCapMinutes: 30,
+          targetDate: new Date(Date.now() + 30 * 86400000).toISOString(),
+        },
+        chapters: {
+          1: {
+            started: true,
+            startedAt: now,
+            checklist: {
+              L1_V017: true,
+              L1_V023: true,
+              L1_V024: true,
+              L1_V025: true,
+              L1_V026: true,
+            },
+          },
+        },
+        grammarUnlocks: {
+          1: {
+            [dateKeyUTC]: ['L1_g1', 'L1_g2', 'L1_g3', 'L1_g4', 'L1_g5'],
+            [dateKeyLocal]: ['L1_g1', 'L1_g2', 'L1_g3', 'L1_g4', 'L1_g5'],
+          },
+        },
+        vocabularyUnlocks: {
+          1: {
+            [dateKeyUTC]: { itemIds: ['L1_V017', 'L1_V023', 'L1_V024', 'L1_V025', 'L1_V026'] },
+            [dateKeyLocal]: { itemIds: ['L1_V017', 'L1_V023', 'L1_V024', 'L1_V025', 'L1_V026'] },
+          },
+        },
+        srs: {
+          c1: { id: 'c1', itemId: 'L1_V017', planLocked: false, reps: 1, state: 1 },
+          c2: { id: 'c2', itemId: 'L1_V023', planLocked: false, reps: 1, state: 1 },
+          c3: { id: 'c3', itemId: 'L1_V024', planLocked: false, reps: 1, state: 1 },
+          c4: { id: 'c4', itemId: 'L1_V025', planLocked: false, reps: 1, state: 1 },
+          c5: { id: 'c5', itemId: 'L1_V026', planLocked: false, reps: 1, state: 1 },
+        },
+        reviewEvents: [
+          { eventType: 'review', itemId: 'L1_V017' },
+          { eventType: 'review', itemId: 'L1_V023' },
+          { eventType: 'review', itemId: 'L1_V024' },
+          { eventType: 'review', itemId: 'L1_V025' },
+          { eventType: 'review', itemId: 'L1_V026' },
+        ],
+      };
+
+      await seedAppState(page, state);
+
+      // Go to Chapter 1 screen via nav
+      await page.evaluate(async () => {
+        if (typeof window.nav === 'function') {
+          window.nav('chapter', 1);
+        }
+        if (typeof window.ensureLesson === 'function') {
+          await window.ensureLesson(1);
+        }
+      });
+      await expect(page.locator('#screen-chapter')).toBeVisible();
+
+      const chapterTitle = page.locator('#chapter-title');
+      await expect(chapterTitle).toBeVisible();
+      await expect(chapterTitle).toContainText(':', { timeout: 10000 });
+
+      // Ensure details are open programmatically
       await page.evaluate(() => {
-        localStorage.clear();
-        sessionStorage.clear();
-        // Initialize state with chapter 1 started and vocabulary introduced
-        const state = {
-          version: 13,
-          chapters: {
-            1: {
-              started: true,
-              checklist: {},
-            },
-          },
-          grammarUnlocks: {
-            1: {
-              '2026-07-26': ['L1_g1', 'L1_g2', 'L1_g3', 'L1_g4', 'L1_g5'],
-            },
-          },
-          srs: {
-            c1: { id: 'c1', itemId: 'L1_V017', planLocked: false, reps: 1, state: 1 },
-            c2: { id: 'c2', itemId: 'L1_V023', planLocked: false, reps: 1, state: 1 },
-            c3: { id: 'c3', itemId: 'L1_V024', planLocked: false, reps: 1, state: 1 },
-            c4: { id: 'c4', itemId: 'L1_V025', planLocked: false, reps: 1, state: 1 },
-            c5: { id: 'c5', itemId: 'L1_V026', planLocked: false, reps: 1, state: 1 },
-          },
-          reviewEvents: [
-            { eventType: 'review', itemId: 'L1_V017' },
-            { eventType: 'review', itemId: 'L1_V023' },
-            { eventType: 'review', itemId: 'L1_V024' },
-            { eventType: 'review', itemId: 'L1_V025' },
-            { eventType: 'review', itemId: 'L1_V026' },
-          ],
-        };
-        localStorage.setItem('kitsune_state_v1', JSON.stringify(state));
+        document.querySelectorAll('details').forEach((el) => {
+          el.open = true;
+        });
       });
 
-      // Go to Chapter 1
-      await page.goto('/#chapter/1');
-      await page.waitForSelector('#chapter-title');
-
       // Click first grammar check card (L1_g1)
-      const grammarCard = page.locator('[data-kind="grammar"][data-check="L1_g1"]');
-      await expect(grammarCard).toBeVisible();
+      const grammarCard = page.locator('[data-kind="grammar"][data-check="L1_g1"]').first();
+      await expect(grammarCard).toBeVisible({ timeout: 10000 });
+      await expect(grammarCard).not.toHaveClass(/locked/, { timeout: 10000 });
+
+      await grammarCard.scrollIntoViewIfNeeded();
       await grammarCard.click();
 
       // Check Explanation screen overlay visible
       const overlay = page.locator('.grammar-lesson-overlay');
-      await expect(overlay).toBeVisible();
+      await expect(overlay).toBeVisible({ timeout: 10000 });
 
       // Verify no horizontal overflow on explanation screen
       const overflowExp = await page.evaluate(

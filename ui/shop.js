@@ -3,6 +3,8 @@
 import { $ } from '../src/utils.js';
 import { syncAvatars, applyStreakSkin, applyCustomTheme } from './shared.js';
 
+import { openModal, closeModal } from '../src/a11y-helpers.js';
+
 // Локальный контекст зависимостей
 let deps = null;
 
@@ -184,9 +186,19 @@ export function renderShop(state, dependencies) {
   const modal = $('#shop-modal');
   if (modal) {
     modal.classList.remove('hidden');
+    openModal(modal, null, {
+      closeOnEscape: true,
+      onClose: () => {
+        closeModal(modal);
+        modal.classList.add('hidden');
+      },
+    });
     const closeBtn = $('#shop-modal-close');
     if (closeBtn) {
-      closeBtn.onclick = () => modal.classList.add('hidden');
+      closeBtn.onclick = () => {
+        closeModal(modal);
+        modal.classList.add('hidden');
+      };
     }
   }
 

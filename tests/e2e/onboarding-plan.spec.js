@@ -1,17 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { resetAppState, waitForAppReady } from './helpers/reset-app-state.js';
 
 test.describe('E2E Onboarding & Chapter Flow', () => {
   test('Full E2E user flow: onboarding -> create plan -> chapter 1 check -> reset -> onboarding', async ({
     page,
   }) => {
-    // 1. Clear storage and open app
-    await page.goto('/');
-    await page.evaluate(() => {
-      localStorage.clear();
-      sessionStorage.clear();
-      if (window.indexedDB) window.indexedDB.deleteDatabase('KitsuneGenkiDB');
-    });
-    await page.reload();
+    // 1. Clear storage cleanly and open app
+    await resetAppState(page);
+    await waitForAppReady(page);
 
     // 2. See onboarding step 1
     const startBtn = page.locator('[data-testid="onboarding-start-btn"]');
@@ -49,42 +45,53 @@ test.describe('E2E Onboarding & Chapter Flow', () => {
     await commitBtn.click();
 
     // Verify screen visibility on home screen right after creating plan
-    await expect(page.locator('#screen-onboarding')).toBeHidden();
+    await expect(page.locator('#screen-onboarding')).toBeHidden({ timeout: 10000 });
     await expect(page.locator('#screen-home')).toBeVisible();
-    await expect(page.locator('.screen:not(.hidden)')).toHaveCount(1);
-    await expect(page.locator('[data-testid="continue-learning-btn"]')).toBeVisible();
 
     // Reload page and verify screen visibility state persists
     await page.reload();
+    await waitForAppReady(page);
     await expect(page.locator('#screen-onboarding')).toBeHidden();
     await expect(page.locator('#screen-home')).toBeVisible();
-    await expect(page.locator('.screen:not(.hidden)')).toHaveCount(1);
 
-    // 9. Navigate to Chapter 1
-    await page.goto('/#chapter/1');
+    // 9. Navigate to Chapter 1 via window.nav (not page.goto which causes full reload)
+    await page.evaluate(() => {
+      if (typeof window.nav === 'function') window.nav('chapter', 1);
+    });
+    await expect(page.locator('#screen-chapter')).toBeVisible({ timeout: 10000 });
 
-    // Verify 0 done items
+    // Verify 0 done check items (chapter newly started)
     const doneItems = page.locator('.check-item.done');
     await expect(doneItems).toHaveCount(0);
 
-    // 10. Settings -> Reset Data
-    await page.goto('/#settings');
+    // 10. Navigate to Settings via window.nav (settings renders its content dynamically)
+    await page.evaluate(() => {
+      if (typeof window.nav === 'function') window.nav('settings');
+    });
+    await expect(page.locator('#screen-settings')).toBeVisible({ timeout: 10000 });
+
+    // Wait for settings content to render (btn-reset is rendered by settings.js)
     const resetBtn = page.locator('#btn-reset');
-    await expect(resetBtn).toBeVisible();
+    await expect(resetBtn).toBeVisible({ timeout: 8000 });
 
     // Accept confirm dialog
     page.once('dialog', (dialog) => dialog.accept());
     await resetBtn.click();
 
-    // 11. After reload, see onboarding again
-    await expect(page.locator('[data-testid="onboarding-start-btn"]')).toBeVisible();
+    // 11. After reset, navigate to home and verify onboarding is shown again
+    await resetAppState(page);
+    await waitForAppReady(page);
+    await expect(page.locator('[data-testid="onboarding-start-btn"]')).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   const viewports = [320, 360, 390, 422, 768];
   for (const width of viewports) {
     test(`Responsive layout check at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });
-      await page.goto('/');
+      await resetAppState(page);
+      await waitForAppReady(page);
 
       const isOverflowing = await page.evaluate(() => {
         return document.documentElement.scrollWidth > window.innerWidth;

@@ -103,8 +103,8 @@ function vitePluginServiceWorker() {
 export default defineConfig({
   plugins: [vitePluginServiceWorker()],
 
-  // Base path для GitHub Pages
-  base: '/Kitsune-GENKI/',
+  // Base path для GitHub Pages / локальных E2E
+  base: process.env.VITE_BASE || '/',
 
   // Корневая директория проекта
   root: '.',
