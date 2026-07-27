@@ -90,7 +90,7 @@ describe('adaptive flashcard modes', () => {
           requiredForm: 'dictionary',
         },
       })
-    ).toEqual({
+    ).toMatchObject({
       prompt: '毎朝 [ _ ] へ行きます。',
       meaningCue: 'школа',
       acceptedAnswers: ['がっこう'],

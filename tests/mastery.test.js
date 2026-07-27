@@ -178,7 +178,7 @@ describe('derived mastery depth', () => {
       applicableSkills: [SKILLS.RECOGNITION, SKILLS.RECALL],
     });
     expect(result.productionSkill).toBeNull();
-    expect(result.productionStatus).toBe('Production пока не проверен');
+    expect(result.productionStatus).toBe('Production-задание пока недоступно');
     expect(result.level).toBe(MASTERY_LEVELS.CONFIDENT);
     expect(result.score).toBe(70);
   });

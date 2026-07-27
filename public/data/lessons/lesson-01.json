@@ -146,7 +146,18 @@
         "kanji": "私",
         "writing": "わたし",
         "romaji": "watashi",
-        "translation": "я (нейтральная форма)"
+        "translation": "я (нейтральная форма)",
+        "contextProduction": {
+          "id": "L01_V017_cp_01",
+          "focusItemId": "L1_V017",
+          "prompt": "Скажите по-японски: «Я — Ямада».",
+          "meaningCue": "Представьтесь с помощью わたし, тематической частицы は и вежливой связки.",
+          "acceptedAnswers": ["わたしはやまだです", "私は山田です"],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "affirmative" },
+          "grammarTopicIds": ["L01_g01"],
+          "hint": "わたしは〜です",
+          "explanation": "Простейшее представление с помощью わたしは и фамилии с です."
+        }
       },
       {
         "id": "L1_V018",
@@ -162,7 +173,18 @@
         "kanji": "友達",
         "writing": "ともだち",
         "romaji": "tomodachi",
-        "translation": "друг"
+        "translation": "друг",
+        "contextProduction": {
+          "id": "L01_V019_cp_01",
+          "focusItemId": "L1_V019",
+          "prompt": "Скажите по-японски: «Я друг Ямады».",
+          "meaningCue": "Используйте притяжательную частицу の.",
+          "acceptedAnswers": ["わたしはやまださんのともだちです", "私は山田さんの友達です", "私は山田の友達です"],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "affirmative" },
+          "grammarTopicIds": ["L01_g03"],
+          "hint": "〜のともだち",
+          "explanation": "Принадлежность («друг Ямады») выражается притяжательной частицей の."
+        }
       },
       {
         "id": "L1_V020",
@@ -197,7 +219,31 @@
         "kanji": "学生",
         "writing": "がくせい",
         "romaji": "gakusee",
-        "translation": "студент"
+        "translation": "студент",
+        "contextProduction": [
+          {
+            "id": "L01_V023_cp_01",
+            "focusItemId": "L1_V023",
+            "prompt": "Скажите по-японски: «Я студент».",
+            "meaningCue": "Используйте слово «студент» и вежливую связку.",
+            "acceptedAnswers": ["わたしはがくせいです", "私は学生です"],
+            "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "affirmative" },
+            "grammarTopicIds": ["L01_g01"],
+            "hint": "〜は〜です",
+            "explanation": "Тема わたし выделяется частицей は, предикат がくせい завершается вежливой связкой です."
+          },
+          {
+            "id": "L01_V023_cp_02",
+            "focusItemId": "L1_V023",
+            "prompt": "Спросите по-японски: «Вы студент?»",
+            "meaningCue": "Используйте местоимение «вы», слово «студент» и вопросительную частицу.",
+            "acceptedAnswers": ["あなたはがくせいですか", "あなたは学生ですか"],
+            "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "interrogative" },
+            "grammarTopicIds": ["L01_g02"],
+            "hint": "〜は〜ですか",
+            "explanation": "Вопрос формируется добавлением частицы か в конец предложения."
+          }
+        ]
       },
       {
         "id": "L1_V024",
@@ -205,7 +251,23 @@
         "kanji": "高校生",
         "writing": "こうこうせい",
         "romaji": "kookoosee",
-        "translation": "старшеклассник (школьник из высшей школы)"
+        "translation": "старшеклассник (школьник из высшей школы)",
+        "contextProduction": {
+          "id": "L01_V024_cp_01",
+          "focusItemId": "L1_V024",
+          "prompt": "Скажите по-японски: «Я не старшеклассник».",
+          "meaningCue": "Используйте отрицательную вежливую форму じゃありません / ではありません.",
+          "acceptedAnswers": [
+            "わたしはこうこうせいじゃありません",
+            "わたしはこうこうせいではありません",
+            "私は高校生じゃありません",
+            "私は高校生ではありません"
+          ],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "negative" },
+          "grammarTopicIds": ["L01_g01"],
+          "hint": "〜じゃありません",
+          "explanation": "Отрицательная вежливая форма связки です — じゃありません или ではありません."
+        }
       },
       {
         "id": "L1_V025",
@@ -213,7 +275,18 @@
         "kanji": "留学生",
         "writing": "りゅうがくせい",
         "romaji": "ryuugakusee",
-        "translation": "студент по обмену, иностранный студент"
+        "translation": "студент по обмену, иностранный студент",
+        "contextProduction": {
+          "id": "L01_V025_cp_01",
+          "focusItemId": "L1_V025",
+          "prompt": "Скажите по-японски: «Я студент по обмену».",
+          "meaningCue": "Используйте слово りゅうがくせい в вежливой форме.",
+          "acceptedAnswers": ["わたしはりゅうがくせいです", "私は留学生です"],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "affirmative" },
+          "grammarTopicIds": ["L01_g01"],
+          "hint": "〜は〜です",
+          "explanation": "Описывает статус 留学生 (りゅうがくせい) с помощью は и です."
+        }
       },
       {
         "id": "L1_V026",
@@ -221,7 +294,18 @@
         "kanji": "先生",
         "writing": "せんせい",
         "romaji": "sensee",
-        "translation": "учитель, преподаватель"
+        "translation": "учитель, преподаватель",
+        "contextProduction": {
+          "id": "L01_V026_cp_01",
+          "focusItemId": "L1_V026",
+          "prompt": "Скажите по-японски: «Я учитель».",
+          "meaningCue": "Используйте слово «учитель» в утвердительном вежливом предложении.",
+          "acceptedAnswers": ["わたしはせんせいです", "私は先生です"],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "affirmative" },
+          "grammarTopicIds": ["L01_g01"],
+          "hint": "〜は〜です",
+          "explanation": "Существительное 先生 (せんせい) связывается с тема-маркером は и связкой です."
+        }
       },
       {
         "id": "L1_V027",
@@ -230,7 +314,23 @@
         "writing": "～さい",
         "romaji": "... sai",
         "translation": "... лет",
-        "note": "... лет (возраст)"
+        "note": "... лет (возраст)",
+        "contextProduction": {
+          "id": "L01_V027_cp_01",
+          "focusItemId": "L1_V027",
+          "prompt": "Скажите по-японски: «Мне 19 лет».",
+          "meaningCue": "Используйте числительное じゅうきゅう и счётный суффикс さい.",
+          "acceptedAnswers": [
+            "わたしはじゅうきゅうさいです",
+            "私は十九歳です",
+            "私は19歳です",
+            "私は十九さいです"
+          ],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "affirmative" },
+          "grammarTopicIds": ["L01_g04"],
+          "hint": "十九さいです",
+          "explanation": "Возраст образуется с помощью счётчика さい после числа じゅうきゅう (19)."
+        }
       },
       {
         "id": "L1_V028",
@@ -391,7 +491,18 @@
         "kanji": "日本",
         "writing": "にほん",
         "romaji": "Nihon",
-        "translation": "Япония"
+        "translation": "Япония",
+        "contextProduction": {
+          "id": "L01_V047_cp_01",
+          "focusItemId": "L1_V047",
+          "prompt": "Скажите по-японски: «Я японец (человек из Японии)».",
+          "meaningCue": "Добавьте суффикс じん к названию страны.",
+          "acceptedAnswers": ["わたしはにほんじんです", "私は日本人です"],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "affirmative" },
+          "grammarTopicIds": ["L01_g01"],
+          "hint": "にほんじん",
+          "explanation": "Национальность образуется добавлением じん к названию страны にほん."
+        }
       },
       {
         "id": "L1_V048",
@@ -399,7 +510,18 @@
         "kanji": "アメリカ",
         "writing": "アメリカ",
         "romaji": "Amerika",
-        "translation": "Америка"
+        "translation": "Америка",
+        "contextProduction": {
+          "id": "L01_V048_cp_01",
+          "focusItemId": "L1_V048",
+          "prompt": "Спросите по-японски: «Мэри американка?»",
+          "meaningCue": "Постройте вопросительное предложение с катаканой アメリカ人.",
+          "acceptedAnswers": ["メアリーさんはアメリカじんですか", "メアリーさんはアメリカ人ですか"],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "interrogative" },
+          "grammarTopicIds": ["L01_g02"],
+          "hint": "〜は〜ですか",
+          "explanation": "Вопросительная частица か ставится в самый конец предложения после です."
+        }
       },
       {
         "id": "L1_V049",
@@ -407,7 +529,18 @@
         "kanji": "ロシア",
         "writing": "ロシア",
         "romaji": "Roshia",
-        "translation": "Россия"
+        "translation": "Россия",
+        "contextProduction": {
+          "id": "L01_V049_cp_01",
+          "focusItemId": "L1_V049",
+          "prompt": "Скажите по-японски: «Я родом из России (я россиянин)».",
+          "meaningCue": "Используйте суффикс じん со словом ロシア.",
+          "acceptedAnswers": ["わたしはロシアじんです", "私はロシア人です"],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "affirmative" },
+          "grammarTopicIds": ["L01_g01"],
+          "hint": "ロシアじんです",
+          "explanation": "Суффикс じん с названием страны ロシア образует национальность ロシア人."
+        }
       },
       {
         "id": "L1_V050",
@@ -415,7 +548,18 @@
         "kanji": "会社員",
         "writing": "かいしゃいん",
         "romaji": "kaishain",
-        "translation": "служащий, офисный работник"
+        "translation": "служащий, офисный работник",
+        "contextProduction": {
+          "id": "L01_V050_cp_01",
+          "focusItemId": "L1_V050",
+          "prompt": "Скажите по-японски: «Я офисный работник».",
+          "meaningCue": "Составьте вежливое утвердительное предложение со словом かいしゃいん.",
+          "acceptedAnswers": ["わたしはかいしゃいんです", "私は会社員です"],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "affirmative" },
+          "grammarTopicIds": ["L01_g01"],
+          "hint": "〜は〜です",
+          "explanation": "Конструкция XはYです со словом 会社員 (かいしゃいん)."
+        }
       },
       {
         "id": "L1_V051",
@@ -423,7 +567,18 @@
         "kanji": "大学",
         "writing": "だいがく",
         "romaji": "daigaku",
-        "translation": "университет"
+        "translation": "университет",
+        "contextProduction": {
+          "id": "L01_V051_cp_01",
+          "focusItemId": "L1_V051",
+          "prompt": "Скажите по-японски: «Преподаватель университета».",
+          "meaningCue": "Свяжите существительные だいがく и せんせい притяжательной частицей.",
+          "acceptedAnswers": ["だいがくのせんせい", "大学の先生", "だいがくのせんせいです", "大学の先生です"],
+          "requiredForm": { "type": "noun_phrase", "politeness": "polite", "tense": "non-past", "polarity": "affirmative" },
+          "grammarTopicIds": ["L01_g03"],
+          "hint": "〜の〜",
+          "explanation": "Частица の связывает определительное существительное Университет с определяемым Преподаватель."
+        }
       },
       {
         "id": "L1_V052",
@@ -431,7 +586,22 @@
         "kanji": "専門",
         "writing": "せんもん",
         "romaji": "senmon",
-        "translation": "специальность, специализация"
+        "translation": "специальность, специализация",
+        "contextProduction": {
+          "id": "L01_V052_cp_01",
+          "focusItemId": "L1_V052",
+          "prompt": "Скажите по-японски: «Моя специальность — японский язык».",
+          "meaningCue": "Свяжите にほんご и せんもん притяжательной частицей の.",
+          "acceptedAnswers": [
+            "わたしのおせんもんはにほんごです",
+            "わたしのせんもんはにほんごです",
+            "私の専門は日本語です"
+          ],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "affirmative" },
+          "grammarTopicIds": ["L01_g03"],
+          "hint": "わたしの〜は〜です",
+          "explanation": "Конструкция わたしの専門 (моя специальность) は 日本語 (японский язык) です."
+        }
       },
       {
         "id": "L1_V053",
@@ -439,7 +609,18 @@
         "kanji": "何",
         "writing": "なん / なに",
         "romaji": "nan / nani",
-        "translation": "что? (вопросительное слово)"
+        "translation": "что? (вопросительное слово)",
+        "contextProduction": {
+          "id": "L01_V053_cp_01",
+          "focusItemId": "L1_V053",
+          "prompt": "Спросите по-японски: «Что это?»",
+          "meaningCue": "Используйте указательное местоимение これ и вопросительное слово なん.",
+          "acceptedAnswers": ["これはなんですか", "何ですか", "これは何ですか"],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "interrogative" },
+          "grammarTopicIds": ["L01_g02"],
+          "hint": "これは何ですか",
+          "explanation": "Классический вопрос «Что это?» со словом 何 (なん) и вопросительной частицей か."
+        }
       },
       {
         "id": "L1_V054",
@@ -455,7 +636,23 @@
         "kanji": "電話番号",
         "writing": "でんわばんごう",
         "romaji": "denwabangoo",
-        "translation": "телефонный номер"
+        "translation": "телефонный номер",
+        "contextProduction": {
+          "id": "L01_V055_cp_01",
+          "focusItemId": "L1_V055",
+          "prompt": "Спросите по-японски: «Какой у вас номер телефона?»",
+          "meaningCue": "Используйте вопросительное слово なん и притяжательную частицу の.",
+          "acceptedAnswers": [
+            "でんわばんごうなんですか",
+            "でんわばんごうはなんですか",
+            "電話番号は何ですか",
+            "電話番号はなんですか"
+          ],
+          "requiredForm": { "type": "copula", "politeness": "polite", "tense": "non-past", "polarity": "interrogative" },
+          "grammarTopicIds": ["L01_g02"],
+          "hint": "〜は何ですか",
+          "explanation": "Вопрос про номер телефона использует вопросительное слово 何 (なん) и частицу か."
+        }
       },
       {
         "id": "L1_V056",

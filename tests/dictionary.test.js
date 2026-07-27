@@ -431,10 +431,12 @@ describe('Dictionary UI System', () => {
         transitivity: 'transitive',
         note: 'Обычный глагол',
         contextProduction: {
+          id: 'L01_V002_cp_01',
+          focusItemId: 'L1_V002',
           prompt: '昨日寿司を_。',
           meaningCue: 'съел',
-          requiredForm: 'past',
           acceptedAnswers: ['たべた'],
+          requiredForm: 'past',
         },
       };
 

@@ -28,7 +28,8 @@ export function ensureVocabularySkillCards(appState, word, options = {}) {
     vocabularySkillsReadyForIntroduction(
       word,
       appState.reviewEvents || [],
-      appState.masteryArchive?.[word.id]
+      appState.masteryArchive?.[word.id],
+      options.now
     )
   );
 

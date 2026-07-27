@@ -1,5 +1,7 @@
 // ui/flashcards/card-modes.js - Рендеринг различных режимов практики карточек
 
+import { selectProductionTask } from '../../src/task-selection.js';
+import { evaluateProductionAnswer } from '../../src/production-context.js';
 import { $, $$ } from '../../src/utils.js';
 import { wordById, isWordUnlocked, getUnlockedParticles } from '../../src/srs-helpers.js';
 import { SRS } from '../../srs.js';
@@ -16,7 +18,6 @@ import {
 } from '../../src/particle-templates.js';
 import {
   CARD_MODES,
-  shortT,
   shuffleArray,
   buildMultipleChoiceOptions,
   generateWordContext,
@@ -26,7 +27,6 @@ import {
   flashQueue,
   flashIdx,
   setFlashIdx,
-  flashRevealed,
   setFlashRevealed,
   flashCtx,
   sessionManager,
@@ -494,24 +494,248 @@ export function renderContextSentenceMode(word, state, dependencies, renderFlash
   );
 }
 
+function formatRequiredForm(rf) {
+  if (!rf) return '';
+  if (typeof rf === 'string') return rf;
+  const parts = [];
+  if (rf.politeness === 'polite') parts.push('Вежливая');
+  else if (rf.politeness === 'plain') parts.push('Простая');
+
+  if (rf.polarity === 'affirmative') parts.push('Утверждение');
+  else if (rf.polarity === 'negative') parts.push('Отрицание');
+  else if (rf.polarity === 'interrogative') parts.push('Вопрос');
+
+  if (rf.tense === 'past') parts.push('Прошедшее');
+  else if (rf.tense === 'non-past') parts.push('Наст./Буд.');
+
+  if (rf.type === 'copula') parts.push('Связка (です)');
+  else if (rf.type === 'verb') parts.push('Глагол');
+  else if (rf.type === 'i-adj') parts.push('い-прил.');
+  else if (rf.type === 'na-adj') parts.push('な-прил.');
+
+  return parts.join(' · ') || JSON.stringify(rf);
+}
+
 export function renderContextProductionMode(word, state, dependencies, renderFlashFn) {
-  const context = generateWordContext(word);
-  if (!context) {
-    throw new Error(`[Production] Для ${word.id} нет структурированного задания`);
+  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav, markActivity } =
+    dependencies;
+
+  const currentCard = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+  const task = selectProductionTask(word, currentCard, state.reviewEvents || []);
+
+  if (!task) {
+    console.warn(`[Production] Для ${word.id} нет структурированного задания`);
+    if (sessionManager) {
+      sessionManager.skipCard(currentCard?.id);
+    } else {
+      setFlashIdx(flashIdx + 1);
+    }
+    if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
+    return;
   }
-  renderTypingMode(
-    word,
-    state,
-    dependencies,
-    {
+
+  const body = $('#srs-body');
+  let isChecked = false;
+  let typingMistakes = 0;
+  let hintUsed = false;
+
+  const acceptedAnswers = task.acceptedAnswers;
+  const requiredFormLabel = formatRequiredForm(task.requiredForm);
+
+  const tabbar = document.querySelector('.tabbar');
+  if (tabbar) tabbar.style.display = 'none';
+
+  const keyboardLetters = generateSrsKeyboard(acceptedAnswers);
+
+  body.innerHTML = `
+    <div class="flash-wrap">
+      <div class="flash-top">
+        <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
+        <button class="btn-ghost" id="flash-exit">Выйти</button>
+      </div>
+      <div class="typing-mode-container cp-mode-container">
+        <div class="typing-prompt cp-prompt-block">
+          <div class="flash-cat">Активное воспроизведение</div>
+          <p class="cp-prompt">${task.prompt}</p>
+          ${task.meaningCue ? `<p class="cp-meaning-cue">${task.meaningCue}</p>` : ''}
+          ${requiredFormLabel ? `<div class="cp-required-form-badge">Форма: <strong>${requiredFormLabel}</strong></div>` : ''}
+        </div>
+        <input 
+          type="text" 
+          class="typing-input" 
+          id="typing-input"
+          autocomplete="off"
+          placeholder="Введите фразу по-японски..."
+        />
+        <div class="srs-keyboard-container" id="srs-keyboard">
+          ${keyboardLetters
+            .map(
+              (letter) => `
+            <button class="srs-kana-key" data-letter="${letter}">
+              <span class="key-hira">${letter}</span>
+              <span class="key-kata">${hiraganaToKatakana(letter)}</span>
+            </button>
+          `
+            )
+            .join('')}
+        </div>
+        <div class="srs-keyboard-actions">
+          <button class="srs-keyboard-backspace" id="srs-backspace">⌫ Стереть</button>
+          <button class="btn-primary typing-check" id="typing-check">Проверить</button>
+        </div>
+        <div id="typing-hint-message" class="typing-hint hidden" style="margin-top: 8px;"></div>
+      </div>
+    </div>`;
+
+  const reviewCardId = (sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx])?.id;
+  startReviewTiming(reviewCardId || word.id, CARD_MODES.CONTEXT_PRODUCTION);
+
+  const input = $('#typing-input');
+  const checkBtn = $('#typing-check');
+  const hintMessage = $('#typing-hint-message');
+  const backspaceBtn = $('#srs-backspace');
+
+  $$('.srs-kana-key').forEach((btn) => {
+    btn.onclick = () => {
+      if (isChecked) return;
+      input.value += btn.dataset.letter;
+    };
+  });
+
+  if (backspaceBtn) {
+    backspaceBtn.onclick = () => {
+      if (isChecked) return;
+      input.value = input.value.slice(0, -1);
+    };
+  }
+
+  const handleRating = (quality) => {
+    const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+
+    const result = submitReview(card, quality, state, {
       mode: CARD_MODES.CONTEXT_PRODUCTION,
-      category: 'Активное воспроизведение',
-      question: context.prompt,
-      hint: `${context.meaningCue} · форма: ${context.requiredForm}`,
-      acceptedAnswers: context.acceptedAnswers,
-    },
-    renderFlashFn
-  );
+      taskId: task.id,
+      mistakes: typingMistakes,
+      hintUsed,
+    });
+    if (!sessionManager) setFlashIdx(flashIdx + 1);
+
+    if (result?.xpEligible) {
+      appAddXP(XP_CARD);
+    }
+    save(true);
+    markActivity();
+    setFlashRevealed(false);
+    if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
+    updateSrsBadge();
+  };
+
+  const handleCheck = () => {
+    if (isChecked) return;
+
+    const evaluation = evaluateProductionAnswer(input.value, task);
+
+    if (evaluation.correct) {
+      input.classList.add('correct');
+      input.classList.remove('incorrect', 'shake-error');
+      isChecked = true;
+
+      const quality = typingMistakes === 0 && !hintUsed ? SRS.Quality.Good : SRS.Quality.Again;
+      markReviewAnswered(reviewCardId || word.id);
+
+      setTimeout(() => {
+        handleRating(quality);
+      }, 500);
+    } else {
+      typingMistakes++;
+
+      if (typingMistakes === 1) {
+        input.classList.add('shake-error', 'incorrect');
+        input.classList.remove('correct');
+
+        setTimeout(() => {
+          input.classList.remove('shake-error');
+        }, 500);
+
+        hintUsed = true;
+        const hintText = task.hint || `Начинается на "${acceptedAnswers[0][0]}"`;
+        hintMessage.textContent = `💡 Подсказка: ${hintText}`;
+        hintMessage.style.color = 'var(--orange)';
+        hintMessage.classList.remove('hidden');
+
+        isChecked = false;
+      } else {
+        input.classList.add('incorrect');
+        input.classList.remove('correct', 'shake-error');
+        input.disabled = true;
+        if (checkBtn) checkBtn.disabled = true;
+        isChecked = true;
+
+        const allAnswers = acceptedAnswers.join(' / ');
+        const expText = task.explanation
+          ? `<p style="margin-top: 4px; font-size: 0.9em; color: var(--text-muted);">${task.explanation}</p>`
+          : '';
+        hintMessage.innerHTML = `<p style="color: var(--danger); margin: 8px 0;">❌ Неправильно</p><p style="margin: 4px 0;">Правильный ответ: <strong style="color: var(--primary);">${allAnswers}</strong></p>${expText}`;
+        hintMessage.classList.remove('hidden');
+        markReviewAnswered(reviewCardId || word.id);
+
+        setTimeout(() => {
+          handleRating(SRS.Quality.Again);
+        }, 1200);
+      }
+    }
+  };
+
+  if (checkBtn) checkBtn.onclick = handleCheck;
+
+  if (input) {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleCheck();
+      }
+    });
+  }
+
+  const exitBtn = $('#flash-exit');
+  if (exitBtn) {
+    exitBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      const tabbar = document.querySelector('.tabbar');
+      if (tabbar) tabbar.style.display = '';
+
+      const srsHeader = document.querySelector('#screen-srs .app-header');
+      if (srsHeader) srsHeader.style.display = '';
+
+      const tabsContainer = document.getElementById('srs-tabs-container');
+      if (tabsContainer) tabsContainer.classList.remove('hidden');
+
+      if (sessionManager) {
+        const stats = sessionManager.getStats();
+        if (stats.reviewed > 0) {
+          showCompletionScreen({
+            title: 'おつかれさま!',
+            subtitle: 'Хорошая работа!',
+            desc: `Вы повторили часть карточек`,
+            theme: 'success',
+            rewards: [
+              { icon: '📚', label: `${stats.reviewed} карточек` },
+              { icon: '✨', label: `${stats.perfect} без ошибок` },
+              { icon: '🪙', label: `+${stats.reviewed} XP` },
+            ],
+            onContinue: () => {
+              setSessionManager(null);
+              flashCtx ? nav('chapter', flashCtx) : nav('srs');
+            },
+          });
+          return;
+        }
+      }
+      setSessionManager(null);
+      flashCtx ? nav('chapter', flashCtx) : nav('srs');
+    };
+  }
 }
 
 export function renderMultipleChoiceMode(

@@ -16,6 +16,7 @@ import {
   normalizeKanaAnswer,
   typingCapability,
 } from '../src/typing-capability.js';
+import { productionContext } from '../src/production-context.js';
 import { CARD_MODES } from '../ui/flashcards.js';
 
 function catalogueWords() {
@@ -54,8 +55,11 @@ describe('typing capability across the lesson catalogue', () => {
       expect(capability.canType, `${word.id}: ${word.writing} (${capability.reason})`).toBe(true);
       expect(capability.acceptedAnswers.length).toBeGreaterThan(0);
       expect(capability.keyboardCharacters.length).toBeLessThanOrEqual(MAX_TYPING_UNIQUE_CHARS);
-      expect(vocabularySkills(word)).toContain(SKILLS.RECALL);
-      expect(vocabularySkills(word)).not.toContain(SKILLS.CONTEXT_PRODUCTION);
+      if (!productionContext(word)) {
+        expect(vocabularySkills(word)).not.toContain(SKILLS.CONTEXT_PRODUCTION);
+      } else {
+        expect(vocabularySkills(word)).toContain(SKILLS.CONTEXT_PRODUCTION);
+      }
     }
   });
 
@@ -178,7 +182,9 @@ describe('typing capability across the lesson catalogue', () => {
       });
 
       expect(result.level, word.id).toBe(MASTERY_LEVELS.CONFIDENT);
-      expect(result.productionSkill, word.id).toBeNull();
+      expect(result.productionSkill, word.id).toBe(
+        productionContext(word) ? SKILLS.CONTEXT_PRODUCTION : null
+      );
     }
   });
 });

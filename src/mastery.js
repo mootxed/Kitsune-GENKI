@@ -238,9 +238,11 @@ export function calculateMastery({
     skills: applicableMetrics.filter((metric) => metric.hasSuccess).map((metric) => metric.skill),
     skillMetrics: metrics,
     productionSkill,
-    productionStatus: production?.hasSuccess
-      ? 'Production проверен'
-      : 'Production пока не проверен',
+    productionStatus: productionSkill
+      ? production?.hasSuccess
+        ? 'Production проверен'
+        : 'Production пока не проверен'
+      : 'Production-задание пока недоступно',
     hasRecentLapse,
     lowRetrievability,
     needsRefresh: readiness === READINESS.REFRESH,

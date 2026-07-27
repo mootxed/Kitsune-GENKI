@@ -7,6 +7,7 @@ export const RESPONSE_TIME_THRESHOLDS = Object.freeze({
   typing: Object.freeze({ fast: 5_000, slow: 15_000 }),
   'sentence-building': Object.freeze({ fast: 5_000, slow: 15_000 }),
   drawing: Object.freeze({ fast: 10_000, slow: 30_000 }),
+  'context-production': Object.freeze({ fast: 10_000, slow: 30_000 }),
 });
 
 export function isLeech(card, threshold = LEECH_THRESHOLD) {
