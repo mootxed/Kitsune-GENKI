@@ -1,15 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "title": "GENKI I Workbook, Third Edition",
-    "scope": "Lesson 8 grammar practice",
-    "workbookTocPdfPages": [
-      10,
-      11,
-      12
-    ],
-    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
-  },
   "chapterId": 8,
   "passingScorePercent": 67,
   "topics": [
@@ -21,18 +11,6 @@
       "summary": "Краткие формы используются в неформальной речи и сложных конструкциях.",
       "formula": "V dictionary / V-ない / Adj / Nだ",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          78
-        ],
-        "pdfPages": [
-          83
-        ],
-        "exerciseTitle": "Краткие формы настоящего времени",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -116,18 +94,6 @@
       "summary": "Вопросы теряют か, はい/いいえ часто заменяются на うん/ううん.",
       "formula": "Short form + intonation",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          79
-        ],
-        "pdfPages": [
-          84
-        ],
-        "exerciseTitle": "Неформальная речь",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L8_g1"
@@ -213,18 +179,6 @@
       "summary": "Краткая форма передаёт мнение или предположение.",
       "formula": "Short clause + と思います",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          80
-        ],
-        "pdfPages": [
-          85
-        ],
-        "exerciseTitle": "～と思います",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L8_g1"
@@ -272,7 +226,7 @@
         {
           "id": "L8_g3_q2",
           "type": "fill-blank",
-          "prompt": "たけしさんはこない ___ おもいます。",
+          "prompt": "ケンさんはこない ___ おもいます。",
           "acceptedAnswers": [
             "と"
           ],
@@ -285,9 +239,9 @@
         {
           "id": "L8_g3_q3",
           "type": "sentence-order",
-          "prompt": "Соберите «Думаю, Мэри не студентка».",
+          "prompt": "Соберите «Думаю, Елена не студентка».",
           "tokens": [
-            "メアリーさん",
+            "エレナさん",
             "は",
             "がくせい",
             "じゃない",
@@ -295,7 +249,7 @@
             "おもいます"
           ],
           "correctOrder": [
-            "メアリーさん",
+            "エレナさん",
             "は",
             "がくせい",
             "じゃない",
@@ -318,18 +272,6 @@
       "summary": "Конструкция передаёт чужие слова.",
       "formula": "Short clause + と言っていました",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          81
-        ],
-        "pdfPages": [
-          86
-        ],
-        "exerciseTitle": "～と言っていました",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L8_g1"
@@ -390,16 +332,16 @@
         {
           "id": "L8_g4_q3",
           "type": "sentence-order",
-          "prompt": "Соберите «Такэси сказал, что не придёт».",
+          "prompt": "Соберите «Кен сказал, что не придёт».",
           "tokens": [
-            "たけしさん",
+            "ケンさん",
             "は",
             "こない",
             "と",
             "いっていました"
           ],
           "correctOrder": [
-            "たけしさん",
+            "ケンさん",
             "は",
             "こない",
             "と",
@@ -421,18 +363,6 @@
       "summary": "Мягкая вежливая просьба не делать действие.",
       "formula": "V-ない + でください",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          82
-        ],
-        "pdfPages": [
-          87
-        ],
-        "exerciseTitle": "～ないでください",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L8_g1"
@@ -522,18 +452,6 @@
       "summary": "の превращает глагольную фразу в именную группу.",
       "formula": "Short Verb + のが + 好き/上手",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          83
-        ],
-        "pdfPages": [
-          88
-        ],
-        "exerciseTitle": "Verb のが好きです／上手です",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L8_g1"
@@ -627,18 +545,6 @@
       "summary": "Вопросительное слово и ответ на него получают が.",
       "formula": "Question word が ...",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          84
-        ],
-        "pdfPages": [
-          89
-        ],
-        "exerciseTitle": "Частица が как подлежащее",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -734,18 +640,6 @@
       "summary": "何か означает «что-то», 何も требует отрицательной формы.",
       "formula": "何か + affirmative / 何も + negative",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          84
-        ],
-        "pdfPages": [
-          89
-        ],
-        "exerciseTitle": "何か и 何も",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L8_g7"

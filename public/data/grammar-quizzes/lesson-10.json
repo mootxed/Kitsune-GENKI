@@ -1,15 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "title": "GENKI I Workbook, Third Edition",
-    "scope": "Lesson 10 grammar practice",
-    "workbookTocPdfPages": [
-      10,
-      11,
-      12
-    ],
-    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
-  },
   "chapterId": 10,
   "passingScorePercent": 67,
   "topics": [
@@ -21,18 +11,6 @@
       "summary": "A обладает качеством сильнее, чем B.",
       "formula": "A のほうが B より Adj",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          96
-        ],
-        "pdfPages": [
-          101
-        ],
-        "exerciseTitle": "Сравнение двух предметов",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -125,18 +103,6 @@
       "summary": "Самая высокая степень внутри группы выражается いちばん.",
       "formula": "Group の中で X が いちばん Adj",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          97
-        ],
-        "pdfPages": [
-          102
-        ],
-        "exerciseTitle": "Сравнение трёх и более предметов",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -236,18 +202,6 @@
       "summary": "の заменяет понятное неодушевлённое существительное.",
       "formula": "Adjective + の",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          98
-        ],
-        "pdfPages": [
-          103
-        ],
-        "exerciseTitle": "Прилагательное + の",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -341,18 +295,6 @@
       "summary": "После притяжательной частицы можно опустить понятное существительное.",
       "formula": "Noun の Noun → Noun の",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          98
-        ],
-        "pdfPages": [
-          103
-        ],
-        "exerciseTitle": "Притяжательное Noun の без повторения",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L10_g3"
@@ -365,9 +307,9 @@
       ],
       "examples": [
         {
-          "japanese": "それはメアリーさんのです。",
-          "reading": "それはメアリーさんのです",
-          "translation": "Это Мэрино.",
+          "japanese": "それはエレナさんのです。",
+          "reading": "それはエレナさんのです",
+          "translation": "Это Еленано.",
           "highlight": []
         }
       ],
@@ -448,18 +390,6 @@
       "summary": "Краткая непрошедшая форма + つもり выражает твёрдый план.",
       "formula": "V-short + つもりです",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          99
-        ],
-        "pdfPages": [
-          104
-        ],
-        "exerciseTitle": "～つもりです",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -549,18 +479,6 @@
       "summary": "Конструкция выражает изменение состояния.",
       "formula": "い→くなる / な・N→になる",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          100
-        ],
-        "pdfPages": [
-          105
-        ],
-        "exerciseTitle": "～くなる／～になる",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -646,18 +564,6 @@
       "summary": "Падежная частица ставится между вопросительным словом и か/も.",
       "formula": "Question word + particle + か/も",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          101
-        ],
-        "pdfPages": [
-          106
-        ],
-        "exerciseTitle": "どこかに／どこにも",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -745,18 +651,6 @@
       "summary": "で отмечает инструмент, язык, канал или транспорт.",
       "formula": "Tool/Vehicle/Language で V",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          101
-        ],
-        "pdfPages": [
-          106
-        ],
-        "exerciseTitle": "Частица で: инструмент и транспорт",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [

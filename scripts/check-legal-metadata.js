@@ -195,7 +195,7 @@ export function checkLegalMetadata() {
     'public/licenses/hanzi-writer/LICENSE.txt',
     'public/licenses/hanzi-writer/NOTICE.md',
     'public/licenses/hanzi-writer-data-jp/LICENSES.md',
-    'public/licenses/hanzi-writer-data-jp/NOTICE.md',
+    'public/licenses/hanzi-writer-data-jp/COPYING.txt',
     'public/licenses/hanzi-writer-data-jp/ARPHICPL.TXT',
     'public/licenses/hanzi-writer-data-jp/LGPL.txt',
     'public/licenses/hanzi-writer-data-jp/OFL.txt',
@@ -281,11 +281,23 @@ export function checkLegalMetadata() {
     }
   }
 
-  // Check 12: OpenRouter provider privacy settings check in services.js
+  // Check 12: OpenRouter provider privacy & ZDR routing check in services.js
   if (existsSync(join(ROOT, 'services.js'))) {
     const srv = read('services.js');
-    if (!srv.includes("data_collection: 'deny'")) {
-      errors.push("services.js missing OpenRouter provider setting: data_collection: 'deny'");
+    if (!srv.includes('PRIVATE_PROVIDER_ROUTING')) {
+      errors.push('services.js missing PRIVATE_PROVIDER_ROUTING constant export');
+    }
+    if (!srv.includes("data_collection: 'deny'") || !srv.includes('zdr: true')) {
+      errors.push(
+        "services.js missing OpenRouter provider settings: data_collection: 'deny' or zdr: true"
+      );
+    }
+    // Count occurrences of provider: PRIVATE_PROVIDER_ROUTING to ensure all calls (including repair) include it
+    const matches = srv.match(/provider:\s*PRIVATE_PROVIDER_ROUTING/g);
+    if (!matches || matches.length < 3) {
+      errors.push(
+        `services.js must include provider: PRIVATE_PROVIDER_ROUTING in all OpenRouter requests (initial & repair). Found ${matches ? matches.length : 0}`
+      );
     }
   }
 
@@ -317,6 +329,47 @@ export function checkLegalMetadata() {
         errors.push(`File contains absolute local filesystem path: ${docFile}`);
       }
     }
+  }
+
+  // Check 14: API key export prohibition in backup-manager.js and settings UI
+  if (existsSync(join(ROOT, 'src/backup-manager.js'))) {
+    const bm = read('src/backup-manager.js');
+    if (bm.includes('includeApiKey')) {
+      errors.push(
+        'src/backup-manager.js contains deprecated includeApiKey parameter allowing API key export'
+      );
+    }
+  }
+  if (existsSync(join(ROOT, 'ui/settings.js'))) {
+    const st = read('ui/settings.js');
+    if (st.includes('export-include-key')) {
+      errors.push('ui/settings.js contains UI checkbox for including API key in backup export');
+    }
+  }
+
+  // Check 15: Absence of workbookReference, pdfPages, workbookPrintedPages in production runtime JSON files
+  const runtimeDataDir = join(ROOT, 'public/data');
+  if (existsSync(runtimeDataDir)) {
+    const scanDir = (dir) => {
+      const entries = readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) {
+          scanDir(full);
+        } else if (entry.isFile() && entry.name.endsWith('.json')) {
+          const content = readFileSync(full, 'utf8');
+          if (
+            content.includes('"workbookReference"') ||
+            content.includes('"pdfPages"') ||
+            content.includes('"workbookPrintedPages"')
+          ) {
+            const rel = full.replace(ROOT + '/', '');
+            errors.push(`Runtime JSON file contains workbook reference metadata: ${rel}`);
+          }
+        }
+      }
+    };
+    scanDir(runtimeDataDir);
   }
 
   if (errors.length > 0) {

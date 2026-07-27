@@ -38,7 +38,7 @@ const MANDATORY_SOURCES = [
   },
   {
     path: join(HW_DATA_DIR, 'licenses', 'COPYING.txt'),
-    dest: join(OUT_DIR, 'hanzi-writer-data-jp', 'NOTICE.md'),
+    dest: join(OUT_DIR, 'hanzi-writer-data-jp', 'COPYING.txt'),
     name: '@k1low/hanzi-writer-data-jp COPYING.txt',
   },
   {

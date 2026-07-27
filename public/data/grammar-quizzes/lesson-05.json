@@ -1,15 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "title": "GENKI I Workbook, Third Edition",
-    "scope": "Lesson 5 grammar practice",
-    "workbookTocPdfPages": [
-      10,
-      11,
-      12
-    ],
-    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
-  },
   "chapterId": 5,
   "passingScorePercent": 67,
   "topics": [
@@ -21,18 +11,6 @@
       "summary": "Классы прилагательных образуют отрицание по-разному.",
       "formula": "い→くないです / な→じゃないです",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          50
-        ],
-        "pdfPages": [
-          55
-        ],
-        "exerciseTitle": "Настоящее время прилагательных",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -121,18 +99,6 @@
       "summary": "Прошедшие формы зависят от класса прилагательного.",
       "formula": "い→かったです / な→でした",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          52
-        ],
-        "pdfPages": [
-          57
-        ],
-        "exerciseTitle": "Прошедшее время прилагательных",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L5_g1"
@@ -223,18 +189,6 @@
       "summary": "い-прилагательное ставится напрямую, な-прилагательное требует な.",
       "formula": "い-Adj + N / な-Adj + な + N",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          54
-        ],
-        "pdfPages": [
-          59
-        ],
-        "exerciseTitle": "Прилагательное перед существительным",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L5_g1"
@@ -322,18 +276,6 @@
       "summary": "Объект симпатии или антипатии отмечается が.",
       "formula": "X は Y が 好き/嫌いです",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          55
-        ],
-        "pdfPages": [
-          60
-        ],
-        "exerciseTitle": "好き・嫌い",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -392,9 +334,9 @@
         {
           "id": "L5_g4_q3",
           "type": "sentence-order",
-          "prompt": "Соберите «Мэри очень любит японский язык».",
+          "prompt": "Соберите «Елена очень любит японский язык».",
           "tokens": [
-            "メアリーさん",
+            "エレナさん",
             "は",
             "にほんご",
             "が",
@@ -402,7 +344,7 @@
             "です"
           ],
           "correctOrder": [
-            "メアリーさん",
+            "エレナさん",
             "は",
             "にほんご",
             "が",
@@ -425,18 +367,6 @@
       "summary": "ましょう предлагает совместное действие, ましょうか — более мягкий вариант.",
       "formula": "Verb stem + ましょう / ましょうか",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          56
-        ],
-        "pdfPages": [
-          61
-        ],
-        "exerciseTitle": "～ましょう／～ましょうか",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [

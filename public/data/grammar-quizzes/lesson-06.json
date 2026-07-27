@@ -1,15 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "title": "GENKI I Workbook, Third Edition",
-    "scope": "Lesson 6 grammar practice",
-    "workbookTocPdfPages": [
-      10,
-      11,
-      12
-    ],
-    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
-  },
   "chapterId": 6,
   "passingScorePercent": 67,
   "topics": [
@@ -21,18 +11,6 @@
       "summary": "て-форма служит основой для многих конструкций.",
       "formula": "Verb→て/で",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          59
-        ],
-        "pdfPages": [
-          64
-        ],
-        "exerciseTitle": "て-форма глаголов",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -118,18 +96,6 @@
       "summary": "Конструкция выражает вежливую просьбу.",
       "formula": "Verb-て + ください",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          62
-        ],
-        "pdfPages": [
-          67
-        ],
-        "exerciseTitle": "～てください",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L6_g1"
@@ -219,18 +185,6 @@
       "summary": "Предшествующие действия ставятся в て-форму, время задаёт последний глагол.",
       "formula": "V1-て、V2",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          63
-        ],
-        "pdfPages": [
-          68
-        ],
-        "exerciseTitle": "Соединение действий через て-форму",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L6_g1"
@@ -320,18 +274,6 @@
       "summary": "Конструкция сообщает или спрашивает разрешение.",
       "formula": "Verb-て + もいいです（か）",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          64
-        ],
-        "pdfPages": [
-          69
-        ],
-        "exerciseTitle": "～てもいいです",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L6_g1"
@@ -425,18 +367,6 @@
       "summary": "Конструкция выражает строгий запрет.",
       "formula": "Verb-て + はいけません",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          65
-        ],
-        "pdfPages": [
-          70
-        ],
-        "exerciseTitle": "～てはいけません",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L6_g1"
@@ -528,18 +458,6 @@
       "summary": "から связывает причину и следствие.",
       "formula": "Reason から、Result",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          66
-        ],
-        "pdfPages": [
-          71
-        ],
-        "exerciseTitle": "～から",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -627,18 +545,6 @@
       "summary": "В контексте помощи конструкция означает «Давайте я…?»",
       "formula": "Verb stem + ましょうか",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          66
-        ],
-        "pdfPages": [
-          71
-        ],
-        "exerciseTitle": "～ましょうか",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L6_g1"

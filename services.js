@@ -62,6 +62,11 @@ function getSystemPrompt(userLevel) {
 const SYSTEM_PROMPT = getSystemPrompt('N5');
 
 // ---- OpenRouter ----
+export const PRIVATE_PROVIDER_ROUTING = Object.freeze({
+  data_collection: 'deny',
+  zdr: true,
+});
+
 async function askSensei(history, settings, options = {}) {
   if (!settings?.openrouterKey) {
     throw new Error('Не задан API-ключ OpenRouter. Откройте Настройки.');
@@ -89,10 +94,7 @@ async function askSensei(history, settings, options = {}) {
       body: JSON.stringify({
         model: settings.model || 'deepseek/deepseek-v4-flash',
         messages,
-        provider: {
-          data_collection: 'deny',
-          zdr: true,
-        },
+        provider: PRIVATE_PROVIDER_ROUTING,
       }),
       signal: options.signal,
     },
@@ -195,10 +197,7 @@ ${
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        provider: {
-          data_collection: 'deny',
-          zdr: true,
-        },
+        provider: PRIVATE_PROVIDER_ROUTING,
       }),
       signal: options.signal,
     },
@@ -274,6 +273,7 @@ ${errorDetails || firstAttemptResult.message}
           { role: 'system', content: repairSystemPrompt },
           { role: 'user', content: repairUserPrompt },
         ],
+        provider: PRIVATE_PROVIDER_ROUTING,
       }),
       signal: options.signal,
     },

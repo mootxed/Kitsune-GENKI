@@ -1,15 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "title": "GENKI I Workbook, Third Edition",
-    "scope": "Lesson 7 grammar practice",
-    "workbookTocPdfPages": [
-      10,
-      11,
-      12
-    ],
-    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
-  },
   "chapterId": 7,
   "passingScorePercent": 67,
   "topics": [
@@ -21,18 +11,6 @@
       "summary": "Конструкция описывает действие, происходящее сейчас.",
       "formula": "Verb-て + います",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          70
-        ],
-        "pdfPages": [
-          75
-        ],
-        "exerciseTitle": "～ている: действие в процессе",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -53,19 +31,19 @@
         {
           "id": "L7_g1_q1",
           "type": "single-choice",
-          "prompt": "Как сказать «Мэри сейчас учится»?",
+          "prompt": "Как сказать «Елена сейчас учится»?",
           "options": [
             {
               "id": "a",
-              "text": "メアリーさんはいまべんきょうしています。"
+              "text": "エレナさんはいまべんきょうしています。"
             },
             {
               "id": "b",
-              "text": "メアリーさんはいまべんきょうしました。"
+              "text": "エレナさんはいまべんきょうしました。"
             },
             {
               "id": "c",
-              "text": "メアリーさんはいまべんきょうするです。"
+              "text": "エレナさんはいまべんきょうするです。"
             }
           ],
           "correctOptionId": "a",
@@ -78,7 +56,7 @@
         {
           "id": "L7_g1_q2",
           "type": "fill-blank",
-          "prompt": "たけしさんはいまテレビをみ ___。",
+          "prompt": "ケンさんはいまテレビをみ ___。",
           "acceptedAnswers": [
             "ています"
           ],
@@ -124,18 +102,6 @@
       "summary": "Некоторые глаголы в ～ている описывают устойчивое состояние.",
       "formula": "Change verb-て + いる",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          71
-        ],
-        "pdfPages": [
-          76
-        ],
-        "exerciseTitle": "～ている: результат изменения",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L7_g1"
@@ -225,18 +191,6 @@
       "summary": "Человек задаётся как тема, часть тела — как подлежащее с が.",
       "formula": "Person は Body が Adjective",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          72
-        ],
-        "pdfPages": [
-          77
-        ],
-        "exerciseTitle": "Описание внешности",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -257,19 +211,19 @@
         {
           "id": "L7_g3_q1",
           "type": "single-choice",
-          "prompt": "Как сказать «У Мэри большие глаза»?",
+          "prompt": "Как сказать «У Елена большие глаза»?",
           "options": [
             {
               "id": "a",
-              "text": "メアリーさんはめがおおきいです。"
+              "text": "エレナさんはめがおおきいです。"
             },
             {
               "id": "b",
-              "text": "メアリーさんがめはおおきいです。"
+              "text": "エレナさんがめはおおきいです。"
             },
             {
               "id": "c",
-              "text": "メアリーさんのめをおおきいです。"
+              "text": "エレナさんのめをおおきいです。"
             }
           ],
           "correctOptionId": "a",
@@ -282,7 +236,7 @@
         {
           "id": "L7_g3_q2",
           "type": "fill-blank",
-          "prompt": "たけしさんはせ ___ たかいです。",
+          "prompt": "ケンさんはせ ___ たかいです。",
           "acceptedAnswers": [
             "が"
           ],
@@ -328,18 +282,6 @@
       "summary": "Формы соединяют несколько качеств в одном предложении.",
       "formula": "い→くて / な→で / N→で",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          73
-        ],
-        "pdfPages": [
-          78
-        ],
-        "exerciseTitle": "て-формы прилагательных и существительных",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -431,18 +373,6 @@
       "summary": "Основа глагола показывает цель движения.",
       "formula": "Verb stem + に + Movement",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          74
-        ],
-        "pdfPages": [
-          79
-        ],
-        "exerciseTitle": "Основа глагола + に行く／来る／帰る",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -532,18 +462,6 @@
       "summary": "Один и два человека имеют особые чтения.",
       "formula": "一人・二人・三人…",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          75
-        ],
-        "pdfPages": [
-          80
-        ],
-        "exerciseTitle": "Счёт людей ～人",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [

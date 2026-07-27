@@ -1,15 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "title": "GENKI I Workbook, Third Edition",
-    "scope": "Lesson 3 grammar practice",
-    "workbookTocPdfPages": [
-      10,
-      11,
-      12
-    ],
-    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
-  },
   "chapterId": 3,
   "passingScorePercent": 67,
   "topics": [
@@ -21,18 +11,6 @@
       "summary": "Вежливые формы выражают привычные или будущие действия.",
       "formula": "Verb stem + ます / ません",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          32
-        ],
-        "pdfPages": [
-          37
-        ],
-        "exerciseTitle": "Спряжение глаголов в непрошедшем времени",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -118,18 +96,6 @@
       "summary": "Контекст определяет привычное или будущее значение формы.",
       "formula": "～ます = habitual / future",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          32
-        ],
-        "pdfPages": [
-          37
-        ],
-        "exerciseTitle": "Привычные и будущие действия",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L3_g1"
@@ -223,18 +189,6 @@
       "summary": "を отмечает объект, で место действия, に/へ направление.",
       "formula": "N を V / Place で V / Destination に・へ V",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          33
-        ],
-        "pdfPages": [
-          38
-        ],
-        "exerciseTitle": "Частицы を・で・に・へ",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L3_g1"
@@ -326,18 +280,6 @@
       "summary": "に используется после точного времени и дней недели.",
       "formula": "Time に V",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          35
-        ],
-        "pdfPages": [
-          40
-        ],
-        "exerciseTitle": "Частица に с временем",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L3_g3"
@@ -429,18 +371,6 @@
       "summary": "Отрицательная вопросительная форма используется для приглашения.",
       "formula": "Verb ませんか",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          36
-        ],
-        "pdfPages": [
-          41
-        ],
-        "exerciseTitle": "～ませんか",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L3_g1"
@@ -532,18 +462,6 @@
       "summary": "あまり и ぜんぜん требуют отрицательной формы.",
       "formula": "よく / ときどき / あまり～ません / ぜんぜん～ません",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          37
-        ],
-        "pdfPages": [
-          42
-        ],
-        "exerciseTitle": "Наречия частотности",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [

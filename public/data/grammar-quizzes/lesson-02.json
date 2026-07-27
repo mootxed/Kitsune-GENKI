@@ -1,15 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "title": "GENKI I Workbook, Third Edition",
-    "scope": "Lesson 2 grammar practice",
-    "workbookTocPdfPages": [
-      10,
-      11,
-      12
-    ],
-    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
-  },
   "chapterId": 2,
   "passingScorePercent": 67,
   "topics": [
@@ -21,18 +11,6 @@
       "summary": "Особые чтения используются у 300, 600, 800, 3000 и 8000.",
       "formula": "百・千・万",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          25
-        ],
-        "pdfPages": [
-          30
-        ],
-        "exerciseTitle": "Японские числа: сотни и тысячи",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -116,18 +94,6 @@
       "summary": "Выбор зависит от расстояния до говорящего и собеседника.",
       "formula": "これ / それ / あれ / どれ",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          26
-        ],
-        "pdfPages": [
-          31
-        ],
-        "exerciseTitle": "これ・それ・あれ・どれ",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -217,18 +183,6 @@
       "summary": "Эти слова всегда требуют существительное после себя.",
       "formula": "この N / その N / あの N / どの N",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          27
-        ],
-        "pdfPages": [
-          32
-        ],
-        "exerciseTitle": "この・その・あの・どの",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L2_g1"
@@ -322,18 +276,6 @@
       "summary": "Серия указывает на место.",
       "formula": "ここ / そこ / あそこ / どこ",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          28
-        ],
-        "pdfPages": [
-          33
-        ],
-        "exerciseTitle": "ここ・そこ・あそこ・どこ",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -421,18 +363,6 @@
       "summary": "だれの означает «чей?» и спрашивает о владельце.",
       "formula": "だれ + の",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          28
-        ],
-        "pdfPages": [
-          33
-        ],
-        "exerciseTitle": "だれの",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L2_g3"
@@ -526,18 +456,6 @@
       "summary": "も заменяет は, が или を и означает «тоже».",
       "formula": "N も ...",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          29
-        ],
-        "pdfPages": [
-          34
-        ],
-        "exerciseTitle": "Частица も",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -625,18 +543,6 @@
       "summary": "Это вежливое отрицание с существительными.",
       "formula": "X は Y じゃないです",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          29
-        ],
-        "pdfPages": [
-          34
-        ],
-        "exerciseTitle": "Noun じゃないです",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L2_g5"
@@ -684,7 +590,7 @@
         {
           "id": "L2_g6_q2",
           "type": "fill-blank",
-          "prompt": "メアリーさんはせんせい ___。",
+          "prompt": "エレナさんはせんせい ___。",
           "acceptedAnswers": [
             "じゃないです",
             "じゃありません"

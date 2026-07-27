@@ -1,15 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "title": "GENKI I Workbook, Third Edition",
-    "scope": "Lesson 9 grammar practice",
-    "workbookTocPdfPages": [
-      10,
-      11,
-      12
-    ],
-    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
-  },
   "chapterId": 9,
   "passingScorePercent": 67,
   "topics": [
@@ -21,18 +11,6 @@
       "summary": "Краткие формы выражают прошедшее без です/ます.",
       "formula": "V-た/だ・V-なかった・Adj-かった・N-だった",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          87
-        ],
-        "pdfPages": [
-          92
-        ],
-        "exerciseTitle": "Прошедшие краткие формы",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -116,18 +94,6 @@
       "summary": "Неформальные вопросы и ответы используют краткие прошедшие формы.",
       "formula": "Past short + intonation",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          88
-        ],
-        "pdfPages": [
-          93
-        ],
-        "exerciseTitle": "Прошедшие краткие формы в разговоре",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L9_g1"
@@ -213,18 +179,6 @@
       "summary": "Перед цитирующими конструкциями используется краткая прошедшая форма.",
       "formula": "Past short + と + 思います/言っていました",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          89
-        ],
-        "pdfPages": [
-          94
-        ],
-        "exerciseTitle": "Прошедшее в цитировании",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L9_g1"
@@ -316,18 +270,6 @@
       "summary": "Определяющая фраза ставится непосредственно перед существительным.",
       "formula": "Short clause + Noun",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          91
-        ],
-        "pdfPages": [
-          96
-        ],
-        "exerciseTitle": "Определение существительного фразой",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -421,18 +363,6 @@
       "summary": "もう сообщает о завершении, まだ～ていません — о пока не выполненном действии.",
       "formula": "もう V-ました / まだ V-ていません",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          92
-        ],
-        "pdfPages": [
-          97
-        ],
-        "exerciseTitle": "もう～ました／まだ～ていません",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -522,18 +452,6 @@
       "summary": "Краткая причина + から соединяется со следствием.",
       "formula": "Short reason + から、Result",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          93
-        ],
-        "pdfPages": [
-          98
-        ],
-        "exerciseTitle": "Причина с から",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L9_g1"

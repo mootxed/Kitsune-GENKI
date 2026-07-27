@@ -1,24 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "title": "GENKI I Workbook, Third Edition",
-    "scope": "Lesson 1 grammar practice",
-    "pdfPages": [
-      21,
-      22,
-      23,
-      24,
-      25
-    ],
-    "workbookPrintedPages": [
-      16,
-      17,
-      18,
-      19,
-      20
-    ],
-    "note": "Exercise types are based on the workbook. Prompts, examples, options, and explanations are original and adapted for in-app use."
-  },
   "chapterId": 1,
   "passingScorePercent": 67,
   "topics": [
@@ -30,14 +11,6 @@
       "summary": "Базовая вежливая конструкция для представления человека или сообщения факта.",
       "formula": "X は Y です",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPage": 16,
-        "exerciseTitle": "X は Y です",
-        "skillTypes": [
-          "profile-description",
-          "translation"
-        ]
-      },
       "requiredVocabularyIds": [
         "L1_V017",
         "L1_V023",
@@ -67,9 +40,9 @@
           ]
         },
         {
-          "japanese": "メアリーさんはりゅうがくせいです。",
-          "reading": "メアリーさん は りゅうがくせい です",
-          "translation": "Мэри — иностранная студентка.",
+          "japanese": "エレナさんはりゅうがくせいです。",
+          "reading": "エレナさん は りゅうがくせい です",
+          "translation": "Елена — иностранная студентка.",
           "highlight": [
             "は",
             "です"
@@ -108,11 +81,11 @@
         {
           "id": "L1_g1_q2",
           "type": "fill-blank",
-          "prompt": "Вставьте недостающий элемент: たけしさん ___ にほんじんです。",
+          "prompt": "Вставьте недостающий элемент: ケンさん ___ にほんじんです。",
           "acceptedAnswers": [
             "は"
           ],
-          "explanation": "После темы たけしさん ставится は.",
+          "explanation": "После темы ケンさん ставится は.",
           "grammarRefs": [
             "L1_g1"
           ],
@@ -150,14 +123,6 @@
       "summary": "Частица か ставится в конце вежливого предложения и превращает его в вопрос.",
       "formula": "X は Y ですか",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPage": 17,
-        "exerciseTitle": "Question Sentences",
-        "skillTypes": [
-          "conversation-completion",
-          "question-formation"
-        ]
-      },
       "requiredVocabularyIds": [
         "L1_V017",
         "L1_V023",
@@ -175,9 +140,9 @@
       ],
       "examples": [
         {
-          "japanese": "メアリーさんはがくせいですか。",
-          "reading": "メアリーさん は がくせい です か",
-          "translation": "Мэри студентка?",
+          "japanese": "エレナさんはがくせいですか。",
+          "reading": "エレナさん は がくせい です か",
+          "translation": "Елена студентка?",
           "highlight": [
             "か"
           ]
@@ -187,19 +152,19 @@
         {
           "id": "L1_g2_q1",
           "type": "single-choice",
-          "prompt": "Как правильно спросить «Такэси — японец?»",
+          "prompt": "Как правильно спросить «Кен — японец?»",
           "options": [
             {
               "id": "a",
-              "text": "たけしさんはにほんじんですか。"
+              "text": "ケンさんはにほんじんですか。"
             },
             {
               "id": "b",
-              "text": "たけしさんかはにほんじんです。"
+              "text": "ケンさんかはにほんじんです。"
             },
             {
               "id": "c",
-              "text": "かたけしさんはにほんじんです。"
+              "text": "かケンさんはにほんじんです。"
             }
           ],
           "correctOptionId": "a",
@@ -264,14 +229,6 @@
       "summary": "Конструкция A の B связывает два существительных: A уточняет или описывает B.",
       "formula": "A の B",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPage": 18,
-        "exerciseTitle": "Noun の Noun",
-        "skillTypes": [
-          "noun-linking",
-          "translation"
-        ]
-      },
       "requiredVocabularyIds": [
         "L1_V019",
         "L1_V022",
@@ -292,9 +249,9 @@
       ],
       "examples": [
         {
-          "japanese": "たけしさんのでんわばんごう",
-          "reading": "たけしさん の でんわばんごう",
-          "translation": "номер телефона Такэси",
+          "japanese": "ケンさんのでんわばんごう",
+          "reading": "ケンさん の でんわばんごう",
+          "translation": "номер телефона Кен",
           "highlight": [
             "の"
           ]
@@ -312,19 +269,19 @@
         {
           "id": "L1_g3_q1",
           "type": "single-choice",
-          "prompt": "Как сказать «номер телефона Мэри»?",
+          "prompt": "Как сказать «номер телефона Елена»?",
           "options": [
             {
               "id": "a",
-              "text": "メアリーさんのでんわばんごう"
+              "text": "エレナさんのでんわばんごう"
             },
             {
               "id": "b",
-              "text": "メアリーさんはでんわばんごう"
+              "text": "エレナさんはでんわばんごう"
             },
             {
               "id": "c",
-              "text": "でんわばんごうのメアリーさん"
+              "text": "でんわばんごうのエレナさん"
             }
           ],
           "correctOptionId": "a",
@@ -384,14 +341,6 @@
       "summary": "Возраст выражается числом и суффиксом さい; вежливый вопрос — おいくつですか.",
       "formula": "число + さい",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPage": 20,
-        "exerciseTitle": "Questions",
-        "skillTypes": [
-          "personal-information",
-          "age-questions"
-        ]
-      },
       "requiredVocabularyIds": [
         "L1_V027",
         "L1_V028",
@@ -510,14 +459,6 @@
       "summary": "Время выражается с 時 и 分; телефонные номера читаются как последовательность отдельных цифр.",
       "formula": "число + 時 / число + 分",
       "estimatedMinutes": 10,
-      "workbookReference": {
-        "printedPage": 19,
-        "exerciseTitle": "Time and Telephone Numbers",
-        "skillTypes": [
-          "time-expression",
-          "number-sequences"
-        ]
-      },
       "requiredVocabularyIds": [
         "L1_V029",
         "L1_V030",

@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { validateImportData, importFullProgress } from '../src/backup-manager.js';
+import {
+  validateImportData,
+  importFullProgress,
+  exportFullProgress,
+} from '../src/backup-manager.js';
 import { db, initializeDB, STORES } from '../src/db.js';
 
 describe('Backup Manager Validation & Security', () => {
@@ -30,7 +34,7 @@ describe('Backup Manager Validation & Security', () => {
   };
 
   const validBackup = {
-    app: 'kitsune_genki',
+    app: 'kotokitsu',
     exportType: 'full_indexeddb',
     schemaVersion: '5.0',
     timestamp: '2026-07-26T12:00:00.000Z',
@@ -52,6 +56,15 @@ describe('Backup Manager Validation & Security', () => {
       ],
     },
   };
+
+  it('exportFullProgress unconditionally strips API key and tags with kotokitsu', async () => {
+    const database = await initializeDB();
+    await database.set(STORES.APP_STATE, 'state', validState);
+
+    const exported = await exportFullProgress();
+    expect(exported.app).toBe('kotokitsu');
+    expect(exported.data.state.settings.openrouterKey).toBe('');
+  });
 
   it('validates a correct current schema version backup', () => {
     const res = validateImportData(validBackup);

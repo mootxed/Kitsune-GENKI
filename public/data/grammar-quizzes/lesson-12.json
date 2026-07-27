@@ -1,15 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "title": "GENKI I Workbook, Third Edition",
-    "scope": "Lesson 12 grammar practice",
-    "workbookTocPdfPages": [
-      10,
-      11,
-      12
-    ],
-    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
-  },
   "chapterId": 12,
   "passingScorePercent": 67,
   "topics": [
@@ -21,18 +11,6 @@
       "summary": "Конструкция добавляет объяснительный оттенок.",
       "formula": "Short predicate + んです",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          111
-        ],
-        "pdfPages": [
-          116
-        ],
-        "exerciseTitle": "～んです",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -120,18 +98,6 @@
       "summary": "Конструкция сообщает о превышении нормы.",
       "formula": "Verb/Adj stem + すぎる",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          112
-        ],
-        "pdfPages": [
-          117
-        ],
-        "exerciseTitle": "～すぎる",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -217,18 +183,6 @@
       "summary": "Утвердительный совет использует た-форму, отрицательный — ない-форму.",
       "formula": "V-た ほうがいい / V-ない ほうがいい",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          113
-        ],
-        "pdfPages": [
-          118
-        ],
-        "exerciseTitle": "～ほうがいいです",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -322,18 +276,6 @@
       "summary": "ので мягко и объективно объясняет причину.",
       "formula": "Short reason + ので、Result",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          114
-        ],
-        "pdfPages": [
-          119
-        ],
-        "exerciseTitle": "～ので",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -425,18 +367,6 @@
       "summary": "Конструкция выражает обязанность или необходимость.",
       "formula": "V-なければいけません",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          115
-        ],
-        "pdfPages": [
-          120
-        ],
-        "exerciseTitle": "～なければいけません／～なきゃいけません",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -525,18 +455,6 @@
       "summary": "でしょうか смягчает предположение или вопрос.",
       "formula": "Short predicate + でしょうか",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          116
-        ],
-        "pdfPages": [
-          121
-        ],
-        "exerciseTitle": "～でしょうか",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [

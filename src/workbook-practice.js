@@ -57,9 +57,6 @@ export function validateWorkbookPracticeData(data, chapters = []) {
       if (!task?.id) errors.push(`missing-task-id:${chapterId}`);
       else if (taskIds.has(task.id)) errors.push(`duplicate-task-id:${task.id}`);
       else taskIds.add(task.id);
-      if (!Number.isInteger(task?.page) || task.page <= 0) {
-        errors.push(`invalid-page:${task?.id || chapterId}`);
-      }
       if (!task?.title) errors.push(`missing-title:${task?.id || chapterId}`);
       if (!ALLOWED_SECTIONS.has(task?.section)) {
         errors.push(`invalid-section:${task?.id || chapterId}`);

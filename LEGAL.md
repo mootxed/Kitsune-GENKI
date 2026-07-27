@@ -2,19 +2,21 @@
 
 ## Project Overview
 
-* **Project Name**: KotoKitsu
-* **Project Status**: Open-source Alpha
-* **Development Location**: Physical person developer based in the Russian Federation
-* **Primary Repository License (Code)**: `GPL-3.0-or-later`
+- **Project Name**: KotoKitsu
+- **Project Status**: Open-source Alpha
+- **Development Location**: Physical person developer based in the Russian Federation
+- **Primary Repository License (Code)**: `GPL-3.0-or-later`
 
 ---
 
 ## Disclaimer of Affiliation / Отказ от аффилиации
 
 **Русский:**
+
 > KotoKitsu — независимый открытый проект для изучения японского языка. Разработка ведётся физическим лицом из Российской Федерации. Продукт находится в стадии альфа-тестирования. Приложение можно использовать самостоятельно или совместно с внешними учебными пособиями.
 
 **English:**
+
 > KotoKitsu is an independent open-source project for Japanese language learning developed by a physical person from the Russian Federation. The project is currently in the alpha development stage.
 
 ---

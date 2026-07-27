@@ -181,14 +181,7 @@ export const BackupSchema = z
   })
   .passthrough();
 
-/**
- * Экспортирует весь прогресс в структурированный JSON
- * @param {Object} [options]
- * @param {boolean} [options.includeApiKey=false] Включать ли API-ключ в экспорт
- * @returns {Promise<Object>} Структурированные данные для экспорта
- */
-export async function exportFullProgress(options = {}) {
-  const includeApiKey = options.includeApiKey === true;
+export async function exportFullProgress() {
   try {
     const database = db || (await initializeDB());
     // Читаем данные из IndexedDB
@@ -228,17 +221,14 @@ export async function exportFullProgress(options = {}) {
       throw new Error('Нет данных для экспорта. Попробуйте сначала пройти хотя бы один урок.');
     }
 
-    // Исключаем API-ключ из экспорта по умолчанию
-    let exportedState = state;
-    if (!includeApiKey && state.settings?.openrouterKey) {
-      exportedState = {
-        ...state,
-        settings: {
-          ...state.settings,
-          openrouterKey: '',
-        },
-      };
-    }
+    // КРИТИЧЕСКАЯ БЕЗОПАСНОСТЬ: API-ключ НЕ ИЗВЛЕКАЕТСЯ и НЕ ВКЛЮЧАЕТСЯ в бэкап ни при каких условиях!
+    const exportedState = {
+      ...state,
+      settings: {
+        ...state.settings,
+        openrouterKey: '',
+      },
+    };
 
     console.log('[Export] Данные для экспорта:', {
       hasState: !!exportedState,
@@ -246,11 +236,10 @@ export async function exportFullProgress(options = {}) {
       lessonVersion,
       lastActivityDay,
       theme,
-      includeApiKey,
     });
 
     const exportData = {
-      app: 'kitsune_genki',
+      app: 'kotokitsu',
       exportType: 'full_indexeddb',
       schemaVersion: SCHEMA_VERSION,
       timestamp: new Date().toISOString(),

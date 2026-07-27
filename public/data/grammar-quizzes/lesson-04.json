@@ -1,15 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "title": "GENKI I Workbook, Third Edition",
-    "scope": "Lesson 4 grammar practice",
-    "workbookTocPdfPages": [
-      10,
-      11,
-      12
-    ],
-    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
-  },
   "chapterId": 4,
   "passingScorePercent": 67,
   "topics": [
@@ -21,18 +11,6 @@
       "summary": "あります для неодушевлённого, います для людей и животных.",
       "formula": "Place に X が あります / います",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          41
-        ],
-        "pdfPages": [
-          46
-        ],
-        "exerciseTitle": "X が あります／います",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -122,18 +100,6 @@
       "summary": "あります выражает наличие вещи и проведение события.",
       "formula": "X が あります / Place で Event が あります",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          41
-        ],
-        "pdfPages": [
-          46
-        ],
-        "exerciseTitle": "あります: владение и события",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L4_g1"
@@ -225,18 +191,6 @@
       "summary": "Ориентир соединяется со словом места через の.",
       "formula": "X は Y の Location です",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          42
-        ],
-        "pdfPages": [
-          47
-        ],
-        "exerciseTitle": "Слова местоположения",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -332,18 +286,6 @@
       "summary": "となり обычно для однотипных объектов, よこ — универсальнее.",
       "formula": "X の となり / X の よこ",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          42
-        ],
-        "pdfPages": [
-          47
-        ],
-        "exerciseTitle": "となり и よこ",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [
         "L4_g3"
@@ -437,18 +379,6 @@
       "summary": "Связка です имеет прошедшие утвердительную и отрицательную формы.",
       "formula": "N でした / N じゃなかったです",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          43
-        ],
-        "pdfPages": [
-          48
-        ],
-        "exerciseTitle": "Прошедшее время существительных",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -535,18 +465,6 @@
       "summary": "Вежливые глаголы образуют прошедшее заменой окончания.",
       "formula": "～ます → ～ました / ～ませんでした",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          44
-        ],
-        "pdfPages": [
-          49
-        ],
-        "exerciseTitle": "Прошедшее время глаголов",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -634,18 +552,6 @@
       "summary": "После に, で, と и へ частица も добавляется после падежа.",
       "formula": "にも / でも / とも",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          46
-        ],
-        "pdfPages": [
-          51
-        ],
-        "exerciseTitle": "Частица も после других частиц",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -704,15 +610,15 @@
         {
           "id": "L4_g7_q3",
           "type": "sentence-order",
-          "prompt": "Соберите «С Мэри я тоже разговаривал».",
+          "prompt": "Соберите «С Елена я тоже разговаривал».",
           "tokens": [
-            "メアリーさん",
+            "エレナさん",
             "と",
             "も",
             "はなしました"
           ],
           "correctOrder": [
-            "メアリーさん",
+            "エレナさん",
             "と",
             "も",
             "はなしました"
@@ -733,18 +639,6 @@
       "summary": "Выражение длительности употребляется без частицы.",
       "formula": "Duration + V / ～時間半 / ～ぐらい",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          47
-        ],
-        "pdfPages": [
-          52
-        ],
-        "exerciseTitle": "Длительность ～時間",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [

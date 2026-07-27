@@ -41,7 +41,6 @@ describe('GENKI Workbook metadata integration', () => {
     expect(chapter.practiceTasks[0]).toMatchObject({
       id: 'L01-wb-cg-01',
       section: 'conversation-grammar',
-      source: 'GENKI I Workbook, Third Edition',
       completionMode: 'manual',
       relatedGrammarIds: ['L1_g1'],
     });

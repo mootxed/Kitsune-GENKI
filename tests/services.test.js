@@ -89,4 +89,86 @@ describe('OpenRouter Services API', () => {
       await expect(promise).rejects.toThrow();
     });
   });
+
+  describe('Privacy and Provider Routing', () => {
+    it('sends PRIVATE_PROVIDER_ROUTING with zdr:true and data_collection:deny on askSensei', async () => {
+      let capturedBody;
+      globalThis.fetch = vi.fn().mockImplementation(async (url, options) => {
+        capturedBody = JSON.parse(options.body);
+        return {
+          ok: true,
+          json: async () => ({ choices: [{ message: { content: 'Konnichiwa!' } }] }),
+        };
+      });
+
+      await API.askSensei([{ role: 'user', content: 'Hi' }], validSettings);
+
+      expect(capturedBody.provider).toEqual({
+        data_collection: 'deny',
+        zdr: true,
+      });
+    });
+
+    it('sends PRIVATE_PROVIDER_ROUTING on both initial and repair generateAIStory requests', async () => {
+      const capturedBodies = [];
+      let calls = 0;
+      globalThis.fetch = vi.fn().mockImplementation(async (url, options) => {
+        capturedBodies.push(JSON.parse(options.body));
+        calls++;
+        if (calls === 1) {
+          // Invalid response to trigger repair
+          return {
+            ok: true,
+            json: async () => ({ choices: [{ message: { content: 'invalid json' } }] }),
+          };
+        }
+        // Valid response on repair
+        return {
+          ok: true,
+          json: async () => ({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify({
+                    story: [
+                      {
+                        sentence_id: 1,
+                        speaker: 'Рассказчик',
+                        tokens: [
+                          { kanji: '私', writing: 'わたし', translation: 'я', type: 'Pronoun' },
+                        ],
+                        translation: 'Я.',
+                      },
+                      {
+                        sentence_id: 2,
+                        speaker: 'Рассказчик',
+                        tokens: [
+                          { kanji: '本', writing: 'ほん', translation: 'книга', type: 'Noun' },
+                        ],
+                        translation: 'Книга.',
+                      },
+                      {
+                        sentence_id: 3,
+                        speaker: 'Рассказчик',
+                        tokens: [
+                          { kanji: '読む', writing: 'よむ', translation: 'читать', type: 'Verb' },
+                        ],
+                        translation: 'Читаю.',
+                      },
+                    ],
+                  }),
+                },
+              },
+            ],
+          }),
+        };
+      });
+
+      const res = await API.generateAIStory('Story prompt', [], validSettings);
+      expect(res.meta.repaired).toBe(true);
+      expect(capturedBodies.length).toBe(2);
+      expect(capturedBodies[0].provider).toEqual({ data_collection: 'deny', zdr: true });
+      expect(capturedBodies[1].provider).toEqual({ data_collection: 'deny', zdr: true });
+    });
+  });
 });

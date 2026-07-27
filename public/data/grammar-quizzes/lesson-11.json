@@ -1,15 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "title": "GENKI I Workbook, Third Edition",
-    "scope": "Lesson 11 grammar practice",
-    "workbookTocPdfPages": [
-      10,
-      11,
-      12
-    ],
-    "note": "Workbook worksheet sequence and skill focus are used as the source structure. Prompts, examples, options, and explanations are original and adapted for in-app use. Only grammar topics directly supported by the Workbook lesson worksheets are included; supplemental expression notes without a dedicated worksheet are intentionally omitted."
-  },
   "chapterId": 11,
   "passingScorePercent": 67,
   "topics": [
@@ -21,18 +11,6 @@
       "summary": "Основа ます-формы + たい выражает желание говорящего.",
       "formula": "Verb stem + たいです",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          105
-        ],
-        "pdfPages": [
-          110
-        ],
-        "exerciseTitle": "～たいです",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -122,18 +100,6 @@
       "summary": "Конструкция перечисляет примеры действий без строгого порядка.",
       "formula": "V-た + り、V-た + りする",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          106
-        ],
-        "pdfPages": [
-          111
-        ],
-        "exerciseTitle": "～たり～たりする",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -223,18 +189,6 @@
       "summary": "Конструкция сообщает жизненный опыт.",
       "formula": "V-た + ことがある",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          107
-        ],
-        "pdfPages": [
-          112
-        ],
-        "exerciseTitle": "～たことがある",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [
@@ -328,18 +282,6 @@
       "summary": "や перечисляет примеры и подразумевает другие элементы.",
       "formula": "N1 や N2",
       "estimatedMinutes": 8,
-      "workbookReference": {
-        "printedPages": [
-          108
-        ],
-        "pdfPages": [
-          113
-        ],
-        "exerciseTitle": "Союз や",
-        "skillTypes": [
-          "grammar-practice"
-        ]
-      },
       "requiredVocabularyIds": [],
       "prerequisiteGrammarIds": [],
       "explanation": [

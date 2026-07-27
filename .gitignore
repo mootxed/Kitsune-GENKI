@@ -35,3 +35,7 @@ build/
 # Codex
 .codex/
 
+# Test outputs & reports
+test-results/
+playwright-report/
+

@@ -72,12 +72,8 @@ export function renderSettings(state, dependencies) {
       <div class="set-item">
         <label>📦 Полный экспорт прогресса</label>
         <div class="set-hint">
-          Экспорт всех данных обучения, карточек, истории повторений и настроек.
+          Экспорт всех данных обучения, карточек, истории повторений и настроек. API-ключ в бэкап не включается.
         </div>
-        <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px">
-          <input type="checkbox" id="export-include-key" aria-label="Включить API-ключ в резервную копию" data-testid="export-include-key" />
-          <span>Включить API-ключ в резервную копию</span>
-        </label>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
           <button class="btn-ghost" id="btn-export-full" data-testid="export-full-btn">📦 Скачать прогресс (.json)</button>
           <button class="btn-ghost" id="btn-import-full" data-testid="import-full-btn">📥 Восстановить из файла</button>
@@ -278,8 +274,7 @@ async function setThemeAndSave(theme, state, dependencies) {
 // Обработчик полного экспорта
 async function handleFullExport(state, toastFn) {
   try {
-    const includeApiKey = $('#export-include-key')?.checked === true;
-    const data = await exportFullProgress({ includeApiKey });
+    const data = await exportFullProgress();
     const filename = `kotokitsu_full_${localDateKey()}.json`;
 
     const shared = await shareJSON(data, filename);

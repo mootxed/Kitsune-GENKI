@@ -73,4 +73,3 @@ npm run build
   - Анимации черт кандзи: hanzi-writer & @k1low/hanzi-writer-data-jp. См. [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - 🔒 **Конфиденциальность**: Приложение работает локально. Правила взаимодействия с AI описаны в [PRIVACY.md](PRIVACY.md).
 - 🏷️ **Товарные знаки**: Регистрация товарного знака не заявляется. См. [TRADEMARKS.md](TRADEMARKS.md).
-
