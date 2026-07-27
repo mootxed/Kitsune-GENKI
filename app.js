@@ -97,6 +97,7 @@ import { renderPlan } from './ui/plan.js';
 import { renderAIStory } from './ui/ai-story.js';
 import { renderWordSearch } from './ui/word-search.js';
 import { renderOnboarding } from './ui/onboarding.js';
+import { renderStatistics } from './ui/statistics.js';
 import { shouldShowOnboarding } from './src/onboarding-state.js';
 
 // ===== ГЛОБАЛЬНЫЕ ЭКСПОРТЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ =====
@@ -702,6 +703,7 @@ function setupRouter() {
     crossword: () => renderCrossword(state, dependencies),
     'word-search': () => renderWordSearch(state, dependencies),
     onboarding: () => renderOnboarding(state, dependencies),
+    statistics: () => renderStatistics(state),
   });
 
   // Глобальные алиасы для обратной совместимости

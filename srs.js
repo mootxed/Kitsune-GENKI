@@ -293,7 +293,15 @@ function getRetrievability(card, now = Date.now()) {
   const normalized = serializeCard(card);
   if (normalized.state === State.New || normalized.reps === 0 || normalized.stability <= 0)
     return 0;
-  return scheduler.get_retrievability(hydrate(normalized), new Date(now), false);
+  try {
+    const hydrated = hydrate(normalized);
+    if (!hydrated.last_review || Number.isNaN(hydrated.last_review.getTime())) {
+      hydrated.last_review = new Date(normalized.due || now);
+    }
+    return scheduler.get_retrievability(hydrated, new Date(now), false);
+  } catch (_) {
+    return 0;
+  }
 }
 
 function isDue(card, ref) {

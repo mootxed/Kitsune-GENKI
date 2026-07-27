@@ -48,3 +48,21 @@ export function startOfLocalDay(value = Date.now()) {
   date.setHours(0, 0, 0, 0);
   return date;
 }
+
+/**
+ * Возвращает ключ локального учебного дня с учётом возможного сдвига начала дня (например, 04:00).
+ *
+ * @param {number|Date|string} value - timestamp или Date
+ * @param {Object} [options]
+ * @param {number} [options.dayBoundaryHour=0] - час сдвига начала дня (0-23)
+ * @returns {string} ключ даты "YYYY-MM-DD"
+ */
+export function getStudyDayKey(value = Date.now(), options = {}) {
+  const boundaryHour = Math.max(0, Math.min(23, Number(options.dayBoundaryHour) || 0));
+  if (boundaryHour === 0) {
+    return formatDateKey(value);
+  }
+  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  date.setHours(date.getHours() - boundaryHour);
+  return formatDateKey(date);
+}

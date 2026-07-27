@@ -86,6 +86,11 @@ export function renderProfile(state, dependencies) {
           <div class="profile-stat-label">🪙 Монет</div>
         </div>
       </div>
+      <div style="margin: 12px 0 16px 0;">
+        <button class="btn-secondary" data-nav="statistics" style="width: 100%; font-weight: 600; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e0e0e0); cursor: pointer;">
+          📊 Детальная статистика карточек
+        </button>
+      </div>
       <div class="achievements-section">
         <h3 class="section-title">ДОСТИЖЕНИЯ</h3>
         <div class="achievements-progress" id="achievements-toggle">

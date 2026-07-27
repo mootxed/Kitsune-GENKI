@@ -18,6 +18,7 @@ export class Router {
       'ai-story',
       'crossword',
       'word-search',
+      'statistics',
     ];
     this.renderHandlers = {};
   }
