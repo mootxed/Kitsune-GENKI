@@ -43,72 +43,72 @@ Received array:  [{"description": "Ensure every form element has a label", "help
 
 ```yaml
 - generic [ref=f1e2]:
-  - generic [ref=f1e4]:
-    - generic [ref=f1e5]:
-      - button "‹" [ref=f1e6] [cursor=pointer]
-      - heading "План обучения" [active] [level=1] [ref=f1e7]
-    - generic [ref=f1e8]:
-      - heading "Создать новый план" [level=3] [ref=f1e9]
-      - generic [ref=f1e10]:
-        - generic [ref=f1e11]: Дата начала
-        - textbox [ref=f1e12] [cursor=pointer]: 2026-07-27
-      - generic [ref=f1e13]:
-        - generic [ref=f1e14]: Способ выбора срока
-        - generic [ref=f1e15]:
-          - button "Количество дней" [ref=f1e16] [cursor=pointer]
-          - button "Дата дедлайна" [ref=f1e17] [cursor=pointer]
-      - generic [ref=f1e18]:
-        - generic [ref=f1e19]: Количество учебных дней
-        - spinbutton [ref=f1e20]: "90"
-      - generic [ref=f1e21]:
-        - generic [ref=f1e22]: Дни недели
-        - generic [ref=f1e23]:
-          - button "Пн" [ref=f1e24] [cursor=pointer]
-          - button "Вт" [ref=f1e25] [cursor=pointer]
-          - button "Ср" [ref=f1e26] [cursor=pointer]
-          - button "Чт" [ref=f1e27] [cursor=pointer]
-          - button "Пт" [ref=f1e28] [cursor=pointer]
-          - button "Сб" [ref=f1e29] [cursor=pointer]
-          - button "Вс" [ref=f1e30] [cursor=pointer]
-      - generic [ref=f1e31]:
-        - generic [ref=f1e32]: Сколько времени вы готовы заниматься в учебный день?
-        - combobox [ref=f1e33]:
-          - option "15 минут"
-          - option "30 минут" [selected]
-          - option "45 минут"
-          - option "60 минут"
-      - generic [ref=f1e34]:
-        - generic [ref=f1e35]: Уже изучено
-        - text: "Завершено: 0 из 12 глав"
-      - group [ref=f1e37]:
-        - generic "Дополнительные настройки" [ref=f1e38] [cursor=pointer]
-      - button "Создать план" [ref=f1e40] [cursor=pointer]
-  - navigation [ref=f1e41]:
-    - button "🏠 Главная" [ref=f1e42] [cursor=pointer]:
-      - generic [ref=f1e43]: 🏠
-      - generic [ref=f1e44]: Главная
-    - button "🎴 SRS" [ref=f1e45] [cursor=pointer]:
-      - generic [ref=f1e46]: 🎴
-      - generic [ref=f1e47]: SRS
-    - button "🤖 Инструменты" [ref=f1e48] [cursor=pointer]:
-      - generic [ref=f1e49]: 🤖
-      - generic [ref=f1e50]: Инструменты
-    - button "📖 Учебник" [ref=f1e51] [cursor=pointer]:
-      - generic [ref=f1e52]: 📖
-      - generic [ref=f1e53]: Учебник
-    - button "👤 Профиль" [ref=f1e54] [cursor=pointer]:
-      - generic [ref=f1e55]: 👤
-      - generic [ref=f1e56]: Профиль
-  - status
-  - generic [ref=f1e57]: "Экран: План обучения"
-  - alert [ref=f1e58]
-  - dialog:
-    - generic:
-      - generic:
+    - generic [ref=f1e4]:
+        - generic [ref=f1e5]:
+            - button "‹" [ref=f1e6] [cursor=pointer]
+            - heading "План обучения" [active] [level=1] [ref=f1e7]
+        - generic [ref=f1e8]:
+            - heading "Создать новый план" [level=3] [ref=f1e9]
+            - generic [ref=f1e10]:
+                - generic [ref=f1e11]: Дата начала
+                - textbox [ref=f1e12] [cursor=pointer]: 2026-07-27
+            - generic [ref=f1e13]:
+                - generic [ref=f1e14]: Способ выбора срока
+                - generic [ref=f1e15]:
+                    - button "Количество дней" [ref=f1e16] [cursor=pointer]
+                    - button "Дата дедлайна" [ref=f1e17] [cursor=pointer]
+            - generic [ref=f1e18]:
+                - generic [ref=f1e19]: Количество учебных дней
+                - spinbutton [ref=f1e20]: '90'
+            - generic [ref=f1e21]:
+                - generic [ref=f1e22]: Дни недели
+                - generic [ref=f1e23]:
+                    - button "Пн" [ref=f1e24] [cursor=pointer]
+                    - button "Вт" [ref=f1e25] [cursor=pointer]
+                    - button "Ср" [ref=f1e26] [cursor=pointer]
+                    - button "Чт" [ref=f1e27] [cursor=pointer]
+                    - button "Пт" [ref=f1e28] [cursor=pointer]
+                    - button "Сб" [ref=f1e29] [cursor=pointer]
+                    - button "Вс" [ref=f1e30] [cursor=pointer]
+            - generic [ref=f1e31]:
+                - generic [ref=f1e32]: Сколько времени вы готовы заниматься в учебный день?
+                - combobox [ref=f1e33]:
+                    - option "15 минут"
+                    - option "30 минут" [selected]
+                    - option "45 минут"
+                    - option "60 минут"
+            - generic [ref=f1e34]:
+                - generic [ref=f1e35]: Уже изучено
+                - text: 'Завершено: 0 из 12 глав'
+            - group [ref=f1e37]:
+                - generic "Дополнительные настройки" [ref=f1e38] [cursor=pointer]
+            - button "Создать план" [ref=f1e40] [cursor=pointer]
+    - navigation [ref=f1e41]:
+        - button "🏠 Главная" [ref=f1e42] [cursor=pointer]:
+            - generic [ref=f1e43]: 🏠
+            - generic [ref=f1e44]: Главная
+        - button "🎴 SRS" [ref=f1e45] [cursor=pointer]:
+            - generic [ref=f1e46]: 🎴
+            - generic [ref=f1e47]: SRS
+        - button "🤖 Инструменты" [ref=f1e48] [cursor=pointer]:
+            - generic [ref=f1e49]: 🤖
+            - generic [ref=f1e50]: Инструменты
+        - button "📖 Учебник" [ref=f1e51] [cursor=pointer]:
+            - generic [ref=f1e52]: 📖
+            - generic [ref=f1e53]: Учебник
+        - button "👤 Профиль" [ref=f1e54] [cursor=pointer]:
+            - generic [ref=f1e55]: 👤
+            - generic [ref=f1e56]: Профиль
+    - status
+    - generic [ref=f1e57]: 'Экран: План обучения'
+    - alert [ref=f1e58]
+    - dialog:
         - generic:
-          - heading [level=2]
-        - paragraph
-        - paragraph
+            - generic:
+                - generic:
+                    - heading [level=2]
+                - paragraph
+                - paragraph
 ```
 
 # Test source
@@ -120,10 +120,10 @@ Received array:  [{"description": "Ensure every form element has a label", "help
   4   |  * Automated accessibility tests using axe-core via @axe-core/playwright.
   5   |  * These tests detect WCAG A/AA structural and ARIA violations on main screens.
   6   |  */
-  7   | 
+  7   |
   8   | import { test, expect } from '@playwright/test';
   9   | import AxeBuilder from '@axe-core/playwright';
-  10  | 
+  10  |
   11  | // Helper: prepare app environment for testing
   12  | async function prepareHomeScreen(page) {
   13  |   await page.waitForFunction(() => typeof window.nav === 'function' || document.readyState === 'complete', { timeout: 10000 }).catch(() => {});
@@ -144,7 +144,7 @@ Received array:  [{"description": "Ensure every form element has a label", "help
   28  |   });
   29  |   await page.waitForSelector('#screen-home:not(.hidden)', { timeout: 5000 }).catch(() => {});
   30  | }
-  31  | 
+  31  |
   32  | // Helper: navigate programmatically between screens for isolated testing
   33  | async function navigateTo(page, screenId) {
   34  |   await page.evaluate((target) => {
@@ -158,89 +158,89 @@ Received array:  [{"description": "Ensure every form element has a label", "help
   42  |   }, screenId);
   43  |   await page.waitForSelector(`#screen-${screenId}:not(.hidden)`, { timeout: 5000 });
   44  | }
-  45  | 
+  45  |
   46  | // ===== AXE TESTS =====
-  47  | 
+  47  |
   48  | test.describe('Accessibility: axe-core WCAG A/AA checks', () => {
   49  |   test.beforeEach(async ({ page }) => {
   50  |     await page.goto('./');
   51  |     await prepareHomeScreen(page);
   52  |   });
-  53  | 
+  53  |
   54  |   test('Home screen: no critical structural axe violations', async ({ page }) => {
   55  |     const results = await new AxeBuilder({ page })
   56  |       .include('#screen-home')
   57  |       .withTags(['wcag2a', 'wcag2aa'])
   58  |       .disableRules(['color-contrast'])
   59  |       .analyze();
-  60  | 
+  60  |
   61  |     const criticalViolations = results.violations.filter(
   62  |       (v) => v.impact === 'critical' || v.impact === 'serious'
   63  |     );
   64  |     expect(criticalViolations).toHaveLength(0);
   65  |   });
-  66  | 
+  66  |
   67  |   test('Settings screen: no critical structural axe violations', async ({ page }) => {
   68  |     await navigateTo(page, 'settings');
-  69  | 
+  69  |
   70  |     const results = await new AxeBuilder({ page })
   71  |       .include('#screen-settings')
   72  |       .withTags(['wcag2a', 'wcag2aa'])
   73  |       .disableRules(['color-contrast'])
   74  |       .analyze();
-  75  | 
+  75  |
   76  |     const criticalViolations = results.violations.filter(
   77  |       (v) => v.impact === 'critical' || v.impact === 'serious'
   78  |     );
   79  |     expect(criticalViolations).toHaveLength(0);
   80  |   });
-  81  | 
+  81  |
   82  |   test('Study plan screen: no critical structural axe violations', async ({ page }) => {
   83  |     await navigateTo(page, 'plan');
-  84  | 
+  84  |
   85  |     const results = await new AxeBuilder({ page })
   86  |       .include('#screen-plan')
   87  |       .withTags(['wcag2a', 'wcag2aa'])
   88  |       .disableRules(['color-contrast'])
   89  |       .analyze();
-  90  | 
+  90  |
   91  |     const criticalViolations = results.violations.filter(
   92  |       (v) => v.impact === 'critical' || v.impact === 'serious'
   93  |     );
 > 94  |     expect(criticalViolations).toHaveLength(0);
       |                                ^ Error: expect(received).toHaveLength(expected)
   95  |   });
-  96  | 
+  96  |
   97  |   test('SRS/Flashcards screen: no critical structural axe violations', async ({ page }) => {
   98  |     await navigateTo(page, 'srs');
-  99  | 
+  99  |
   100 |     const results = await new AxeBuilder({ page })
   101 |       .include('#screen-srs')
   102 |       .withTags(['wcag2a', 'wcag2aa'])
   103 |       .disableRules(['color-contrast'])
   104 |       .analyze();
-  105 | 
+  105 |
   106 |     const criticalViolations = results.violations.filter(
   107 |       (v) => v.impact === 'critical' || v.impact === 'serious'
   108 |     );
   109 |     expect(criticalViolations).toHaveLength(0);
   110 |   });
-  111 | 
+  111 |
   112 |   test('Statistics screen: no critical structural axe violations', async ({ page }) => {
   113 |     await navigateTo(page, 'statistics');
-  114 | 
+  114 |
   115 |     const results = await new AxeBuilder({ page })
   116 |       .include('#screen-statistics')
   117 |       .withTags(['wcag2a', 'wcag2aa'])
   118 |       .disableRules(['color-contrast'])
   119 |       .analyze();
-  120 | 
+  120 |
   121 |     const criticalViolations = results.violations.filter(
   122 |       (v) => v.impact === 'critical' || v.impact === 'serious'
   123 |     );
   124 |     expect(criticalViolations).toHaveLength(0);
   125 |   });
-  126 | 
+  126 |
   127 |   test('Shop modal: has role=dialog, aria-modal, aria-labelledby', async ({ page }) => {
   128 |     await page.evaluate(() => {
   129 |       const modal = document.getElementById('shop-modal');
@@ -250,29 +250,29 @@ Received array:  [{"description": "Ensure every form element has a label", "help
   133 |       }
   134 |     });
   135 |     await page.waitForTimeout(100);
-  136 | 
+  136 |
   137 |     const modal = page.locator('#shop-modal');
   138 |     await expect(modal).toHaveAttribute('role', 'dialog');
   139 |     await expect(modal).toHaveAttribute('aria-modal', 'true');
   140 |     await expect(modal).toHaveAttribute('aria-labelledby', 'shop-modal-title');
-  141 | 
+  141 |
   142 |     const results = await new AxeBuilder({ page })
   143 |       .include('#shop-modal')
   144 |       .withTags(['wcag2a', 'wcag2aa'])
   145 |       .disableRules(['color-contrast'])
   146 |       .analyze();
-  147 | 
+  147 |
   148 |     const criticalViolations = results.violations.filter(
   149 |       (v) => v.impact === 'critical' || v.impact === 'serious'
   150 |     );
   151 |     expect(criticalViolations).toHaveLength(0);
   152 |   });
-  153 | 
+  153 |
   154 |   test('Document has lang="ru" on html element', async ({ page }) => {
   155 |     const lang = await page.getAttribute('html', 'lang');
   156 |     expect(lang).toBe('ru');
   157 |   });
-  158 | 
+  158 |
   159 |   test('Viewport allows user scaling', async ({ page }) => {
   160 |     const viewport = await page.$eval(
   161 |       'meta[name="viewport"]',
@@ -281,32 +281,32 @@ Received array:  [{"description": "Ensure every form element has a label", "help
   164 |     expect(viewport).not.toContain('user-scalable=no');
   165 |     expect(viewport).not.toMatch(/maximum-scale=1(?:[^.]|$)/);
   166 |   });
-  167 | 
+  167 |
   168 |   test('Live region elements exist in DOM', async ({ page }) => {
   169 |     await expect(page.locator('#a11y-announce')).toBeAttached();
   170 |     const politeRole = await page.getAttribute('#a11y-announce', 'aria-live');
   171 |     expect(politeRole).toBe('polite');
-  172 | 
+  172 |
   173 |     await expect(page.locator('#a11y-alert')).toBeAttached();
   174 |     const alertRole = await page.getAttribute('#a11y-alert', 'role');
   175 |     expect(alertRole).toBe('alert');
   176 |   });
   177 | });
-  178 | 
+  178 |
   179 | // ===== KEYBOARD NAVIGATION TESTS =====
-  180 | 
+  180 |
   181 | test.describe('Keyboard Navigation', () => {
   182 |   test.beforeEach(async ({ page }) => {
   183 |     await page.goto('./');
   184 |     await prepareHomeScreen(page);
   185 |   });
-  186 | 
+  186 |
   187 |   test('Navigation to SRS screen moves focus to heading or screen', async ({ page }) => {
   188 |     await navigateTo(page, 'srs');
-  189 | 
+  189 |
   190 |     const isSrsActive = await page.evaluate(() => {
   191 |       const srs = document.getElementById('screen-srs');
   192 |       return srs && !srs.classList.contains('hidden');
   193 |     });
-  194 | 
+  194 |
 ```
