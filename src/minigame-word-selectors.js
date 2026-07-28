@@ -4,6 +4,7 @@ import { isPriorKnowledge, isChapterCompleted } from './chapter-progress.js';
 import { isValidWordForSearch } from './word-search-generator.js';
 import { parseCardIdentity } from './knowledge-model.js';
 import { getWeakMiniGameCandidates } from './minigame-weakness.js';
+import { isUserDictionaryWordLearned } from './user-dictionaries/runtime.js';
 
 /**
  * Calculates the number of unique chapters available to minigames.
@@ -52,6 +53,9 @@ export function getAvailableChapterCount(state) {
  */
 export function isWordAccessible(word, lessonChapterId, state) {
   if (!word || !word.id || !state) return false;
+  if (word.sourceType === 'user-dictionary' && !isUserDictionaryWordLearned(word, state)) {
+    return false;
+  }
 
   // Check SRS cards for this word: if SRS cards exist, at least one must be unlocked (!planLocked)
   if (state.srs && typeof state.srs === 'object') {

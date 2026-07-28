@@ -196,7 +196,14 @@
       <section class="screen hidden" id="screen-srs" data-testid="screen-srs">
         <header class="app-header">
           <div class="app-header-left">
-            <button class="icon-btn back-btn" data-nav="home" data-testid="srs-back-btn" aria-label="Назад">‹</button>
+            <button
+              class="icon-btn back-btn"
+              data-nav="home"
+              data-testid="srs-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
             <span class="logo-fox">🦊</span>
             <div>
               <h1 class="app-title">KotoKitsu</h1>
@@ -212,8 +219,28 @@
           <button class="lib-tab active" data-tab="repetition">Повторение</button>
           <button class="lib-tab" data-tab="dictionary">Словарь</button>
           <button class="lib-tab" data-tab="particles">Частицы</button>
+          <button class="lib-tab" data-tab="user-dictionaries">Мои словари</button>
         </div>
         <div class="screen-scroll" id="srs-body"></div>
+      </section>
+
+      <!-- ===== USER DICTIONARIES ===== -->
+      <section
+        class="screen hidden"
+        id="screen-user-dictionaries"
+        data-testid="screen-user-dictionaries"
+      >
+        <header class="app-header">
+          <button class="icon-btn back-btn" data-nav="srs" aria-label="Назад">‹</button>
+          <div>
+            <h1 class="app-title">Мои словари</h1>
+            <p class="app-subtitle">Личные слова отдельно от очереди обучения</p>
+          </div>
+        </header>
+        <div class="screen-scroll">
+          <div id="user-dictionaries-body"></div>
+          <div class="bottom-pad"></div>
+        </div>
       </section>
 
       <!-- ===== SENSEI ===== -->

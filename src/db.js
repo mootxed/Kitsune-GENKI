@@ -1,7 +1,7 @@
 /* src/db.js — Promise-based обёртка над IndexedDB с graceful degradation */
 
 const DB_NAME = 'KitsuneGenkiDB';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 // Object Stores
 const STORES = {
@@ -10,6 +10,9 @@ const STORES = {
   UI_PREFERENCES: 'ui_preferences', // UI настройки (тема)
   REVIEW_LOG: 'review_log', // Append-only история FSRS review
   ACTIVE_SESSION: 'active_session', // Незавершённая учебная сессия для авто-восстановления
+  USER_DICTIONARIES: 'userDictionaries',
+  USER_DICTIONARY_ENTRIES: 'userDictionaryEntries',
+  USER_DICTIONARY_IMPORT_PROFILES: 'userDictionaryImportProfiles',
 };
 
 /**
@@ -179,6 +182,27 @@ class IndexedDBWrapper {
             console.log('[DB] Создан store:', STORES.ACTIVE_SESSION);
           }
 
+          if (!db.objectStoreNames.contains(STORES.USER_DICTIONARIES)) {
+            const store = db.createObjectStore(STORES.USER_DICTIONARIES, { keyPath: 'id' });
+            store.createIndex('updatedAt', 'updatedAt', { unique: false });
+          }
+
+          if (!db.objectStoreNames.contains(STORES.USER_DICTIONARY_ENTRIES)) {
+            const store = db.createObjectStore(STORES.USER_DICTIONARY_ENTRIES, { keyPath: 'id' });
+            store.createIndex('dictionaryId', 'dictionaryId', { unique: false });
+            store.createIndex('dictionaryId_entryKey', ['dictionaryId', 'entryKey'], {
+              unique: false,
+            });
+            store.createIndex('learningEnabled', 'learningEnabled', { unique: false });
+          }
+
+          if (!db.objectStoreNames.contains(STORES.USER_DICTIONARY_IMPORT_PROFILES)) {
+            const store = db.createObjectStore(STORES.USER_DICTIONARY_IMPORT_PROFILES, {
+              keyPath: 'id',
+            });
+            store.createIndex('name', 'name', { unique: false });
+          }
+
           let reviewLogStore;
           if (!db.objectStoreNames.contains(STORES.REVIEW_LOG)) {
             reviewLogStore = db.createObjectStore(STORES.REVIEW_LOG, {
@@ -249,7 +273,11 @@ class IndexedDBWrapper {
         request.onsuccess = () => {
           const result = request.result;
           // Если это объект с полем value, возвращаем его содержимое
-          resolve(result ? result.value : result);
+          resolve(
+            result && typeof result === 'object' && Object.hasOwn(result, 'value')
+              ? result.value
+              : result
+          );
         };
 
         request.onerror = () => {
@@ -323,6 +351,72 @@ class IndexedDBWrapper {
         transaction.onabort = () => reject(transaction.error || request.error);
       } catch (error) {
         console.error(`[DB] Исключение при добавлении в ${storeName}:`, error);
+        reject(error);
+      }
+    });
+  }
+
+  async putRecord(storeName, value) {
+    await this.ensureInitialized();
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = this.db.transaction([storeName], 'readwrite');
+        const request = transaction.objectStore(storeName).put(value);
+        transaction.oncomplete = () => resolve(request.result);
+        transaction.onerror = () => reject(transaction.error || request.error);
+        transaction.onabort = () => reject(transaction.error || request.error);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async atomicDictionaryCommit({ dictionary, entries, deleteEntryIds = [], state = undefined }) {
+    await this.ensureInitialized();
+    return new Promise((resolve, reject) => {
+      try {
+        const stores = [STORES.USER_DICTIONARIES, STORES.USER_DICTIONARY_ENTRIES];
+        if (state !== undefined) stores.push(STORES.APP_STATE);
+        const transaction = this.db.transaction(stores, 'readwrite');
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () =>
+          reject(transaction.error || new Error('Ошибка транзакции словаря'));
+        transaction.onabort = () =>
+          reject(transaction.error || new Error('Транзакция словаря прервана'));
+        if (dictionary) {
+          transaction.objectStore(STORES.USER_DICTIONARIES).put(dictionary);
+        }
+        const entryStore = transaction.objectStore(STORES.USER_DICTIONARY_ENTRIES);
+        for (const id of deleteEntryIds) entryStore.delete(id);
+        for (const entry of entries || []) entryStore.put(entry);
+        if (state !== undefined) {
+          transaction.objectStore(STORES.APP_STATE).put({ id: 'state', value: state });
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async atomicDeleteDictionary({ dictionaryId, entryIds, state = undefined }) {
+    await this.ensureInitialized();
+    return new Promise((resolve, reject) => {
+      try {
+        const stores = [STORES.USER_DICTIONARIES, STORES.USER_DICTIONARY_ENTRIES];
+        if (state !== undefined) stores.push(STORES.APP_STATE);
+        const transaction = this.db.transaction(stores, 'readwrite');
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () =>
+          reject(transaction.error || new Error('Ошибка удаления словаря'));
+        transaction.onabort = () =>
+          reject(transaction.error || new Error('Транзакция удаления словаря прервана'));
+        transaction.objectStore(STORES.USER_DICTIONARIES).delete(dictionaryId);
+        const entryStore = transaction.objectStore(STORES.USER_DICTIONARY_ENTRIES);
+        for (const entryId of entryIds || []) entryStore.delete(entryId);
+        if (state !== undefined) {
+          transaction.objectStore(STORES.APP_STATE).put({ id: 'state', value: state });
+        }
+      } catch (error) {
         reject(error);
       }
     });
@@ -482,7 +576,16 @@ class IndexedDBWrapper {
    * @param {Object} payload - { state, lessonVersion, lastActivityDay, theme, reviewLog }
    * @returns {Promise<void>}
    */
-  async atomicImport({ state, lessonVersion, lastActivityDay, theme, reviewLog }) {
+  async atomicImport({
+    state,
+    lessonVersion,
+    lastActivityDay,
+    theme,
+    reviewLog,
+    userDictionaries = [],
+    userDictionaryEntries = [],
+    userDictionaryImportProfiles = [],
+  }) {
     await this.ensureInitialized();
 
     return new Promise((resolve, reject) => {
@@ -492,6 +595,9 @@ class IndexedDBWrapper {
           STORES.CONTENT_CACHE,
           STORES.UI_PREFERENCES,
           STORES.REVIEW_LOG,
+          STORES.USER_DICTIONARIES,
+          STORES.USER_DICTIONARY_ENTRIES,
+          STORES.USER_DICTIONARY_IMPORT_PROFILES,
         ];
         const transaction = this.db.transaction(stores, 'readwrite');
 
@@ -541,6 +647,15 @@ class IndexedDBWrapper {
             reviewLogStore.add(cleanEntry);
           }
         }
+
+        const replaceRecords = (storeName, records) => {
+          const store = transaction.objectStore(storeName);
+          store.clear();
+          for (const record of records || []) store.add(record);
+        };
+        replaceRecords(STORES.USER_DICTIONARIES, userDictionaries);
+        replaceRecords(STORES.USER_DICTIONARY_ENTRIES, userDictionaryEntries);
+        replaceRecords(STORES.USER_DICTIONARY_IMPORT_PROFILES, userDictionaryImportProfiles);
       } catch (error) {
         console.error('[DB] Исключение при атомарном импорте:', error);
         reject(error);
@@ -598,7 +713,8 @@ class InMemoryFallback {
 
   async get(storeName, key) {
     const storeKey = `${storeName}:${key}`;
-    return this.storage.get(storeKey);
+    if (this.storage.has(storeKey)) return this.storage.get(storeKey);
+    return (this.storage.get(`${storeName}:__records__`) || []).find((record) => record.id === key);
   }
 
   async set(storeName, key, value) {
@@ -617,6 +733,56 @@ class InMemoryFallback {
     return nextId;
   }
 
+  async putRecord(storeName, value) {
+    if (!value?.id) throw new Error('Record id обязателен');
+    const storeKey = `${storeName}:__records__`;
+    const records = this.storage.get(storeKey) || [];
+    const index = records.findIndex((record) => record.id === value.id);
+    if (index >= 0) records[index] = { ...value };
+    else records.push({ ...value });
+    this.storage.set(storeKey, records);
+    return value.id;
+  }
+
+  async atomicDictionaryCommit({ dictionary, entries, deleteEntryIds = [], state = undefined }) {
+    const backupStorage = new Map(
+      [...this.storage].map(([key, value]) => [
+        key,
+        Array.isArray(value) ? value.map((record) => ({ ...record })) : value,
+      ])
+    );
+    try {
+      if (dictionary) await this.putRecord(STORES.USER_DICTIONARIES, dictionary);
+      for (const id of deleteEntryIds) await this.delete(STORES.USER_DICTIONARY_ENTRIES, id);
+      for (const entry of entries || []) {
+        await this.putRecord(STORES.USER_DICTIONARY_ENTRIES, entry);
+      }
+      if (state !== undefined) this.storage.set(`${STORES.APP_STATE}:state`, state);
+    } catch (error) {
+      this.storage = backupStorage;
+      throw error;
+    }
+  }
+
+  async atomicDeleteDictionary({ dictionaryId, entryIds, state = undefined }) {
+    const backupStorage = new Map(
+      [...this.storage].map(([key, value]) => [
+        key,
+        Array.isArray(value) ? value.map((record) => ({ ...record })) : value,
+      ])
+    );
+    try {
+      for (const entryId of entryIds || []) {
+        await this.delete(STORES.USER_DICTIONARY_ENTRIES, entryId);
+      }
+      await this.delete(STORES.USER_DICTIONARIES, dictionaryId);
+      if (state !== undefined) this.storage.set(`${STORES.APP_STATE}:state`, state);
+    } catch (error) {
+      this.storage = backupStorage;
+      throw error;
+    }
+  }
+
   async addUnique(storeName, _indexName, key, value) {
     const storeKey = `${storeName}:__records__`;
     const records = this.storage.get(storeKey) || [];
@@ -630,9 +796,29 @@ class InMemoryFallback {
     return records.map((record) => ({ ...record }));
   }
 
+  async getAllByIndex(storeName, indexName, query = null) {
+    const records = await this.getAll(storeName);
+    if (query === null) return records;
+    return records.filter((record) => {
+      if (indexName === 'dictionaryId_entryKey') {
+        return (
+          Array.isArray(query) && record.dictionaryId === query[0] && record.entryKey === query[1]
+        );
+      }
+      return record[indexName] === query;
+    });
+  }
+
   async delete(storeName, key) {
-    const storeKey = `${storeName}:${key}`;
-    this.storage.delete(storeKey);
+    const recordsKey = `${storeName}:__records__`;
+    if (this.storage.has(recordsKey)) {
+      const records = this.storage.get(recordsKey) || [];
+      this.storage.set(
+        recordsKey,
+        records.filter((record) => record.id !== key)
+      );
+    }
+    this.storage.delete(`${storeName}:${key}`);
   }
 
   async clear(storeName) {
@@ -646,7 +832,16 @@ class InMemoryFallback {
     this.autoIncrement.delete(storeName);
   }
 
-  async atomicImport({ state, lessonVersion, lastActivityDay, theme, reviewLog }) {
+  async atomicImport({
+    state,
+    lessonVersion,
+    lastActivityDay,
+    theme,
+    reviewLog,
+    userDictionaries = [],
+    userDictionaryEntries = [],
+    userDictionaryImportProfiles = [],
+  }) {
     const backupStorage = new Map(this.storage);
     const backupAutoInc = new Map(this.autoIncrement);
 
@@ -681,6 +876,15 @@ class InMemoryFallback {
           await this.add(STORES.REVIEW_LOG, entry);
         }
       }
+      const replace = (storeName, records) => {
+        this.storage.set(
+          `${storeName}:__records__`,
+          records.map((record) => ({ ...record }))
+        );
+      };
+      replace(STORES.USER_DICTIONARIES, userDictionaries);
+      replace(STORES.USER_DICTIONARY_ENTRIES, userDictionaryEntries);
+      replace(STORES.USER_DICTIONARY_IMPORT_PROFILES, userDictionaryImportProfiles);
     } catch (error) {
       this.storage = backupStorage;
       this.autoIncrement = backupAutoInc;

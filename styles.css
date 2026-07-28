@@ -11126,6 +11126,211 @@ body.ws-focus-mode .tabbar {
   display: none !important;
 }
 
+/* User dictionaries */
+.user-dict-actions,
+.user-dict-card-actions,
+.user-dict-toolbar,
+.user-dict-filters,
+.user-dict-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+#user-dictionaries-body {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.user-dict-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 14px;
+}
+
+.user-dict-card,
+.user-word-card {
+  border: 1px solid var(--border, rgba(128, 128, 128, 0.25));
+  border-radius: 16px;
+  background: var(--card, #fff);
+  padding: 16px;
+}
+
+.user-dict-card {
+  display: grid;
+  gap: 8px;
+}
+
+.user-word-list {
+  display: grid;
+  gap: 10px;
+}
+
+.user-word-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.user-word-content {
+  min-width: 0;
+}
+
+.user-word-content h3,
+.user-word-content p {
+  overflow-wrap: anywhere;
+}
+
+.user-word-reading {
+  color: var(--muted, #666);
+  font-size: 0.95rem;
+}
+
+.user-dict-filters > input,
+.user-dict-filters > select {
+  min-height: 44px;
+  flex: 1 1 180px;
+}
+
+.user-dict-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.58);
+}
+
+.user-dict-modal {
+  width: min(760px, 100%);
+  max-height: min(90vh, 900px);
+  overflow: auto;
+  border-radius: 18px;
+  background: var(--bg, #fff);
+  color: var(--text, #222);
+  padding: 18px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.user-dict-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.user-dict-form,
+.user-dict-import {
+  display: grid;
+  gap: 14px;
+}
+
+.user-dict-field {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.user-dict-field input:not([type='checkbox']),
+.user-dict-field textarea,
+.user-dict-field select,
+.user-dict-import select {
+  width: 100%;
+  min-height: 44px;
+}
+
+.user-dict-field textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.user-dict-mapping {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-dict-mapping th,
+.user-dict-mapping td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border, rgba(128, 128, 128, 0.25));
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.user-dict-mapping caption {
+  padding: 8px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.user-dict-preview {
+  display: grid;
+  gap: 8px;
+  padding-inline-start: 24px;
+}
+
+.user-dict-preview li {
+  overflow-wrap: anywhere;
+}
+
+.user-dict-conflict {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.user-dict-pagination {
+  justify-content: center;
+}
+
+.muted {
+  color: var(--muted, #666);
+}
+
+@media (max-width: 640px) {
+  .user-word-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .user-word-card .user-dict-card-actions {
+    grid-column: 1 / -1;
+  }
+
+  .user-dict-mapping,
+  .user-dict-mapping thead,
+  .user-dict-mapping tbody,
+  .user-dict-mapping tr,
+  .user-dict-mapping th,
+  .user-dict-mapping td {
+    display: block;
+    width: 100%;
+  }
+
+  .user-dict-mapping thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .user-dict-mapping tr {
+    padding: 10px 0;
+  }
+
+  .user-dict-mapping td {
+    border: 0;
+  }
+
+  .user-dict-conflict {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Difficulty Selection Screen */
 .ws-difficulty-container {
   display: flex;

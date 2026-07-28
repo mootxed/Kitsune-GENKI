@@ -201,7 +201,7 @@ describe('IndexedDB review_log', () => {
     vi.unstubAllGlobals();
   });
 
-  it('создаёт v3 store с autoIncrement и индексами', async () => {
+  it('создаёт review_log в актуальной схеме с autoIncrement и индексами', async () => {
     const { DB_NAME, DB_VERSION, STORES, initializeDB } = await import('../src/db.js');
     const existingAppState = {
       options: { keyPath: 'id' },
@@ -214,7 +214,7 @@ describe('IndexedDB review_log', () => {
     await initializeDB();
 
     expect(fakeIndexedDB.factory.open).toHaveBeenCalledWith(DB_NAME, DB_VERSION);
-    expect(DB_VERSION).toBe(5);
+    expect(DB_VERSION).toBe(6);
     const store = fakeIndexedDB.stores.get(STORES.REVIEW_LOG);
     expect(store.options).toEqual({ keyPath: 'id', autoIncrement: true });
     expect([...store.indexes.keys()]).toEqual([

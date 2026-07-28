@@ -102,6 +102,8 @@ import { renderAIStory } from './ui/ai-story.js';
 import { renderWordSearch } from './ui/word-search.js';
 import { renderOnboarding } from './ui/onboarding.js';
 import { renderStatistics } from './ui/statistics.js';
+import { renderUserDictionaries } from './ui/user-dictionaries.js';
+import { refreshUserDictionaryLesson } from './src/user-dictionaries/runtime.js';
 import { shouldShowOnboarding } from './src/onboarding-state.js';
 
 // ===== ГЛОБАЛЬНЫЕ ЭКСПОРТЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ =====
@@ -649,6 +651,8 @@ function setupRouter() {
             t.classList.toggle('active', t === tab)
           );
           renderParticlesDictionary();
+        } else if (tab.dataset.tab === 'user-dictionaries') {
+          router.navigate('user-dictionaries');
         } else {
           renderSrsDashboard();
         }
@@ -702,6 +706,11 @@ function setupRouter() {
     'word-search': () => renderWordSearch(state, dependencies),
     onboarding: () => renderOnboarding(state, dependencies),
     statistics: () => renderStatistics(state),
+    'user-dictionaries': () =>
+      renderUserDictionaries(state, {
+        ...dependencies,
+        refreshRuntime: () => refreshUserDictionaryLesson(LESSONS, undefined, state),
+      }),
   });
 
   // Глобальные алиасы для обратной совместимости
@@ -772,6 +781,8 @@ async function init() {
 
     // Загрузка уроков
     await loadLessons();
+    const userDictionaryRuntime = await refreshUserDictionaryLesson(LESSONS, undefined, state);
+    if (userDictionaryRuntime.added > 0) await save(true);
 
     // Применение темы
     applyTheme();

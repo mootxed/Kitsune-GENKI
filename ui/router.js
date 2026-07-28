@@ -30,6 +30,7 @@ export function initRouter(handlers) {
   router.registerRenderHandler('crossword', handlers.crossword);
   router.registerRenderHandler('word-search', handlers['word-search']);
   router.registerRenderHandler('statistics', handlers.statistics);
+  router.registerRenderHandler('user-dictionaries', handlers['user-dictionaries']);
 
   // Инициализация обработчика истории браузера
   router.initHistoryHandler();

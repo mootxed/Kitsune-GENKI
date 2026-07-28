@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { db, initializeDB, STORES } from './db.js';
 import { getReviewLogs, syncReviewLogQueue } from './review-log.js';
+import {
+  ImportProfileSchema,
+  UserDictionaryEntrySchema,
+  UserDictionarySchema,
+} from './user-dictionaries/schema.js';
 
 // Константы ключей localStorage (для обратной совместимости со старыми бэкапами)
 const LS_STATE = 'kitsune_state_v1';
@@ -10,8 +15,8 @@ const LS_LAST_ACTIVITY_DAY = 'kitsune_last_activity_day';
 const LS_THEME = 'kitsune_theme';
 
 // Версия схемы для совместимости при будущих изменениях
-const SCHEMA_VERSION = '5.0'; // Версия формата бэкапа (не версия схемы IndexedDB)
-const LEGACY_SCHEMA_VERSIONS = new Set(['2.0', '3.0', '4.0']);
+const SCHEMA_VERSION = '6.0'; // Версия формата бэкапа (не версия схемы IndexedDB)
+const LEGACY_SCHEMA_VERSIONS = new Set(['2.0', '3.0', '4.0', '5.0']);
 
 // ---------- Zod Validation Schemas ----------
 
@@ -166,7 +171,7 @@ export const BackupSchema = z
       .optional()
       .default(SCHEMA_VERSION)
       .refine((val) => val === SCHEMA_VERSION || LEGACY_SCHEMA_VERSIONS.has(val), {
-        message: `Несовместимая версия схемы данных (поддерживаются ${SCHEMA_VERSION}, 4.0, 3.0 и 2.0)`,
+        message: `Несовместимая версия схемы данных (поддерживаются ${SCHEMA_VERSION}, 5.0, 4.0, 3.0 и 2.0)`,
       }),
     timestamp: z.string().max(100).optional(),
     data: z
@@ -176,6 +181,13 @@ export const BackupSchema = z
         lastActivityDay: z.string().max(100).nullable().optional(),
         theme: z.string().max(100).nullable().optional(),
         reviewLog: z.array(ReviewLogEntrySchema).max(50000).optional(),
+        userDictionaries: z.array(UserDictionarySchema).max(5_000).optional().default([]),
+        userDictionaryEntries: z
+          .array(UserDictionaryEntrySchema)
+          .max(20_000)
+          .optional()
+          .default([]),
+        userDictionaryImportProfiles: z.array(ImportProfileSchema).max(500).optional().default([]),
       })
       .passthrough(),
   })
@@ -190,6 +202,11 @@ export async function exportFullProgress() {
     let lastActivityDay = await database.get(STORES.CONTENT_CACHE, 'last_activity_day');
     let theme = await database.get(STORES.UI_PREFERENCES, 'theme');
     const reviewLog = await getReviewLogs();
+    const userDictionaries = await database.getAll(STORES.USER_DICTIONARIES);
+    const userDictionaryEntries = await database.getAll(STORES.USER_DICTIONARY_ENTRIES);
+    const userDictionaryImportProfiles = await database.getAll(
+      STORES.USER_DICTIONARY_IMPORT_PROFILES
+    );
 
     // Фоллбэк на localStorage если IndexedDB пустой
     if (!state) {
@@ -249,6 +266,9 @@ export async function exportFullProgress() {
         lastActivityDay,
         theme,
         reviewLog,
+        userDictionaries,
+        userDictionaryEntries,
+        userDictionaryImportProfiles,
       },
     };
 
@@ -300,6 +320,9 @@ export async function importFullProgress(data, preserveApiKey = true) {
       lastActivityDay: await database.get(STORES.CONTENT_CACHE, 'last_activity_day'),
       theme: await database.get(STORES.UI_PREFERENCES, 'theme'),
       reviewLog: await database.getAll(STORES.REVIEW_LOG),
+      userDictionaries: await database.getAll(STORES.USER_DICTIONARIES),
+      userDictionaryEntries: await database.getAll(STORES.USER_DICTIONARY_ENTRIES),
+      userDictionaryImportProfiles: await database.getAll(STORES.USER_DICTIONARY_IMPORT_PROFILES),
     };
 
     // Импортированный API-ключ всегда игнорируется (безопасность):
@@ -321,6 +344,9 @@ export async function importFullProgress(data, preserveApiKey = true) {
       lastActivityDay: data.data?.lastActivityDay ?? null,
       theme: data.data?.theme ?? null,
       reviewLog: Array.isArray(data.data?.reviewLog) ? data.data.reviewLog : [],
+      userDictionaries: data.data?.userDictionaries || [],
+      userDictionaryEntries: data.data?.userDictionaryEntries || [],
+      userDictionaryImportProfiles: data.data?.userDictionaryImportProfiles || [],
     };
 
     // 2. Выполняем атомарную запись всех хранилищ через единую IndexedDB транзакцию

@@ -1,43 +1,35 @@
-# Backup & Export/Import — Резервное Копирование Данных
+# Backup & Export/Import — Резервное копирование
 
-В этом документе описан формат резервных копий и механизм импорта/экспорта данных (`src/backup-manager.js`).
+Полный backup создаётся модулем `src/backup-manager.js`.
 
----
-
-## 📄 Структура JSON-файла бэкапа
-
-Экспортируемый файл представляет собой JSON с метаданными и полным снимком состояния:
-
-```javascript
+```json
 {
-  "appName": "Kitsune-GENKI",
-  "exportDate": "2026-07-27T16:30:00.000Z",
-  "schemaVersion": 13,
+  "app": "kotokitsu",
+  "exportType": "full_indexeddb",
+  "schemaVersion": "6.0",
+  "timestamp": "2026-07-28T10:00:00.000Z",
   "data": {
-    "version": 13,
-    "xp": 1250,
-    "streak": 5,
-    "srs": { ... },
-    "vocabularyUnlocks": { ... },
-    "userPlan": { ... },
-    "settings": { ... }
+    "state": {},
+    "lessonVersion": "1.0",
+    "lastActivityDay": "2026-07-28",
+    "theme": "default",
+    "reviewLog": [],
+    "userDictionaries": [],
+    "userDictionaryEntries": [],
+    "userDictionaryImportProfiles": []
   }
 }
 ```
 
----
+OpenRouter API key в `state.settings.openrouterKey` при export всегда заменяется
+пустой строкой. При import ключ из файла никогда не принимается.
 
-## 🔒 Безопасность и Секретные поля
+`validateImportData()` выполняет:
 
-> [!IMPORTANT]
-> При экспорте файла бэкапа чувствительные данные (такие как сохранённый пользователем OpenRouter API Key в `settings.apiKeys`) **автоматически вырезаются** из итогового JSON для защиты от утечки ключей при передаче файла.
+1. Zod-валидацию формата, state, FSRS/review данных и пользовательских словарей.
+2. Проверку версии `6.0` либо поддерживаемой legacy-версии `2.0`–`5.0`.
+3. Атомарную замену связанных IndexedDB stores.
+4. Rollback на предварительный snapshot при ошибке транзакции.
 
----
-
-## 📥 Валидация при импорте
-
-Перед применением импортируемого бэкапа функция `importBackupData()` выполняет следующие проверки:
-
-1. Проверка наличия поля `appName === 'Kitsune-GENKI'`.
-2. Проверка корректности `schemaVersion`. Если бэкап сделан на более старой версии схемы, к нему автоматически применяются необходимые миграции из `MIGRATIONS`.
-3. Атомарное перезаписывание хранилища IndexedDB с перезагрузкой состояния.
+Отдельный экспорт пользовательского словаря описан в
+[документе пользовательских словарей](../user-dictionaries.md) и не содержит FSRS.

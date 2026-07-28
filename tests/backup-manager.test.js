@@ -5,6 +5,7 @@ import {
   exportFullProgress,
 } from '../src/backup-manager.js';
 import { db, initializeDB, STORES } from '../src/db.js';
+import { UserDictionaryRepository } from '../src/user-dictionaries/index.js';
 
 describe('Backup Manager Validation & Security', () => {
   beforeEach(async () => {
@@ -14,6 +15,9 @@ describe('Backup Manager Validation & Security', () => {
     await database.clear(STORES.CONTENT_CACHE);
     await database.clear(STORES.UI_PREFERENCES);
     await database.clear(STORES.REVIEW_LOG);
+    await database.clear(STORES.USER_DICTIONARIES);
+    await database.clear(STORES.USER_DICTIONARY_ENTRIES);
+    await database.clear(STORES.USER_DICTIONARY_IMPORT_PROFILES);
   });
 
   afterEach(() => {
@@ -64,6 +68,33 @@ describe('Backup Manager Validation & Security', () => {
     const exported = await exportFullProgress();
     expect(exported.app).toBe('kotokitsu');
     expect(exported.data.state.settings.openrouterKey).toBe('');
+  });
+
+  it('includes user dictionaries and entries in full backup and restores them', async () => {
+    const database = await initializeDB();
+    await database.set(STORES.APP_STATE, 'state', validState);
+    const repository = new UserDictionaryRepository(database);
+    const dictionary = await repository.saveDictionary({ name: 'Backup dictionary' });
+    const entry = await repository.saveEntry({
+      dictionaryId: dictionary.id,
+      writing: '猫',
+      reading: 'ねこ',
+      meanings: ['кошка'],
+      learningEnabled: true,
+      source: { type: 'manual', label: '', externalId: null },
+    });
+
+    const exported = await exportFullProgress();
+    expect(exported.schemaVersion).toBe('6.0');
+    expect(exported.data.userDictionaries).toHaveLength(1);
+    expect(exported.data.userDictionaryEntries[0].learningEnabled).toBe(true);
+
+    await database.clear(STORES.USER_DICTIONARIES);
+    await database.clear(STORES.USER_DICTIONARY_ENTRIES);
+    const restored = await importFullProgress(exported, false);
+    expect(restored.success).toBe(true);
+    expect((await repository.listDictionaries())[0].id).toBe(dictionary.id);
+    expect((await repository.listEntries(dictionary.id))[0].id).toBe(entry.id);
   });
 
   it('validates a correct current schema version backup', () => {

@@ -20,6 +20,7 @@ const SCREEN_TITLES = {
   crossword: 'Кроссворд',
   'word-search': 'Поиск слов',
   statistics: 'Статистика',
+  'user-dictionaries': 'Мои словари',
 };
 
 export class Router {
@@ -41,6 +42,7 @@ export class Router {
       'crossword',
       'word-search',
       'statistics',
+      'user-dictionaries',
     ];
     this.renderHandlers = {};
   }

@@ -1,6 +1,6 @@
 # Kitsune-GENKI — Системная документация разработчика
 
-Добро пожаловать в официальную техническую документацию проекта **Kitsune-GENKI** — офлайн-первого PWA-приложения для изучения японского языка (на базе учебников Genki I/II), построенного на Vanilla JavaScript (ES Modules), Vite, IndexedDB (`KitsuneGenkiDB` v4), системе состояний `state` (v13) и интервальном повторении `ts-fsrs` (v5.4.1).
+Добро пожаловать в официальную техническую документацию проекта **Kitsune-GENKI** — офлайн-первого PWA-приложения для изучения японского языка (на базе учебников Genki I/II), построенного на Vanilla JavaScript (ES Modules), Vite, IndexedDB (`KitsuneGenkiDB` v6), системе состояний `state` (v13) и интервальном повторении `ts-fsrs` (v5.4.1).
 
 > [!IMPORTANT]
 > Настоящая документация отражает **фактическое текущее состояние исходного кода**, модулей, схем данных и проверенных тестов репозитория.
@@ -21,6 +21,7 @@
 | 📚 [**Content System**](content/content-system.md)             | Структура глав Genki, схема JSON-контента, валидаторы и пошаговые руководства по добавлению материалов.                            |
 | 🎮 [**Minigames**](minigames/overview.md)                      | Вспомогательные мини-игры (Crossword, Word Search, Particles), алгоритмы выбора слабых слов и accessibility.                       |
 | ✨ [**Features**](features/dictionary.md)                      | Интерактивный словарь, экран статистики, настройки, AI Story, TTS Audio, Onboarding.                                               |
+| 🗂️ [**User Dictionaries**](user-dictionaries.md)               | Личные словари, безопасный импорт JSON/CSV/TSV, FSRS-интеграция, export и backup.                                                  |
 | ⚖️ [**Legal & Licensing**](legal/README.md)                    | Модель лицензирования, происхождение ресурсов (RhosGFX, AI covers), third-party notices и disclaimers.                             |
 | 📱 [**PWA & SW**](pwa/pwa-overview.md)                         | Service Worker, стратегии кеширования, offline-first fallback, жизненный цикл обновлений PWA.                                      |
 | 📖 [**Reference**](reference/routes.md)                        | Справочники по маршрутам, конфигурации, npm-скриптам, схемам State/Events/Cards и Known Limitations.                               |

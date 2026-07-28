@@ -5,6 +5,7 @@ import {
   getAvailableMiniGameCandidates,
 } from '../src/minigame-word-selectors.js';
 import { defaultState } from '../state/store.js';
+import { SRS } from '../srs.js';
 
 describe('Minigame Word Selectors & Prior Knowledge Unlock Tests', () => {
   let mockLessons;
@@ -88,5 +89,51 @@ describe('Minigame Word Selectors & Prior Knowledge Unlock Tests', () => {
     const availableCount = getAvailableChapterCount(state);
     expect(availableCount).toBe(3);
     expect(availableCount >= 3).toBe(true);
+  });
+
+  it('user dictionary words enter minigames only after existing confident mastery threshold', () => {
+    const state = defaultState();
+    const now = Date.now();
+    const itemId = 'user-word:12345678';
+    const word = {
+      id: itemId,
+      writing: 'ねこ',
+      reading: 'ねこ',
+      russian: 'кошка',
+      sourceType: 'user-dictionary',
+      learningEnabled: true,
+    };
+    const recognition = SRS.newCard(itemId);
+    const recall = SRS.newCard(`${itemId}::recall`);
+    Object.assign(recognition, { reps: 3, stability: 30, state: 2, due: now + 86400000 });
+    Object.assign(recall, { reps: 3, stability: 30, state: 2, due: now + 86400000 });
+    state.srs = { [recognition.id]: recognition, [recall.id]: recall };
+
+    expect(
+      getAvailableMiniGameCandidates(state, [{ id: 'user-dictionaries', words: [word] }])
+    ).toEqual([]);
+
+    const successful = (skill, mode, reviewedAt) => ({
+      eventId: `${skill}-${reviewedAt}`,
+      eventType: 'review',
+      itemId,
+      cardId: skill === 'recognition' ? itemId : `${itemId}::recall`,
+      skill,
+      mode,
+      firstAttemptCorrect: true,
+      effectiveRating: 4,
+      reviewedAt,
+    });
+    state.reviewEvents = [
+      successful('recognition', 'multiple-choice', now - 3 * 86400000),
+      successful('recall', 'typing', now - 2 * 86400000),
+      successful('recall', 'typing', now - 86400000),
+    ];
+    const before = JSON.stringify(state);
+    const candidates = getAvailableMiniGameCandidates(state, [
+      { id: 'user-dictionaries', words: [word] },
+    ]);
+    expect(candidates.map((candidate) => candidate.id)).toEqual([itemId]);
+    expect(JSON.stringify(state)).toBe(before);
   });
 });

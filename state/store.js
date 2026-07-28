@@ -935,6 +935,18 @@ export async function resetApplicationData(options = {}) {
     console.warn('[Store] Ошибка очистки review logs:', err);
   }
 
+  for (const storeName of [
+    STORES.USER_DICTIONARIES,
+    STORES.USER_DICTIONARY_ENTRIES,
+    STORES.USER_DICTIONARY_IMPORT_PROFILES,
+  ]) {
+    try {
+      if (storeName) await db.clear(storeName);
+    } catch (err) {
+      console.warn(`[Store] Ошибка очистки ${storeName}:`, err);
+    }
+  }
+
   try {
     if (STORES.UI_PREFERENCES) {
       await db.delete(STORES.UI_PREFERENCES, 'idb_migrated');

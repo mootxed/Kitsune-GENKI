@@ -7,20 +7,24 @@
 ## 🗄️ Спецификация базы данных
 
 - **Имя базы данных**: `KitsuneGenkiDB`
-- **Текущая версия DB**: `DB_VERSION = 4`
+- **Текущая версия DB**: `DB_VERSION = 6`
 
 ---
 
 ## 📑 Object Stores (Таблицы)
 
-`KitsuneGenkiDB` содержит 4 специализированных хранилища (Object Stores):
+`KitsuneGenkiDB` содержит 8 специализированных хранилищ (Object Stores):
 
-| Object Store (`STORES`) | Ключ (KeyPath)     | Индексы                     | Назначение                                                               |
-| :---------------------- | :----------------- | :-------------------------- | :----------------------------------------------------------------------- |
-| `app_state`             | `id` (string)      | —                           | Основное состояние приложения (ключ `'state'`).                          |
-| `content_cache`         | `key` (string)     | —                           | Кэш загруженных глав Genki, грамматики и иероглифов.                     |
-| `ui_preferences`        | `key` (string)     | —                           | Позабытые UI настройки (тема, флаг выполненной миграции `idb_migrated`). |
-| `review_log`            | `eventId` (string) | `by_cardId`, `by_timestamp` | Append-only журнал всех совершённых FSRS повторений.                     |
+| Object Store (`STORES`)        | Ключ (KeyPath) | Индексы                                                           | Назначение                                                               |
+| :----------------------------- | :------------- | :---------------------------------------------------------------- | :----------------------------------------------------------------------- |
+| `app_state`                    | `id` (string)  | —                                                                 | Основное состояние приложения (ключ `'state'`).                          |
+| `content_cache`                | `key` (string) | —                                                                 | Кэш загруженных глав Genki, грамматики и иероглифов.                     |
+| `ui_preferences`               | `key` (string) | —                                                                 | Позабытые UI настройки (тема, флаг выполненной миграции `idb_migrated`). |
+| `review_log`                   | `id` (auto)    | `cardId`, `timestamp`, `reviewedAt`, составные индексы, `eventId` | Append-only журнал FSRS повторений.                                      |
+| `active_session`               | `id` (string)  | —                                                                 | Незавершённая учебная сессия.                                            |
+| `userDictionaries`             | `id` (string)  | `updatedAt`                                                       | Метаданные пользовательских словарей.                                    |
+| `userDictionaryEntries`        | `id` (string)  | `dictionaryId`, `dictionaryId_entryKey`, `learningEnabled`        | Нормализованные пользовательские записи.                                 |
+| `userDictionaryImportProfiles` | `id` (string)  | `name`                                                            | Сохранённые mapping-профили импорта.                                     |
 
 ---
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { IndexedDBWrapper, STORES } from '../src/db.js';
+import { DB_VERSION, IndexedDBWrapper, STORES } from '../src/db.js';
 
 describe('IndexedDBWrapper resilience and recovery', () => {
   let mockIDBRequest;
@@ -119,5 +119,31 @@ describe('IndexedDBWrapper resilience and recovery', () => {
     expect(wrapper.isInitialized).toBe(false);
     expect(wrapper.db).toBeNull();
     expect(wrapper.initializationPromise).toBeNull();
+  });
+
+  it('returns raw records for keyPath-id stores instead of assuming a value wrapper', async () => {
+    const wrapper = new IndexedDBWrapper();
+    const initTask = wrapper.initDB({ timeoutMs: 100, maxRetries: 0 });
+    mockIDBRequest.onsuccess();
+    await initTask;
+
+    const rawRecord = { id: 'user-dict:12345678', name: 'Raw dictionary' };
+    const getRequest = { onsuccess: null, onerror: null, result: rawRecord, error: null };
+    mockIDBDatabase.transaction.mockReturnValue({
+      objectStore: () => ({ get: () => getRequest }),
+    });
+    const readTask = wrapper.get(STORES.USER_DICTIONARIES, rawRecord.id);
+    await Promise.resolve();
+    getRequest.onsuccess();
+    await expect(readTask).resolves.toEqual(rawRecord);
+  });
+});
+
+describe('user dictionary IndexedDB migration metadata', () => {
+  it('bumps the legacy database in place and exposes normalized stores', () => {
+    expect(DB_VERSION).toBe(6);
+    expect(STORES.USER_DICTIONARIES).toBe('userDictionaries');
+    expect(STORES.USER_DICTIONARY_ENTRIES).toBe('userDictionaryEntries');
+    expect(STORES.USER_DICTIONARY_IMPORT_PROFILES).toBe('userDictionaryImportProfiles');
   });
 });
