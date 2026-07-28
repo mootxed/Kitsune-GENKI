@@ -76,7 +76,7 @@ export function openDictionaryModal(word, state, dependencies) {
     let conjugationHtml = '';
 
     function getRussianMeaning(formId, translation) {
-      const clean = translation
+      const clean = (translation || '')
         .toLowerCase()
         .trim()
         .replace(/^то\s+/i, '');

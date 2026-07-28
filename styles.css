@@ -557,7 +557,8 @@ p {
   overflow: hidden;
   position: relative;
 }
-#screen-sensei > .app-header {
+#screen-sensei > .app-header,
+.screen > .app-header {
   flex-shrink: 0;
 }
 #sensei-body {
@@ -1842,6 +1843,16 @@ p {
   padding-top: 8;
   padding-left: 8;
   padding-right: 8;
+}
+
+#screen-srs.srs-session-active .app-header,
+body.srs-session-active #screen-srs .app-header {
+  display: none !important;
+}
+
+#screen-srs.srs-session-active #srs-tabs-container,
+body.srs-session-active #srs-tabs-container {
+  display: none !important;
 }
 
 /* ===== PARTICLES DICTIONARY ===== */
@@ -4989,9 +5000,10 @@ input[type='date']:focus {
 }
 
 .app-loader.hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  display: none !important;
 }
 
 .loader-content {
@@ -7775,7 +7787,8 @@ rt {
 }
 
 .completion-overlay.hidden {
-  display: none;
+  display: none !important;
+  pointer-events: none !important;
 }
 
 .completion-content {

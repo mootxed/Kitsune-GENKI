@@ -87,10 +87,6 @@ export function renderFlash(state, dependencies) {
   setActiveReviewState(state);
   setActiveReviewDependencies(dependencies);
 
-  // Скрываем .tabbar при входе в режим SRS-карточек
-  const tabbar = document.querySelector('.tabbar');
-  if (tabbar) tabbar.style.display = 'none';
-
   const body = $('#srs-body');
   if (!body) {
     console.error('[renderFlash] #srs-body not found!');
@@ -154,17 +150,40 @@ export function renderFlash(state, dependencies) {
     card = flashQueue[flashIdx];
   }
 
-  if (card && card.id) {
-    const srsCard = state.srs?.[card.id];
-    if (srsCard && !srsCard.introducedOn) {
-      markCardIntroduced(srsCard);
-      card.introducedOn = srsCard.introducedOn;
-      if (typeof save === 'function') save();
+  if (!card || !card.id) {
+    console.warn('[renderFlash] No active card to render, restoring dashboard');
+    const srsScreen = document.getElementById('screen-srs');
+    if (srsScreen) srsScreen.classList.remove('srs-session-active');
+    const srsHeader = document.querySelector('#screen-srs .app-header');
+    if (srsHeader) srsHeader.style.display = 'flex';
+    const tabbarEl = document.querySelector('.tabbar');
+    if (tabbarEl) tabbarEl.style.display = '';
+    const tabsContainer = document.getElementById('srs-tabs-container');
+    if (tabsContainer) {
+      tabsContainer.classList.remove('hidden');
+      tabsContainer.style.display = '';
     }
+    return;
+  }
+
+  const srsScreen = document.getElementById('screen-srs');
+  if (srsScreen) srsScreen.classList.add('srs-session-active');
+  const srsHeader = document.querySelector('#screen-srs .app-header');
+  if (srsHeader) srsHeader.style.display = 'none';
+  const tabbarEl = document.querySelector('.tabbar');
+  if (tabbarEl) tabbarEl.style.display = 'none';
+  const tabsContainer = document.getElementById('srs-tabs-container');
+  if (tabsContainer) tabsContainer.classList.add('hidden');
+
+  const srsCard = state.srs?.[card.id];
+  if (srsCard && !srsCard.introducedOn) {
+    markCardIntroduced(srsCard);
+    card.introducedOn = srsCard.introducedOn;
+    if (typeof save === 'function') save();
   }
 
   // Проверяем, является ли карточка particle quiz
-  if (card.id && card.id.startsWith('PARTICLE_')) {
+  if (card.id.startsWith('PARTICLE_')) {
     renderParticleQuizMode(card, state, dependencies, renderFlash);
     return;
   }

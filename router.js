@@ -163,22 +163,26 @@ export class Router {
   }
 
   /**
-   * Инициализация обработчиков кликов для кнопок табара и навигации
+   * Инициализация обработчиков кликов для кнопок табара и навигации (делегирование на document)
    */
   initTabbarListeners() {
-    // Делегирование событий для всех кнопок с data-nav
-    const navButtons = document.querySelectorAll('[data-nav]');
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-nav]');
+      if (!btn) return;
+      const targetScreen = btn.dataset.nav;
 
-    navButtons.forEach((btn) => {
-      btn.addEventListener('click', (e) => {
+      if (targetScreen === 'shop') {
+        // Модальное окно магазина обрабатывается отдельно
+        return;
+      }
+
+      if (
+        targetScreen &&
+        (this.screens.includes(targetScreen) || this.renderHandlers[targetScreen])
+      ) {
         e.preventDefault();
-        const targetScreen = btn.dataset.nav;
-
-        // Проверяем, что это валидный экран
-        if (this.screens.includes(targetScreen) || this.renderHandlers[targetScreen]) {
-          this.navigate(targetScreen);
-        }
-      });
+        this.navigate(targetScreen);
+      }
     });
   }
 

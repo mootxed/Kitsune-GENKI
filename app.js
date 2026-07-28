@@ -1,5 +1,7 @@
 /* app.js — Kitsune Genki main controller */
 
+import './styles.css';
+
 // ===== ИМПОРТЫ МОДУЛЕЙ =====
 
 // Базовые модули
@@ -502,21 +504,12 @@ function setupRouter() {
       return;
     }
 
-    // Явно переключаемся на экран SRS
-    $$('.screen').forEach((s) => s.classList.add('hidden'));
-    const srsScreen = document.getElementById('screen-srs');
-    if (srsScreen) srsScreen.classList.remove('hidden');
-
-    // Скрываем tabbar во время сессии
-    const tabbar = document.querySelector('.tabbar');
-    if (tabbar) tabbar.style.display = 'none';
-
-    // Скрываем header и табы SRS во время сессии для полноэкранного интерфейса флэшкарточек
-    const srsHeader = document.querySelector('#screen-srs .app-header');
-    if (srsHeader) srsHeader.style.display = 'none';
-
-    const tabsContainer = document.getElementById('srs-tabs-container');
-    if (tabsContainer) tabsContainer.classList.add('hidden');
+    // Явно переключаемся на экран SRS (снимаем inert и aria-hidden)
+    if (router) {
+      router.navigate('srs');
+    } else {
+      nav('srs');
+    }
 
     // Чистый старт сессии повторения карточек главы
     setSessionManager(null);
@@ -527,7 +520,7 @@ function setupRouter() {
     const sessionCards = limitNewCardsForSession(chapterDue, state.srs);
     if (sessionCards.length === 0) {
       toast('Лимит новых карточек на сегодня исчерпан');
-      if (tabbar) tabbar.style.display = '';
+      renderSrsDashboard();
       return;
     }
 
@@ -539,11 +532,11 @@ function setupRouter() {
 
     if (!activateSessionBatch(batchInfo, chapterId)) {
       toast('Ошибка инициализации батча карточек');
-      if (tabbar) tabbar.style.display = '';
+      renderSrsDashboard();
       return;
     }
 
-    // Запускаем карточки (nav('srs') больше не нужен, т.к. мы уже переключили экран)
+    // Запускаем карточки
     renderFlash(state, dependencies);
   };
 
@@ -552,14 +545,11 @@ function setupRouter() {
 
   // Функция запуска сессии повторения карточек
   const startSrsSession = async () => {
-    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Явно переключаемся на экран SRS
-    // Скрываем все экраны
-    $$('.screen').forEach((s) => s.classList.add('hidden'));
-
-    // Показываем экран SRS
-    const srsScreen = document.getElementById('screen-srs');
-    if (srsScreen) {
-      srsScreen.classList.remove('hidden');
+    // Явно переключаемся на экран SRS (снимаем inert и aria-hidden)
+    if (router) {
+      router.navigate('srs');
+    } else {
+      nav('srs');
     }
 
     // Скрываем tabbar во время сессии
@@ -574,15 +564,14 @@ function setupRouter() {
 
       if (!due || due.length === 0) {
         toast('Нет карточек для повторения');
-        // Восстанавливаем tabbar
-        if (tabbar) tabbar.style.display = '';
+        renderSrsDashboard();
         return;
       }
 
       const sessionCards = limitNewCardsForSession(due, state.srs);
       if (sessionCards.length === 0) {
         toast('Лимит новых карточек на сегодня исчерпан');
-        if (tabbar) tabbar.style.display = '';
+        renderSrsDashboard();
         return;
       }
 
@@ -601,19 +590,9 @@ function setupRouter() {
       if (!batchInfo || !batchInfo.organizedCards) {
         console.error('[SRS] Failed to generate organized cards batch!');
         toast('Ошибка инициализации батча карточек');
-        // Восстанавливаем tabbar
-        if (tabbar) tabbar.style.display = '';
+        renderSrsDashboard();
         return;
       }
-
-      activateSessionBatch(batchInfo);
-
-      // Скрываем header и табы SRS во время сессии для полноэкранного интерфейса флэшкарточек
-      const srsHeader = document.querySelector('#screen-srs .app-header');
-      if (srsHeader) srsHeader.style.display = 'none';
-
-      const tabsContainerSession = document.getElementById('srs-tabs-container');
-      if (tabsContainerSession) tabsContainerSession.classList.add('hidden');
 
       // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Полностью очищаем #srs-body от dashboard HTML
       const srsBody = document.getElementById('srs-body');
@@ -625,6 +604,7 @@ function setupRouter() {
     } catch (err) {
       console.error('[SRS] Error in startSrsSession:', err);
       toast('Ошибка при запуске сессии: ' + err.message);
+      renderSrsDashboard();
     }
   };
 
@@ -633,11 +613,27 @@ function setupRouter() {
     const body = $('#srs-body');
     if (!body) return;
 
+    // Восстанавливаем видимость header и tabbar на dashboard
+    const srsScreen = document.getElementById('screen-srs');
+    if (srsScreen) srsScreen.classList.remove('srs-session-active');
+    document.body.classList.remove('srs-session-active');
+
+    const srsHeader = document.querySelector('#screen-srs .app-header');
+    if (srsHeader) {
+      srsHeader.style.display = 'flex';
+    }
+
+    const tabbar = document.querySelector('.tabbar');
+    if (tabbar) tabbar.style.display = '';
+
     document.getElementById('completion-overlay')?.classList.add('hidden');
 
     // Показываем табы на dashboard
     const tabsContainerDashboard = document.getElementById('srs-tabs-container');
-    if (tabsContainerDashboard) tabsContainerDashboard.classList.remove('hidden');
+    if (tabsContainerDashboard) {
+      tabsContainerDashboard.classList.remove('hidden');
+      tabsContainerDashboard.style.display = '';
+    }
 
     // Привязка вкладок SRS (Повторение / Словарь / Частицы)
     $$('#srs-tabs-container .lib-tab').forEach((tab) => {
@@ -810,9 +806,13 @@ async function init() {
     // Скрытие загрузочного экрана после полной инициализации
     const loader = document.getElementById('app-loader');
     if (loader) {
+      loader.classList.add('hidden');
+      loader.style.pointerEvents = 'none';
       loader.style.transition = 'opacity 0.3s ease';
       loader.style.opacity = '0';
-      setTimeout(() => loader.remove(), 300);
+      setTimeout(() => {
+        if (loader.parentNode) loader.remove();
+      }, 300);
     }
   } catch (error) {
     console.error('[Init] ❌ Критическая ошибка инициализации:', error);
@@ -845,6 +845,15 @@ async function init() {
 // Автоматического reload при controllerchange НЕТ — только по действию пользователя.
 
 window.addEventListener('load', async () => {
+  if (import.meta.env.DEV) {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        await reg.unregister();
+      }
+    }
+    return;
+  }
   const swUrl = `${import.meta.env.BASE_URL}sw.js`;
   await registerAndManageSW(swUrl, {
     onUpdateAvailable(waitingWorker) {

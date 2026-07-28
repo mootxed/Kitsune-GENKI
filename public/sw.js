@@ -51,8 +51,6 @@ const CORE_SHELL_ASSETS = [
 // Не кешируются атомарно; ошибка загрузки лишь пишется в лог.
 const OPTIONAL_SHELL_ASSETS = [
   'icon.svg',
-  'apple-touch-icon.png',
-  'favicon.ico',
   /* __STATIC_ASSETS_BEGIN__ */
   /* __STATIC_ASSETS_END__ */
 ];
@@ -244,7 +242,9 @@ self.addEventListener('activate', (event) => {
       .keys()
       .then((keys) => {
         const toDelete = keys.filter((key) => {
-          // Удаляем только кеши нашего namespace
+          if (CACHE_VERSION.startsWith('dev-')) {
+            return key.startsWith(`${NS}-`);
+          }
           return key.startsWith(`${NS}-`) && !validCaches.has(key);
         });
 
@@ -271,6 +271,9 @@ self.addEventListener('message', (event) => {
 
 // ===== FETCH EVENT =====
 self.addEventListener('fetch', (event) => {
+  // В режиме разработки (Vite dev) полностью отключаем кеширование SW, чтобы Vite отдавал свежие файлы
+  if (CACHE_VERSION.startsWith('dev-')) return;
+
   const { request } = event;
   const url = new URL(request.url);
 
