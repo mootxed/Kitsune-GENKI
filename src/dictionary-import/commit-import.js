@@ -51,37 +51,18 @@ export async function commitDictionaryImport({
       learningMode === 'all' ||
       (learningMode === 'selected' && selectedEntryIds.includes(item.entry.id));
 
-    const conflict = conflictsByIncomingId.get(item.entry.id);
+    // Проверяем, есть ли уже накопленная запись для этого entryKey в ТЕКУЩЕМ импорте
+    const existingAccumulatedIndex = addedEntriesByKey.get(entryKey);
 
-    if (conflict) {
-      // Конфликт с существующей записью в базе
-      const resolved = resolveEntryConflict(conflict.existing, sourceEntry, entryStrategy);
-      if (resolved.action === 'skip') continue;
-
-      const finalLearningEnabled = conflict.existing.learningEnabled || shouldLearn;
-      const entryToSave = {
-        ...resolved.entry,
-        learningEnabled: finalLearningEnabled,
-      };
-
-      const existingIndex = addedEntriesByKey.get(entryKey);
-      if (existingIndex !== undefined) {
-        entries[existingIndex] = entryToSave;
-      } else {
-        addedEntriesByKey.set(entryKey, entries.length);
-        entries.push(entryToSave);
-      }
-    } else if (addedEntriesByKey.has(entryKey) && entryStrategy !== 'separate') {
-      // Повтор внутри самого импортируемого файла
-      const previousIndex = addedEntriesByKey.get(entryKey);
-      const previousEntry = entries[previousIndex];
-
+    if (existingAccumulatedIndex !== undefined && entryStrategy !== 'separate') {
+      // Это повторное совпадение в импорте. Накапливаем относительно УЖЕ занесенного entries[existingAccumulatedIndex]
       if (entryStrategy === 'skip') {
         continue;
       }
+      const previousEntry = entries[existingAccumulatedIndex];
       if (entryStrategy === 'merge') {
         const merged = mergeUserDictionaryEntries(previousEntry, sourceEntry);
-        entries[previousIndex] = {
+        entries[existingAccumulatedIndex] = {
           ...merged,
           learningEnabled: previousEntry.learningEnabled || shouldLearn,
         };
@@ -97,15 +78,41 @@ export async function commitDictionaryImport({
             sourceType: sourceEntry.source?.type || 'import',
           }
         );
-        entries[previousIndex] = {
+        entries[existingAccumulatedIndex] = {
           ...replaced,
           learningEnabled: previousEntry.learningEnabled || shouldLearn,
         };
       }
+      continue;
+    }
+
+    // Если нет накопленной записи в импорте, проверяем конфликт с существующей записью в БД
+    const conflict = conflictsByIncomingId.get(item.entry.id);
+
+    if (conflict) {
+      const resolved = resolveEntryConflict(conflict.existing, sourceEntry, entryStrategy);
+      if (resolved.action === 'skip') continue;
+
+      // Для separate (action === 'insert') это новая отдельная запись -> берем только shouldLearn.
+      // Для merge/replace (action === 'update') берем conflict.existing.learningEnabled || shouldLearn.
+      const finalLearningEnabled =
+        resolved.action === 'update'
+          ? conflict.existing.learningEnabled || shouldLearn
+          : shouldLearn;
+
+      const entryToSave = {
+        ...resolved.entry,
+        learningEnabled: finalLearningEnabled,
+      };
+
+      if (entryStrategy === 'separate') {
+        entries.push(entryToSave);
+      } else {
+        addedEntriesByKey.set(entryKey, entries.length);
+        entries.push(entryToSave);
+      }
     } else {
-      // Новая импортируемая запись (без конфликтов)
-      // При новом импорте флаг learningEnabled берется ИСКЛЮЧИТЕЛЬНО из выбора пользователя (shouldLearn),
-      // а НЕ переносится из файла, когда выбран выбор 'dictionary-only'.
+      // Новая импортируемая запись (без конфликта с БД)
       const entryToSave = {
         ...sourceEntry,
         learningEnabled: shouldLearn,

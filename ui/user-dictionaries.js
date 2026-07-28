@@ -871,7 +871,11 @@ async function openImportWizard(
           try {
             const dictionary =
               dictionaries.find((value) => value.id === dictionarySelect.value) ||
-              createUserDictionaryModel({ name: newName.value, sourceType: 'import' });
+              createUserDictionaryModel({
+                name: newName.value,
+                description: parsed.root?.dictionary?.description || '',
+                sourceType: 'import',
+              });
             const existingEntries = dictionarySelect.value
               ? await repository.listEntries(dictionary.id)
               : [];

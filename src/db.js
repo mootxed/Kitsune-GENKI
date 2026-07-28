@@ -218,10 +218,14 @@ class IndexedDBWrapper {
             reviewLogStore.createIndex('cardId_reviewedAt', ['cardId', 'reviewedAt'], {
               unique: false,
             });
+            reviewLogStore.createIndex('itemId', 'itemId', { unique: false });
             reviewLogStore.createIndex('eventId', 'eventId', { unique: true });
             console.log('[DB] Создан store:', STORES.REVIEW_LOG);
           } else if (event.target.transaction) {
             reviewLogStore = event.target.transaction.objectStore(STORES.REVIEW_LOG);
+            if (!reviewLogStore.indexNames.contains('itemId')) {
+              reviewLogStore.createIndex('itemId', 'itemId', { unique: false });
+            }
             if (!reviewLogStore.indexNames.contains('eventId')) {
               reviewLogStore.createIndex('eventId', 'eventId', { unique: true });
             }
@@ -375,7 +379,11 @@ class IndexedDBWrapper {
     await this.ensureInitialized();
     return new Promise((resolve, reject) => {
       try {
-        const stores = [STORES.USER_DICTIONARIES, STORES.USER_DICTIONARY_ENTRIES];
+        const stores = [
+          STORES.USER_DICTIONARIES,
+          STORES.USER_DICTIONARY_ENTRIES,
+          STORES.REVIEW_LOG,
+        ];
         if (state !== undefined) stores.push(STORES.APP_STATE);
         const transaction = this.db.transaction(stores, 'readwrite');
         transaction.oncomplete = () => resolve();
@@ -387,7 +395,22 @@ class IndexedDBWrapper {
           transaction.objectStore(STORES.USER_DICTIONARIES).put(dictionary);
         }
         const entryStore = transaction.objectStore(STORES.USER_DICTIONARY_ENTRIES);
-        for (const id of deleteEntryIds) entryStore.delete(id);
+        const reviewLogStore = transaction.objectStore(STORES.REVIEW_LOG);
+
+        for (const id of deleteEntryIds) {
+          entryStore.delete(id);
+          if (reviewLogStore.indexNames.contains('itemId')) {
+            const index = reviewLogStore.index('itemId');
+            const req = index.openCursor(IDBKeyRange.only(id));
+            req.onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (cursor) {
+                cursor.delete();
+                cursor.continue();
+              }
+            };
+          }
+        }
         for (const entry of entries || []) entryStore.put(entry);
         if (state !== undefined) {
           transaction.objectStore(STORES.APP_STATE).put({ id: 'state', value: state });
@@ -402,7 +425,11 @@ class IndexedDBWrapper {
     await this.ensureInitialized();
     return new Promise((resolve, reject) => {
       try {
-        const stores = [STORES.USER_DICTIONARIES, STORES.USER_DICTIONARY_ENTRIES];
+        const stores = [
+          STORES.USER_DICTIONARIES,
+          STORES.USER_DICTIONARY_ENTRIES,
+          STORES.REVIEW_LOG,
+        ];
         if (state !== undefined) stores.push(STORES.APP_STATE);
         const transaction = this.db.transaction(stores, 'readwrite');
         transaction.oncomplete = () => resolve();
@@ -412,7 +439,22 @@ class IndexedDBWrapper {
           reject(transaction.error || new Error('Транзакция удаления словаря прервана'));
         transaction.objectStore(STORES.USER_DICTIONARIES).delete(dictionaryId);
         const entryStore = transaction.objectStore(STORES.USER_DICTIONARY_ENTRIES);
-        for (const entryId of entryIds || []) entryStore.delete(entryId);
+        const reviewLogStore = transaction.objectStore(STORES.REVIEW_LOG);
+
+        for (const entryId of entryIds || []) {
+          entryStore.delete(entryId);
+          if (reviewLogStore.indexNames.contains('itemId')) {
+            const index = reviewLogStore.index('itemId');
+            const req = index.openCursor(IDBKeyRange.only(entryId));
+            req.onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (cursor) {
+                cursor.delete();
+                cursor.continue();
+              }
+            };
+          }
+        }
         if (state !== undefined) {
           transaction.objectStore(STORES.APP_STATE).put({ id: 'state', value: state });
         }
@@ -753,7 +795,17 @@ class InMemoryFallback {
     );
     try {
       if (dictionary) await this.putRecord(STORES.USER_DICTIONARIES, dictionary);
-      for (const id of deleteEntryIds) await this.delete(STORES.USER_DICTIONARY_ENTRIES, id);
+      for (const id of deleteEntryIds) {
+        await this.delete(STORES.USER_DICTIONARY_ENTRIES, id);
+        const reviewLogsKey = `${STORES.REVIEW_LOG}:__records__`;
+        if (this.storage.has(reviewLogsKey)) {
+          const logs = this.storage.get(reviewLogsKey) || [];
+          this.storage.set(
+            reviewLogsKey,
+            logs.filter((record) => record.itemId !== id)
+          );
+        }
+      }
       for (const entry of entries || []) {
         await this.putRecord(STORES.USER_DICTIONARY_ENTRIES, entry);
       }
@@ -772,8 +824,17 @@ class InMemoryFallback {
       ])
     );
     try {
+      const entryIdSet = new Set(entryIds || []);
       for (const entryId of entryIds || []) {
         await this.delete(STORES.USER_DICTIONARY_ENTRIES, entryId);
+      }
+      const reviewLogsKey = `${STORES.REVIEW_LOG}:__records__`;
+      if (this.storage.has(reviewLogsKey)) {
+        const logs = this.storage.get(reviewLogsKey) || [];
+        this.storage.set(
+          reviewLogsKey,
+          logs.filter((record) => !entryIdSet.has(record.itemId))
+        );
       }
       await this.delete(STORES.USER_DICTIONARIES, dictionaryId);
       if (state !== undefined) this.storage.set(`${STORES.APP_STATE}:state`, state);

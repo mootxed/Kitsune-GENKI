@@ -223,6 +223,7 @@ describe('IndexedDB review_log', () => {
       'reviewedAt',
       'cardId_timestamp',
       'cardId_reviewedAt',
+      'itemId',
       'eventId',
     ]);
     expect(fakeIndexedDB.stores.get(STORES.APP_STATE)).toBe(existingAppState);

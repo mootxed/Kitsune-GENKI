@@ -102,7 +102,7 @@ export async function setUserEntriesLearningEnabled({ repository, entries, enabl
       syncUserEntryCards(entry, nextState);
     } else {
       for (const card of cardsForItem(nextState.srs, entry.id)) {
-        nextState.srs[card.id] = { ...card, suspended: true };
+        nextState.srs[card.id] = { ...card, suspended: true, suspendedReason: 'learning-disabled' };
       }
     }
   }

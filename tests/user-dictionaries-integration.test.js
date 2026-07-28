@@ -634,3 +634,153 @@ describe('intra-file duplicate merge and replace strategies', () => {
     expect(entries[0].meanings).toEqual(['кот']);
   });
 });
+
+describe('review 3 fixes: REVIEW_LOG deletion, separate strategy learningMode, multi-merge accumulation, and suspendedReason', () => {
+  let database;
+  let repository;
+
+  beforeEach(async () => {
+    database = await initializeDB();
+    for (const store of [
+      STORES.USER_DICTIONARIES,
+      STORES.USER_DICTIONARY_ENTRIES,
+      STORES.REVIEW_LOG,
+    ]) {
+      await database.clear(store);
+    }
+    repository = new UserDictionaryRepository(database);
+  });
+
+  it('atomically deletes REVIEW_LOG entries when user entry is deleted', async () => {
+    const dict = await repository.saveDictionary({ name: 'ReviewLog Test' });
+    const entry = await repository.saveEntry({
+      dictionaryId: dict.id,
+      writing: '猫',
+      reading: 'ねこ',
+      meanings: ['кошка'],
+      source: { type: 'manual', label: '', externalId: null },
+    });
+
+    // Добавляем тестовую запись в REVIEW_LOG
+    await database.putRecord(STORES.REVIEW_LOG, {
+      id: 'log-1',
+      cardId: entry.id,
+      itemId: entry.id,
+      timestamp: Date.now(),
+      reviewedAt: Date.now(),
+      effectiveRating: 3,
+    });
+
+    const logsBefore = await database.getAll(STORES.REVIEW_LOG);
+    expect(logsBefore.filter((log) => log.itemId === entry.id)).toHaveLength(1);
+
+    // Удаляем запись
+    await deleteUserEntriesWithProgress({
+      repository,
+      entries: [entry],
+      state: makeState(),
+    });
+
+    const logsAfter = await database.getAll(STORES.REVIEW_LOG);
+    expect(logsAfter.filter((log) => log.itemId === entry.id)).toHaveLength(0);
+  });
+
+  it('sets learningEnabled: false for separate strategy when learningMode is dictionary-only and existing entry is enabled', async () => {
+    const dict = await repository.saveDictionary({ name: 'Separate Test' });
+    const existingEntry = await repository.saveEntry({
+      dictionaryId: dict.id,
+      writing: '猫',
+      reading: 'ねこ',
+      meanings: ['кошка'],
+      source: { type: 'manual', label: '', externalId: null },
+    });
+
+    // Включаем обучение для существующей записи в БД
+    const enableResult = await setUserEntriesLearningEnabled({
+      repository,
+      entries: [{ ...existingEntry, learningEnabled: false }],
+      enabled: true,
+      state: makeState(),
+    });
+
+    const records = [{ value: { word: '猫', reading: 'ねこ', meaning: 'кот' }, sourceIndex: 1 }];
+    const preview = createImportPreview({
+      records,
+      mapping: { writing: 'word', reading: 'reading', meanings: 'meaning' },
+      options: { dictionaryId: dict.id },
+      existingEntries: [enableResult.entries[0]],
+    });
+
+    // Импортируем с separate и dictionary-only
+    await commitDictionaryImport({
+      repository,
+      dictionary: dict,
+      preview,
+      conflictStrategy: 'separate',
+      learningMode: 'dictionary-only',
+      state: makeState(),
+    });
+
+    const entries = await repository.listEntries(dict.id);
+    expect(entries).toHaveLength(2);
+    const separateEntry = entries.find((e) => e.id !== existingEntry.id);
+    expect(separateEntry).toBeDefined();
+    // Новая отдельная запись должна быть с learningEnabled: false
+    expect(separateEntry.learningEnabled).toBe(false);
+  });
+
+  it('accumulates multiple incoming merge conflicts without losing data', async () => {
+    const dict = await repository.saveDictionary({ name: 'Multi-Merge Test' });
+    const existingEntry = await repository.saveEntry({
+      dictionaryId: dict.id,
+      writing: '猫',
+      reading: 'ねこ',
+      meanings: ['кошка'],
+      source: { type: 'manual', label: '', externalId: null },
+    });
+
+    const records = [
+      { value: { word: '猫', reading: 'ねこ', meaning: 'кот' }, sourceIndex: 1 },
+      { value: { word: '猫', reading: 'ねこ', meaning: 'кошечка' }, sourceIndex: 2 },
+    ];
+    const preview = createImportPreview({
+      records,
+      mapping: { writing: 'word', reading: 'reading', meanings: 'meaning' },
+      options: { dictionaryId: dict.id },
+      existingEntries: [existingEntry],
+    });
+
+    await commitDictionaryImport({
+      repository,
+      dictionary: dict,
+      preview,
+      conflictStrategy: 'merge',
+      state: makeState(),
+    });
+
+    const entries = await repository.listEntries(dict.id);
+    expect(entries).toHaveLength(1);
+    // Все 3 значения (кошка из БД + кот из строки 1 + кошечка из строки 2) должны сохраниться!
+    expect(entries[0].meanings).toEqual(['кошка', 'кот', 'кошечка']);
+  });
+
+  it('sets suspendedReason: learning-disabled when bulk disabling learning', async () => {
+    const entry = makeEntry({ learningEnabled: true });
+    const state = makeState();
+    // Инициализируем карточки
+    syncUserEntryCards(entry, state);
+    const cardId = entry.id;
+    expect(state.srs[cardId]).toBeDefined();
+
+    // Отключаем обучение через setUserEntriesLearningEnabled
+    const result = await setUserEntriesLearningEnabled({
+      repository: { db: async () => ({ atomicDictionaryCommit: async () => {} }) },
+      entries: [entry],
+      enabled: false,
+      state,
+    });
+
+    expect(result.state.srs[cardId].suspended).toBe(true);
+    expect(result.state.srs[cardId].suspendedReason).toBe('learning-disabled');
+  });
+});
