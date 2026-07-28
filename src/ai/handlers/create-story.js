@@ -39,7 +39,7 @@ export const CREATE_STORY_PROMPT = `Создай естественную уче
   ],
   "unknownWords": [ { "writing": "...", "reading": "...", "meaning": "..." } ]
 }
-Слова W1... из контекста обязательны. Для каждого обязательного слова W1 указывай sourceToken: "W1". История содержит от 3 до 15 предложений. Каждый японский элемент (кроме пунктуации) — отдельный токен. История не меняет прогресс.`;
+Обязательные слова (requiredWords / первые слова W1..Wk) обязательны к использованию с указанием sourceToken: "W1". Дополнительные слова (supportingWords) являются необязательным поддерживающим контекстом. История содержит от 3 до 15 предложений. Каждый японский элемент (кроме пунктуации) — отдельный токен. История не меняет прогресс.`;
 
 function norm(val) {
   return String(val || '')
@@ -49,13 +49,24 @@ function norm(val) {
 }
 
 function isTokenMatchingWord(token, word) {
-  const tokenFields = [token.kanji, token.writing, token.dictionaryForm, token.dictionaryReading]
-    .map(norm)
-    .filter(Boolean);
+  const tokenKanji = norm(token.kanji || token.dictionaryForm || token.writing);
+  const tokenReading = norm(token.dictionaryReading || token.reading || token.writing);
 
-  const wordFields = [word.writing, word.kanji, word.reading].map(norm).filter(Boolean);
+  const wordWriting = norm(word.writing || word.kanji);
+  const wordReading = norm(word.reading);
 
-  return tokenFields.some((tf) => wordFields.includes(tf));
+  const wordHasKanji = /[\u4e00-\u9faf]/u.test(wordWriting || '');
+
+  if (tokenKanji && wordWriting && tokenKanji === wordWriting && tokenReading === wordReading) {
+    return true;
+  }
+  if (tokenKanji && wordWriting && tokenKanji === wordWriting) {
+    return true;
+  }
+  if (!wordHasKanji && tokenReading && wordReading && tokenReading === wordReading) {
+    return true;
+  }
+  return false;
 }
 
 export function validateStoryForMaterial(data, { length = 'short', words = [] } = {}) {

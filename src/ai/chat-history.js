@@ -80,21 +80,20 @@ export function createAssistantChatMessage({ text, intent, artifact, context, ty
 }
 
 function summarizeArtifact(message) {
-  if (!message.artifact) return message.text;
-  if (message.artifact.type === 'story') {
+  if (!message.artifact || typeof message.artifact !== 'object') return message.text;
+  if (message.artifact.type === 'story' && Array.isArray(message.artifact.story)) {
     return [
       message.text,
       ...message.artifact.story.slice(-3).map((sentence) => {
-        const japanese = sentence.tokens
-          .map((token) => token.kanji || token.writing || '')
-          .join('');
-        return `${japanese} — ${sentence.translation}`;
+        const tokens = Array.isArray(sentence?.tokens) ? sentence.tokens : [];
+        const japanese = tokens.map((token) => token?.kanji || token?.writing || '').join('');
+        return `${japanese} — ${sentence?.translation || ''}`;
       }),
     ].join('\n');
   }
-  const examples = (message.artifact.examples || [])
+  const examples = (Array.isArray(message.artifact.examples) ? message.artifact.examples : [])
     .slice(0, 3)
-    .map((example) => `${example.japanese} — ${example.translation}`);
+    .map((example) => `${example?.japanese || ''} — ${example?.translation || ''}`);
   return [message.text, ...examples].filter(Boolean).join('\n');
 }
 
@@ -109,13 +108,16 @@ export function selectRelevantMessages(history, limit = 12) {
 
 export function updateQuizAnswer(history, messageIdValue, questionId, selectedIndex) {
   return normalizeChatHistory(history).map((message) => {
-    if (message.id !== messageIdValue || !message.artifact?.quiz) return message;
+    if (message.id !== messageIdValue || !Array.isArray(message.artifact?.quiz?.questions)) {
+      return message;
+    }
     const questions = message.artifact.quiz.questions.map((question) => {
-      if (question.id !== questionId) return question;
+      if (!question || question.id !== questionId) return question;
+      const options = Array.isArray(question.options) ? question.options : [];
       return {
         ...question,
         selectedIndex,
-        answeredCorrectly: question.options[selectedIndex]?.isCorrect === true,
+        answeredCorrectly: options[selectedIndex]?.isCorrect === true,
       };
     });
     return { ...message, artifact: { ...message.artifact, quiz: { questions } } };

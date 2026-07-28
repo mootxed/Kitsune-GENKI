@@ -39,6 +39,15 @@ function flattenLessons(lessons = []) {
   });
 }
 
+export function wasVocabularyItemUnlocked(state, chapterId, itemId) {
+  if (!state?.vocabularyUnlocks || !chapterId || !itemId) return false;
+  const chapterUnlocks = state.vocabularyUnlocks[chapterId];
+  if (!chapterUnlocks || typeof chapterUnlocks !== 'object') return false;
+  return Object.values(chapterUnlocks).some(
+    (batch) => Array.isArray(batch?.itemIds) && batch.itemIds.includes(itemId)
+  );
+}
+
 function isUnlocked(word, state) {
   const id = word.id || word.itemId;
 
@@ -52,14 +61,19 @@ function isUnlocked(word, state) {
   if (isPlanLocked) return false;
 
   if (isVocabularyItemIntroduced(state, id)) return true;
-  if (state?.vocabularyUnlocks?.[id]) return true;
+  if (wasVocabularyItemUnlocked(state, word.chapterId, id)) return true;
 
-  const chapter = state?.chapters?.[word.chapterId];
-  if (chapter?.started) return true;
-
-  return wordCards.some(
+  const hasActiveRecord = wordCards.some(
     ([, record]) => record && record.planLocked !== true && (record.status || record.state)
   );
+  if (hasActiveRecord) return true;
+
+  const chapter = state?.chapters?.[word.chapterId];
+  if (chapter?.started && wordCards.length === 0 && !state?.vocabularyUnlocks) {
+    return true;
+  }
+
+  return false;
 }
 
 function fsrsBucket(state, catalog, bucket) {

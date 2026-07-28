@@ -206,26 +206,48 @@ export async function saveSenseiDictionaryEntry({
     return { status: 'saved', entry, merged: true };
   }
 
-  let dictionary;
-  if (draft.dictionaryId === '__new__') {
-    dictionary = await repository.saveDictionary({
-      name: draft.newDictionaryName || 'Новый словарь',
-      description: 'Создано из формы AI Сенсея',
-      sourceType: 'manual',
-    });
-    draft.dictionaryId = dictionary.id;
-  } else if (draft.dictionaryId === PERSONAL_DICTIONARY_ID) {
-    dictionary = await ensurePersonalDictionary(repository);
-  } else {
-    dictionary = await repository.getDictionary(draft.dictionaryId);
-  }
-
-  if (!dictionary) throw new Error('Выбранный словарь был удалён. Выберите другой словарь.');
-
   const separateId =
     duplicates.length && duplicateAction === 'separate'
       ? `user-word:${globalThis.crypto?.randomUUID?.() || `${Date.now()}-separate`}`
       : draft.id;
+
+  if (draft.dictionaryId === '__new__') {
+    const dictInput = {
+      name: draft.newDictionaryName || 'Новый словарь',
+      description: 'Создано из формы AI Сенсея',
+      sourceType: 'manual',
+    };
+    const entryInput = {
+      ...draft,
+      ...(separateId ? { id: separateId } : {}),
+      learningEnabled: false,
+      source: { type: 'manual', label: 'AI Сенсей', externalId: null },
+    };
+
+    if (typeof repository.createDictionaryWithEntry === 'function') {
+      const { entry } = await repository.createDictionaryWithEntry(dictInput, entryInput);
+      return { status: 'saved', entry, merged: false };
+    }
+
+    const createdDict = await repository.saveDictionary(dictInput);
+    try {
+      const entry = await repository.saveEntry({ ...entryInput, dictionaryId: createdDict.id });
+      return { status: 'saved', entry, merged: false };
+    } catch (saveError) {
+      if (repository.deleteDictionary) {
+        await repository.deleteDictionary(createdDict.id).catch(() => {});
+      }
+      throw saveError;
+    }
+  }
+
+  const dictionary =
+    draft.dictionaryId === PERSONAL_DICTIONARY_ID
+      ? await ensurePersonalDictionary(repository)
+      : await repository.getDictionary(draft.dictionaryId);
+
+  if (!dictionary) throw new Error('Выбранный словарь был удалён. Выберите другой словарь.');
+
   const entry = await repository.saveEntry({
     ...draft,
     ...(separateId ? { id: separateId } : {}),

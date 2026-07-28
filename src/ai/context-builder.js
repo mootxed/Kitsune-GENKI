@@ -67,9 +67,20 @@ export async function buildAIContext({
 }
 
 export function serializeAIContext(context = {}) {
+  let wordsPayload = context.words;
+  if (Array.isArray(context.words) && context.words.length && context.length) {
+    const requiredLimits = { short: 6, medium: 9, long: 12 };
+    const maxReq = requiredLimits[context.length] || 6;
+    const requiredWords = context.words.slice(0, maxReq);
+    const supportingWords = context.words.slice(maxReq);
+    wordsPayload = {
+      requiredWords,
+      ...(supportingWords.length ? { supportingWords } : {}),
+    };
+  }
   const safe = {
     ...(context.jlptTarget ? { jlptTarget: context.jlptTarget } : {}),
-    ...(context.words?.length ? { words: context.words } : {}),
+    ...(wordsPayload ? { words: wordsPayload } : {}),
     ...(context.topic ? { topic: context.topic } : {}),
     ...(context.tone ? { tone: context.tone } : {}),
     ...(context.length ? { length: context.length } : {}),

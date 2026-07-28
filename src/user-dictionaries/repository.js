@@ -54,6 +54,20 @@ export class UserDictionaryRepository {
     return value;
   }
 
+  async createDictionaryWithEntry(dictionaryInput, entryInput) {
+    const dictionary = await this.saveDictionary(dictionaryInput);
+    try {
+      const entry = await this.saveEntry({
+        ...entryInput,
+        dictionaryId: dictionary.id,
+      });
+      return { dictionary, entry };
+    } catch (error) {
+      await this.deleteDictionary(dictionary.id).catch(() => {});
+      throw error;
+    }
+  }
+
   async listEntries(dictionaryId) {
     const values = await (
       await this.db()

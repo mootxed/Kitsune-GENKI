@@ -8,6 +8,7 @@ import { UserDictionaryRepository } from '../src/user-dictionaries/repository.js
 import { AI_INTENTS, STARTER_ACTIONS } from '../src/ai/intents.js';
 import { createAIRequestClient } from '../src/ai/request-client.js';
 import { runSenseiPipeline } from '../src/ai/pipeline.js';
+import { PERSONAL_DICTIONARY_ID } from '../src/ai/personal-dictionary.js';
 import {
   clearChatHistory,
   createAssistantChatMessage,
@@ -390,6 +391,35 @@ export function renderSensei(state, dependencies = {}, renderOptions = {}) {
       input.placeholder = '質問してください… Задайте вопрос';
     }
   });
+  const wordSourceMenu = $('#sensei-wordsource-menu');
+  if (wordSourceMenu) {
+    wordSourceMenu.addEventListener('change', () => {
+      wordSourceMenu.dataset.explicit = 'true';
+    });
+    const repository =
+      dependencies.userDictionaryRepository ||
+      (dependencies.createUserDictionaryRepository?.() ?? new UserDictionaryRepository());
+    Promise.resolve(repository.listDictionaries())
+      .then((dictionaries) => {
+        if (!dictionaries || !dictionaries.length) return;
+        const extraDicts = dictionaries.filter((d) => d.id !== PERSONAL_DICTIONARY_ID);
+        if (extraDicts.length > 0) {
+          const selectedValue = wordSourceMenu.value;
+          const isExplicit = wordSourceMenu.dataset.explicit;
+          wordSourceMenu.innerHTML = `
+          <option value="mixed">Смешанный источник</option>
+          <option value="${PERSONAL_DICTIONARY_ID}">Мой словарь</option>
+          ${extraDicts.map((d) => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('')}
+          <option value="current_lesson">Текущий урок</option>
+          <option value="fsrs_difficult">Трудные слова</option>
+          <option value="fsrs_learned">Изученные слова</option>
+        `;
+          if (selectedValue) wordSourceMenu.value = selectedValue;
+          if (isExplicit) wordSourceMenu.dataset.explicit = isExplicit;
+        }
+      })
+      .catch(() => {});
+  }
   $('#chat-send').onclick = () => sendChat(state, dependencies);
   $('#chat-input').addEventListener('keydown', (event) => {
     if (event.key === 'Enter') sendChat(state, dependencies);
@@ -444,7 +474,21 @@ export async function sendChat(state, dependencies = {}) {
     delete input.dataset.storyContext;
   }
   const wordSourceSelect = $('#sensei-wordsource-menu');
-  const wordSource = wordSourceSelect?.value || 'mixed';
+  const rawValue = wordSourceSelect?.value || 'mixed';
+  const isExplicit =
+    wordSourceSelect?.dataset.explicit === 'true' ||
+    (rawValue !== 'mixed' && rawValue !== 'user_dictionary');
+
+  let wordSource = rawValue;
+  let dictionaryId = null;
+  if (rawValue === 'user_dictionary' || rawValue === PERSONAL_DICTIONARY_ID) {
+    wordSource = 'user_dictionary';
+    dictionaryId = PERSONAL_DICTIONARY_ID;
+  } else if (rawValue.startsWith('user-dict:')) {
+    wordSource = 'user_dictionary';
+    dictionaryId = rawValue;
+  }
+
   input.value = '';
   chatSending = true;
   chatHistory.push(createUserChatMessage(text, explicitIntent));
@@ -464,7 +508,12 @@ export async function sendChat(state, dependencies = {}) {
       lessons: dependencies.LESSONS || [],
       repository,
       request,
-      overrides: { wordSource, ...(storyContext ? { storyContext } : {}) },
+      overrides: {
+        wordSource,
+        ...(dictionaryId ? { dictionaryId } : {}),
+        wordSourceExplicit: isExplicit,
+        ...(storyContext ? { storyContext } : {}),
+      },
     });
     let assistant;
     if (result.status === 'clarify') {

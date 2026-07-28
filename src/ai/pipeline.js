@@ -19,8 +19,22 @@ export async function runSenseiPipeline({
   if (intentResult.intent === AI_INTENTS.CLARIFY_REQUEST) {
     return { status: 'clarify', intentResult };
   }
-  if (!explicitIntent && intentResult.intent === AI_INTENTS.CREATE_STORY && overrides.wordSource) {
-    intentResult.wordSource = overrides.wordSource;
+  if (
+    !explicitIntent &&
+    intentResult.intent === AI_INTENTS.CREATE_STORY &&
+    overrides.wordSource &&
+    overrides.wordSourceExplicit !== false
+  ) {
+    if (
+      overrides.wordSourceExplicit ||
+      intentResult.wordSource === 'mixed' ||
+      !intentResult.wordSource
+    ) {
+      intentResult.wordSource = overrides.wordSource;
+      if (overrides.dictionaryId) {
+        intentResult.dictionaryId = overrides.dictionaryId;
+      }
+    }
   }
 
   if (

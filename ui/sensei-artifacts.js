@@ -187,7 +187,11 @@ export function renderAssistantArtifact(message, options = {}) {
   if (artifact.type === 'story' && Array.isArray(artifact.story)) {
     content.append(renderStory(artifact, { ...options, message }));
   }
-  if (artifact.quiz && typeof artifact.quiz === 'object') {
+  if (
+    artifact.quiz &&
+    typeof artifact.quiz === 'object' &&
+    Array.isArray(artifact.quiz.questions)
+  ) {
     content.append(renderQuiz(artifact.quiz, { ...options, messageId: message.id }));
   }
   return content;
