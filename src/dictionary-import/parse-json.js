@@ -1,4 +1,4 @@
-import { USER_DICTIONARY_LIMITS } from '../user-dictionaries/schema.js';
+import { USER_DICTIONARY_LIMITS, UserDictionaryExportSchema } from '../user-dictionaries/schema.js';
 import { assertSafeValue } from '../user-dictionaries/normalize.js';
 
 function getAtPath(root, path) {
@@ -43,17 +43,20 @@ export function parseDictionaryJson(text, options = {}) {
     throw new Error(`Некорректный JSON: ${error.message}`);
   }
   assertSafeValue(root, { maxDepth: USER_DICTIONARY_LIMITS.jsonDepth });
-  if (
-    root?.format === 'kotokitsu-dictionary' &&
-    root?.schemaVersion === 1 &&
-    Array.isArray(root.entries)
-  ) {
-    if (root.entries.length > USER_DICTIONARY_LIMITS.entries) {
-      throw new Error(`В файле больше ${USER_DICTIONARY_LIMITS.entries} записей`);
+  if (root?.format === 'kotokitsu-dictionary' && root?.schemaVersion === 1) {
+    if (Array.isArray(root.entries)) {
+      const ids = root.entries.map((entry) => entry?.id).filter(Boolean);
+      if (new Set(ids).size !== ids.length) {
+        throw new Error('Строгий JSON содержит повторяющиеся ID');
+      }
     }
-    const ids = root.entries.map((entry) => entry?.id).filter(Boolean);
-    if (new Set(ids).size !== ids.length) {
-      throw new Error('Строгий JSON содержит повторяющиеся ID');
+    const validation = UserDictionaryExportSchema.safeParse(root);
+    if (!validation.success) {
+      const firstError = validation.error.issues?.[0];
+      const issuePath = firstError?.path?.length ? `${firstError.path.join('.')}: ` : '';
+      throw new Error(
+        `Некорректная структура строгого экспорта KotoKitsu (${issuePath}${firstError?.message || 'ошибка валидации'})`
+      );
     }
     return {
       root,
@@ -64,6 +67,7 @@ export function parseDictionaryJson(text, options = {}) {
       isStrict: true,
     };
   }
+
   const collections = discoverJsonCollections(root);
   const selectedPath = options.collectionPath ?? collections[0]?.path ?? '';
   const selected = getAtPath(root, selectedPath);

@@ -1,9 +1,13 @@
 import { makeCardId, SKILLS } from '../knowledge-model.js';
 import { SRS } from '../../srs.js';
 import { createKnowledgeItemFromUserEntry } from '../user-dictionaries/knowledge-item-adapter.js';
-import { resolveEntryConflict } from '../user-dictionaries/duplicate-detector.js';
+import {
+  mergeUserDictionaryEntries,
+  resolveEntryConflict,
+} from '../user-dictionaries/duplicate-detector.js';
 import {
   createNamespacedId,
+  getUserDictionaryEntryKey,
   normalizeUserDictionaryEntry,
 } from '../user-dictionaries/normalize.js';
 
@@ -20,23 +24,17 @@ export async function commitDictionaryImport({
   const conflictsByIncomingId = new Map(
     preview.conflicts.map((conflict) => [conflict.incoming.id, conflict])
   );
-  // Дубликаты внутри файла: по умолчанию skip второй и последующие вхождения
-  const intraFileDuplicateIds = new Set(
-    (preview.intraFileDuplicates || []).map((item) => item.duplicate.id)
-  );
 
   const entries = [];
+  const addedEntriesByKey = new Map(); // entryKey -> index in entries array
+
   for (const item of preview.accepted) {
-    // Строгий KotoKitsu-формат: записи уже нормализованы в preview
-    // Создаём новые ID, чтобы повторный импорт не перезаписывал произвольные записи
     let sourceEntry = item.entry;
     if (preview.isStrict) {
-      // Пересчитываем производные поля, не доверяем ID из файла
       sourceEntry = normalizeUserDictionaryEntry(
         {
           ...item.entry,
           id: createNamespacedId('user-word'),
-          // Не переносим FSRS-state — это dictionary-only export
         },
         {
           dictionaryId: dictionary.id,
@@ -47,25 +45,76 @@ export async function commitDictionaryImport({
       );
     }
 
-    // Пропускаем intra-file дубликаты (кроме стратегии separate)
     const entryStrategy = conflictStrategies[item.entry.id] || conflictStrategy;
-    if (intraFileDuplicateIds.has(item.entry.id) && entryStrategy !== 'separate') {
-      continue;
-    }
-
-    const conflict = conflictsByIncomingId.get(item.entry.id);
-    const resolved = conflict
-      ? resolveEntryConflict(conflict.existing, sourceEntry, entryStrategy)
-      : { action: 'insert', entry: sourceEntry };
-    if (resolved.action === 'skip') continue;
+    const entryKey = getUserDictionaryEntryKey(sourceEntry);
     const shouldLearn =
       learningMode === 'all' ||
       (learningMode === 'selected' && selectedEntryIds.includes(item.entry.id));
-    entries.push({
-      ...resolved.entry,
-      learningEnabled: shouldLearn || resolved.entry.learningEnabled,
-    });
+
+    const conflict = conflictsByIncomingId.get(item.entry.id);
+
+    if (conflict) {
+      // Конфликт с существующей записью в базе
+      const resolved = resolveEntryConflict(conflict.existing, sourceEntry, entryStrategy);
+      if (resolved.action === 'skip') continue;
+
+      const finalLearningEnabled = conflict.existing.learningEnabled || shouldLearn;
+      const entryToSave = {
+        ...resolved.entry,
+        learningEnabled: finalLearningEnabled,
+      };
+
+      const existingIndex = addedEntriesByKey.get(entryKey);
+      if (existingIndex !== undefined) {
+        entries[existingIndex] = entryToSave;
+      } else {
+        addedEntriesByKey.set(entryKey, entries.length);
+        entries.push(entryToSave);
+      }
+    } else if (addedEntriesByKey.has(entryKey) && entryStrategy !== 'separate') {
+      // Повтор внутри самого импортируемого файла
+      const previousIndex = addedEntriesByKey.get(entryKey);
+      const previousEntry = entries[previousIndex];
+
+      if (entryStrategy === 'skip') {
+        continue;
+      }
+      if (entryStrategy === 'merge') {
+        const merged = mergeUserDictionaryEntries(previousEntry, sourceEntry);
+        entries[previousIndex] = {
+          ...merged,
+          learningEnabled: previousEntry.learningEnabled || shouldLearn,
+        };
+      } else if (entryStrategy === 'replace') {
+        const replaced = normalizeUserDictionaryEntry(
+          {
+            ...sourceEntry,
+            id: previousEntry.id,
+            createdAt: previousEntry.createdAt,
+          },
+          {
+            dictionaryId: dictionary.id,
+            sourceType: sourceEntry.source?.type || 'import',
+          }
+        );
+        entries[previousIndex] = {
+          ...replaced,
+          learningEnabled: previousEntry.learningEnabled || shouldLearn,
+        };
+      }
+    } else {
+      // Новая импортируемая запись (без конфликтов)
+      // При новом импорте флаг learningEnabled берется ИСКЛЮЧИТЕЛЬНО из выбора пользователя (shouldLearn),
+      // а НЕ переносится из файла, когда выбран выбор 'dictionary-only'.
+      const entryToSave = {
+        ...sourceEntry,
+        learningEnabled: shouldLearn,
+      };
+      addedEntriesByKey.set(entryKey, entries.length);
+      entries.push(entryToSave);
+    }
   }
+
   const nextState = state ? { ...state, srs: { ...(state.srs || {}) } } : undefined;
   if (nextState) {
     for (const entry of entries.filter((value) => value.learningEnabled)) {

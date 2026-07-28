@@ -388,9 +388,7 @@ describe('syncUserEntryCards: capability reconcile', () => {
     });
 
     const state = makeState();
-    const cardId = `${entry.id}${CARD_SEP}recognition`;
     // recognition для user-word — это сам entry.id (без суффикса для recognition)
-    // Используем entry.id как recognition-карточку
     const recognitionCardId = entry.id;
     state.srs[recognitionCardId] = {
       id: recognitionCardId,
@@ -480,5 +478,159 @@ describe('updateUserEntryWithSync: atomic edit', () => {
     const dbEntries = await repository.listEntries(dict.id);
     expect(dbEntries[0].meanings).toEqual(['кошка', 'кот']);
     expect(dbEntries[0].id).toBe(rawEntry.id);
+  });
+});
+
+// --------------------------------------------------------------------------
+// Дополнительные тесты ревью
+// --------------------------------------------------------------------------
+
+describe('strict import: respects dictionary-only learningMode even when file entries have learningEnabled: true', () => {
+  let database;
+  let repository;
+
+  beforeEach(async () => {
+    database = await initializeDB();
+    for (const store of [STORES.USER_DICTIONARIES, STORES.USER_DICTIONARY_ENTRIES]) {
+      await database.clear(store);
+    }
+    repository = new UserDictionaryRepository(database);
+  });
+
+  it('sets learningEnabled: false for imported entries when learningMode is dictionary-only', async () => {
+    const dict = await repository.saveDictionary({ name: 'Обучение' });
+    const rawEntry = await repository.saveEntry({
+      dictionaryId: dict.id,
+      writing: '食べる',
+      reading: 'たべる',
+      meanings: ['есть'],
+      source: { type: 'manual', label: '', externalId: null },
+    });
+
+    // Экспортируем словарь с записью, имеющей learningEnabled: true
+    const enabledEntry = { ...rawEntry, learningEnabled: true };
+    const exported = createUserDictionaryExport(dict, [enabledEntry]);
+    const exportedJson = JSON.stringify(exported);
+
+    const parsedJson = parseDictionaryJson(exportedJson);
+    const newDict = createUserDictionaryModel({ name: 'Новый', sourceType: 'import' });
+    const preview = createImportPreview({
+      records: parsedJson.records,
+      mapping: {},
+      options: { dictionaryId: newDict.id },
+      isStrict: true,
+    });
+
+    // Выбираем режим «Только импортировать в словарь»
+    const state = makeState();
+    const result = await commitDictionaryImport({
+      repository,
+      dictionary: newDict,
+      preview,
+      learningMode: 'dictionary-only',
+      state,
+    });
+
+    const importedEntries = await repository.listEntries(newDict.id);
+    expect(importedEntries).toHaveLength(1);
+    expect(importedEntries[0].learningEnabled).toBe(false);
+    expect(Object.keys(result.state?.srs || {})).toHaveLength(0);
+  });
+});
+
+describe('parseDictionaryJson: collectionPath fallback & UserDictionaryExportSchema validation', () => {
+  it('throws error when strict JSON schema is invalid', () => {
+    const invalidStrictJson = JSON.stringify({
+      format: 'kotokitsu-dictionary',
+      schemaVersion: 1,
+      // отсутствует dictionary и exportedAt
+      entries: [{ id: 'user-word:12345678', writing: '猫' }],
+    });
+    expect(() => parseDictionaryJson(invalidStrictJson)).toThrow(
+      'Некорректная структура строгого экспорта KotoKitsu'
+    );
+  });
+
+  it('fallback gracefully when saved collectionPath is not in JSON file', () => {
+    const jsonWithoutCustomPath = JSON.stringify({
+      items: [{ word: '猫', meaning: 'кошка' }],
+    });
+    const savedPath = 'non_existent_path';
+
+    let parsed;
+    let warning = null;
+    try {
+      parsed = parseDictionaryJson(jsonWithoutCustomPath, { collectionPath: savedPath });
+    } catch {
+      parsed = parseDictionaryJson(jsonWithoutCustomPath);
+      warning = 'Путь коллекции не найден';
+    }
+
+    expect(parsed).toBeDefined();
+    expect(parsed.records).toHaveLength(1);
+    expect(warning).not.toBeNull();
+  });
+});
+
+describe('intra-file duplicate merge and replace strategies', () => {
+  let database;
+  let repository;
+
+  beforeEach(async () => {
+    database = await initializeDB();
+    for (const store of [STORES.USER_DICTIONARIES, STORES.USER_DICTIONARY_ENTRIES]) {
+      await database.clear(store);
+    }
+    repository = new UserDictionaryRepository(database);
+  });
+
+  it('merges intra-file duplicates when strategy is merge', async () => {
+    const dict = createUserDictionaryModel({ name: 'Мердж повторов' });
+    const records = [
+      { value: { word: '猫', reading: 'ねこ', meaning: 'кошка' }, sourceIndex: 1 },
+      { value: { word: '猫', reading: 'ねこ', meaning: 'кот' }, sourceIndex: 2 },
+    ];
+    const preview = createImportPreview({
+      records,
+      mapping: { writing: 'word', reading: 'reading', meanings: 'meaning' },
+      options: { dictionaryId: dict.id },
+    });
+
+    await commitDictionaryImport({
+      repository,
+      dictionary: dict,
+      preview,
+      conflictStrategy: 'merge',
+      state: defaultState(),
+    });
+
+    const entries = await repository.listEntries(dict.id);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].meanings).toEqual(['кошка', 'кот']);
+  });
+
+  it('replaces intra-file duplicate with second entry when strategy is replace', async () => {
+    const dict = createUserDictionaryModel({ name: 'Замена повторов' });
+    const records = [
+      { value: { word: '猫', reading: 'ねこ', meaning: 'кошка' }, sourceIndex: 1 },
+      { value: { word: '猫', reading: 'ねこ', meaning: 'кот' }, sourceIndex: 2 },
+    ];
+    const preview = createImportPreview({
+      records,
+      mapping: { writing: 'word', reading: 'reading', meanings: 'meaning' },
+      options: { dictionaryId: dict.id },
+    });
+
+    await commitDictionaryImport({
+      repository,
+      dictionary: dict,
+      preview,
+      conflictStrategy: 'replace',
+      state: defaultState(),
+    });
+
+    const entries = await repository.listEntries(dict.id);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].meanings).toEqual(['кот']);
   });
 });

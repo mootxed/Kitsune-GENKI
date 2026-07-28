@@ -12,6 +12,7 @@ import {
   deleteUserDictionaryWithProgress,
   deleteUserEntriesWithProgress,
   setUserEntriesLearningEnabled,
+  updateUserEntryWithSync,
 } from '../src/user-dictionaries/learning-service.js';
 import {
   commitDictionaryImport,
@@ -575,31 +576,37 @@ function openEntryForm(opener, repository, dictionary, entry, state, dependencie
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     try {
-      await repository.saveEntry({
-        ...entry,
-        dictionaryId: dictionary.id,
-        writing: writing.value,
-        reading: reading.value,
-        meanings: normalizeMeanings(meanings.value.replaceAll('\n', ';'), { separator: ';' }),
-        alternativeWritings: normalizeTags(alternatives.value, { separator: ';' }),
-        partOfSpeech: normalizeTags(partOfSpeech.value, { separator: ',' }),
-        tags: normalizeTags(tags.value, { separator: ',' }),
-        examples: examples.value
-          .split('\n')
-          .filter(Boolean)
-          .map((line) => {
-            const [japanese = '', translation = ''] = line.split('\t');
-            return { japanese, translation };
-          }),
-        notes: notes.value,
-        source: {
-          type: entry?.source.type || 'manual',
-          label: source.value,
-          externalId: entry?.source.externalId || null,
+      const result = await updateUserEntryWithSync({
+        repository,
+        entry: {
+          ...entry,
+          dictionaryId: dictionary.id,
+          writing: writing.value,
+          reading: reading.value,
+          meanings: normalizeMeanings(meanings.value.replaceAll('\n', ';'), { separator: ';' }),
+          alternativeWritings: normalizeTags(alternatives.value, { separator: ';' }),
+          partOfSpeech: normalizeTags(partOfSpeech.value, { separator: ',' }),
+          tags: normalizeTags(tags.value, { separator: ',' }),
+          examples: examples.value
+            .split('\n')
+            .filter(Boolean)
+            .map((line) => {
+              const [japanese = '', translation = ''] = line.split('\t');
+              return { japanese, translation };
+            }),
+          notes: notes.value,
+          source: {
+            type: entry?.source.type || 'manual',
+            label: source.value,
+            externalId: entry?.source.externalId || null,
+          },
         },
+        state,
       });
+      if (result.state) Object.assign(state, result.state);
       dirty = false;
       modal.close();
+      await dependencies.save?.(true);
       await dependencies.refreshRuntime?.();
       renderUserDictionaries(state, dependencies);
     } catch (error) {
@@ -736,14 +743,21 @@ async function openImportWizard(
         const profile = profiles.find((value) => value.id === profileSelect.value);
         selectedProfileId = profileSelect.value;
         if (format === 'json') {
-          // #5: Применяем collectionPath из профиля, если он есть
+          // #5: Применяем collectionPath из профиля, с падением на дефолтный поиск при отсутствии пути
           const savedPath = profile?.collectionPath || null;
-          parsed = parseDictionaryJson(text, savedPath ? { collectionPath: savedPath } : {});
-          // Проверяем, что сохранённый путь был найден в новом файле
-          if (savedPath && parsed.path !== savedPath) {
-            announceAlert(
-              `Путь коллекции «${savedPath}» из профиля не найден в новом файле. Выберите коллекцию вручную.`
-            );
+          let collectionPathWarning = null;
+          if (savedPath) {
+            try {
+              parsed = parseDictionaryJson(text, { collectionPath: savedPath });
+            } catch {
+              parsed = parseDictionaryJson(text);
+              collectionPathWarning = `Путь коллекции «${savedPath}» из профиля не найден в новом файле. Выберите коллекцию вручную.`;
+            }
+          } else {
+            parsed = parseDictionaryJson(text);
+          }
+          if (collectionPathWarning) {
+            announceAlert(collectionPathWarning);
           }
         } else {
           parsed = parseDelimited(text, { delimiter: format === 'tsv' ? '\t' : ',' });
@@ -785,7 +799,11 @@ async function openImportWizard(
       option.selected = (presetDictionaryId || '') === dictionary.id;
       dictionarySelect.append(option);
     });
-    const newName = textInput(file?.name.replace(/\.[^.]+$/u, '') || 'Импортированный словарь');
+    const defaultDictName =
+      parsed.root?.dictionary?.name ||
+      file?.name.replace(/\.[^.]+$/u, '') ||
+      'Импортированный словарь';
+    const newName = textInput(defaultDictName);
     const delimiter = node('select', { attrs: { 'aria-label': 'Разделитель CSV' } });
     [
       [',', 'Запятая'],
