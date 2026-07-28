@@ -706,11 +706,15 @@ function setupRouter() {
     'word-search': () => renderWordSearch(state, dependencies),
     onboarding: () => renderOnboarding(state, dependencies),
     statistics: () => renderStatistics(state),
-    'user-dictionaries': () =>
-      renderUserDictionaries(state, {
-        ...dependencies,
-        refreshRuntime: () => refreshUserDictionaryLesson(LESSONS, undefined, state),
-      }),
+    'user-dictionaries': (options) =>
+      renderUserDictionaries(
+        state,
+        {
+          ...dependencies,
+          refreshRuntime: () => refreshUserDictionaryLesson(LESSONS, undefined, state),
+        },
+        options
+      ),
   });
 
   // Глобальные алиасы для обратной совместимости

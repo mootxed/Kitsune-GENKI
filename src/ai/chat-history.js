@@ -146,6 +146,18 @@ export function clearChatHistory() {
 export function formatMessageAsNote(message) {
   const normalized = normalizeChatMessage(message);
   const lines = [normalized.text];
+  if (normalized.artifact?.story?.length) {
+    lines.push(
+      '',
+      'История:',
+      ...normalized.artifact.story.map((s) => {
+        const sentenceText = Array.isArray(s.tokens)
+          ? s.tokens.map((t) => t.kanji || t.writing || '').join('')
+          : s.japanese || '';
+        return `${s.speaker ? `**${s.speaker}**: ` : ''}${sentenceText}\n_${s.translation || ''}_`;
+      })
+    );
+  }
   if (normalized.artifact?.examples?.length) {
     lines.push(
       '',

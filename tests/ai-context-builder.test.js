@@ -120,6 +120,32 @@ describe('AI context builder privacy boundary', () => {
     expect(writings).not.toContain('二');
   });
 
+  it('excludes words that are planLocked even if the chapter is started', () => {
+    const lessonWithLockedWord = [
+      {
+        id: 1,
+        words: [
+          { id: 'word:unlocked', writing: '月', reading: 'つき', meanings: ['луна'] },
+          { id: 'word:plan_locked', writing: '太陽', reading: 'たいよう', meanings: ['солнце'] },
+        ],
+      },
+    ];
+    const testState = {
+      chapters: { 1: { started: true } },
+      srs: {
+        'word:plan_locked::recognition': { itemId: 'word:plan_locked', planLocked: true },
+      },
+    };
+    const unlocked = selectWords({
+      source: 'mixed',
+      state: testState,
+      lessons: lessonWithLockedWord,
+    });
+    const writings = unlocked.map((w) => w.writing);
+    expect(writings).toContain('月');
+    expect(writings).not.toContain('太陽');
+  });
+
   it('sorts recent learned cards by last review timestamp in descending order', () => {
     const recentState = {
       chapters: { 1: { started: true } },

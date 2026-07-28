@@ -126,18 +126,24 @@ function renderStory(artifact, options) {
     className: 'sensei-story',
     attrs: { 'data-testid': 'sensei-story-artifact' },
   });
-  for (const sentence of artifact.story || []) {
+  const sentences = Array.isArray(artifact?.story) ? artifact.story : [];
+  for (const sentence of sentences) {
+    if (!sentence) continue;
     const article = el('article', { className: 'sensei-story-sentence' });
-    article.append(el('strong', { className: 'sensei-story-speaker', text: sentence.speaker }));
+    article.append(
+      el('strong', { className: 'sensei-story-speaker', text: sentence.speaker || '' })
+    );
     const japanese = el('p', { className: 'sensei-story-japanese' });
-    sentence.tokens.forEach((token, index) => {
+    const tokens = Array.isArray(sentence.tokens) ? sentence.tokens : [];
+    tokens.forEach((token, index) => {
+      if (!token) return;
       const punctuation =
         !token.type ||
         /^punctuation$/iu.test(token.type) ||
         /^[。、！？…]+$/u.test(token.kanji || '');
       const tokenNode = el(punctuation ? 'span' : 'button', {
         className: punctuation ? 'sensei-punctuation' : 'sensei-token',
-        text: token.kanji || token.writing,
+        text: token.kanji || token.writing || '',
         attrs: punctuation ? {} : { type: 'button' },
       });
       if (!punctuation) {
@@ -155,7 +161,7 @@ function renderStory(artifact, options) {
       }
       japanese.append(tokenNode);
     });
-    article.append(japanese, el('p', { className: 'muted', text: sentence.translation }));
+    article.append(japanese, el('p', { className: 'muted', text: sentence.translation || '' }));
     section.append(article);
   }
   const check = el('button', {
@@ -174,12 +180,14 @@ export function renderAssistantArtifact(message, options = {}) {
   text.innerHTML = options.renderMarkdown(message.text || message.artifact?.message || '');
   content.append(text);
   const artifact = message.artifact;
-  if (!artifact) return content;
-  if (artifact.examples?.length) content.append(renderExamples(artifact.examples));
-  if (artifact.type === 'story') {
+  if (!artifact || typeof artifact !== 'object') return content;
+  if (Array.isArray(artifact.examples) && artifact.examples.length) {
+    content.append(renderExamples(artifact.examples));
+  }
+  if (artifact.type === 'story' && Array.isArray(artifact.story)) {
     content.append(renderStory(artifact, { ...options, message }));
   }
-  if (artifact.quiz) {
+  if (artifact.quiz && typeof artifact.quiz === 'object') {
     content.append(renderQuiz(artifact.quiz, { ...options, messageId: message.id }));
   }
   return content;

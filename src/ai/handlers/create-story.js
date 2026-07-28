@@ -41,6 +41,23 @@ export const CREATE_STORY_PROMPT = `Создай естественную уче
 }
 Слова W1... из контекста обязательны. Для каждого обязательного слова W1 указывай sourceToken: "W1". История содержит от 3 до 15 предложений. Каждый японский элемент (кроме пунктуации) — отдельный токен. История не меняет прогресс.`;
 
+function norm(val) {
+  return String(val || '')
+    .normalize('NFKC')
+    .replace(/\s+/gu, '')
+    .toLowerCase();
+}
+
+function isTokenMatchingWord(token, word) {
+  const tokenFields = [token.kanji, token.writing, token.dictionaryForm, token.dictionaryReading]
+    .map(norm)
+    .filter(Boolean);
+
+  const wordFields = [word.writing, word.kanji, word.reading].map(norm).filter(Boolean);
+
+  return tokenFields.some((tf) => wordFields.includes(tf));
+}
+
 export function validateStoryForMaterial(data, { length = 'short', words = [] } = {}) {
   const story = data?.story;
   if (!Array.isArray(story) || story.length === 0) {
@@ -70,17 +87,19 @@ export function validateStoryForMaterial(data, { length = 'short', words = [] } 
   }
 
   const allTokens = story.flatMap((s) => s.tokens || []);
-  const usedSourceTokens = new Set(allTokens.map((t) => t.sourceToken).filter(Boolean));
-  const usedWritings = new Set(
-    allTokens.flatMap((t) => [t.writing, t.kanji, t.dictionaryForm]).filter(Boolean)
-  );
+  const requiredLimits = { short: 6, medium: 9, long: 12 };
+  const maxRequired = requiredLimits[length] || 6;
+  const requiredWords = words.slice(0, maxRequired);
 
-  for (const promptWord of words) {
-    const isUsedBySourceToken = promptWord.token && usedSourceTokens.has(promptWord.token);
-    const isUsedByText =
-      usedWritings.has(promptWord.writing) ||
-      (promptWord.kanji && usedWritings.has(promptWord.kanji));
-    if (!isUsedBySourceToken && !isUsedByText) {
+  for (const promptWord of requiredWords) {
+    const isMatched = allTokens.some((t) => {
+      if (t.sourceToken && promptWord.token && t.sourceToken === promptWord.token) {
+        return isTokenMatchingWord(t, promptWord);
+      }
+      return isTokenMatchingWord(t, promptWord);
+    });
+
+    if (!isMatched) {
       return {
         success: false,
         error: new z.ZodError([

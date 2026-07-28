@@ -9,7 +9,7 @@ function issueText(result) {
 
 export async function requestWithOneRepair({
   request,
-  messages,
+  messages = [],
   schema,
   additionalValidator,
   repairPrompt,
@@ -19,18 +19,14 @@ export async function requestWithOneRepair({
   const first = validateJsonResponse(firstRaw, schema, additionalValidator);
   if (first.success) return { ...first, repaired: false, attempts: 1 };
 
-  const systemContent = systemPrompt
-    ? `${systemPrompt}\n\nИсправь JSON по указанным ошибкам. Верни только один валидный JSON-объект без markdown и пояснений.`
-    : 'Исправь JSON по указанным ошибкам. Верни только один JSON-объект без markdown и пояснений.';
+  const baseMessages = messages.length > 0 ? messages : [{ role: 'system', content: systemPrompt }];
 
   const repairMessages = [
-    {
-      role: 'system',
-      content: systemContent,
-    },
+    ...baseMessages,
+    { role: 'assistant', content: String(firstRaw || '').slice(0, 6_000) },
     {
       role: 'user',
-      content: `${repairPrompt}\nОшибки: ${issueText(first)}\nОтвет:\n${String(firstRaw || '').slice(0, 6_000)}`,
+      content: `${repairPrompt}\nОшибки: ${issueText(first)}\nИсправь JSON и верни только один валидный JSON-объект без markdown и пояснений.`,
     },
   ];
   const repairedRaw = await request(repairMessages);

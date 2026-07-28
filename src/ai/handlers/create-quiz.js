@@ -7,6 +7,17 @@ export const CreateQuizInputSchema = z
   .object({
     topic: z.string().trim().min(1).max(500),
     complexity: z.enum(['simple', 'normal', 'complex']).default('normal'),
+    storyContext: z
+      .object({
+        storyMessageId: z.string().nullable().optional(),
+        sentences: z.array(
+          z.object({
+            japanese: z.string(),
+            translation: z.string(),
+          })
+        ),
+      })
+      .optional(),
   })
   .strip();
 export const CREATE_QUIZ_PROMPT = `Создай проверочный квиз с вариантами ответа.
@@ -27,7 +38,7 @@ export const CREATE_QUIZ_PROMPT = `Создай проверочный квиз 
     ]
   }
 }
-В каждом вопросе 2-6 уникальных вариантов text/isCorrect, ровно один правильный и непустое объяснение. Все поля (id, type, prompt, topic, options, explanation) обязательны.`;
+Если в контексте переданы предложения истории (storyContext), составляй вопросы именно по этой истории. Каждый id вопроса (q1, q2...) должен быть уникальным. В каждом вопросе 2-6 уникальных вариантов text/isCorrect, ровно один правильный и непустое объяснение. Все поля обязательны.`;
 
 export function handleCreateQuiz(options) {
   return runStructuredHandler({

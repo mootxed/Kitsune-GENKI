@@ -333,7 +333,7 @@ function renderAssistantMessage(message, state, dependencies) {
 function renderMessages(state, dependencies, renderOptions = {}) {
   const area = $('#chat-area');
   if (!area || !chatHistory.length) return;
-  const savedScrollTop = area.scrollTop;
+  const targetScrollTop = renderOptions.savedScrollTop ?? area.scrollTop;
   area.replaceChildren();
   for (const message of chatHistory) {
     area.append(
@@ -344,7 +344,7 @@ function renderMessages(state, dependencies, renderOptions = {}) {
   }
   requestAnimationFrame(() => {
     if (renderOptions.autoScroll === false) {
-      area.scrollTop = savedScrollTop;
+      area.scrollTop = targetScrollTop;
     } else {
       area.scrollTop = area.scrollHeight;
     }
@@ -355,6 +355,10 @@ export function renderSensei(state, dependencies = {}, renderOptions = {}) {
   deps = dependencies;
   chatHistory = normalizeChatHistory(state?.chatHistory || chatHistory);
   if (state) state.chatHistory = chatHistory;
+
+  const existingArea = $('#chat-area');
+  const savedScrollTop = existingArea ? existingArea.scrollTop : 0;
+
   const selectAll =
     dependencies.$$ ||
     globalThis.window?.$$ ||
@@ -373,7 +377,7 @@ export function renderSensei(state, dependencies = {}, renderOptions = {}) {
   const body = $('#sensei-body');
   if (!body) return;
   body.innerHTML = chatShell(chatHistory.length === 0);
-  renderMessages(state, dependencies, renderOptions);
+  renderMessages(state, dependencies, { savedScrollTop, ...renderOptions });
   document.querySelectorAll('[data-sensei-action]').forEach((button) => {
     button.addEventListener('click', () => applyExplicitAction(button.dataset.senseiAction));
   });
@@ -439,6 +443,8 @@ export async function sendChat(state, dependencies = {}) {
     }
     delete input.dataset.storyContext;
   }
+  const wordSourceSelect = $('#sensei-wordsource-menu');
+  const wordSource = wordSourceSelect?.value || 'mixed';
   input.value = '';
   chatSending = true;
   chatHistory.push(createUserChatMessage(text, explicitIntent));
@@ -451,8 +457,6 @@ export async function sendChat(state, dependencies = {}) {
     const repository =
       dependencies.userDictionaryRepository ||
       (dependencies.createUserDictionaryRepository?.() ?? new UserDictionaryRepository());
-    const wordSourceSelect = $('#sensei-wordsource-menu');
-    const wordSource = wordSourceSelect?.value || 'mixed';
     const result = await runSenseiPipeline({
       text,
       explicitIntent,

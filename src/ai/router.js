@@ -17,6 +17,7 @@ export async function routeIntent(text, { request }) {
     schema: IntentRouterSchema,
     repairPrompt:
       'Исправь классификацию. Для неоднозначного запроса используй {"intent":"clarify_request","missing":["activityType"]}.',
+    systemPrompt: ROUTER_SYSTEM_PROMPT,
   });
   if (result.success) return { ...result.data, meta: { repaired: result.repaired } };
   return {

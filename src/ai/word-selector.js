@@ -1,4 +1,5 @@
 import { WORD_SOURCES } from './intents.js';
+import { isVocabularyItemIntroduced } from '../vocabulary-unlock-plan.js';
 
 const MAX_WORDS = 20;
 
@@ -39,11 +40,25 @@ function flattenLessons(lessons = []) {
 }
 
 function isUnlocked(word, state) {
+  const id = word.id || word.itemId;
+
+  const srsEntries = Object.entries(state?.srs || {});
+  const wordCards = srsEntries.filter(
+    ([cardId, record]) => cardId === id || cardId.startsWith(`${id}::`) || record?.itemId === id
+  );
+
+  const isPlanLocked =
+    wordCards.length > 0 && wordCards.every(([, record]) => record?.planLocked === true);
+  if (isPlanLocked) return false;
+
+  if (isVocabularyItemIntroduced(state, id)) return true;
+  if (state?.vocabularyUnlocks?.[id]) return true;
+
   const chapter = state?.chapters?.[word.chapterId];
   if (chapter?.started) return true;
-  const id = word.id || word.itemId;
-  return Object.entries(state?.srs || {}).some(
-    ([cardId, record]) => cardId === id || cardId.startsWith(`${id}::`) || record?.itemId === id
+
+  return wordCards.some(
+    ([, record]) => record && record.planLocked !== true && (record.status || record.state)
   );
 }
 

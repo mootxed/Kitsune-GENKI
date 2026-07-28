@@ -152,11 +152,16 @@ export function prepareTokenDictionaryDraft({
 
 export async function findDuplicateEntries(repository, draft) {
   const dictionaries = await repository.listDictionaries();
+  const probeDictionaryId =
+    !draft.dictionaryId || draft.dictionaryId === '__new__'
+      ? PERSONAL_DICTIONARY_ID
+      : draft.dictionaryId;
+
   const probe = normalizeUserDictionaryEntry(
     {
       ...draft,
       id: 'user-word:duplicate-probe',
-      dictionaryId: draft.dictionaryId || PERSONAL_DICTIONARY_ID,
+      dictionaryId: probeDictionaryId,
     },
     { preserveUpdatedAt: true }
   );
@@ -186,33 +191,10 @@ export async function saveSenseiDictionaryEntry({
   duplicateAction = 'cancel',
   duplicateEntry = null,
 }) {
-  let dictionary;
-  if (draft.dictionaryId === '__new__') {
-    const duplicatesBefore = duplicateEntry
-      ? [duplicateEntry]
-      : await findDuplicateEntries(repository, draft);
-    if (duplicatesBefore.length && duplicateAction === 'cancel') {
-      return { status: 'duplicate', duplicates: duplicatesBefore };
-    }
-    if (duplicatesBefore.length && duplicateAction === 'open') {
-      return { status: 'open', entry: duplicatesBefore[0] };
-    }
-    dictionary = await repository.saveDictionary({
-      name: draft.newDictionaryName || 'Новый словарь',
-      description: 'Создано из формы AI Сенсея',
-      sourceType: 'manual',
-    });
-    draft.dictionaryId = dictionary.id;
-  } else {
-    dictionary =
-      draft.dictionaryId === PERSONAL_DICTIONARY_ID
-        ? await ensurePersonalDictionary(repository)
-        : await repository.getDictionary(draft.dictionaryId);
-  }
-  if (!dictionary) throw new Error('Выбранный словарь был удалён. Выберите другой словарь.');
   const duplicates = duplicateEntry
     ? [duplicateEntry]
     : await findDuplicateEntries(repository, draft);
+
   if (duplicates.length && duplicateAction === 'cancel') {
     return { status: 'duplicate', duplicates };
   }
@@ -223,6 +205,23 @@ export async function saveSenseiDictionaryEntry({
     const entry = await mergeSenseiDictionaryEntry(repository, duplicates[0], draft);
     return { status: 'saved', entry, merged: true };
   }
+
+  let dictionary;
+  if (draft.dictionaryId === '__new__') {
+    dictionary = await repository.saveDictionary({
+      name: draft.newDictionaryName || 'Новый словарь',
+      description: 'Создано из формы AI Сенсея',
+      sourceType: 'manual',
+    });
+    draft.dictionaryId = dictionary.id;
+  } else if (draft.dictionaryId === PERSONAL_DICTIONARY_ID) {
+    dictionary = await ensurePersonalDictionary(repository);
+  } else {
+    dictionary = await repository.getDictionary(draft.dictionaryId);
+  }
+
+  if (!dictionary) throw new Error('Выбранный словарь был удалён. Выберите другой словарь.');
+
   const separateId =
     duplicates.length && duplicateAction === 'separate'
       ? `user-word:${globalThis.crypto?.randomUUID?.() || `${Date.now()}-separate`}`

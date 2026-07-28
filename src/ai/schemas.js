@@ -50,6 +50,17 @@ export const IntentRouterSchema = z.discriminatedUnion('intent', [
       intent: z.literal(AI_INTENTS.CREATE_QUIZ),
       topic: cleanText(500),
       complexity: z.enum(['simple', 'normal', 'complex']).default('normal'),
+      storyContext: z
+        .object({
+          storyMessageId: z.string().nullable().optional(),
+          sentences: z.array(
+            z.object({
+              japanese: cleanText(2_000),
+              translation: cleanText(2_000),
+            })
+          ),
+        })
+        .optional(),
     })
     .strip(),
   z
@@ -119,7 +130,17 @@ export const QuizSchema = z
   .object({
     questions: z.array(QuizQuestionSchema).min(1).max(8),
   })
-  .strip();
+  .strip()
+  .superRefine((quiz, ctx) => {
+    const ids = quiz.questions.map((q) => q.id);
+    if (new Set(ids).size !== ids.length) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['questions'],
+        message: 'Идентификаторы вопросов (id) должны быть уникальными',
+      });
+    }
+  });
 
 export const ExampleSchema = z
   .object({

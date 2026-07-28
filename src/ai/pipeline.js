@@ -19,6 +19,9 @@ export async function runSenseiPipeline({
   if (intentResult.intent === AI_INTENTS.CLARIFY_REQUEST) {
     return { status: 'clarify', intentResult };
   }
+  if (!explicitIntent && intentResult.intent === AI_INTENTS.CREATE_STORY && overrides.wordSource) {
+    intentResult.wordSource = overrides.wordSource;
+  }
 
   if (
     repository &&
