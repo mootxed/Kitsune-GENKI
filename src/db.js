@@ -1,7 +1,7 @@
 /* src/db.js — Promise-based обёртка над IndexedDB с graceful degradation */
 
 const DB_NAME = 'KitsuneGenkiDB';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 // Object Stores
 const STORES = {
@@ -14,6 +14,128 @@ const STORES = {
   USER_DICTIONARY_ENTRIES: 'userDictionaryEntries',
   USER_DICTIONARY_IMPORT_PROFILES: 'userDictionaryImportProfiles',
 };
+
+/**
+ * Удаляет записи review_log для указанного itemId.
+ * Использован индекс itemId (при наличии) либо полный cursor-обход.
+ */
+function deleteReviewLogsForItem(store, itemId, transaction, reject) {
+  const matchesItem = (value) => {
+    if (!value) return false;
+    if (value.itemId === itemId) return true;
+    if (!value.itemId && typeof value.cardId === 'string') {
+      return value.cardId === itemId || value.cardId.startsWith(`${itemId}::`);
+    }
+    return false;
+  };
+
+  const handleCursorSuccess = (event) => {
+    const cursor = event.target.result;
+    if (!cursor) return;
+
+    try {
+      if (matchesItem(cursor.value)) {
+        const deleteReq = cursor.delete();
+        deleteReq.onerror = (e) => {
+          try {
+            transaction.abort();
+          } catch {
+            /* ignore */
+          }
+          reject(deleteReq.error || e?.target?.error || new Error('Ошибка удаления cursor'));
+        };
+      }
+      cursor.continue();
+    } catch (err) {
+      try {
+        transaction.abort();
+      } catch {
+        /* ignore */
+      }
+      reject(err);
+    }
+  };
+
+  const handleCursorError = (event) => {
+    try {
+      transaction.abort();
+    } catch {
+      /* ignore */
+    }
+    reject(event?.target?.error || new Error('Ошибка запроса cursor'));
+  };
+
+  try {
+    if (store.indexNames.contains('itemId')) {
+      const keyRange = typeof IDBKeyRange !== 'undefined' ? IDBKeyRange.only(itemId) : itemId;
+      const request = store.index('itemId').openCursor(keyRange);
+      request.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (!cursor) {
+          const legacyRequest = store.openCursor();
+          legacyRequest.onsuccess = (legacyEvt) => {
+            const legCursor = legacyEvt.target.result;
+            if (!legCursor) return;
+            try {
+              if (!legCursor.value?.itemId && matchesItem(legCursor.value)) {
+                const delReq = legCursor.delete();
+                delReq.onerror = (err) => {
+                  try {
+                    transaction.abort();
+                  } catch {
+                    /* ignore */
+                  }
+                  reject(delReq.error || err?.target?.error);
+                };
+              }
+              legCursor.continue();
+            } catch (err) {
+              try {
+                transaction.abort();
+              } catch {
+                /* ignore */
+              }
+              reject(err);
+            }
+          };
+          legacyRequest.onerror = handleCursorError;
+          return;
+        }
+        try {
+          const deleteReq = cursor.delete();
+          deleteReq.onerror = (err) => {
+            try {
+              transaction.abort();
+            } catch {
+              /* ignore */
+            }
+            reject(deleteReq.error || err?.target?.error);
+          };
+          cursor.continue();
+        } catch (err) {
+          try {
+            transaction.abort();
+          } catch {
+            /* ignore */
+          }
+          reject(err);
+        }
+      };
+      request.onerror = handleCursorError;
+    } else {
+      const request = store.openCursor();
+      request.onsuccess = handleCursorSuccess;
+      request.onerror = handleCursorError;
+    }
+  } catch (err) {
+    try {
+      transaction.abort();
+    } catch {
+      /* ignore */
+    }
+    reject(err);
+  }
+}
 
 /**
  * Класс для работы с IndexedDB
@@ -399,17 +521,7 @@ class IndexedDBWrapper {
 
         for (const id of deleteEntryIds) {
           entryStore.delete(id);
-          if (reviewLogStore.indexNames.contains('itemId')) {
-            const index = reviewLogStore.index('itemId');
-            const req = index.openCursor(IDBKeyRange.only(id));
-            req.onsuccess = (e) => {
-              const cursor = e.target.result;
-              if (cursor) {
-                cursor.delete();
-                cursor.continue();
-              }
-            };
-          }
+          deleteReviewLogsForItem(reviewLogStore, id, transaction, reject);
         }
         for (const entry of entries || []) entryStore.put(entry);
         if (state !== undefined) {
@@ -443,17 +555,7 @@ class IndexedDBWrapper {
 
         for (const entryId of entryIds || []) {
           entryStore.delete(entryId);
-          if (reviewLogStore.indexNames.contains('itemId')) {
-            const index = reviewLogStore.index('itemId');
-            const req = index.openCursor(IDBKeyRange.only(entryId));
-            req.onsuccess = (e) => {
-              const cursor = e.target.result;
-              if (cursor) {
-                cursor.delete();
-                cursor.continue();
-              }
-            };
-          }
+          deleteReviewLogsForItem(reviewLogStore, entryId, transaction, reject);
         }
         if (state !== undefined) {
           transaction.objectStore(STORES.APP_STATE).put({ id: 'state', value: state });
@@ -793,6 +895,14 @@ class InMemoryFallback {
         Array.isArray(value) ? value.map((record) => ({ ...record })) : value,
       ])
     );
+    const matchesItemInMemory = (record, itemId) => {
+      if (!record) return false;
+      if (record.itemId === itemId) return true;
+      if (!record.itemId && typeof record.cardId === 'string') {
+        return record.cardId === itemId || record.cardId.startsWith(`${itemId}::`);
+      }
+      return false;
+    };
     try {
       if (dictionary) await this.putRecord(STORES.USER_DICTIONARIES, dictionary);
       for (const id of deleteEntryIds) {
@@ -802,7 +912,7 @@ class InMemoryFallback {
           const logs = this.storage.get(reviewLogsKey) || [];
           this.storage.set(
             reviewLogsKey,
-            logs.filter((record) => record.itemId !== id)
+            logs.filter((record) => !matchesItemInMemory(record, id))
           );
         }
       }
@@ -823,9 +933,17 @@ class InMemoryFallback {
         Array.isArray(value) ? value.map((record) => ({ ...record })) : value,
       ])
     );
+    const matchesItemInMemory = (record, itemId) => {
+      if (!record) return false;
+      if (record.itemId === itemId) return true;
+      if (!record.itemId && typeof record.cardId === 'string') {
+        return record.cardId === itemId || record.cardId.startsWith(`${itemId}::`);
+      }
+      return false;
+    };
     try {
-      const entryIdSet = new Set(entryIds || []);
-      for (const entryId of entryIds || []) {
+      const entryIdsArr = entryIds || [];
+      for (const entryId of entryIdsArr) {
         await this.delete(STORES.USER_DICTIONARY_ENTRIES, entryId);
       }
       const reviewLogsKey = `${STORES.REVIEW_LOG}:__records__`;
@@ -833,7 +951,7 @@ class InMemoryFallback {
         const logs = this.storage.get(reviewLogsKey) || [];
         this.storage.set(
           reviewLogsKey,
-          logs.filter((record) => !entryIdSet.has(record.itemId))
+          logs.filter((record) => !entryIdsArr.some((id) => matchesItemInMemory(record, id)))
         );
       }
       await this.delete(STORES.USER_DICTIONARIES, dictionaryId);

@@ -19,13 +19,14 @@
 
 ## IndexedDB
 
-Имя legacy-базы остаётся `KitsuneGenkiDB`. Версия IndexedDB поднята до `6`; миграция
-создаёт без очистки прежних данных:
+Имя legacy-базы остаётся `KitsuneGenkiDB`. Версия IndexedDB поднята до `7`; миграция v6 → v7
+добавляет индекс `review_log.itemId` для существующих установок без очистки прежних данных:
 
 - `userDictionaries`, key path `id`, индекс `updatedAt`;
 - `userDictionaryEntries`, key path `id`, индексы `dictionaryId`,
   `dictionaryId_entryKey` и `learningEnabled`;
-- `userDictionaryImportProfiles`, key path `id`, индекс `name`.
+- `userDictionaryImportProfiles`, key path `id`, индекс `name`;
+- `review_log`, индекс `itemId` (добавлен в v7 для существующих и новых баз).
 
 Полные записи не помещаются в state snapshot. Массовый import записывает словарь,
 entries и, только при явном выборе обучения, обновлённый state в одной транзакции.
@@ -110,7 +111,7 @@ Capabilities:
 
 Динамическое изменение полей записи приводит к согласованию (reconcile) карточек в `syncUserEntryCards`: карточки недоступных навыков (например, при удалении кандзи из записи) приостанавливаются с причиной `suspendedReason: 'capability-removed'`. При повторном появлении навыка такие карточки автоматически возобновляются без потери накопленного FSRS-прогресса. Редактирование записи в UI выполняется атомарно через `updateUserEntryWithSync`.
 
-Исключение из обучения приостанавливает карточки с `suspendedReason: 'learning-disabled'`. Удаление записи или словаря (независимо от текущего флага `learningEnabled`) полностью удаляет карточки, review events, pending review logs и mastery archive в единой транзакции, не оставляя dangling references.
+Исключение из обучения приостанавливает карточки с `suspendedReason: 'learning-disabled'`. Удаление записи или словаря (независимо от текущего флага `learningEnabled`) полностью удаляет карточки, review events, pending review logs, записи `review_log` (через индекс `itemId` или fallback-cursor для связанных legacy `cardId`) и mastery archive в единой транзакции, не оставляя dangling references.
 
 ## Мини-игры
 

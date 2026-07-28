@@ -141,7 +141,7 @@ describe('IndexedDBWrapper resilience and recovery', () => {
 
 describe('user dictionary IndexedDB migration metadata', () => {
   it('bumps the legacy database in place and exposes normalized stores', () => {
-    expect(DB_VERSION).toBe(6);
+    expect(DB_VERSION).toBe(7);
     expect(STORES.USER_DICTIONARIES).toBe('userDictionaries');
     expect(STORES.USER_DICTIONARY_ENTRIES).toBe('userDictionaryEntries');
     expect(STORES.USER_DICTIONARY_IMPORT_PROFILES).toBe('userDictionaryImportProfiles');
