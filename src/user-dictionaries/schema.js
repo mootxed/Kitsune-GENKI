@@ -33,13 +33,19 @@ const dictionaryId = z.string().regex(/^user-dict:[A-Za-z0-9-]{8,100}$/u);
 const entryId = z.string().regex(/^user-word:[A-Za-z0-9-]{8,100}$/u);
 const profileId = z.string().regex(/^import-profile:[A-Za-z0-9-]{8,100}$/u);
 const cleanString = (max) => z.string().trim().max(max);
-const japaneseText = (max) =>
+// Строгий набор символов для чтения (хирагана, катакана, кандзи, ー, ・, пробелы)
+const readingText = (max) =>
   cleanString(max).refine(
     (value) =>
       value === '' ||
       /^[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}々〆ヶー・\s]+$/u.test(value),
     { message: 'Ожидался японский текст' }
   );
+// Мягкий набор символов для написания: любые Unicode кроме управляющих символов
+const writingText = (max) =>
+  cleanString(max).refine((value) => value === '' || !/[\u0000-\u001F\u007F-\u009F]/u.test(value), {
+    message: 'Написание не может содержать управляющие символы',
+  });
 const nonEmptyStrings = (maxItems, maxLength) =>
   z.array(cleanString(maxLength).min(1)).max(maxItems);
 
@@ -78,8 +84,8 @@ export const UserDictionaryEntrySchema = z
   .object({
     id: entryId,
     dictionaryId,
-    writing: japaneseText(USER_DICTIONARY_LIMITS.word).default(''),
-    reading: japaneseText(USER_DICTIONARY_LIMITS.reading).default(''),
+    writing: writingText(USER_DICTIONARY_LIMITS.word).default(''),
+    reading: readingText(USER_DICTIONARY_LIMITS.reading).default(''),
     meanings: nonEmptyStrings(USER_DICTIONARY_LIMITS.meanings, USER_DICTIONARY_LIMITS.meaning).min(
       1
     ),
@@ -124,8 +130,8 @@ export const ImportProfileSchema = z
         meaningSeparator: z.string().max(10).default(';'),
         tagSeparator: z.string().max(10).default(','),
         stripHtml: z.boolean().default(true),
-        trim: z.boolean().default(true),
-        emptyAsMissing: z.boolean().default(true),
+        // trim и emptyAsMissing убраны в v1: нормализатор обрезает пробелы
+        // безусловно, отдельная настройка вводила пользователя в заблуждение.
         useObjectKeyAsWriting: z.boolean().default(false),
       })
       .strict(),

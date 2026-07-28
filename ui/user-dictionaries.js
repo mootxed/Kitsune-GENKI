@@ -424,24 +424,29 @@ async function renderDictionaryEntries(body, repository, dictionary, state, depe
       button(
         'Удалить',
         async () => {
+          // Проверяем фактическое наличие прогресса в SRS, а не только learningEnabled
+          const hasProgress =
+            entry.learningEnabled ||
+            Object.keys(state.srs || {}).some((cardId) => {
+              const { itemId } = state.srs[cardId] || {};
+              return itemId === entry.id || cardId === entry.id;
+            });
           if (
             !window.confirm(
-              entry.learningEnabled
+              hasProgress
                 ? 'Удалить запись вместе со связанными карточками и прогрессом?'
                 : 'Удалить запись?'
             )
           )
             return;
-          if (entry.learningEnabled) {
-            const result = await deleteUserEntriesWithProgress({
-              repository,
-              entries: [entry],
-              state,
-            });
-            Object.assign(state, result.state);
-          } else {
-            await repository.deleteEntry(entry.id);
-          }
+          // Всегда используем deleteUserEntriesWithProgress, чтобы
+          // очистить dangling SRS-ссылки даже для suspended (excluded) записей
+          const result = await deleteUserEntriesWithProgress({
+            repository,
+            entries: [entry],
+            state,
+          });
+          Object.assign(state, result.state);
           await dependencies.save?.(true);
           await dependencies.refreshRuntime?.();
           renderUserDictionaries(state, dependencies);
@@ -686,8 +691,6 @@ async function openImportWizard(
     meaningSeparator: ';',
     tagSeparator: ',',
     stripHtml: true,
-    trim: true,
-    emptyAsMissing: true,
     useObjectKeyAsWriting: false,
   };
   const modal = modalShell({
@@ -730,15 +733,24 @@ async function openImportWizard(
           text,
           size: file.size,
         });
-        parsed =
-          format === 'json'
-            ? parseDictionaryJson(text)
-            : parseDelimited(text, { delimiter: format === 'tsv' ? '\t' : ',' });
+        const profile = profiles.find((value) => value.id === profileSelect.value);
+        selectedProfileId = profileSelect.value;
+        if (format === 'json') {
+          // #5: Применяем collectionPath из профиля, если он есть
+          const savedPath = profile?.collectionPath || null;
+          parsed = parseDictionaryJson(text, savedPath ? { collectionPath: savedPath } : {});
+          // Проверяем, что сохранённый путь был найден в новом файле
+          if (savedPath && parsed.path !== savedPath) {
+            announceAlert(
+              `Путь коллекции «${savedPath}» из профиля не найден в новом файле. Выберите коллекцию вручную.`
+            );
+          }
+        } else {
+          parsed = parseDelimited(text, { delimiter: format === 'tsv' ? '\t' : ',' });
+        }
         const records = parsed.records || [];
         const fields = Object.keys(records[0]?.value || {});
         mapping = inferDictionaryMapping(fields);
-        const profile = profiles.find((value) => value.id === profileSelect.value);
-        selectedProfileId = profileSelect.value;
         if (profile) {
           mapping = { ...profile.mapping };
           Object.assign(transforms, profile.transforms);
@@ -817,19 +829,22 @@ async function openImportWizard(
     const tagSeparator = textInput(transforms.tagSeparator, { maxLength: 10 });
     const stripHtml = node('input', { type: 'checkbox' });
     stripHtml.checked = transforms.stripHtml;
-    const trimSpaces = node('input', { type: 'checkbox' });
-    trimSpaces.checked = transforms.trim;
-    const emptyAsMissing = node('input', { type: 'checkbox' });
-    emptyAsMissing.checked = transforms.emptyAsMissing;
     const useObjectKey = node('input', { type: 'checkbox' });
     useObjectKey.checked = transforms.useObjectKeyAsWriting;
     content.append(
-      labeledControl('Разделитель значений', meaningSeparator),
-      labeledControl('Разделитель тегов', tagSeparator),
-      labeledControl('Удалять HTML', stripHtml),
-      labeledControl('Обрезать пробелы', trimSpaces),
-      labeledControl('Считать пустые строки отсутствующими', emptyAsMissing),
-      labeledControl('Использовать ключ объекта как написание', useObjectKey)
+      labeledControl(
+        '\u0420\u0430\u0437\u0434\u0435\u043b\u0438\u0442\u0435\u043b\u044c \u0437\u043d\u0430\u0447\u0435\u043d\u0438\u0439',
+        meaningSeparator
+      ),
+      labeledControl(
+        '\u0420\u0430\u0437\u0434\u0435\u043b\u0438\u0442\u0435\u043b\u044c \u0442\u0435\u0433\u043e\u0432',
+        tagSeparator
+      ),
+      labeledControl('\u0423\u0434\u0430\u043b\u044f\u0442\u044c HTML', stripHtml),
+      labeledControl(
+        '\u0418\u0441\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u044c \u043a\u043b\u044e\u0447 \u043e\u0431\u044a\u0435\u043a\u0442\u0430 \u043a\u0430\u043a \u043d\u0430\u043f\u0438\u0441\u0430\u043d\u0438\u0435',
+        useObjectKey
+      )
     );
     content.append(
       button(
@@ -846,8 +861,6 @@ async function openImportWizard(
               meaningSeparator: meaningSeparator.value,
               tagSeparator: tagSeparator.value,
               stripHtml: stripHtml.checked,
-              trim: trimSpaces.checked,
-              emptyAsMissing: emptyAsMissing.checked,
               useObjectKeyAsWriting: useObjectKey.checked,
             });
             preview = createImportPreview({
@@ -859,6 +872,7 @@ async function openImportWizard(
                 sourceLabel: file.name,
               },
               existingEntries,
+              isStrict: Boolean(parsed.isStrict),
             });
             renderPreview(dictionary);
           } catch (error) {
@@ -876,7 +890,7 @@ async function openImportWizard(
     );
     content.append(
       node('p', {
-        text: `Всего: ${preview.total} · Готово: ${preview.ready} · С предупреждениями: ${preview.warningCount} · Отклонено: ${preview.rejectedCount} · Дубликатов: ${preview.duplicateCount}`,
+        text: `Всего: ${preview.total} · Готово: ${preview.ready} · С предупреждениями: ${preview.warningCount} · Отклонено: ${preview.rejectedCount} · Дубликатов (файл): ${preview.intraFileDuplicateCount || 0} · Дубликатов (словарь): ${preview.duplicateCount}`,
         attrs: { 'aria-live': 'polite' },
       })
     );

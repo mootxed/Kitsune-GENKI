@@ -11,6 +11,7 @@ export function createKnowledgeItemFromUserEntry(entry) {
     kanji: entry.writing,
     reading: entry.reading,
     kana: entry.reading,
+    translation: entry.meanings.join('; '),
     russian: entry.meanings.join('; '),
     meanings: [...entry.meanings],
     acceptedAnswers: [...capabilities.acceptedAnswers],

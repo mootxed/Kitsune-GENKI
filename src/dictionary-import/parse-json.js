@@ -61,6 +61,7 @@ export function parseDictionaryJson(text, options = {}) {
       collections: [{ path: 'entries', count: root.entries.length, kind: 'array' }],
       records: root.entries.map((value, index) => ({ value, sourceIndex: index + 1 })),
       strict: true,
+      isStrict: true,
     };
   }
   const collections = discoverJsonCollections(root);

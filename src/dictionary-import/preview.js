@@ -1,5 +1,9 @@
 import { applyDictionaryMapping } from './apply-mapping.js';
-import { findEntryConflicts } from '../user-dictionaries/duplicate-detector.js';
+import {
+  findEntryConflicts,
+  findIntraFileDuplicates,
+} from '../user-dictionaries/duplicate-detector.js';
+import { normalizeUserDictionaryEntry } from '../user-dictionaries/normalize.js';
 
 function readableImportError(error) {
   if (Array.isArray(error?.issues) && error.issues.length) {
@@ -16,13 +20,26 @@ export function createImportPreview({
   options,
   existingEntries = [],
   previewLimit = 20,
+  // При строгом KotoKitsu-формате не применяем ручной field mapping
+  isStrict = false,
 }) {
   const accepted = [];
   const rejected = [];
   const warnings = [];
   for (const record of records) {
     try {
-      const entry = applyDictionaryMapping(record, mapping, options);
+      let entry;
+      if (isStrict) {
+        // Строгий путь: нормализуем запись напрямую без ручного mapping
+        entry = normalizeUserDictionaryEntry(record.value, {
+          dictionaryId: options?.dictionaryId,
+          sourceType: record.value?.source?.type || 'import',
+          now: options?.now,
+          preserveUpdatedAt: true,
+        });
+      } else {
+        entry = applyDictionaryMapping(record, mapping, options);
+      }
       accepted.push({ entry, sourceIndex: record.sourceIndex });
       if (!entry.reading) {
         warnings.push({ sourceIndex: record.sourceIndex, message: 'Отсутствует чтение' });
@@ -35,16 +52,21 @@ export function createImportPreview({
     existingEntries,
     accepted.map((item) => item.entry)
   );
+  // Детекция дубликатов внутри самого импортируемого файла
+  const intraFileDuplicates = findIntraFileDuplicates(accepted.map((item) => item.entry));
   return {
     total: records.length,
     ready: accepted.length,
     warningCount: warnings.length,
     rejectedCount: rejected.length,
     duplicateCount: conflicts.length,
+    intraFileDuplicateCount: intraFileDuplicates.length,
     accepted,
     rejected,
     warnings,
     conflicts,
+    intraFileDuplicates,
+    isStrict,
     rows: [...accepted, ...rejected].slice(0, previewLimit),
   };
 }

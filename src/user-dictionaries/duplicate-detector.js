@@ -72,3 +72,24 @@ export function resolveEntryConflict(existing, incoming, strategy, options = {})
   if (strategy === 'separate') return { action: 'insert', entry: incoming };
   throw new Error(`Неизвестная стратегия конфликта: ${strategy}`);
 }
+
+/**
+ * Определяет дубликаты внутри одного набора импортируемых записей.
+ * Возвращает только второй и последующие экземпляры каждого entryKey.
+ * @param {Array} entries — нормализованные incoming записи
+ * @returns {Array} — [{first, duplicate, keyIndex}]
+ */
+export function findIntraFileDuplicates(entries) {
+  const seen = new Map();
+  const duplicates = [];
+  for (let index = 0; index < (entries || []).length; index += 1) {
+    const entry = entries[index];
+    const key = getUserDictionaryEntryKey(entry);
+    if (seen.has(key)) {
+      duplicates.push({ first: seen.get(key), duplicate: entry, keyIndex: index });
+    } else {
+      seen.set(key, entry);
+    }
+  }
+  return duplicates;
+}

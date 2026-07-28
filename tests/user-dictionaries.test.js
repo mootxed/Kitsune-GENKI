@@ -63,10 +63,20 @@ describe('user dictionary schema and normalization', () => {
     expect(() => entry({ notes: 'n'.repeat(10_001) })).toThrow();
   });
 
-  it('rejects non-Japanese writing and unexpected object types', () => {
-    expect(() => entry({ writing: '<script>alert(1)</script>' })).toThrow(
-      'Ожидался японский текст'
+  it('rejects control characters in writing but allows mixed scripts', () => {
+    // HTML tags are allowed in writing (displayed via textContent, not innerHTML)
+    expect(() => entry({ writing: '<script>alert(1)</script>' })).not.toThrow();
+    // Control characters are rejected
+    expect(() => entry({ writing: 'テスト\u0000文字' })).toThrow(
+      'Написание не может содержать управляющие символы'
     );
+    // Mixed scripts are allowed: Latin + Japanese
+    expect(() => entry({ writing: 'Tシャツ' })).not.toThrow();
+    expect(() => entry({ writing: '3つ' })).not.toThrow();
+    expect(() => entry({ writing: 'A型' })).not.toThrow();
+    // Non-Japanese reading is still rejected
+    expect(() => entry({ reading: 'english' })).toThrow('Ожидался японский текст');
+    // Object types throw a type error
     expect(() => entry({ reading: { kana: 'たべる' } })).toThrow('Ожидалась строка');
   });
 
@@ -203,5 +213,8 @@ describe('knowledge item capabilities', () => {
     expect(item.sourceType).toBe('user-dictionary');
     expect(item.sourceDictionaryId).toBe(value.dictionaryId);
     expect(item.russian).toBe('есть');
+    // translation must equal russian so card-mode renderers work correctly
+    expect(item.translation).toBe('есть');
+    expect(item.translation).toBe(item.russian);
   });
 });
