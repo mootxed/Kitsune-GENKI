@@ -24,6 +24,7 @@ export async function runStructuredHandler({
     schema: outputSchema,
     additionalValidator,
     repairPrompt: `Исправь structured output для handler ${handlerName}, сохранив учебный смысл.`,
+    systemPrompt,
   });
   if (!result.success) {
     return {

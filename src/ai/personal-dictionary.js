@@ -13,19 +13,57 @@ function normalizeLookup(value) {
     .toLocaleLowerCase('ja');
 }
 
-export function findTokenLexemeMatches(token, catalogWords = [], userEntries = []) {
-  const targets = new Set(
-    [token.dictionaryForm, token.dictionaryReading, token.kanji, token.writing]
-      .map(normalizeLookup)
-      .filter(Boolean)
+function matchRank(token, entry) {
+  const tokenWriting = normalizeLookup(token.dictionaryForm || token.kanji || token.writing);
+  const tokenReading = normalizeLookup(token.dictionaryReading || token.writing);
+
+  const entryWriting = normalizeLookup(entry.writing || entry.kanji);
+  const entryReading = normalizeLookup(entry.reading || entry.kana);
+
+  const writingMatch = Boolean(
+    tokenWriting &&
+    (tokenWriting === entryWriting ||
+      tokenWriting === normalizeLookup(entry.kanji) ||
+      tokenWriting === normalizeLookup(entry.writing))
   );
-  const matches = (entry) =>
-    [entry.writing, entry.kanji, entry.reading, entry.kana]
-      .map(normalizeLookup)
-      .some((value) => value && targets.has(value));
+  const readingMatch = Boolean(
+    tokenReading &&
+    (tokenReading === entryReading ||
+      tokenReading === normalizeLookup(entry.kana) ||
+      tokenReading === normalizeLookup(entry.reading))
+  );
+
+  if (writingMatch && readingMatch) return 1;
+  if (writingMatch && entryReading) return 2;
+  if (writingMatch) return 3;
+  if (readingMatch) return 4;
+  return 999;
+}
+
+export function findBestEntryMatch(token, entries = []) {
+  const ranked = entries
+    .map((entry) => ({ entry, rank: matchRank(token, entry) }))
+    .filter((item) => item.rank < 999);
+
+  if (ranked.length === 0) return null;
+
+  ranked.sort((a, b) => a.rank - b.rank);
+  const topRank = ranked[0].rank;
+  const topMatches = ranked.filter((item) => item.rank === topRank);
+
+  if (topRank <= 3) return topMatches[0].entry;
+  if (topRank === 4) {
+    if (topMatches.length === 1) return topMatches[0].entry;
+    return null;
+  }
+
+  return null;
+}
+
+export function findTokenLexemeMatches(token, catalogWords = [], userEntries = []) {
   return {
-    catalogMatch: catalogWords.find(matches) || null,
-    userMatch: userEntries.find(matches) || null,
+    catalogMatch: findBestEntryMatch(token, catalogWords),
+    userMatch: findBestEntryMatch(token, userEntries),
   };
 }
 
@@ -148,10 +186,29 @@ export async function saveSenseiDictionaryEntry({
   duplicateAction = 'cancel',
   duplicateEntry = null,
 }) {
-  const dictionary =
-    draft.dictionaryId === PERSONAL_DICTIONARY_ID
-      ? await ensurePersonalDictionary(repository)
-      : await repository.getDictionary(draft.dictionaryId);
+  let dictionary;
+  if (draft.dictionaryId === '__new__') {
+    const duplicatesBefore = duplicateEntry
+      ? [duplicateEntry]
+      : await findDuplicateEntries(repository, draft);
+    if (duplicatesBefore.length && duplicateAction === 'cancel') {
+      return { status: 'duplicate', duplicates: duplicatesBefore };
+    }
+    if (duplicatesBefore.length && duplicateAction === 'open') {
+      return { status: 'open', entry: duplicatesBefore[0] };
+    }
+    dictionary = await repository.saveDictionary({
+      name: draft.newDictionaryName || 'Новый словарь',
+      description: 'Создано из формы AI Сенсея',
+      sourceType: 'manual',
+    });
+    draft.dictionaryId = dictionary.id;
+  } else {
+    dictionary =
+      draft.dictionaryId === PERSONAL_DICTIONARY_ID
+        ? await ensurePersonalDictionary(repository)
+        : await repository.getDictionary(draft.dictionaryId);
+  }
   if (!dictionary) throw new Error('Выбранный словарь был удалён. Выберите другой словарь.');
   const duplicates = duplicateEntry
     ? [duplicateEntry]

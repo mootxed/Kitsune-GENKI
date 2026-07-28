@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AI_INTENTS } from '../intents.js';
-import { ExplanationResponseSchema, validateQuizForMaterial } from '../schemas.js';
+import { ExplanationWithQuizResponseSchema, validateQuizForMaterial } from '../schemas.js';
 import { runStructuredHandler } from '../handler-runner.js';
 
 export const CompareItemsInputSchema = z
@@ -11,15 +11,32 @@ export const CompareItemsInputSchema = z
   })
   .strip();
 export const COMPARE_ITEMS_PROMPT = `Сравни элементы: общая идея, точные различия,
-естественные контексты и ошибки взаимозамены. Верни JSON type=explanation и 5-7
-разнотипных вопросов. Не делай вопросы перефразировками друг друга.`;
+естественные контексты и ошибки взаимозамены. Верни только JSON следующей точной структуры:
+{
+  "type": "explanation",
+  "message": "сравнение элементов",
+  "examples": [ { "japanese": "...", "reading": "...", "translation": "..." } ],
+  "quiz": {
+    "questions": [
+      {
+        "id": "q1",
+        "type": "translation|reading|dictionary_form|verb_form|particle|natural_sentence|usage|find_error",
+        "prompt": "Текст вопроса",
+        "topic": "Тема",
+        "options": [ { "text": "Вариант 1", "isCorrect": true }, { "text": "Вариант 2", "isCorrect": false } ],
+        "explanation": "Объяснение"
+      }
+    ]
+  }
+}
+Квиз обязателен из 5-7 разнотипных вопросов. Не делай вопросы перефразировками друг друга. Все поля (id, type, prompt, topic, options, explanation) обязательны.`;
 
 export function handleCompareItems(options) {
   return runStructuredHandler({
     handlerName: AI_INTENTS.COMPARE_ITEMS,
     systemPrompt: COMPARE_ITEMS_PROMPT,
     inputSchema: CompareItemsInputSchema,
-    outputSchema: ExplanationResponseSchema,
+    outputSchema: ExplanationWithQuizResponseSchema,
     additionalValidator: (data) =>
       validateQuizForMaterial(data, {
         intent: AI_INTENTS.COMPARE_ITEMS,

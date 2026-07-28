@@ -19,6 +19,60 @@ export async function runSenseiPipeline({
   if (intentResult.intent === AI_INTENTS.CLARIFY_REQUEST) {
     return { status: 'clarify', intentResult };
   }
+
+  if (
+    repository &&
+    (intentResult.wordSource === 'user_dictionary' ||
+      intentResult.dictionaryName ||
+      intentResult.dictionaryId)
+  ) {
+    const dictionaries = (await repository.listDictionaries()) || [];
+    if (!intentResult.dictionaryId) {
+      if (intentResult.dictionaryName) {
+        const query = intentResult.dictionaryName.trim().toLowerCase();
+        const matches = dictionaries.filter(
+          (d) =>
+            (d.name || '').toLowerCase().includes(query) ||
+            query.includes((d.name || '').toLowerCase())
+        );
+        if (matches.length === 1) {
+          intentResult.dictionaryId = matches[0].id;
+        } else if (matches.length === 0 && dictionaries.length > 0) {
+          return {
+            status: 'clarify',
+            intentResult: {
+              intent: AI_INTENTS.CLARIFY_REQUEST,
+              missing: ['topic'],
+              question: `Словарь «${intentResult.dictionaryName}» не найден. Выберите один из доступных словарей: ${dictionaries.map((d) => d.name).join(', ')}`,
+            },
+          };
+        } else if (matches.length > 1) {
+          return {
+            status: 'clarify',
+            intentResult: {
+              intent: AI_INTENTS.CLARIFY_REQUEST,
+              missing: ['topic'],
+              question: `Найдено несколько подходящих словарей: ${matches.map((d) => d.name).join(', ')}. Уточните название.`,
+            },
+          };
+        }
+      } else if (intentResult.wordSource === 'user_dictionary') {
+        if (dictionaries.length === 1) {
+          intentResult.dictionaryId = dictionaries[0].id;
+        } else if (dictionaries.length > 1) {
+          return {
+            status: 'clarify',
+            intentResult: {
+              intent: AI_INTENTS.CLARIFY_REQUEST,
+              missing: ['topic'],
+              question: `Выберите словарь из доступных: ${dictionaries.map((d) => d.name).join(', ')}`,
+            },
+          };
+        }
+      }
+    }
+  }
+
   const handler = getAIHandler(intentResult.intent);
   if (!handler) {
     return {

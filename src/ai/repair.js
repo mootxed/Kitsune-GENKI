@@ -13,16 +13,20 @@ export async function requestWithOneRepair({
   schema,
   additionalValidator,
   repairPrompt,
+  systemPrompt = '',
 }) {
   const firstRaw = await request(messages);
   const first = validateJsonResponse(firstRaw, schema, additionalValidator);
   if (first.success) return { ...first, repaired: false, attempts: 1 };
 
+  const systemContent = systemPrompt
+    ? `${systemPrompt}\n\nИсправь JSON по указанным ошибкам. Верни только один валидный JSON-объект без markdown и пояснений.`
+    : 'Исправь JSON по указанным ошибкам. Верни только один JSON-объект без markdown и пояснений.';
+
   const repairMessages = [
     {
       role: 'system',
-      content:
-        'Исправь JSON по указанным ошибкам. Верни только один JSON-объект без markdown и пояснений.',
+      content: systemContent,
     },
     {
       role: 'user',

@@ -118,17 +118,10 @@ export async function openSenseiDictionaryDialog({
 
   const buildDraft = async () => {
     let dictionaryId = dictionary.value;
-    if (dictionaryId === '__new__') {
-      const created = await repository.saveDictionary({
-        name: newDictionaryName.value,
-        description: 'Создано из формы AI Сенсея',
-        sourceType: 'manual',
-      });
-      dictionaryId = created.id;
-    }
     return {
       ...draft,
       dictionaryId,
+      newDictionaryName: dictionaryId === '__new__' ? newDictionaryName.value.trim() : '',
       writing: writing.value.trim(),
       reading: reading.value.trim(),
       meanings: meanings.value

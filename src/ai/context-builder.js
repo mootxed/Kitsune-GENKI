@@ -62,6 +62,7 @@ export async function buildAIContext({
   if (intentResult.topic) context.topic = intentResult.topic;
   if (intentResult.tone) context.tone = intentResult.tone;
   if (intentResult.length) context.length = intentResult.length;
+  if (intentResult.storyContext) context.storyContext = intentResult.storyContext;
   return context;
 }
 
@@ -72,6 +73,7 @@ export function serializeAIContext(context = {}) {
     ...(context.topic ? { topic: context.topic } : {}),
     ...(context.tone ? { tone: context.tone } : {}),
     ...(context.length ? { length: context.length } : {}),
+    ...(context.storyContext ? { storyContext: context.storyContext } : {}),
     recentMessages: (context.recentMessages || []).slice(-12),
   };
   return JSON.stringify(safe);

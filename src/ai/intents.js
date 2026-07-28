@@ -77,6 +77,8 @@ export function buildExplicitIntent(action, text, overrides = {}) {
       length: overrides.length || 'short',
       wordSource: overrides.wordSource || 'mixed',
       explicitWords: overrides.explicitWords || [],
+      ...(overrides.dictionaryId ? { dictionaryId: overrides.dictionaryId } : {}),
+      ...(overrides.dictionaryName ? { dictionaryName: overrides.dictionaryName } : {}),
       ...overrides,
     };
   }

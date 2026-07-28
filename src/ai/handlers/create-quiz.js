@@ -10,8 +10,24 @@ export const CreateQuizInputSchema = z
   })
   .strip();
 export const CREATE_QUIZ_PROMPT = `Создай проверочный квиз с вариантами ответа.
-Верни JSON type=quiz. В каждом вопросе 2-6 уникальных вариантов text/isCorrect,
-ровно один правильный и непустое объяснение. Используй разные типы проверки.`;
+Верни только JSON следующей точной структуры:
+{
+  "type": "quiz",
+  "message": "Проверочный квиз",
+  "quiz": {
+    "questions": [
+      {
+        "id": "q1",
+        "type": "translation|reading|dictionary_form|verb_form|particle|natural_sentence|usage|find_error",
+        "prompt": "Текст вопроса",
+        "topic": "Тема",
+        "options": [ { "text": "Вариант 1", "isCorrect": true }, { "text": "Вариант 2", "isCorrect": false } ],
+        "explanation": "Объяснение ответа"
+      }
+    ]
+  }
+}
+В каждом вопросе 2-6 уникальных вариантов text/isCorrect, ровно один правильный и непустое объяснение. Все поля (id, type, prompt, topic, options, explanation) обязательны.`;
 
 export function handleCreateQuiz(options) {
   return runStructuredHandler({

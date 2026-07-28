@@ -43,18 +43,13 @@ function isUnlocked(word, state) {
   if (chapter?.started) return true;
   const id = word.id || word.itemId;
   return Object.entries(state?.srs || {}).some(
-    ([cardId, record]) =>
-      cardId === id ||
-      cardId.startsWith(`${id}::`) ||
-      record?.itemId === id ||
-      record?.status === 'learning' ||
-      record?.status === 'review'
+    ([cardId, record]) => cardId === id || cardId.startsWith(`${id}::`) || record?.itemId === id
   );
 }
 
 function fsrsBucket(state, catalog, bucket) {
   const byId = new Map(catalog.map((word) => [word.id || word.itemId, word]));
-  const values = [];
+  const items = [];
   for (const [cardId, record] of Object.entries(state?.srs || {})) {
     const itemId = record?.itemId || cardId.split('::')[0];
     const word = byId.get(itemId);
@@ -70,15 +65,28 @@ function fsrsBucket(state, catalog, bucket) {
       Number(record?.stability) > 0 ||
       Number(record?.reps) > 0;
     const stable = learned && Number(record?.stability) >= 10 && !difficult;
+    const timestamp =
+      Date.parse(
+        record?.last_review ||
+          record?.lastReview ||
+          record?.updatedAt ||
+          record?.first_seen ||
+          record?.firstSeen ||
+          record?.due ||
+          ''
+      ) || 0;
     if (
       (bucket === 'difficult' && difficult) ||
       (bucket === 'recent' && learned && !stable) ||
       (bucket === 'stable' && stable)
     ) {
-      values.push(word);
+      items.push({ word, timestamp });
     }
   }
-  return values;
+  if (bucket === 'recent') {
+    items.sort((a, b) => b.timestamp - a.timestamp);
+  }
+  return items.map((item) => item.word);
 }
 
 function uniqueWords(words, limit = MAX_WORDS) {

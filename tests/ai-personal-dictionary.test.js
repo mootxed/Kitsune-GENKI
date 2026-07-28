@@ -198,4 +198,26 @@ describe('AI Sensei personal dictionary', () => {
       })
     ).rejects.toThrow('удалён');
   });
+
+  it('correctly distinguishes homonyms like 橋 (bridge) and 箸 (chopsticks) based on 6-tier hierarchy', () => {
+    const catalog = [
+      { writing: '箸', reading: 'はし', meanings: ['палочки'] },
+      { writing: '橋', reading: 'はし', meanings: ['мост'] },
+    ];
+
+    // Case A: token has exact writing 橋 and reading はし -> must match 橋, NOT 箸
+    const bridgeToken = {
+      kanji: '橋',
+      writing: 'はし',
+      dictionaryForm: '橋',
+      dictionaryReading: 'はし',
+    };
+    const bridgeMatch = findTokenLexemeMatches(bridgeToken, catalog);
+    expect(bridgeMatch.catalogMatch?.writing).toBe('橋');
+
+    // Case B: token has reading only はし and multiple homonyms exist -> returns null (ambiguous)
+    const ambiguousToken = { writing: 'はし', dictionaryReading: 'はし' };
+    const ambiguousMatch = findTokenLexemeMatches(ambiguousToken, catalog);
+    expect(ambiguousMatch.catalogMatch).toBeNull();
+  });
 });

@@ -163,7 +163,7 @@ function renderStory(artifact, options) {
     text: 'Проверить понимание',
     attrs: { type: 'button' },
   });
-  check.addEventListener('click', () => options.onCreateStoryQuiz?.(artifact));
+  check.addEventListener('click', () => options.onCreateStoryQuiz?.(artifact, options.message));
   section.append(check);
   return section;
 }

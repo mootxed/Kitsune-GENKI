@@ -41,6 +41,8 @@ export const IntentRouterSchema = z.discriminatedUnion('intent', [
       length: z.enum(['short', 'medium', 'long']).default('short'),
       wordSource: z.enum(WORD_SOURCES).default('mixed'),
       explicitWords: z.array(cleanText(200)).max(20).default([]),
+      dictionaryId: z.string().trim().max(100).optional(),
+      dictionaryName: z.string().trim().max(200).optional(),
     })
     .strip(),
   z
@@ -136,6 +138,15 @@ export const ExplanationResponseSchema = z
   })
   .strip();
 
+export const ExplanationWithQuizResponseSchema = z
+  .object({
+    type: z.literal('explanation'),
+    message: cleanText(8_000),
+    examples: z.array(ExampleSchema).max(12).default([]),
+    quiz: QuizSchema,
+  })
+  .strip();
+
 export const GeneralResponseSchema = z
   .object({
     type: z.literal('explanation'),
@@ -179,6 +190,7 @@ export const QuizResponseSchema = z
 
 export const StructuredResponseSchema = z.union([
   ExplanationResponseSchema,
+  ExplanationWithQuizResponseSchema,
   StoryResponseSchema,
   QuizResponseSchema,
 ]);
@@ -189,12 +201,49 @@ export function getQuizQuestionRange(intent, complexity = 'normal') {
   return { min: 3, max: 4 };
 }
 
-export function validateQuizForMaterial(response, { intent, complexity = 'normal' }) {
+export function validateQuizForMaterial(
+  response,
+  { intent, complexity = 'normal', text = '' } = {}
+) {
   const parsed = StructuredResponseSchema.safeParse(response);
   if (!parsed.success) return parsed;
+  const isMandatoryQuiz = [
+    AI_INTENTS.EXPLAIN_WORD,
+    AI_INTENTS.EXPLAIN_GRAMMAR,
+    AI_INTENTS.COMPARE_ITEMS,
+    AI_INTENTS.CREATE_QUIZ,
+  ].includes(intent);
+
   const quiz = parsed.data.quiz;
-  if (!quiz) return parsed;
-  const range = getQuizQuestionRange(intent, complexity);
+  if (!quiz) {
+    if (isMandatoryQuiz) {
+      return {
+        success: false,
+        error: new z.ZodError([
+          {
+            code: 'custom',
+            path: ['quiz'],
+            message: 'Квиз обязателен для данного материала',
+          },
+        ]),
+      };
+    }
+    return parsed;
+  }
+
+  let effectiveComplexity = complexity;
+  if (intent === AI_INTENTS.EXPLAIN_GRAMMAR) {
+    const isComplexPattern =
+      /N[12]/i.test(text) ||
+      /сложн/i.test(text) ||
+      /продвинут/i.test(text) ||
+      quiz.questions.length >= 5;
+    if (isComplexPattern) {
+      effectiveComplexity = 'complex';
+    }
+  }
+
+  const range = getQuizQuestionRange(intent, effectiveComplexity);
   if (quiz.questions.length < range.min || quiz.questions.length > range.max) {
     return {
       success: false,
@@ -207,6 +256,24 @@ export function validateQuizForMaterial(response, { intent, complexity = 'normal
       ]),
     };
   }
+
+  if (quiz.questions.length >= 3) {
+    const types = new Set(quiz.questions.map((q) => q.type));
+    const prompts = new Set(quiz.questions.map((q) => q.prompt.trim().toLowerCase()));
+    if (types.size < 2 || prompts.size < quiz.questions.length) {
+      return {
+        success: false,
+        error: new z.ZodError([
+          {
+            code: 'custom',
+            path: ['quiz', 'questions'],
+            message: 'Вопросы квиза должны быть разнотипными и не дублировать формулировки',
+          },
+        ]),
+      };
+    }
+  }
+
   return parsed;
 }
 

@@ -1043,9 +1043,11 @@ async function openImportWizard(
   renderStepOne();
 }
 
-export async function renderUserDictionaries(state, dependencies = {}) {
+export async function renderUserDictionaries(state, dependencies = {}, options = {}) {
   const body = document.getElementById('user-dictionaries-body');
   if (!body) return;
+  if (options.dictionaryId) view.dictionaryId = options.dictionaryId;
+  if (options.search || options.entryId) view.search = options.search || options.entryId || '';
   const repository = dependencies.repository || new UserDictionaryRepository();
   body.replaceChildren(node('p', { text: 'Загрузка…', attrs: { 'aria-live': 'polite' } }));
   try {

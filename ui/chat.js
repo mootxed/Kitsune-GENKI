@@ -148,6 +148,13 @@ function chatShell(isEmpty) {
           (action) => `<option value="${action.intent}">${action.title}</option>`
         ).join('')}
       </select>
+      <select id="sensei-wordsource-menu" aria-label="Источник слов" title="Источник слов">
+        <option value="mixed">Смешанный источник</option>
+        <option value="user_dictionary">Мой словарь</option>
+        <option value="current_lesson">Текущий урок</option>
+        <option value="fsrs_difficult">Трудные слова</option>
+        <option value="fsrs_learned">Изученные слова</option>
+      </select>
       <input type="text" id="chat-input" class="chat-input" placeholder="質問してください… Задайте вопрос" data-testid="chat-input" />
       <button class="chat-send" id="chat-send" data-testid="chat-send-btn" aria-label="Отправить">➤</button>
     </div>`;
@@ -229,7 +236,7 @@ function renderAssistantMessage(message, state, dependencies) {
         chatHistory = updateQuizAnswer(chatHistory, messageId, questionId, selectedIndex);
         state.chatHistory = chatHistory;
         dependencies.save?.();
-        renderSensei(state, dependencies);
+        renderSensei(state, dependencies, { autoScroll: false });
       },
       onExplain: (token) => {
         const particle = String(token.type || '')
@@ -246,10 +253,13 @@ function renderAssistantMessage(message, state, dependencies) {
         const existingId = message.context?.dictionaryTokens?.[key];
         if (existingId) {
           const entry = await repository.getEntry(existingId);
-          getToast()(
-            entry ? `${entry.writing || entry.reading} уже в словаре` : 'Запись не найдена'
-          );
-          return;
+          if (entry) {
+            getToast()(`${entry.writing || entry.reading} уже в словаре`);
+            return;
+          }
+          chatHistory = markTokenDictionaryEntry(chatHistory, message.id, key, null);
+          state.chatHistory = chatHistory;
+          dependencies.save?.();
         }
         try {
           const catalogWords = (dependencies.LESSONS || []).flatMap(
@@ -276,18 +286,34 @@ function renderAssistantMessage(message, state, dependencies) {
             },
             onOpenExisting: (entry) => {
               getToast()(`Найдено: ${entry.writing || entry.reading}`);
-              dependencies.nav?.('user-dictionaries');
+              dependencies.nav?.('user-dictionaries', {
+                dictionaryId: entry.dictionaryId,
+                entryId: entry.id,
+                search: entry.writing,
+              });
             },
           });
         } catch (error) {
           getToast()(`⚠️ ${error.message}`);
         }
       },
-      onCreateStoryQuiz: () =>
-        prefillFollowup(
-          `Создай квиз на понимание истории «${message.text.slice(0, 120)}»`,
-          AI_INTENTS.CREATE_QUIZ
-        ),
+      onCreateStoryQuiz: (storyArtifact, storyMessage) => {
+        const sentences = (storyArtifact?.story || []).map((s) => ({
+          japanese: (s.tokens || []).map((t) => t.kanji || t.writing || '').join(''),
+          translation: s.translation || '',
+        }));
+        const storyContext = {
+          storyMessageId: storyMessage?.id || null,
+          sentences,
+        };
+        const input = $('#chat-input');
+        if (input) {
+          input.value = `Создай квиз на понимание истории из ${sentences.length} предложений`;
+          input.dataset.explicitIntent = AI_INTENTS.CREATE_QUIZ;
+          input.dataset.storyContext = JSON.stringify(storyContext);
+          sendChat(state, dependencies);
+        }
+      },
     })
   );
   if (message.context?.clarify) wrap.append(renderClarification(message));
@@ -304,9 +330,10 @@ function renderAssistantMessage(message, state, dependencies) {
   return wrap;
 }
 
-function renderMessages(state, dependencies) {
+function renderMessages(state, dependencies, renderOptions = {}) {
   const area = $('#chat-area');
   if (!area || !chatHistory.length) return;
+  const savedScrollTop = area.scrollTop;
   area.replaceChildren();
   for (const message of chatHistory) {
     area.append(
@@ -316,11 +343,15 @@ function renderMessages(state, dependencies) {
     );
   }
   requestAnimationFrame(() => {
-    area.scrollTop = area.scrollHeight;
+    if (renderOptions.autoScroll === false) {
+      area.scrollTop = savedScrollTop;
+    } else {
+      area.scrollTop = area.scrollHeight;
+    }
   });
 }
 
-export function renderSensei(state, dependencies = {}) {
+export function renderSensei(state, dependencies = {}, renderOptions = {}) {
   deps = dependencies;
   chatHistory = normalizeChatHistory(state?.chatHistory || chatHistory);
   if (state) state.chatHistory = chatHistory;
@@ -342,7 +373,7 @@ export function renderSensei(state, dependencies = {}) {
   const body = $('#sensei-body');
   if (!body) return;
   body.innerHTML = chatShell(chatHistory.length === 0);
-  renderMessages(state, dependencies);
+  renderMessages(state, dependencies, renderOptions);
   document.querySelectorAll('[data-sensei-action]').forEach((button) => {
     button.addEventListener('click', () => applyExplicitAction(button.dataset.senseiAction));
   });
@@ -399,6 +430,15 @@ export async function sendChat(state, dependencies = {}) {
   const accepted = await ensureAIPrivacyDisclosure(state, dependencies.save);
   if (!accepted) return;
   const explicitIntent = input.dataset.explicitIntent || null;
+  let storyContext = null;
+  if (input.dataset.storyContext) {
+    try {
+      storyContext = JSON.parse(input.dataset.storyContext);
+    } catch (error) {
+      void error;
+    }
+    delete input.dataset.storyContext;
+  }
   input.value = '';
   chatSending = true;
   chatHistory.push(createUserChatMessage(text, explicitIntent));
@@ -411,6 +451,8 @@ export async function sendChat(state, dependencies = {}) {
     const repository =
       dependencies.userDictionaryRepository ||
       (dependencies.createUserDictionaryRepository?.() ?? new UserDictionaryRepository());
+    const wordSourceSelect = $('#sensei-wordsource-menu');
+    const wordSource = wordSourceSelect?.value || 'mixed';
     const result = await runSenseiPipeline({
       text,
       explicitIntent,
@@ -418,6 +460,7 @@ export async function sendChat(state, dependencies = {}) {
       lessons: dependencies.LESSONS || [],
       repository,
       request,
+      overrides: { wordSource, ...(storyContext ? { storyContext } : {}) },
     });
     let assistant;
     if (result.status === 'clarify') {

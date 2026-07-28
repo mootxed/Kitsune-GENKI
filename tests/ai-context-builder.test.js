@@ -92,4 +92,54 @@ describe('AI context builder privacy boundary', () => {
       expect.objectContaining({ token: 'W1', writing: '空', reading: 'そら' }),
     ]);
   });
+
+  it('does not unlock words in other unstarted chapters when a single card from chapter 1 is learning', () => {
+    const multiChapterLessons = [
+      {
+        id: 1,
+        words: [{ id: 'word:ch1', writing: '一', reading: 'いち', meanings: ['один'] }],
+      },
+      {
+        id: 2,
+        words: [{ id: 'word:ch2', writing: '二', reading: 'に', meanings: ['два'] }],
+      },
+    ];
+    const testState = {
+      chapters: { 1: { started: true }, 2: { started: false } },
+      srs: {
+        'word:ch1::recognition': { itemId: 'word:ch1', status: 'learning' },
+      },
+    };
+    const unlocked = selectWords({
+      source: 'mixed',
+      state: testState,
+      lessons: multiChapterLessons,
+    });
+    const writings = unlocked.map((w) => w.writing);
+    expect(writings).toContain('一');
+    expect(writings).not.toContain('二');
+  });
+
+  it('sorts recent learned cards by last review timestamp in descending order', () => {
+    const recentState = {
+      chapters: { 1: { started: true } },
+      srs: {
+        'word:猫::recognition': {
+          itemId: 'word:猫',
+          stability: 2,
+          status: 'review',
+          last_review: '2026-01-01T10:00:00Z',
+        },
+        'word:犬::recognition': {
+          itemId: 'word:犬',
+          stability: 3,
+          status: 'review',
+          last_review: '2026-05-01T10:00:00Z',
+        },
+      },
+    };
+    const result = selectWords({ source: 'fsrs_learned', state: recentState, lessons });
+    expect(result[0].writing).toBe('犬');
+    expect(result[1].writing).toBe('猫');
+  });
 });
