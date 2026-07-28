@@ -1,338 +1,499 @@
-// ui/chat.js - Модуль AI-чата с сенсеем
+// ui/chat.js — AI Сенсей: shell, interaction wiring and safe rendering
 
 import { $, todayStr as getTodayStr } from '../src/utils.js';
 import { syncAvatars } from './shared.js';
-import { API } from '../services.js';
 import { getAvailableChapterCount } from '../src/minigame-word-selectors.js';
 import { ensureAIPrivacyDisclosure } from '../src/ai-disclosure.js';
+import { UserDictionaryRepository } from '../src/user-dictionaries/repository.js';
+import { AI_INTENTS, STARTER_ACTIONS } from '../src/ai/intents.js';
+import { createAIRequestClient } from '../src/ai/request-client.js';
+import { runSenseiPipeline } from '../src/ai/pipeline.js';
+import {
+  clearChatHistory,
+  createAssistantChatMessage,
+  createUserChatMessage,
+  formatMessageAsNote,
+  markTokenDictionaryEntry,
+  normalizeChatHistory,
+  updateQuizAnswer,
+} from '../src/ai/chat-history.js';
+import { renderAssistantArtifact } from './sensei-artifacts.js';
+import { openSenseiDictionaryDialog } from './sensei-dictionary.js';
+import { findTokenLexemeMatches } from '../src/ai/personal-dictionary.js';
 
-// Локальный контекст зависимостей
 let deps = null;
-
-// Глобальные переменные модуля
 let chatHistory = [];
 let senseiTab = 'chat';
 let chatSending = false;
 
-// Функция рендеринга главного экрана сенсея
-export function renderSensei(state, dependencies) {
-  if (dependencies) deps = dependencies;
-  if (state && Array.isArray(state.chatHistory)) {
-    chatHistory = state.chatHistory;
-  }
-  const { CHECK_ITEMS, save, todayStr } = deps;
-  const $$ = deps?.$$ || window.$$ || ((s) => Array.from(document.querySelectorAll(s)));
-  const toast = deps?.toast || window.toast || (() => {});
-  const nav = deps?.nav || window.nav || (() => {});
-  const markActivity = deps?.markActivity || window.markActivity || ((toastFn) => {});
+const getToast = () => deps?.toast || globalThis.window?.toast || (() => {});
 
-  $$('[data-senseitab]').forEach((t) => {
-    t.classList.toggle('active', t.dataset.senseitab === senseiTab);
-    t.onclick = () => {
-      senseiTab = t.dataset.senseitab;
-      renderSensei(state, deps);
+function escapeHtml(value) {
+  const text = String(value ?? '');
+  return text.replace(/[&<>"']/gu, (character) => {
+    if (character === '&') return '&amp;';
+    if (character === '<') return '&lt;';
+    if (character === '>') return '&gt;';
+    if (character === '"') return '&quot;';
+    return '&#39;';
+  });
+}
+
+function parseTableRow(line, tag) {
+  const cells = line
+    .split('|')
+    .map((cell) => cell.trim())
+    .filter(Boolean);
+  return `<tr>${cells.map((cell) => `<${tag}>${cell}</${tag}>`).join('')}</tr>`;
+}
+
+export function md(text) {
+  const codeBlocks = [];
+  const preserved = String(text ?? '').replace(/```([\s\S]*?)```/gu, (_, content) => {
+    const index = codeBlocks.length;
+    codeBlocks.push(`<pre>${escapeHtml(content.trim())}</pre>`);
+    return `KOTOKITSU_CODE_BLOCK_${index}_END`;
+  });
+  let html = escapeHtml(preserved);
+  html = html.replace(/KOTOKITSU_CODE_BLOCK_(\d+)_END/gu, (_, index) => codeBlocks[Number(index)]);
+  html = html.replace(/`([^`]+)`/gu, (_, content) => `<code>${escapeHtml(content)}</code>`);
+  html = html.replace(/^\s*[-*_]{3,}\s*$/gmu, '<hr>');
+  html = html.replace(/^######\s+(.*)$/gmu, '<h6>$1</h6>');
+  html = html.replace(/^#####\s+(.*)$/gmu, '<h5>$1</h5>');
+  html = html.replace(/^####\s+(.*)$/gmu, '<h4>$1</h4>');
+  html = html.replace(/^###\s+(.*)$/gmu, '<h3>$1</h3>');
+  html = html.replace(/^##\s+(.*)$/gmu, '<h2>$1</h2>');
+  html = html.replace(/^#\s+(.*)$/gmu, '<h1>$1</h1>');
+  html = html.replace(/^>\s+(.*)$/gmu, '<blockquote>$1</blockquote>');
+  html = html.replace(/((?:^\s*\d+\.\s+.*\n?)+)/gmu, (match) => {
+    const items = match
+      .trim()
+      .split('\n')
+      .map((line) => line.replace(/^\s*\d+\.\s+(.*)$/u, '<li>$1</li>'))
+      .join('');
+    return `<ol>${items}</ol>`;
+  });
+  html = html.replace(/((?:^\s*[-*]\s+.*\n?)+)/gmu, (match) => {
+    const items = match
+      .trim()
+      .split('\n')
+      .map((line) => line.replace(/^\s*[-*]\s+(.*)$/u, '<li>$1</li>'))
+      .join('');
+    return `<ul>${items}</ul>`;
+  });
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gu, (_, label, url) => {
+    const safeUrl = url.trim();
+    return /^(?:https?:\/\/|mailto:)/iu.test(safeUrl)
+      ? `<a href="${safeUrl}" target="_blank" rel="noopener">${label}</a>`
+      : label;
+  });
+  html = html.replace(/((?:^\|.*\|\n?)+)/gmu, (match) => {
+    const lines = match
+      .trim()
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (lines.length < 2 || !/^\|[-:\s|]+\|$/u.test(lines[1])) return match;
+    return `<div class="table-wrap"><table><thead>${parseTableRow(lines[0], 'th')}</thead><tbody>${lines
+      .slice(2)
+      .map((line) => parseTableRow(line, 'td'))
+      .join('')}</tbody></table></div>`;
+  });
+  html = html.replace(/\*\*([^*]+)\*\*/gu, '<b>$1</b>');
+  html = html.replace(/\*([^*]+)\*/gu, '<i>$1</i>');
+  html = html.replace(/~~([^~]+)~~/gu, '<s>$1</s>');
+  const blockTags = /^(<pre>|<h[1-6]>|<hr>|<blockquote>|<ul>|<ol>|<div class="table-wrap">)/u;
+  return html
+    .split(/\n{2,}/u)
+    .map((part) => {
+      const trimmed = part.trim();
+      if (!trimmed) return '';
+      return blockTags.test(trimmed) ? trimmed : `<p>${trimmed.replace(/\n/gu, '<br>')}</p>`;
+    })
+    .join('\n');
+}
+
+function starterMarkup() {
+  return `
+    <section class="sensei-starter" data-testid="sensei-starter">
+      <div class="sensei-starter-intro">
+        <span aria-hidden="true">🦊</span>
+        <div><h2>Чем займёмся?</h2><p>Выберите учебное действие или задайте вопрос своими словами.</p></div>
+      </div>
+      <div class="sensei-starter-grid">
+        ${STARTER_ACTIONS.map(
+          (action) => `
+            <button type="button" class="sensei-starter-card" data-sensei-action="${action.intent}">
+              <span aria-hidden="true">${action.icon}</span>
+              <strong>${action.title}</strong>
+            </button>`
+        ).join('')}
+      </div>
+    </section>`;
+}
+
+function chatShell(isEmpty) {
+  return `
+    <div class="sensei-chat-toolbar">
+      <button type="button" id="sensei-clear-history" ${isEmpty ? 'disabled' : ''}>Очистить историю</button>
+    </div>
+    <div class="chat-area" id="chat-area" data-testid="chat-area">${isEmpty ? starterMarkup() : ''}</div>
+    <div class="sensei-privacy-note">
+      🔒 Для генерации ответа текст отправляется провайдеру OpenRouter. Не отправляйте персональные данные.
+    </div>
+    <div class="chat-input-bar">
+      <select id="sensei-action-menu" aria-label="Учебное действие">
+        <option value="">Свободный текст</option>
+        ${STARTER_ACTIONS.map(
+          (action) => `<option value="${action.intent}">${action.title}</option>`
+        ).join('')}
+      </select>
+      <input type="text" id="chat-input" class="chat-input" placeholder="質問してください… Задайте вопрос" data-testid="chat-input" />
+      <button class="chat-send" id="chat-send" data-testid="chat-send-btn" aria-label="Отправить">➤</button>
+    </div>`;
+}
+
+function applyExplicitAction(intent) {
+  const input = $('#chat-input');
+  const action = STARTER_ACTIONS.find((item) => item.intent === intent);
+  if (!input || !action) return;
+  input.dataset.explicitIntent = intent;
+  input.placeholder = action.prompt;
+  const menu = $('#sensei-action-menu');
+  if (menu) menu.value = intent;
+  input.focus();
+}
+
+function saveAssistantNote(message, state, dependencies, button) {
+  const todayStr = dependencies?.todayStr || getTodayStr;
+  const note = formatMessageAsNote(message);
+  state.savedNotes ||= [];
+  state.savedNotes.unshift({
+    id: `n${Date.now()}`,
+    title: note.title,
+    content: note.content,
+    date: todayStr(),
+  });
+  dependencies.save?.();
+  button.textContent = '✓ Сохранено';
+  button.disabled = true;
+  getToast()('Сохранено в Мини-учебник 📚');
+}
+
+function renderUserMessage(message) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap user';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg user';
+  bubble.textContent = message.text;
+  wrap.append(bubble);
+  return wrap;
+}
+
+function prefillFollowup(text, intent) {
+  const input = $('#chat-input');
+  if (!input) return;
+  input.value = text;
+  applyExplicitAction(intent);
+}
+
+function renderClarification(message) {
+  const box = document.createElement('div');
+  box.className = 'sensei-clarify-actions';
+  [
+    [AI_INTENTS.CREATE_STORY, 'Создать историю'],
+    [AI_INTENTS.CREATE_QUIZ, 'Создать квиз'],
+    [AI_INTENTS.EXPLAIN_WORD, 'Объяснить'],
+  ].forEach(([intent, label]) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = label;
+    button.addEventListener('click', () =>
+      prefillFollowup(message.context?.originalText || '', intent)
+    );
+    box.append(button);
+  });
+  return box;
+}
+
+function renderAssistantMessage(message, state, dependencies) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap';
+  const repository =
+    dependencies.userDictionaryRepository ||
+    (dependencies.createUserDictionaryRepository?.() ?? new UserDictionaryRepository());
+  wrap.append(
+    renderAssistantArtifact(message, {
+      renderMarkdown: md,
+      onAnswer: (messageId, questionId, selectedIndex) => {
+        chatHistory = updateQuizAnswer(chatHistory, messageId, questionId, selectedIndex);
+        state.chatHistory = chatHistory;
+        dependencies.save?.();
+        renderSensei(state, dependencies);
+      },
+      onExplain: (token) => {
+        const particle = String(token.type || '')
+          .toLowerCase()
+          .includes('particle');
+        prefillFollowup(
+          particle
+            ? `Объясни употребление ${token.kanji || token.writing}`
+            : `Объясни слово ${token.dictionaryForm || token.kanji || token.writing}`,
+          particle ? AI_INTENTS.EXPLAIN_GRAMMAR : AI_INTENTS.EXPLAIN_WORD
+        );
+      },
+      onAddToken: async ({ token, sentence, key, opener }) => {
+        const existingId = message.context?.dictionaryTokens?.[key];
+        if (existingId) {
+          const entry = await repository.getEntry(existingId);
+          getToast()(
+            entry ? `${entry.writing || entry.reading} уже в словаре` : 'Запись не найдена'
+          );
+          return;
+        }
+        try {
+          const catalogWords = (dependencies.LESSONS || []).flatMap(
+            (lesson) => lesson?.vocab || lesson?.vocabulary || lesson?.words || lesson?.items || []
+          );
+          const dictionaries = await repository.listDictionaries();
+          const userEntries = (
+            await Promise.all(
+              dictionaries.slice(0, 20).map((dictionary) => repository.listEntries(dictionary.id))
+            )
+          ).flat();
+          const matches = findTokenLexemeMatches(token, catalogWords, userEntries);
+          await openSenseiDictionaryDialog({
+            repository,
+            token,
+            sentence,
+            opener,
+            ...matches,
+            onSaved: (entry) => {
+              chatHistory = markTokenDictionaryEntry(chatHistory, message.id, key, entry.id);
+              state.chatHistory = chatHistory;
+              dependencies.save?.();
+              renderSensei(state, dependencies);
+            },
+            onOpenExisting: (entry) => {
+              getToast()(`Найдено: ${entry.writing || entry.reading}`);
+              dependencies.nav?.('user-dictionaries');
+            },
+          });
+        } catch (error) {
+          getToast()(`⚠️ ${error.message}`);
+        }
+      },
+      onCreateStoryQuiz: () =>
+        prefillFollowup(
+          `Создай квиз на понимание истории «${message.text.slice(0, 120)}»`,
+          AI_INTENTS.CREATE_QUIZ
+        ),
+    })
+  );
+  if (message.context?.clarify) wrap.append(renderClarification(message));
+  if (message.type !== 'error') {
+    const saveButton = document.createElement('button');
+    saveButton.className = 'save-note-btn';
+    saveButton.dataset.testid = 'save-note-btn';
+    saveButton.textContent = '＋ Сохранить в учебник';
+    saveButton.addEventListener('click', () =>
+      saveAssistantNote(message, state, dependencies, saveButton)
+    );
+    wrap.append(saveButton);
+  }
+  return wrap;
+}
+
+function renderMessages(state, dependencies) {
+  const area = $('#chat-area');
+  if (!area || !chatHistory.length) return;
+  area.replaceChildren();
+  for (const message of chatHistory) {
+    area.append(
+      message.role === 'user'
+        ? renderUserMessage(message)
+        : renderAssistantMessage(message, state, dependencies)
+    );
+  }
+  requestAnimationFrame(() => {
+    area.scrollTop = area.scrollHeight;
+  });
+}
+
+export function renderSensei(state, dependencies = {}) {
+  deps = dependencies;
+  chatHistory = normalizeChatHistory(state?.chatHistory || chatHistory);
+  if (state) state.chatHistory = chatHistory;
+  const selectAll =
+    dependencies.$$ ||
+    globalThis.window?.$$ ||
+    ((selector) => [...document.querySelectorAll(selector)]);
+  selectAll('[data-senseitab]').forEach((tab) => {
+    tab.classList.toggle('active', tab.dataset.senseitab === senseiTab);
+    tab.onclick = () => {
+      senseiTab = tab.dataset.senseitab;
+      renderSensei(state, dependencies);
     };
   });
-
-  const body = $('#sensei-body');
-
   if (senseiTab === 'tools') {
     renderSenseiTools(state, dependencies);
     return;
   }
-
-  body.innerHTML = `
-    <div class="chat-area" id="chat-area" data-testid="chat-area"></div>
-    <div style="padding: 4px 12px; font-size: 11px; color: var(--text-muted); background: var(--bg-card); border-top: 1px solid var(--border); text-align: center;">
-      🔒 Для генерации ответа текст отправляется провайдеру OpenRouter. Не отправляйте персональные данные.
-    </div>
-    <div class="chat-input-bar">
-      <input type="text" id="chat-input" class="chat-input" placeholder="質問してください… Задайте вопрос" data-testid="chat-input" />
-      <button class="chat-send" id="chat-send" data-testid="chat-send-btn" aria-label="Отправить">➤</button>
-    </div>
-  `;
-
-  const area = $('#chat-area');
-  if (chatHistory.length === 0) {
-    addBotMessage(
-      'こんにちは！Я — KotoKitsu Sensei 🦊 Спросите что угодно про японский язык!',
-      state,
-      dependencies
-    );
-  } else {
-    chatHistory.forEach((msg) => {
-      if (msg.role === 'user') {
-        const wrap = document.createElement('div');
-        wrap.className = 'msg-wrap user';
-        wrap.innerHTML = `<div class="msg user">${escapeHtml(msg.content)}</div>`;
-        area.appendChild(wrap);
-      } else if (msg.role === 'assistant') {
-        addBotMessage(msg.content, state, dependencies, false);
-      }
-    });
-    requestAnimationFrame(() => (area.scrollTop = area.scrollHeight));
-  }
-
-  $('#chat-send').onclick = () => sendChat(state, dependencies);
-  $('#chat-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') sendChat(state, dependencies);
+  const body = $('#sensei-body');
+  if (!body) return;
+  body.innerHTML = chatShell(chatHistory.length === 0);
+  renderMessages(state, dependencies);
+  document.querySelectorAll('[data-sensei-action]').forEach((button) => {
+    button.addEventListener('click', () => applyExplicitAction(button.dataset.senseiAction));
   });
-
+  $('#sensei-action-menu')?.addEventListener('change', (event) => {
+    const input = $('#chat-input');
+    if (!input) return;
+    if (event.target.value) applyExplicitAction(event.target.value);
+    else {
+      delete input.dataset.explicitIntent;
+      input.placeholder = '質問してください… Задайте вопрос';
+    }
+  });
+  $('#chat-send').onclick = () => sendChat(state, dependencies);
+  $('#chat-input').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') sendChat(state, dependencies);
+  });
+  $('#sensei-clear-history').addEventListener('click', () => {
+    if (!globalThis.window?.confirm?.('Очистить всю историю AI Сенсея?')) return;
+    chatHistory = clearChatHistory();
+    state.chatHistory = chatHistory;
+    dependencies.save?.();
+    renderSensei(state, dependencies);
+  });
   syncAvatars();
 }
 
-// Функция рендеринга вкладки инструментов
-function renderSenseiTools(state, dependencies) {
-  const { CHECK_ITEMS } = dependencies;
-  const body = $('#sensei-body');
-  const toast = dependencies?.toast || window.toast || (() => {});
-  const nav = dependencies?.nav || window.nav || (() => {});
+function typingIndicator() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap';
+  wrap.innerHTML = '<div class="msg bot"><div class="typing"><i></i><i></i><i></i></div></div>';
+  $('#chat-area')?.append(wrap);
+  return wrap;
+}
 
-  const inputBar = body.querySelector('.chat-input-bar');
-  if (inputBar) {
-    inputBar.remove();
+function setChatDisabled(disabled) {
+  const send = $('#chat-send');
+  const input = $('#chat-input');
+  if (send) send.disabled = disabled;
+  if (input) input.disabled = disabled;
+}
+
+export async function sendChat(state, dependencies = {}) {
+  if (chatSending) {
+    getToast()('⏳ Дождитесь ответа на предыдущий вопрос');
+    return;
   }
+  const input = $('#chat-input');
+  const text = input?.value.trim();
+  if (!text) return;
+  if (!state.settings?.openrouterKey && !dependencies.aiRequest) {
+    getToast()('⚠️ Укажите API-ключ OpenRouter в настройках');
+    return;
+  }
+  const accepted = await ensureAIPrivacyDisclosure(state, dependencies.save);
+  if (!accepted) return;
+  const explicitIntent = input.dataset.explicitIntent || null;
+  input.value = '';
+  chatSending = true;
+  chatHistory.push(createUserChatMessage(text, explicitIntent));
+  state.chatHistory = chatHistory;
+  renderSensei(state, dependencies);
+  const typing = typingIndicator();
+  setChatDisabled(true);
+  try {
+    const request = dependencies.aiRequest || createAIRequestClient(state.settings);
+    const repository =
+      dependencies.userDictionaryRepository ||
+      (dependencies.createUserDictionaryRepository?.() ?? new UserDictionaryRepository());
+    const result = await runSenseiPipeline({
+      text,
+      explicitIntent,
+      state,
+      lessons: dependencies.LESSONS || [],
+      repository,
+      request,
+    });
+    let assistant;
+    if (result.status === 'clarify') {
+      assistant = createAssistantChatMessage({
+        text: result.intentResult.question || 'Что сделать со словами?',
+        intent: AI_INTENTS.CLARIFY_REQUEST,
+        type: 'explanation',
+        context: { clarify: true, originalText: text, missing: result.intentResult.missing },
+      });
+    } else if (result.status === 'success') {
+      assistant = createAssistantChatMessage({
+        text: result.artifact.message,
+        intent: result.intentResult.intent,
+        type: result.artifact.type,
+        artifact: result.artifact,
+        context: {
+          jlptTarget: result.context.jlptTarget || null,
+          wordTokens: result.context.words?.map((word) => word.token) || [],
+        },
+      });
+    } else {
+      assistant = createAssistantChatMessage({
+        text: result.text,
+        intent: result.intentResult?.intent,
+        type: 'error',
+      });
+    }
+    chatHistory.push(assistant);
+  } catch (error) {
+    chatHistory.push(
+      createAssistantChatMessage({
+        text: `⚠️ ${error.message}`,
+        type: 'error',
+      })
+    );
+  } finally {
+    typing.remove();
+    state.chatHistory = chatHistory;
+    await dependencies.save?.();
+    chatSending = false;
+    renderSensei(state, dependencies);
+    setChatDisabled(false);
+  }
+}
 
+function renderSenseiTools(state, dependencies) {
+  const body = $('#sensei-body');
+  const toast = dependencies?.toast || globalThis.window?.toast || (() => {});
+  const nav = dependencies?.nav || globalThis.window?.nav || (() => {});
   const availableLessons = getAvailableChapterCount(state);
   const crosswordUnlocked = availableLessons >= 3;
-
   body.innerHTML = `
-  <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
-    <!-- AI-история -->
-    <div class="tool-card" data-nav="ai-story">
-      <span class="tool-icon">✨</span>
-      <div class="tool-info">
-        <h3>AI-история</h3>
-        <p>Генерируйте интерактивные истории на основе ваших слабых слов</p>
-      </div>
-      <span class="tool-arrow">›</span>
-    </div>
-
-    <!-- Кроссворд -->
-    <div class="tool-card ${crosswordUnlocked ? '' : 'tool-locked'}" data-nav="crossword" data-locked="${!crosswordUnlocked}">
-      <span class="tool-icon">🧩</span>
-      <div class="tool-info">
-        <h3>Кроссворд</h3>
-        <p>${crosswordUnlocked ? 'Закрепляйте изученные слова в игровой форме' : '🔒 Откроется после изучения или начала 3 глав'}</p>
-      </div>
-      <span class="${crosswordUnlocked ? 'tool-arrow' : 'tool-lock'}">${crosswordUnlocked ? '›' : '🔒'}</span>
-    </div>
-
-    <!-- Охота на слова -->
-    <div class="tool-card" data-nav="word-search" data-testid="tool-card-word-search">
-      <span class="tool-icon">🔍</span>
-      <div class="tool-info">
-        <h3>Охота на слова</h3>
-        <p>Находите японские слова в сетке по русскому переводу</p>
-      </div>
-      <span class="tool-arrow">›</span>
-    </div>
-  </div>
-  `;
-
+    <div class="sensei-tools-list">
+      <button type="button" class="tool-card" data-nav="ai-story">
+        <span class="tool-icon">✨</span><span class="tool-info"><strong>AI-история</strong><small>Старый генератор остаётся доступен</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button type="button" class="tool-card ${crosswordUnlocked ? '' : 'tool-locked'}" data-nav="crossword" data-locked="${!crosswordUnlocked}">
+        <span class="tool-icon">🧩</span><span class="tool-info"><strong>Кроссворд</strong><small>${crosswordUnlocked ? 'Закрепляйте изученные слова' : 'Откроется после 3 глав'}</small></span><span>${crosswordUnlocked ? '›' : '🔒'}</span>
+      </button>
+      <button type="button" class="tool-card" data-nav="word-search" data-testid="tool-card-word-search">
+        <span class="tool-icon">🔍</span><span class="tool-info"><strong>Охота на слова</strong><small>Поиск слов в сетке</small></span><span class="tool-arrow">›</span>
+      </button>
+    </div>`;
   body.querySelectorAll('.tool-card').forEach((card) => {
-    card.onclick = () => {
-      const targetNav = card.dataset.nav;
-      const isLocked = card.dataset.locked === 'true';
-
-      if (isLocked) {
+    card.addEventListener('click', () => {
+      if (card.dataset.locked === 'true') {
         toast('🔒 Кроссворды откроются после изучения или начала 3 глав!');
         return;
       }
-
-      nav(targetNav);
-    };
+      nav(card.dataset.nav);
+    });
   });
 }
 
-// Функция экранирования HTML
-function escapeHtml(s) {
-  var a = String.fromCharCode(38);
-  return s.replace(/[&<>"']/g, function (c) {
-    if (c === '&') return a + 'amp;';
-    if (c === '<') return a + 'lt;';
-    if (c === '>') return a + 'gt;';
-    if (c === '"') return a + 'quot;';
-    if (c === "'") return a + '#39;';
-    return c;
-  });
-}
-
-// Функция парсинга Markdown
-export function md(text) {
-  const codeBlocks = [];
-  const preserved = text.replace(/```([\s\S]*?)```/g, (_, c) => {
-    const idx = codeBlocks.length;
-    codeBlocks.push(`<pre>${escapeHtml(c.trim())}</pre>`);
-    return `\x00CODEBLOCK${idx}\x00`;
-  });
-  let h = escapeHtml(preserved);
-  h = h.replace(/\x00CODEBLOCK(\d+)\x00/g, (_, idx) => codeBlocks[parseInt(idx, 10)]);
-  h = h.replace(/`([^`]+)`/g, (_, c) => `<code>${escapeHtml(c)}</code>`);
-  h = h.replace(/^\s*[-*_]{3,}\s*$/gm, '<hr>');
-  h = h.replace(/^######\s+(.*)$/gm, '<h6>$1</h6>');
-  h = h.replace(/^#####\s+(.*)$/gm, '<h5>$1</h5>');
-  h = h.replace(/^####\s+(.*)$/gm, '<h4>$1</h4>');
-  h = h.replace(/^###\s+(.*)$/gm, '<h3>$1</h3>');
-  h = h.replace(/^##\s+(.*)$/gm, '<h2>$1</h2>');
-  h = h.replace(/^#\s+(.*)$/gm, '<h1>$1</h1>');
-  h = h.replace(/^>\s+(.*)$/gm, '<blockquote>$1</blockquote>');
-  h = h.replace(/((?:^\s*\d+\.\s+.*\n?)+)/gm, (match) => {
-    const items = match
-      .trim()
-      .split('\n')
-      .map((line) => line.replace(/^\s*\d+\.\s+(.*)$/, '<li>$1</li>'))
-      .join('');
-    return '<ol>' + items + '</ol>';
-  });
-  h = h.replace(/((?:^\s*[-*]\s+.*\n?)+)/gm, (match) => {
-    const items = match
-      .trim()
-      .split('\n')
-      .map((line) => line.replace(/^\s*[-*]\s+(.*)$/, '<li>$1</li>'))
-      .join('');
-    return '<ul>' + items + '</ul>';
-  });
-  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
-    const trimmedUrl = url.trim();
-    if (/^(?:https?:\/\/|mailto:)/i.test(trimmedUrl)) {
-      return `<a href="${trimmedUrl}" target="_blank" rel="noopener">${label}</a>`;
-    }
-    return label;
-  });
-  h = h.replace(/((?:^\|.*\|\n?)+)/gm, (match) => {
-    const lines = match
-      .trim()
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l);
-    if (lines.length < 2) return match;
-    const sep = lines[1];
-    if (!/^\|[-:\s|]+\|$/.test(sep)) return match;
-    const header = parseTableRow(lines[0], 'th');
-    const body = lines
-      .slice(2)
-      .map((l) => parseTableRow(l, 'td'))
-      .join('');
-    return `<div class="table-wrap"><table><thead>${header}</thead><tbody>${body}</tbody></table></div>`;
-  });
-  function parseTableRow(line, tag) {
-    const cells = line
-      .split('|')
-      .map((c) => c.trim())
-      .filter((c) => c);
-    return '<tr>' + cells.map((c) => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
-  }
-  h = h.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
-  h = h.replace(/\*([^*]+)\*/g, '<i>$1</i>');
-  h = h.replace(/~~([^~]+)~~/g, '<s>$1</s>');
-  h = h.replace(/\n{2,}/g, '\n\n');
-  const parts = h.split(/\n{2,}/);
-  const blockTags = /^(<pre>|<h[1-6]>|<hr>|<blockquote>|<ul>|<ol>|<div class="table-wrap">)/;
-  const out = parts
-    .map((part) => {
-      const trimmed = part.trim();
-      if (!trimmed) return '';
-      if (blockTags.test(trimmed)) return trimmed;
-      return '<p>' + trimmed.replace(/\n/g, '<br>') + '</p>';
-    })
-    .join('\n');
-  return out;
-}
-
-// Функция добавления сообщения бота
-function addBotMessage(content, state, dependencies, saveable = true) {
-  const { save } = dependencies;
-  // Fallback: deps могут не содержать todayStr — берём утилиту напрямую
-  const todayStr = dependencies?.todayStr || getTodayStr;
-
-  const area = $('#chat-area');
-  const wrap = document.createElement('div');
-  wrap.className = 'msg-wrap';
-  wrap.innerHTML = `<div class="msg bot">${md(content)}</div>`;
-  if (saveable) {
-    const btn = document.createElement('button');
-    btn.className = 'save-note-btn';
-    btn.textContent = '＋ Сохранить в учебник';
-    btn.dataset.testid = 'save-note-btn';
-    btn.onclick = () => {
-      const title = content.replace(/[#*`]/g, '').split('\n')[0].slice(0, 48) || 'Заметка AI';
-      state.savedNotes.unshift({ id: 'n' + Date.now(), title, content, date: todayStr() });
-      save();
-      btn.textContent = '✓ Сохранено';
-      btn.disabled = true;
-      toast('Сохранено в Мини-учебник 📚');
-    };
-    wrap.appendChild(btn);
-  }
-  area.appendChild(wrap);
-  area.scrollTop = area.scrollHeight;
-}
-
-// Функция добавления сообщения пользователя
-function addUserMessage(text) {
-  const area = $('#chat-area');
-  const wrap = document.createElement('div');
-  wrap.className = 'msg-wrap user';
-  wrap.innerHTML = `<div class="msg user">${escapeHtml(text)}</div>`;
-  area.appendChild(wrap);
-  area.scrollTop = area.scrollHeight;
-}
-
-// Функция отправки сообщения в чат
-async function sendChat(state, dependencies) {
-  const { save } = dependencies;
-
-  if (chatSending) {
-    toast('⏳ Дождитесь ответа на предыдущий вопрос');
-    return;
-  }
-
-  const input = $('#chat-input');
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = '';
-
-  if (!state.settings.openrouterKey) {
-    toast('⚠️ Укажите API-ключ OpenRouter в настройках');
-    return;
-  }
-
-  const accepted = await ensureAIPrivacyDisclosure(state, save);
-  if (!accepted) return;
-
-  chatSending = true;
-  addUserMessage(text);
-  chatHistory.push({ role: 'user', content: text });
-  const area = $('#chat-area');
-  const t = document.createElement('div');
-  t.className = 'msg-wrap';
-  t.innerHTML = `<div class="msg bot"><div class="typing"><i></i><i></i><i></i></div></div>`;
-  area.appendChild(t);
-  area.scrollTop = area.scrollHeight;
-  $('#chat-send').disabled = true;
-  $('#chat-input').disabled = true;
-  try {
-    const reply = await API.askSensei(chatHistory, state.settings);
-    chatHistory.push({ role: 'assistant', content: reply });
-    t.remove();
-    addBotMessage(reply, state, dependencies, true);
-    markActivity(deps?.toast || window.toast);
-  } catch (e) {
-    t.remove();
-    addBotMessage('⚠️ ' + e.message, state, dependencies, false);
-  } finally {
-    state.chatHistory = chatHistory;
-    save();
-    $('#chat-send').disabled = false;
-    $('#chat-input').disabled = false;
-    chatSending = false;
-  }
-}
-
-// Экспорт функций для установки глобальных переменных
 export function setChatHistory(history) {
-  chatHistory = history;
+  chatHistory = normalizeChatHistory(history);
 }
 
 export function setSenseiTab(tab) {

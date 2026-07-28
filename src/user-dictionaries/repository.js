@@ -19,6 +19,7 @@ export function createUserDictionaryModel(input = {}, now = new Date().toISOStri
     createdAt: input.createdAt || now,
     updatedAt: now,
     sourceType: input.sourceType === 'import' ? 'import' : 'manual',
+    kind: input.kind === 'personal' ? 'personal' : 'regular',
     schemaVersion: USER_DICTIONARY_SCHEMA_VERSION,
   });
 }

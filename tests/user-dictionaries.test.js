@@ -44,7 +44,7 @@ describe('user dictionary schema and normalization', () => {
       sourceType: 'manual',
       schemaVersion: 1,
     };
-    expect(UserDictionarySchema.parse(dictionary)).toEqual(dictionary);
+    expect(UserDictionarySchema.parse(dictionary)).toEqual({ ...dictionary, kind: 'regular' });
     expect(() => UserDictionarySchema.parse({ ...dictionary, constructor: 'bad' })).toThrow();
   });
 

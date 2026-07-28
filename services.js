@@ -154,7 +154,7 @@ async function generateAIStory(userPrompt, weakWords, settings, options = {}) {
       "sentence_id": 1,
       "speaker": "Имя говорящего",
       "tokens": [
-        { "kanji": "私", "writing": "わたし", "translation": "я", "type": "Pronoun" },
+        { "kanji": "私", "writing": "わたし", "translation": "я", "type": "Pronoun", "dictionaryForm": "私", "dictionaryReading": "わたし", "dictionaryMeaning": "я" },
         { "kanji": "は", "writing": "は", "translation": "(тема)", "type": "Particle" }
       ],
       "translation": "Полный перевод предложения"
@@ -182,6 +182,7 @@ async function generateAIStory(userPrompt, weakWords, settings, options = {}) {
 1. Создай историю (5-10 предложений) на естественном японском языке уровня N5 (вежливая форма ~masu / ~desu).
 2. Перевод на русский ("translation") должен быть живым, художественным и естественным. Избегай дословного "роботизированного" перевода (особенно для частиц вроде も).
 3. Перевод культурных реалий: Переводи "コンビニ" (konbini) как "конбини", "круглосуточный магазин" или "минимаркет" (но никогда не переводи как "удобный магазин").
+4. Для склонённых содержательных слов по возможности добавляй необязательные поля dictionaryForm, dictionaryReading и dictionaryMeaning. Старые четыре поля токена обязательны.
 ${
   weakWords && weakWords.length > 0
     ? `- ОБЯЗАТЕЛЬНО используй в сюжете эти слова: ${weakWords.join(', ')}`

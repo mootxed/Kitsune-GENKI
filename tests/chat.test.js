@@ -15,7 +15,10 @@ describe('AI Chat History Restoration', () => {
       { role: 'assistant', content: 'Кандзи — это иероглифы.' },
     ];
     setChatHistory(history);
-    expect(getChatHistory()).toEqual(history);
+    expect(getChatHistory()).toEqual([
+      expect.objectContaining({ role: 'user', text: 'Что такое kanji?' }),
+      expect.objectContaining({ role: 'assistant', text: 'Кандзи — это иероглифы.' }),
+    ]);
   });
 
   it('renderSensei syncs chatHistory from state.chatHistory if provided', () => {
@@ -36,7 +39,7 @@ describe('AI Chat History Restoration', () => {
     expect(body.textContent).toContain('Здравствуйте!');
   });
 
-  it('renderSensei shows welcome message if chatHistory is empty', () => {
+  it('renderSensei shows starter actions if chatHistory is empty', () => {
     const state = {
       chatHistory: [],
       settings: {},
@@ -46,7 +49,10 @@ describe('AI Chat History Restoration', () => {
     renderSensei(state, deps);
 
     const body = document.getElementById('sensei-body');
-    expect(body.textContent).toContain('KotoKitsu Sensei');
+    expect(body.querySelector('[data-testid="sensei-starter"]')).not.toBeNull();
+    expect(body.textContent).toContain('Объяснить слово');
+    expect(body.textContent).toContain('Создать историю');
+    expect(body.textContent).toContain('Задать свободный вопрос');
   });
 });
 

@@ -76,7 +76,9 @@ test.describe('E2E Onboarding & Chapter Flow', () => {
 
     // Accept confirm dialog
     page.once('dialog', (dialog) => dialog.accept());
+    const resetReload = page.waitForEvent('load');
     await resetBtn.click();
+    await resetReload;
 
     // 11. After reset, navigate to home and verify onboarding is shown again
     await resetAppState(page);

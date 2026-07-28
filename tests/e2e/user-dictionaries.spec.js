@@ -132,7 +132,7 @@ test.describe('User dictionaries full flow', () => {
     await dialog.getByTestId('dictionary-import-preview').click();
     await expect(dialog.getByText(/Всего: 3/)).toBeVisible();
     await expect(dialog.getByText(/Отклонено: 1/)).toBeVisible();
-    await expect(dialog.getByText(/Дубликатов: 1/)).toBeVisible();
+    await expect(dialog.getByText(/Дубликатов \(словарь\): 1/)).toBeVisible();
     await expect(dialog.getByText(/Укажите написание или чтение/)).toBeVisible();
     await dialog.getByLabel('Для всех конфликтов').selectOption('merge');
     await expect(dialog.getByLabel('После импорта')).toHaveValue('dictionary-only');

@@ -57,6 +57,7 @@ export const UserDictionarySchema = z
     createdAt: isoDate,
     updatedAt: isoDate,
     sourceType: z.enum(['manual', 'import']),
+    kind: z.enum(['personal', 'regular']).default('regular'),
     schemaVersion: z.literal(USER_DICTIONARY_SCHEMA_VERSION),
   })
   .strict();

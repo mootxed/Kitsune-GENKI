@@ -7,6 +7,7 @@ import { acknowledgeReviewLogs, compactReviewJournal } from '../src/review-journ
 import { normalizeVocabularyLockState } from '../src/vocabulary-unlock-plan.js';
 import { hasMeaningfulUserProgress } from '../src/onboarding-state.js';
 import { isPrimaryTab, broadcastStateUpdated } from '../src/tab-sync.js';
+import { normalizeChatHistory } from '../src/ai/chat-history.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
@@ -380,7 +381,7 @@ export function defaultState() {
       darkMode: 'auto',
       hideRomaji: false,
     },
-    chatHistory: [], // {role,content}
+    chatHistory: [], // normalized AI chat messages; legacy role/content is accepted on load
     xp: 0,
     level: 1,
     coins: 0,
@@ -429,6 +430,7 @@ function normalizeRuntimeShape(loadedState) {
   const normalized = { ...base, ...loadedState };
   normalized.updatedAt = Number(loadedState.updatedAt) || 0;
   normalized.settings = { ...base.settings, ...(loadedState.settings || {}) };
+  normalized.chatHistory = normalizeChatHistory(loadedState.chatHistory);
   normalized.priorKnowledgeChapterIds = Array.isArray(loadedState.priorKnowledgeChapterIds)
     ? [...new Set(loadedState.priorKnowledgeChapterIds.map(Number))]
         .filter((id) => Number.isInteger(id) && id > 0)

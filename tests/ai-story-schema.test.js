@@ -240,6 +240,31 @@ describe('AI Story Zod Schema & Parser', () => {
     expect(res.data.story[1].sentence_id).toBe(2);
     expect(res.data.story[2].sentence_id).toBe(3);
   });
+
+  it('accepts optional dictionary fields while keeping old tokens compatible', () => {
+    const enriched = JSON.parse(JSON.stringify(validStoryData));
+    enriched.story[1].tokens[2] = {
+      ...enriched.story[1].tokens[2],
+      kanji: '始めました',
+      writing: 'はじめました',
+      translation: 'начал',
+      type: 'Verb',
+      dictionaryForm: '始める',
+      dictionaryReading: 'はじめる',
+      dictionaryMeaning: 'начинать',
+    };
+    const result = parseAndValidateAIStory(JSON.stringify(enriched));
+    expect(result.success).toBe(true);
+    expect(result.data.story[1].tokens[2]).toMatchObject({
+      dictionaryForm: '始める',
+      dictionaryReading: 'はじめる',
+      dictionaryMeaning: 'начинать',
+    });
+
+    const legacy = parseAndValidateAIStory(JSON.stringify(validStoryData));
+    expect(legacy.success).toBe(true);
+    expect(legacy.data.story[0].tokens[0].dictionaryForm).toBeNull();
+  });
 });
 
 describe('AI Story API Repair Retry & UI Integration', () => {

@@ -30,6 +30,33 @@ export const StoryTokenSchema = z
         return trimmed.length > 0 ? trimmed : 'Unknown';
       })
       .pipe(z.string().max(100)),
+    dictionaryForm: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => {
+        const value = (val ?? '').trim();
+        return value || null;
+      })
+      .pipe(z.string().max(200).nullable()),
+    dictionaryReading: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => {
+        const value = (val ?? '').trim();
+        return value || null;
+      })
+      .pipe(z.string().max(200).nullable()),
+    dictionaryMeaning: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => {
+        const value = (val ?? '').trim();
+        return value || null;
+      })
+      .pipe(z.string().max(500).nullable()),
   })
   .strip()
   .refine((token) => token.kanji.trim().length > 0 || token.writing.trim().length > 0, {

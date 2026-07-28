@@ -13119,3 +13119,270 @@ mark.grammar-highlight {
   font-size: 12px;
   color: var(--text-muted, #6b7280);
 }
+
+/* AI Сенсей structured chat */
+.sensei-chat-toolbar,
+.sensei-privacy-note {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+}
+
+.sensei-chat-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sensei-chat-toolbar button {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.sensei-privacy-note {
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.sensei-starter {
+  min-height: 100%;
+  display: grid;
+  align-content: center;
+  gap: 18px;
+  padding: 22px;
+}
+
+.sensei-starter-intro {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sensei-starter-intro > span {
+  font-size: 42px;
+}
+
+.sensei-starter-intro h2,
+.sensei-starter-intro p {
+  margin: 0;
+}
+
+.sensei-starter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sensei-starter-card {
+  min-height: 86px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-card);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sensei-starter-card:last-child {
+  grid-column: 1 / -1;
+}
+
+.sensei-starter-card > span {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--primary);
+  font-size: 19px;
+}
+
+#sensei-action-menu {
+  max-width: 140px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text);
+  padding: 0 8px;
+}
+
+.sensei-structured-message {
+  display: grid;
+  gap: 12px;
+}
+
+.sensei-examples,
+.sensei-quiz,
+.sensei-story {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.sensei-examples h4,
+.sensei-quiz h4 {
+  margin: 0;
+}
+
+.sensei-example {
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+}
+
+.sensei-quiz-question {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.sensei-quiz-option {
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text);
+  text-align: left;
+}
+
+.sensei-quiz-option.correct {
+  border-color: var(--success, #22c55e);
+  background: color-mix(in srgb, var(--success, #22c55e) 14%, transparent);
+}
+
+.sensei-quiz-option.incorrect {
+  border-color: var(--danger, #ef4444);
+  background: color-mix(in srgb, var(--danger, #ef4444) 12%, transparent);
+}
+
+.quiz-result {
+  white-space: pre-line;
+}
+
+.sensei-story-sentence {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.sensei-story-japanese {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 8px 0 4px;
+}
+
+.sensei-token,
+.sensei-punctuation {
+  padding: 2px 3px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+}
+
+.sensei-token {
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.sensei-token:hover,
+.sensei-token:focus-visible {
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+.sensei-token-popover {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  gap: 5px;
+  max-width: 320px;
+  margin: 4px 0 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 18%);
+}
+
+.sensei-token-actions,
+.sensei-dictionary-actions,
+.sensei-clarify-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sensei-dictionary-dialog {
+  width: min(560px, calc(100vw - 24px));
+  max-height: calc(100vh - 32px);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.sensei-dictionary-form {
+  display: grid;
+  gap: 12px;
+}
+
+.sensei-dict-field {
+  display: grid;
+  gap: 5px;
+}
+
+.sensei-dict-field input,
+.sensei-dict-field textarea,
+.sensei-dict-field select {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.sensei-dictionary-context {
+  white-space: pre-line;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.sensei-dictionary-warning {
+  color: var(--warning, #b45309);
+}
+
+.sensei-tools-list {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+@media (max-width: 520px) {
+  .sensei-starter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sensei-starter-card:last-child {
+    grid-column: auto;
+  }
+
+  #sensei-action-menu {
+    max-width: 46px;
+  }
+}
