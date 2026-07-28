@@ -55,17 +55,30 @@ export class UserDictionaryRepository {
   }
 
   async createDictionaryWithEntry(dictionaryInput, entryInput) {
-    const dictionary = await this.saveDictionary(dictionaryInput);
-    try {
-      const entry = await this.saveEntry({
-        ...entryInput,
-        dictionaryId: dictionary.id,
+    const dictionary = createUserDictionaryModel(dictionaryInput);
+    const entry = normalizeUserDictionaryEntry(entryInput, {
+      dictionaryId: dictionary.id,
+      sourceType: entryInput.source?.type || 'manual',
+    });
+
+    const dbInstance = await this.db();
+    if (typeof dbInstance.atomicSaveDictionary === 'function') {
+      await dbInstance.atomicSaveDictionary({
+        dictionary,
+        entries: [entry],
       });
-      return { dictionary, entry };
-    } catch (error) {
-      await this.deleteDictionary(dictionary.id).catch(() => {});
-      throw error;
+    } else {
+      await dbInstance.putRecord(STORES.USER_DICTIONARIES, dictionary);
+      try {
+        await dbInstance.putRecord(STORES.USER_DICTIONARY_ENTRIES, entry);
+      } catch (error) {
+        if (typeof dbInstance.deleteRecord === 'function') {
+          await dbInstance.deleteRecord(STORES.USER_DICTIONARIES, dictionary.id).catch(() => {});
+        }
+        throw error;
+      }
     }
+    return { dictionary, entry };
   }
 
   async listEntries(dictionaryId) {

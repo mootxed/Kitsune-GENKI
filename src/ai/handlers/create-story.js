@@ -48,24 +48,33 @@ function norm(val) {
     .toLowerCase();
 }
 
-function isTokenMatchingWord(token, word) {
-  const tokenKanji = norm(token.kanji || token.dictionaryForm || token.writing);
-  const tokenReading = norm(token.dictionaryReading || token.reading || token.writing);
+export function isTokenMatchingWord(token, word) {
+  if (!token || !word) return false;
+  const surfaceWriting = norm(token.kanji || token.writing);
+  const dictionaryForm = norm(token.dictionaryForm);
+  const surfaceReading = norm(token.writing);
+  const dictionaryReading = norm(token.dictionaryReading);
 
   const wordWriting = norm(word.writing || word.kanji);
   const wordReading = norm(word.reading);
+  const wordHasKanji = /[\u4e00-\u9faf]/u.test(wordWriting);
 
-  const wordHasKanji = /[\u4e00-\u9faf]/u.test(wordWriting || '');
+  if (dictionaryForm && dictionaryForm === wordWriting) {
+    return !wordReading || !dictionaryReading || dictionaryReading === wordReading;
+  }
 
-  if (tokenKanji && wordWriting && tokenKanji === wordWriting && tokenReading === wordReading) {
+  if (surfaceWriting && surfaceWriting === wordWriting) {
     return true;
   }
-  if (tokenKanji && wordWriting && tokenKanji === wordWriting) {
+
+  if (
+    !wordHasKanji &&
+    wordReading &&
+    (dictionaryReading === wordReading || surfaceReading === wordReading)
+  ) {
     return true;
   }
-  if (!wordHasKanji && tokenReading && wordReading && tokenReading === wordReading) {
-    return true;
-  }
+
   return false;
 }
 

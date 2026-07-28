@@ -30,20 +30,22 @@ function renderExamples(examples = []) {
 }
 
 function renderQuiz(quiz, { messageId, onAnswer }) {
-  if (!quiz?.questions?.length) return null;
+  if (!Array.isArray(quiz?.questions) || !quiz.questions.length) return null;
   const section = el('section', {
     className: 'sensei-quiz',
     attrs: { 'data-testid': 'sensei-inline-quiz' },
   });
   section.append(el('h4', { text: 'Проверьте себя' }));
   quiz.questions.forEach((question, questionIndex) => {
+    if (!question || typeof question !== 'object' || !Array.isArray(question.options)) return;
     const card = el('fieldset', { className: 'sensei-quiz-question' });
-    card.append(el('legend', { text: `${questionIndex + 1}. ${question.prompt}` }));
+    card.append(el('legend', { text: `${questionIndex + 1}. ${question.prompt || ''}` }));
     const correctIndex = getCorrectOptionIndex(question);
     question.options.forEach((option, optionIndex) => {
+      if (!option || typeof option !== 'object') return;
       const button = el('button', {
         className: 'sensei-quiz-option',
-        text: option.text,
+        text: option.text || '',
         attrs: { type: 'button' },
       });
       if (question.selectedIndex !== null && question.selectedIndex !== undefined) {
@@ -60,7 +62,7 @@ function renderQuiz(quiz, { messageId, onAnswer }) {
       card.append(
         el('p', {
           className: question.answeredCorrectly ? 'quiz-result correct' : 'quiz-result incorrect',
-          text: `${question.answeredCorrectly ? '✓ Правильно' : '✗ Неверно'}\n${question.explanation}`,
+          text: `${question.answeredCorrectly ? '✓ Правильно' : '✗ Неверно'}\n${question.explanation || ''}`,
         })
       );
     }
