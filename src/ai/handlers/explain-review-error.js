@@ -33,6 +33,7 @@ const ExplainReviewErrorInputSchema = z
         instruction: z.string().nullish(),
         contextSentence: z.string().nullish(),
         contextTranslation: z.string().nullish(),
+        requiredForm: z.string().max(300).nullish(),
       }),
       answer: z.object({
         expectedAnswers: z.array(z.string()).min(1),

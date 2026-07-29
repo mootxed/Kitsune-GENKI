@@ -44,10 +44,17 @@ export function diagnoseReviewError(snapshot) {
     return { category: 'unknown', confidence: 'low' };
   }
 
-  const userAnswer = String(answer.userAnswer || '').trim();
+  const lastIncorrect = answer.incorrectAttempts?.[answer.incorrectAttempts.length - 1];
+
+  const userAnswer = String(
+    lastIncorrect?.normalizedAnswer || lastIncorrect?.rawAnswer || answer.userAnswer || ''
+  ).trim();
+
   const expectedAnswers = (answer.expectedAnswers || []).map((a) => String(a).trim());
   const correctOption = String(answer.correctOption || '').trim();
-  const selectedOption = String(answer.selectedOption || '').trim();
+  const selectedOption = String(
+    lastIncorrect?.selectedOption || answer.selectedOption || ''
+  ).trim();
 
   if (!userAnswer && !selectedOption) {
     return { category: 'unknown', confidence: 'low' };

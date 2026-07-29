@@ -68,4 +68,60 @@ describe('handleExplainReviewError', () => {
     expect(res.artifact.type).toBe('review_explanation');
     expect(res.artifact.quiz.questions).toHaveLength(1);
   });
+
+  it('preserves requiredForm in task object sent to mockRequest', async () => {
+    let sentInput = '';
+    const mockRequest = async (messages) => {
+      sentInput = JSON.stringify(messages);
+      return JSON.stringify({
+        type: 'review_explanation',
+        diagnosis: {
+          category: 'polite_instead_of_dictionary_form',
+          message: 'Использована вежливая форма вместо словарной.',
+        },
+        explanation: 'Объяснение',
+        comparison: [{ form: '行く', reading: 'いく', role: 'Словарная форма', isExpected: true }],
+        examples: [],
+        quiz: {
+          questions: [
+            {
+              id: 'q1',
+              type: 'dictionary_form',
+              prompt: 'Вопрос',
+              topic: 'Тема',
+              options: [
+                { text: 'Вариант 1', isCorrect: true },
+                { text: 'Вариант 2', isCorrect: false },
+              ],
+              explanation: 'Объяснение',
+            },
+          ],
+        },
+      });
+    };
+
+    const snapshotWithRequiredForm = {
+      ...validSnapshot,
+      task: {
+        ...validSnapshot.task,
+        requiredForm: 'Словарная форма',
+      },
+    };
+
+    const res = await handleExplainReviewError({
+      input: {
+        attempt: snapshotWithRequiredForm,
+        localDiagnosis: { category: 'polite_instead_of_dictionary_form', confidence: 'high' },
+      },
+      request: mockRequest,
+    });
+
+    if (!res.success) {
+      console.log('Test 2 failed with issues:', JSON.stringify(res, null, 2));
+    }
+
+    expect(res.success).toBe(true);
+    expect(sentInput).toContain('requiredForm');
+    expect(sentInput).toContain('Словарная форма');
+  });
 });

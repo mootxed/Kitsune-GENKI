@@ -50,4 +50,19 @@ describe('diagnoseReviewError', () => {
     expect(diag.category).toBe('unknown');
     expect(diag.confidence).toBe('low');
   });
+
+  it('uses last incorrectAttempt when userAnswer is final correct or empty', () => {
+    const retrySnapshot = {
+      ...baseSnapshot,
+      answer: {
+        expectedAnswers: ['食べる'],
+        userAnswer: '食べる',
+        incorrectAttempts: [{ rawAnswer: '食べます', normalizedAnswer: '食べます' }],
+      },
+      result: { outcome: 'partial', mistakes: 1 },
+    };
+    const diag = diagnoseReviewError(retrySnapshot);
+    expect(diag.category).toBe('polite_instead_of_dictionary_form');
+    expect(diag.confidence).toBe('high');
+  });
 });

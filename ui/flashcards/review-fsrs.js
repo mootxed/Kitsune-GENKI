@@ -2,7 +2,12 @@
 
 import { markCardIntroduced } from '../../src/srs-limits.js';
 import { SRS } from '../../srs.js';
-import { adjustQualityByTime, isLeech, undoReviewEvent } from '../../src/card-behavior.js';
+import {
+  adjustQualityByTime,
+  isLeech,
+  LEECH_THRESHOLD,
+  undoReviewEvent,
+} from '../../src/card-behavior.js';
 import { wordById } from '../../src/srs-helpers.js';
 import {
   modeCanSchedule,
@@ -232,9 +237,7 @@ export function submitReview(card, quality, state, context = null) {
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const snapshotCard =
-        nowLeech && !wasLeech
-          ? { ...previousCard, lapses: Math.max(4, previousCard.lapses || 4) }
-          : previousCard;
+        nowLeech && !wasLeech ? { ...previousCard, lapses: LEECH_THRESHOLD } : previousCard;
       const snapshot = buildReviewAttemptSnapshot({
         card: snapshotCard,
         word,

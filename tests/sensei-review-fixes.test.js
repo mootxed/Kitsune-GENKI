@@ -27,7 +27,11 @@ import { SRS } from '../srs.js';
 import { SessionManager } from '../session-manager.js';
 import { lockCurrentReviewUI } from '../ui/flashcards/card-modes.js';
 import { clearPostReviewSenseiActions } from '../ui/flashcards/sensei-review-panel.js';
-import { clearActiveReviewAIContext } from '../ui/flashcards/state.js';
+import {
+  activeReviewAIContext,
+  clearActiveReviewAIContext,
+  setActiveReviewState,
+} from '../ui/flashcards/state.js';
 
 describe('AI Sensei & Review Lifecycle Fixes', () => {
   beforeEach(() => {
@@ -565,6 +569,44 @@ describe('AI Sensei & Review Lifecycle Fixes', () => {
       const decision = shouldShowSenseiAction(snapshot);
       expect(decision.show).toBe(true);
       expect(decision.actions[0].reason).toBe('writing_guidance');
+    });
+
+    it('Leech transition test (lapses 7 -> 8): sets memoryContext.isLeech true in activeReviewAIContext.snapshot', () => {
+      const card = SRS.newCard('genki1_l1_v1::recall');
+      card.state = 2; // Review state
+      card.reps = 7;
+      card.stability = 10;
+      card.difficulty = 5;
+      card.lapses = 7;
+
+      const state = {
+        srs: { [card.id]: card },
+        dictionary: [
+          { id: 'genki1_l1_v1', writing: '食べる', reading: 'たべる', meanings: ['есть'] },
+        ],
+        reviewEvents: [],
+        journalLogs: [],
+      };
+      setActiveReviewState(state);
+
+      const reviewContext = {
+        aiAttempt: adaptTypingContext({
+          word: state.dictionary[0],
+          acceptedAnswers: ['食べる'],
+          userAnswer: 'たべます',
+          mistakes: 1,
+          hintUsed: false,
+          firstAttemptCorrect: false,
+        }),
+        mode: 'typing',
+        responseTimeMs: 2000,
+      };
+
+      submitReview(card, SRS.Quality.Again, state, reviewContext);
+
+      expect(activeReviewAIContext).not.toBeNull();
+      expect(activeReviewAIContext.snapshot.memoryContext.isLeech).toBe(true);
+      expect(activeReviewAIContext.snapshot.memoryContext.stage).toBe('leech');
     });
   });
 });
