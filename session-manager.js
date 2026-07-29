@@ -1,16 +1,24 @@
 /* session-manager.js — Intra-session learning logic for SRS & active session persistence */
 
 import { db, STORES } from './src/db.js';
-import { broadcastSessionStarted, broadcastSessionEnded } from './src/tab-sync.js';
+import { broadcastSessionEnded } from './src/tab-sync.js';
 
 export async function saveSessionToDB(sessionData) {
-  if (!db || typeof db.set !== 'function') return;
+  if (!db) return;
   try {
-    await db.set(STORES.ACTIVE_SESSION, 'current', {
-      id: 'current',
-      data: sessionData,
-      updatedAt: Date.now(),
-    });
+    if (typeof db.putRecord === 'function') {
+      await db.putRecord(STORES.ACTIVE_SESSION, {
+        id: 'current',
+        data: sessionData,
+        updatedAt: Date.now(),
+      });
+    } else if (typeof db.set === 'function') {
+      await db.set(STORES.ACTIVE_SESSION, 'current', {
+        id: 'current',
+        data: sessionData,
+        updatedAt: Date.now(),
+      });
+    }
   } catch (err) {
     console.warn('[SessionManager] Failed to save active session to DB:', err);
   }

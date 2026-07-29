@@ -1,5 +1,6 @@
 /* services.js — OpenRouter chat & AI Story Generator with Zod Validation & Repair */
 import { parseAndValidateAIStory } from './src/ai-story-parser.js';
+import { getOpenRouterKey } from './src/openrouter-key.js';
 
 const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_TIMEOUT_MS = 45000;
@@ -90,11 +91,12 @@ export async function openRouterRequest({ model, messages, key, signal, timeoutM
 }
 
 async function askSensei(history, settings, options = {}) {
-  if (!settings?.openrouterKey) {
+  const apiKey = getOpenRouterKey() || settings?.openrouterKey;
+  if (!apiKey) {
     throw new Error('Не задан API-ключ OpenRouter. Откройте Настройки.');
   }
   // Валидация формата ключа
-  const key = settings.openrouterKey.trim();
+  const key = apiKey.trim();
   if (!key.startsWith('sk-or-v1-')) {
     throw new Error("Неверный формат API-ключа. Ключ должен начинаться с 'sk-or-v1-'");
   }
@@ -130,11 +132,12 @@ async function askSensei(history, settings, options = {}) {
 
 // ---- AI Story Generator ----
 async function generateAIStory(userPrompt, weakWords, settings, options = {}) {
-  if (!settings?.openrouterKey) {
+  const apiKey = getOpenRouterKey() || settings?.openrouterKey;
+  if (!apiKey) {
     throw new Error('Не задан API-ключ OpenRouter. Откройте Настройки.');
   }
 
-  const key = settings.openrouterKey.trim();
+  const key = apiKey.trim();
   if (!key.startsWith('sk-or-v1-')) {
     throw new Error("Неверный формат API-ключа. Должен начинаться с 'sk-or-v1-'");
   }

@@ -108,3 +108,59 @@ describe('Router screen visibility and invariant logic', () => {
     expect(document.querySelectorAll('.screen:not(.hidden)').length).toBe(1);
   });
 });
+
+describe('Router async render and rapid navigation sequence (dictionary -> settings -> home)', () => {
+  let router;
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <section class="screen hidden" id="screen-user-dictionaries"></section>
+      <section class="screen hidden" id="screen-settings"></section>
+      <section class="screen hidden" id="screen-home"></section>
+    `;
+    router = new Router();
+  });
+
+  it('ignores stale async render from earlier navigation when fast sequence dictionary -> settings -> home occurs', async () => {
+    const dictionaryRenderLog = [];
+    const settingsRenderLog = [];
+    const homeRenderLog = [];
+
+    // Slow async render for user-dictionaries
+    router.registerRenderHandler('user-dictionaries', async (_opt, context) => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      if (context.signal.aborted) return;
+      dictionaryRenderLog.push('rendered-dictionary');
+    });
+
+    // Medium async render for settings
+    router.registerRenderHandler('settings', async (_opt, context) => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      if (context.signal.aborted) return;
+      settingsRenderLog.push('rendered-settings');
+    });
+
+    // Fast sync render for home
+    router.registerRenderHandler('home', (_opt, _context) => {
+      homeRenderLog.push('rendered-home');
+    });
+
+    // Rapid sequence: dictionary -> settings -> home
+    const p1 = router.navigate('user-dictionaries');
+    const p2 = router.navigate('settings');
+    const p3 = router.navigate('home');
+
+    await Promise.all([p1, p2, p3]);
+    await new Promise((resolve) => setTimeout(resolve, 70));
+
+    expect(router.currentScreen).toBe('home');
+    expect(document.getElementById('screen-home').classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('screen-user-dictionaries').classList.contains('hidden')).toBe(
+      true
+    );
+    expect(document.getElementById('screen-settings').classList.contains('hidden')).toBe(true);
+    expect(dictionaryRenderLog).toEqual([]);
+    expect(settingsRenderLog).toEqual([]);
+    expect(homeRenderLog).toEqual(['rendered-home']);
+  });
+});

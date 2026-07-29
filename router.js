@@ -50,6 +50,8 @@ export class Router {
       'user-dictionaries',
     ];
     this.renderHandlers = {};
+    this.navigationId = 0;
+    this.currentAbortController = null;
   }
 
   /**
@@ -66,14 +68,23 @@ export class Router {
    * @param {string} name - Название экрана для перехода
    * @param {*} opt - Опциональные параметры (например, ID главы)
    * @param {boolean} skipHistory - Пропустить добавление в историю браузера
+   * @returns {Promise<void>}
    */
-  navigate(name, opt, skipHistory = false) {
+  async navigate(name, opt, skipHistory = false) {
     const targetId = `screen-${name}`;
     const targetScreen = document.getElementById(targetId);
     if (!targetScreen) {
       console.error(`[Router] Unknown screen: ${name}`);
       return;
     }
+
+    const navId = ++this.navigationId;
+
+    if (this.currentAbortController) {
+      this.currentAbortController.abort();
+    }
+    this.currentAbortController = new AbortController();
+    const signal = this.currentAbortController.signal;
 
     // Очищаем рендеры мини-игр при переходе на другие экраны
     if (this.currentScreen === 'word-search' && name !== 'word-search') {
@@ -137,9 +148,23 @@ export class Router {
       history.pushState({ screen: name, opt: opt }, '', '');
     }
 
-    // Вызов соответствующего обработчика рендера
+    // Вызов соответствующего обработчика рендера с отслеживанием async Promise и AbortSignal
     if (this.renderHandlers[name]) {
-      this.renderHandlers[name](opt);
+      try {
+        await Promise.resolve(this.renderHandlers[name](opt, { signal, navigationId: navId }));
+      } catch (err) {
+        if (err?.name !== 'AbortError') {
+          console.error(`[Router] Ошибка при рендере экрана ${name}:`, err);
+        }
+      }
+    }
+
+    // Защита от устаревшего рендера: если за время рендера начата новая навигация — не меняем DOM и фокус
+    if (this.navigationId !== navId || signal.aborted) {
+      console.log(
+        `[Router] Пропущен устаревший рендер для ${name} (navId ${navId}, текущий ${this.navigationId})`
+      );
+      return;
     }
 
     // Прокрутка наверх и синхронизация аватаров

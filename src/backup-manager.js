@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { db, initializeDB, STORES } from './db.js';
 import { getReviewLogs, syncReviewLogQueue } from './review-log.js';
+import { getOpenRouterKey, setOpenRouterKey, clearOpenRouterKey } from './openrouter-key.js';
 import {
   ImportProfileSchema,
   UserDictionaryEntrySchema,
@@ -9,7 +10,6 @@ import {
 
 // Константы ключей localStorage (для обратной совместимости со старыми бэкапами)
 const LS_STATE = 'kitsune_state_v1';
-const LS_LESSONS = 'kitsune_lessons_v1';
 const LS_LESSON_VERSION = 'kitsune_lessons_version_v1';
 const LS_LAST_ACTIVITY_DAY = 'kitsune_last_activity_day';
 const LS_THEME = 'kitsune_theme';
@@ -239,13 +239,10 @@ export async function exportFullProgress() {
     }
 
     // КРИТИЧЕСКАЯ БЕЗОПАСНОСТЬ: API-ключ НЕ ИЗВЛЕКАЕТСЯ и НЕ ВКЛЮЧАЕТСЯ в бэкап ни при каких условиях!
-    const exportedState = {
-      ...state,
-      settings: {
-        ...state.settings,
-        openrouterKey: '',
-      },
-    };
+    const exportedState = JSON.parse(JSON.stringify(state));
+    if (exportedState.settings) {
+      exportedState.settings.openrouterKey = '';
+    }
 
     console.log('[Export] Данные для экспорта:', {
       hasState: !!exportedState,
@@ -326,8 +323,16 @@ export async function importFullProgress(data, preserveApiKey = true) {
     };
 
     // Импортированный API-ключ всегда игнорируется (безопасность):
-    // сохраняем текущий локальный ключ (если preserveApiKey === true) или сбрасываем в пустую строку
-    const currentApiKey = preserveApiKey ? snapshot.state?.settings?.openrouterKey || '' : '';
+    // сохраняем текущий локальный ключ (если preserveApiKey === true) или сбрасываем
+    const currentApiKey = preserveApiKey
+      ? getOpenRouterKey() || snapshot.state?.settings?.openrouterKey || ''
+      : '';
+
+    if (!preserveApiKey) {
+      await clearOpenRouterKey();
+    } else if (currentApiKey) {
+      await setOpenRouterKey(currentApiKey);
+    }
 
     const stateToImport = data.data?.state ? { ...data.data.state } : null;
 

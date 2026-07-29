@@ -1,9 +1,10 @@
 import { openRouterRequest } from '../../services.js';
+import { getOpenRouterKey } from '../openrouter-key.js';
 
 export const DEFAULT_AI_MODEL = 'deepseek/deepseek-v4-flash';
 
 export function validateOpenRouterSettings(settings) {
-  const key = String(settings?.openrouterKey || '').trim();
+  const key = String(getOpenRouterKey() || settings?.openrouterKey || '').trim();
   if (!key) throw new Error('Не задан API-ключ OpenRouter. Откройте Настройки.');
   if (!key.startsWith('sk-or-v1-')) {
     throw new Error("Неверный формат API-ключа. Ключ должен начинаться с 'sk-or-v1-'");

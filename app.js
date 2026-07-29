@@ -348,8 +348,10 @@ function calculateNextNotificationDate(notifyTimeStr, notifyDays, now = new Date
   }
 
   const [hoursStr, minutesStr] = notifyTimeStr.split(':');
-  const targetHours = parseInt(hoursStr, 10) || 12;
-  const targetMinutes = parseInt(minutesStr, 10) || 0;
+  const parsedHours = Number.parseInt(hoursStr, 10);
+  const targetHours = Number.isInteger(parsedHours) ? parsedHours : 12;
+  const parsedMinutes = Number.parseInt(minutesStr, 10);
+  const targetMinutes = Number.isInteger(parsedMinutes) ? parsedMinutes : 0;
 
   for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
     const candidate = new Date(now.getTime());
@@ -481,6 +483,8 @@ window.applyTheme = applyTheme;
 window.showNotification = showNotification;
 window.scheduleNotify = scheduleNotify;
 window.scheduleOneHourReminder = scheduleOneHourReminder;
+window.calculateNextNotificationDate = calculateNextNotificationDate;
+export { calculateNextNotificationDate };
 
 // ===== ROUTER SETUP =====
 let router = null;
@@ -596,7 +600,7 @@ function setupRouter() {
       // Инициализируем батчинг (20 карточек на батч)
       const batchInfo = initSessionBatching(sessionCards, LESSONS, 20);
 
-      if (!batchInfo || !batchInfo.organizedCards) {
+      if (!activateSessionBatch(batchInfo, null)) {
         console.error('[SRS] Failed to generate organized cards batch!');
         toast('Ошибка инициализации батча карточек');
         renderSrsDashboard();

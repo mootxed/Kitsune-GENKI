@@ -5,6 +5,7 @@ import { wordById } from '../src/srs-helpers.js';
 import { parseAndValidateAIStory } from '../src/ai-story-parser.js';
 import { getWeakVocabularyItems } from '../src/vocabulary-weakness-service.js';
 import { ensureAIPrivacyDisclosure } from '../src/ai-disclosure.js';
+import { getOpenRouterKey } from '../src/openrouter-key.js';
 
 function escapeHtml(str) {
   if (typeof str !== 'string') return '';
@@ -55,7 +56,7 @@ export function renderAIStory(state, dependencies) {
   const toast = dependencies?.toast || window.toast || (() => {});
 
   // Check if OpenRouter key is configured
-  const apiKey = state?.settings?.openrouterKey?.trim();
+  const apiKey = (getOpenRouterKey() || state?.settings?.openrouterKey || '').trim();
   if (!apiKey) {
     body.innerHTML = `
       <div class="card" style="text-align:center; padding: 24px;" data-testid="ai-story-no-key">

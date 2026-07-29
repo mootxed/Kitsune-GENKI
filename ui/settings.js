@@ -12,6 +12,7 @@ import { localDateKey } from '../src/local-date.js';
 import { getDailyStudyDigest } from '../src/daily-study-digest.js';
 import { resetApplicationData, commitState } from '../state/store.js';
 import { updateThemeCommand } from '../src/domain-commands.js';
+import { getOpenRouterKey, setOpenRouterKey } from '../src/openrouter-key.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -22,16 +23,7 @@ const LS_THEME = 'kitsune_theme';
 // Функция рендеринга настроек
 export function renderSettings(state, dependencies) {
   if (dependencies) deps = dependencies;
-  const {
-    save,
-    nav,
-    loadState,
-    scheduleNotify,
-    showNotification,
-    applyTheme,
-    applyCustomTheme,
-    applyStreakSkin,
-  } = deps;
+  const { save, nav, scheduleNotify, showNotification } = deps;
   const toast = deps?.toast || window.toast || (() => {});
 
   const s = state.settings;
@@ -57,7 +49,7 @@ export function renderSettings(state, dependencies) {
     <div class="set-group">
       <div class="set-item">
         <label>🔑 API-ключ OpenRouter</label>
-        <input type="password" id="set-key" value="${s.openrouterKey || ''}" placeholder="sk-or-v1-..." data-testid="set-openrouter-key" />
+        <input type="password" id="set-key" value="${getOpenRouterKey()}" placeholder="sk-or-v1-..." data-testid="set-openrouter-key" />
         <div class="set-hint">Получите ключ на openrouter.ai. Хранится только на этом устройстве.</div>
         <div class="set-warning">⚠️ Ключ хранится локально в браузере. Не сохраняйте его на общем или чужом устройстве.</div>
       </div>
@@ -156,7 +148,7 @@ export function renderSettings(state, dependencies) {
     if (e) e.addEventListener(event, fn);
   };
   const persist = () => {
-    s.openrouterKey = $('#set-key').value.trim();
+    setOpenRouterKey($('#set-key').value.trim());
     s.model = $('#set-model').value.trim() || 'deepseek/deepseek-v4-flash';
     s.notifyTime = $('#set-notify-time').value || '12:00';
     save();
@@ -327,7 +319,7 @@ function showImportConfirmDialog(data, state, dependencies, toastFn) {
   const currentState = state;
   const importState = data.data.state;
 
-  const hasCurrentApiKey = currentState.settings.openrouterKey;
+  const hasCurrentApiKey = !!getOpenRouterKey();
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';

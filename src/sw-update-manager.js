@@ -67,12 +67,32 @@ export function activateWaitingWorker(waitingWorker) {
 /**
  * Sets the reload guard and reloads the page.
  * Called after controllerchange fires.
+ * @param {Function} [onBeforeReload]
  */
-export function performControlledReload() {
+export async function performControlledReload(onBeforeReload) {
+  if (typeof onBeforeReload === 'function') {
+    try {
+      await onBeforeReload();
+    } catch (err) {
+      console.warn('[SWUpdateManager] Ошибка сохранения состояния перед перезагрузкой:', err);
+    }
+  } else if (
+    typeof window !== 'undefined' &&
+    typeof window.saveActiveSessionBeforeReload === 'function'
+  ) {
+    try {
+      await window.saveActiveSessionBeforeReload();
+    } catch (err) {
+      console.warn('[SWUpdateManager] Ошибка сохранения активной сессии:', err);
+    }
+  }
+
   if (typeof sessionStorage !== 'undefined') {
     sessionStorage.setItem(RELOAD_GUARD_KEY, '1');
   }
-  window.location.reload();
+  if (typeof window !== 'undefined' && window.location) {
+    window.location.reload();
+  }
 }
 
 /**
@@ -106,10 +126,14 @@ export async function registerAndManageSW(swUrl, callbacks) {
   // We attach this BEFORE registering so we don't miss the event
   navigator.serviceWorker.addEventListener(
     'controllerchange',
-    () => {
+    async () => {
       callbacks.onStatusChange?.('updated');
-      callbacks.onUpdateActivated?.();
-      performControlledReload();
+      try {
+        await callbacks.onUpdateActivated?.();
+      } catch (err) {
+        console.warn('[SWUpdateManager] onUpdateActivated callback error:', err);
+      }
+      await performControlledReload(callbacks.onUpdateActivated);
     },
     { once: true }
   );

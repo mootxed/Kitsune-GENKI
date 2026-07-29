@@ -16,6 +16,49 @@ const STORES = {
 };
 
 /**
+ * Единое декларативное описание схем IndexedDB stores и их key paths
+ */
+const STORE_SCHEMAS = {
+  [STORES.APP_STATE]: { keyPath: 'id' },
+  [STORES.CONTENT_CACHE]: { keyPath: 'key' },
+  [STORES.UI_PREFERENCES]: { keyPath: 'key' },
+  [STORES.ACTIVE_SESSION]: { keyPath: 'id' },
+  [STORES.USER_DICTIONARIES]: {
+    keyPath: 'id',
+    indexes: [{ name: 'updatedAt', keyPath: 'updatedAt', options: { unique: false } }],
+  },
+  [STORES.USER_DICTIONARY_ENTRIES]: {
+    keyPath: 'id',
+    indexes: [
+      { name: 'dictionaryId', keyPath: 'dictionaryId', options: { unique: false } },
+      {
+        name: 'dictionaryId_entryKey',
+        keyPath: ['dictionaryId', 'entryKey'],
+        options: { unique: false },
+      },
+      { name: 'learningEnabled', keyPath: 'learningEnabled', options: { unique: false } },
+    ],
+  },
+  [STORES.USER_DICTIONARY_IMPORT_PROFILES]: {
+    keyPath: 'id',
+    indexes: [{ name: 'name', keyPath: 'name', options: { unique: false } }],
+  },
+  [STORES.REVIEW_LOG]: {
+    keyPath: 'id',
+    autoIncrement: true,
+    indexes: [
+      { name: 'cardId', keyPath: 'cardId', options: { unique: false } },
+      { name: 'timestamp', keyPath: 'timestamp', options: { unique: false } },
+      { name: 'reviewedAt', keyPath: 'reviewedAt', options: { unique: false } },
+      { name: 'cardId_timestamp', keyPath: ['cardId', 'timestamp'], options: { unique: false } },
+      { name: 'cardId_reviewedAt', keyPath: ['cardId', 'reviewedAt'], options: { unique: false } },
+      { name: 'itemId', keyPath: 'itemId', options: { unique: false } },
+      { name: 'eventId', keyPath: 'eventId', options: { unique: true } },
+    ],
+  },
+};
+
+/**
  * Удаляет записи review_log для указанного itemId.
  * Использован индекс itemId (при наличии) либо полный cursor-обход.
  */
@@ -432,8 +475,25 @@ class IndexedDBWrapper {
         const transaction = this.db.transaction([storeName], 'readwrite');
         const store = transaction.objectStore(storeName);
 
-        // Для app_state используем id, для остальных — key
-        const data = storeName === STORES.APP_STATE ? { id: key, value } : { key, value };
+        // Сторы с keyPath: 'id'
+        const storesWithIdKeyPath = [
+          STORES.APP_STATE,
+          STORES.ACTIVE_SESSION,
+          STORES.USER_DICTIONARIES,
+          STORES.USER_DICTIONARY_ENTRIES,
+          STORES.USER_DICTIONARY_IMPORT_PROFILES,
+        ];
+
+        let data;
+        if (storesWithIdKeyPath.includes(storeName)) {
+          if (value && typeof value === 'object' && !Array.isArray(value)) {
+            data = { id: key, ...value };
+          } else {
+            data = { id: key, value };
+          }
+        } else {
+          data = { key, value };
+        }
 
         const request = store.put(data);
 
@@ -1119,5 +1179,5 @@ export async function initializeDB() {
   return db;
 }
 
-// Экспорт имён stores и обёртки для использования в других модулях и тестах
-export { DB_NAME, DB_VERSION, STORES, IndexedDBWrapper };
+// Экспорт имён stores, схем и обёртки для использования в других модулях и тестах
+export { DB_NAME, DB_VERSION, STORES, STORE_SCHEMAS, IndexedDBWrapper };

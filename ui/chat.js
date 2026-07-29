@@ -8,6 +8,7 @@ import { UserDictionaryRepository } from '../src/user-dictionaries/repository.js
 import { AI_INTENTS, STARTER_ACTIONS } from '../src/ai/intents.js';
 import { createAIRequestClient } from '../src/ai/request-client.js';
 import { runSenseiPipeline } from '../src/ai/pipeline.js';
+import { getOpenRouterKey } from '../src/openrouter-key.js';
 import { PERSONAL_DICTIONARY_ID } from '../src/ai/personal-dictionary.js';
 import {
   clearChatHistory,
@@ -611,7 +612,7 @@ export async function sendChat(state, dependencies = {}) {
   const input = $('#chat-input');
   const text = input?.value.trim();
   if (!text) return;
-  if (!state.settings?.openrouterKey && !dependencies.aiRequest) {
+  if (!getOpenRouterKey() && !state?.settings?.openrouterKey && !dependencies.aiRequest) {
     getToast()('⚠️ Укажите API-ключ OpenRouter в настройках');
     return;
   }

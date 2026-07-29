@@ -18,12 +18,14 @@ const CACHE_AUDIO = `${NS}-audio-${CACHE_VERSION}`;
 const CACHE_LESSON = `${NS}-lesson-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `${NS}-dynamic-${CACHE_VERSION}`;
 
-// Cache size limits (number of entries, not bytes)
+// Cache size and byte volume limits
+const DEFAULT_CACHE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB default limit per cache category
+
 const RUNTIME_CACHE_LIMITS = {
-  images: 80,
-  audio: 60,
-  content: 40,
-  dynamic: 30,
+  images: { maxEntries: 80, maxSizeBytes: 15 * 1024 * 1024 },
+  audio: { maxEntries: 60, maxSizeBytes: 15 * 1024 * 1024 },
+  content: { maxEntries: 40, maxSizeBytes: 10 * 1024 * 1024 },
+  dynamic: { maxEntries: 30, maxSizeBytes: 8 * 1024 * 1024 },
 };
 
 // Базовый путь скоупа SW (например '/Kitsune-GENKI/' или '/')
@@ -151,20 +153,63 @@ async function safeCachePut(cache, request, response) {
 }
 
 /**
- * Обрезает кеш до maxEntries записей (LRU — удаляет самые старые).
+ * Обрезает кеш до maxEntries записей и maxSizeBytes общего объёма (LRU — удаляет самые старые).
  * Выполняется асинхронно, не блокирует текущий ответ.
- * Ошибки логируются, но не бросаются.
  * @param {string} cacheName
- * @param {number} maxEntries
+ * @param {number|{maxEntries: number, maxSizeBytes?: number}} maxEntries
+ * @param {number} [maxSizeBytes]
  */
-function trimCache(cacheName, maxEntries) {
-  // Запускаем асинхронно, не await
+function trimCache(cacheName, maxEntries, maxSizeBytes) {
   Promise.resolve().then(async () => {
     try {
       const cache = await caches.open(cacheName);
       const keys = await cache.keys();
-      if (keys.length > maxEntries) {
-        const toDelete = keys.slice(0, keys.length - maxEntries);
+      const limitEntries = typeof maxEntries === 'object' ? maxEntries.maxEntries : maxEntries;
+      const limitBytes =
+        typeof maxEntries === 'object'
+          ? maxEntries.maxSizeBytes || DEFAULT_CACHE_MAX_BYTES
+          : maxSizeBytes || DEFAULT_CACHE_MAX_BYTES;
+
+      const entryStats = [];
+      let totalBytes = 0;
+
+      for (const key of keys) {
+        const response = await cache.match(key);
+        let size = 0;
+        if (response) {
+          const len = response.headers.get('content-length');
+          if (len && !isNaN(Number(len))) {
+            size = Number(len);
+          } else {
+            try {
+              const blob = await response.clone().blob();
+              size = blob.size;
+            } catch {
+              size = 50 * 1024;
+            }
+          }
+        }
+        entryStats.push({ key, size });
+        totalBytes += size;
+      }
+
+      const toDelete = [];
+
+      // 1. Ограничение по количеству элементов (LRU)
+      while (entryStats.length > limitEntries) {
+        const item = entryStats.shift();
+        totalBytes -= item.size;
+        toDelete.push(item.key);
+      }
+
+      // 2. Ограничение по общему байтовому объёму (LRU)
+      while (totalBytes > limitBytes && entryStats.length > 0) {
+        const item = entryStats.shift();
+        totalBytes -= item.size;
+        toDelete.push(item.key);
+      }
+
+      if (toDelete.length > 0) {
         await Promise.all(toDelete.map((key) => cache.delete(key)));
       }
     } catch (err) {
@@ -174,6 +219,7 @@ function trimCache(cacheName, maxEntries) {
 }
 
 // Alias for backwards compatibility
+// eslint-disable-next-line no-unused-vars
 const limitCacheSize = trimCache;
 
 // ===== INSTALL EVENT =====
@@ -359,7 +405,7 @@ async function handleNavigationRequest(request) {
       await safeCachePut(cache, request, networkResponse.clone());
     }
     return networkResponse;
-  } catch (_err) {
+  } catch {
     // Сеть недоступна — пробуем кеш
     const cached = await caches.match(request);
     if (cached) return cached;
@@ -370,7 +416,7 @@ async function handleNavigationRequest(request) {
     if (shellResponse) return shellResponse;
 
     // Крайний случай — offline page
-    return caches.match(new URL('offline.html', self.location).href);
+    return caches.match(OFFLINE_URL);
   }
 }
 
@@ -435,7 +481,7 @@ async function handleDynamicRequest(request) {
       trimCache(CACHE_DYNAMIC, RUNTIME_CACHE_LIMITS.dynamic);
     }
     return networkResponse;
-  } catch (_err) {
+  } catch {
     const cached = await caches.match(request);
     if (cached) return cached;
     return new Response('', { status: 408, statusText: 'Offline' });

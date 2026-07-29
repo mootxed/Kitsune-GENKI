@@ -1,6 +1,6 @@
 // ui/flashcards/dictionary.js - Экран словаря, фильтрация, карточки и прогресс освоения
 
-import { $, $$ } from '../../src/utils.js';
+import { $, $$, escapeHtml } from '../../src/utils.js';
 import { isWordUnlocked, cardChapter, wordById } from '../../src/srs-helpers.js';
 import { cardsForItem, vocabularySkills } from '../../src/knowledge-model.js';
 import { calculateMastery } from '../../src/mastery.js';
@@ -17,17 +17,12 @@ export const dictionaryViewState = {
   expandedLessons: new Set(),
 };
 
-let dictSearchQuery = '';
-let dictFilter = 'all';
-let dictTopicFilter = 'all';
-let dictAdjectiveClassFilter = 'all';
-
 export function emptyState(icon, title, desc) {
   return `
     <div class="empty-state">
-      <div class="empty-state-icon">${icon}</div>
-      <h3 class="empty-state-title">${title}</h3>
-      <p class="empty-state-desc">${desc}</p>
+      <div class="empty-state-icon">${escapeHtml(icon)}</div>
+      <h3 class="empty-state-title">${escapeHtml(title)}</h3>
+      <p class="empty-state-desc">${escapeHtml(desc)}</p>
     </div>
   `;
 }
@@ -540,7 +535,7 @@ export async function renderDictionary(state, dependencies) {
           class="dict-search-input" 
           placeholder="🔍 Поиск слов..."
           autocomplete="off"
-          value="${dictionaryViewState.search || ''}"
+          value="${escapeHtml(dictionaryViewState.search || '')}"
         />
       </div>
       <div class="dict-filters-wrap">
@@ -586,7 +581,6 @@ export async function renderDictionary(state, dependencies) {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
         dictionaryViewState.search = e.target.value;
-        dictSearchQuery = e.target.value;
         renderDictionaryLessons(state, dependencies, dictionaryViewState);
       }, 300);
     });
@@ -597,7 +591,6 @@ export async function renderDictionary(state, dependencies) {
       $$('.dict-filter-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       dictionaryViewState.partOfSpeech = btn.dataset.filter;
-      dictFilter = btn.dataset.filter;
 
       const adjSubfilter = $('#dict-adjective-subfilter');
       if (adjSubfilter) {
@@ -606,7 +599,6 @@ export async function renderDictionary(state, dependencies) {
         } else {
           adjSubfilter.style.display = 'none';
           dictionaryViewState.adjectiveClass = 'all';
-          dictAdjectiveClassFilter = 'all';
         }
       }
 
@@ -619,7 +611,6 @@ export async function renderDictionary(state, dependencies) {
       $$('.dict-adj-class-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       dictionaryViewState.adjectiveClass = btn.dataset.adjClass;
-      dictAdjectiveClassFilter = btn.dataset.adjClass;
       renderDictionaryLessons(state, dependencies, dictionaryViewState);
     };
   });
@@ -628,7 +619,6 @@ export async function renderDictionary(state, dependencies) {
   if (topicSelect) {
     topicSelect.onchange = (e) => {
       dictionaryViewState.topic = e.target.value;
-      dictTopicFilter = e.target.value;
       renderDictionaryLessons(state, dependencies, dictionaryViewState);
     };
   }

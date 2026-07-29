@@ -28,6 +28,20 @@ function endsWith(str, suffixes) {
   return suffixes.some((s) => str.endsWith(s));
 }
 
+export function getLastConfusion(answer) {
+  if (!answer) return null;
+  const attempt = answer.incorrectAttempts?.at(-1);
+
+  return (
+    attempt?.normalizedAnswer ||
+    attempt?.rawAnswer ||
+    attempt?.selectedOption ||
+    answer.userAnswer ||
+    answer.selectedOption ||
+    null
+  );
+}
+
 /**
  * Сравнивает userAnswer с expectedAnswers и requiredForm,
  * возвращает локальный диагноз.
@@ -44,10 +58,10 @@ export function diagnoseReviewError(snapshot) {
     return { category: 'unknown', confidence: 'low' };
   }
 
-  const lastIncorrect = answer.incorrectAttempts?.[answer.incorrectAttempts.length - 1];
+  const lastIncorrect = answer.incorrectAttempts?.at(-1);
 
   const userAnswer = String(
-    lastIncorrect?.normalizedAnswer || lastIncorrect?.rawAnswer || answer.userAnswer || ''
+    lastIncorrect?.normalizedAnswer || lastIncorrect?.rawAnswer || getLastConfusion(answer) || ''
   ).trim();
 
   const expectedAnswers = (answer.expectedAnswers || []).map((a) => String(a).trim());

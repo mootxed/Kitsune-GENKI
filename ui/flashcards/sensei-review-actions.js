@@ -14,6 +14,8 @@
  * Первый правильный ответ без hints и слово не leech → никогда.
  */
 
+import { getLastConfusion } from '../../src/ai/local-diagnosis.js';
+
 const EXCLUDED_MODES = new Set(['system-fallback', 'preview', 'debug-skip']);
 
 /**
@@ -138,7 +140,7 @@ export function buildSenseiActionInput(
       item: snapshot.item,
       skill: snapshot.skill,
       mode: snapshot.mode,
-      confusion: snapshot.answer.userAnswer || snapshot.answer.selectedOption || null,
+      confusion: getLastConfusion(snapshot?.answer),
       userPreferences: { mnemonicLanguage: 'ru' },
     };
   }

@@ -11,6 +11,7 @@
 
 import { createAIRequestClient } from '../../src/ai/request-client.js';
 import { ensureAIPrivacyDisclosure } from '../../src/ai-disclosure.js';
+import { getOpenRouterKey } from '../../src/openrouter-key.js';
 
 import { handleExplainReviewError } from '../../src/ai/handlers/explain-review-error.js';
 import { handleCreateMnemonic } from '../../src/ai/handlers/create-mnemonic.js';
@@ -419,7 +420,8 @@ export async function openSenseiPanel({ snapshot, actionType, reason, dependenci
     setLoading(panelContainer, true);
 
     try {
-      const apiKey = aiSettings?.openrouterKey || state?.settings?.openrouterKey;
+      const apiKey =
+        getOpenRouterKey() || aiSettings?.openrouterKey || state?.settings?.openrouterKey;
       if (!apiKey && !dependencies?.aiRequest) {
         setLoading(panelContainer, false);
         showErrorInContainer(panelContainer, 'API-ключ OpenRouter не указан', null);

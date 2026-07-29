@@ -8,6 +8,11 @@ import { normalizeVocabularyLockState } from '../src/vocabulary-unlock-plan.js';
 import { hasMeaningfulUserProgress } from '../src/onboarding-state.js';
 import { isPrimaryTab, broadcastStateUpdated } from '../src/tab-sync.js';
 import { normalizeChatHistory } from '../src/ai/chat-history.js';
+import {
+  migrateLegacyOpenRouterKey,
+  getOpenRouterKey,
+  setOpenRouterKey,
+} from '../src/openrouter-key.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
@@ -372,7 +377,6 @@ export function defaultState() {
     streak: { count: 0, lastActive: null },
     savedNotes: [], // {id,title,content,date}
     settings: {
-      openrouterKey: '',
       model: 'deepseek/deepseek-v4-flash',
       notifyEnabled: false,
       notifyTime: '12:00',
@@ -426,10 +430,21 @@ export function runMigrations(loadedState) {
 }
 
 function normalizeRuntimeShape(loadedState) {
+  migrateLegacyOpenRouterKey(loadedState);
   const base = defaultState();
   const normalized = { ...base, ...loadedState };
   normalized.updatedAt = Number(loadedState.updatedAt) || 0;
   normalized.settings = { ...base.settings, ...(loadedState.settings || {}) };
+  Object.defineProperty(normalized.settings, 'openrouterKey', {
+    get() {
+      return getOpenRouterKey();
+    },
+    set(val) {
+      setOpenRouterKey(val);
+    },
+    enumerable: true,
+    configurable: true,
+  });
   normalized.chatHistory = normalizeChatHistory(loadedState.chatHistory);
   normalized.priorKnowledgeChapterIds = Array.isArray(loadedState.priorKnowledgeChapterIds)
     ? [...new Set(loadedState.priorKnowledgeChapterIds.map(Number))]
