@@ -14,7 +14,11 @@ import { SessionManager } from './session-manager.js';
 
 import { saveSessionToDB, loadSessionFromDB, clearSessionFromDB } from './session-manager.js';
 import { loadOpenRouterKeyFromDB } from './src/openrouter-key.js';
-import { saveActiveSessionState, restoreActiveSessionRecord } from './ui/flashcards/session.js';
+import {
+  saveActiveSessionState,
+  restoreActiveSessionRecord,
+  abandonActiveSession,
+} from './ui/flashcards/session.js';
 import { getSessionManager } from './ui/flashcards/state.js';
 import { showSessionRecoveryModal } from './ui/session-recovery-modal.js';
 
@@ -525,9 +529,31 @@ function setupRouter() {
       return;
     }
 
-    // Явно переключаемся на экран SRS (снимаем inert и aria-hidden)
+    const sessionCards = limitNewCardsForSession(chapterDue, state.srs);
+    if (sessionCards.length === 0) {
+      toast('Лимит новых карточек на сегодня исчерпан');
+      return;
+    }
+
+    save();
+
+    setSessionManager(null);
+    setFlashCtx(chapterId);
+    setFlashRevealed(false);
+    setFlashIdx(0);
+
+    const batchInfo = initSessionBatching(sessionCards, LESSONS, 20);
+
+    if (!activateSessionBatch(batchInfo, chapterId)) {
+      toast('Ошибка инициализации батча карточек');
+      return;
+    }
+
+    saveActiveSessionState();
+
+    // ТОЛЬКО ТЕПЕРЬ переключаем роутер, когда менеджер полностью готов!
     if (router) {
-      router.navigate('srs', { mode: 'session' }, true);
+      await router.navigate('srs', { mode: 'session' }, true);
       if (window.history && window.history.replaceState) {
         window.history.replaceState({ screen: 'srs', opt: { mode: 'session' } }, '', '');
       }
@@ -535,29 +561,6 @@ function setupRouter() {
       nav('srs');
     }
 
-    setSessionManager(null);
-    setFlashCtx(chapterId);
-    setFlashRevealed(false);
-    setFlashIdx(0);
-
-    const sessionCards = limitNewCardsForSession(chapterDue, state.srs);
-    if (sessionCards.length === 0) {
-      toast('Лимит новых карточек на сегодня исчерпан');
-      renderSrsDashboard();
-      return;
-    }
-
-    save();
-
-    const batchInfo = initSessionBatching(sessionCards, LESSONS, 20);
-
-    if (!activateSessionBatch(batchInfo, chapterId)) {
-      toast('Ошибка инициализации батча карточек');
-      renderSrsDashboard();
-      return;
-    }
-
-    saveActiveSessionState();
     renderFlash(state, dependencies);
   };
 
@@ -566,34 +569,18 @@ function setupRouter() {
 
   startSrsSessionFn = async () => startSrsSession();
   const startSrsSession = async () => {
-    if (router) {
-      router.navigate('srs', { mode: 'session' }, true);
-      if (window.history && window.history.replaceState) {
-        window.history.replaceState({ screen: 'srs', opt: { mode: 'session' } }, '', '');
-      }
-    } else {
-      nav('srs');
-    }
-
-    const tabbar = document.querySelector('.tabbar');
-    if (tabbar) {
-      tabbar.style.display = 'none';
-    }
-
     try {
       await ensureLessonsForSrs();
       const due = dueCards(state.srs);
 
       if (!due || due.length === 0) {
         toast('Нет карточек для повторения');
-        renderSrsDashboard();
         return;
       }
 
       const sessionCards = limitNewCardsForSession(due, state.srs);
       if (sessionCards.length === 0) {
         toast('Лимит новых карточек на сегодня исчерпан');
-        renderSrsDashboard();
         return;
       }
 
@@ -609,11 +596,25 @@ function setupRouter() {
       if (!activateSessionBatch(batchInfo, null)) {
         console.error('[SRS] Failed to generate organized cards batch!');
         toast('Ошибка инициализации батча карточек');
-        renderSrsDashboard();
         return;
       }
 
       saveActiveSessionState();
+
+      // ТОЛЬКО ТЕПЕРЬ переключаем роутер, когда менеджер полностью готов!
+      if (router) {
+        await router.navigate('srs', { mode: 'session' }, true);
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({ screen: 'srs', opt: { mode: 'session' } }, '', '');
+        }
+      } else {
+        nav('srs');
+      }
+
+      const tabbar = document.querySelector('.tabbar');
+      if (tabbar) {
+        tabbar.style.display = 'none';
+      }
 
       const srsBody = document.getElementById('srs-body');
       if (srsBody) {
@@ -624,18 +625,13 @@ function setupRouter() {
     } catch (err) {
       console.error('[SRS] Error in startSrsSession:', err);
       toast('Ошибка при запуске сессии: ' + err.message);
-      renderSrsDashboard();
     }
   };
 
   const renderSrsDashboard = async (options = {}, context = {}) => {
+    // При явном mode: 'session' ВСЕГДА возвращаемся немедленно!
     if (options?.mode === 'session') {
-      if (getSessionManager()) {
-        return;
-      }
-      if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
-        window.history.replaceState({ screen: 'srs' }, '', '');
-      }
+      return;
     }
 
     const body = $('#srs-body');
@@ -686,21 +682,68 @@ function setupRouter() {
     if (context?.signal?.aborted) return;
 
     const digest = getDailyStudyDigest(state);
+    const activeManager = getSessionManager();
+    const isSessionActive = activeManager && !activeManager.isSessionComplete();
+
+    let sessionBannerHtml = '';
+    if (isSessionActive) {
+      const stats = activeManager.getStats();
+      sessionBannerHtml = `
+        <div class="card active-session-banner" style="background: rgba(255,138,43,0.08); border: 1.5px solid var(--orange, #ff8a2b); padding: 16px; border-radius: 12px; margin-bottom: 16px; text-align: left;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+            <strong style="font-size: 15px; color: var(--ink);">⏳ Незавершённая сессия</strong>
+            <span class="badge" style="background: var(--orange, #ff8a2b); color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px;">${stats.reviewed} / ${stats.total}</span>
+          </div>
+          <p style="font-size: 13px; color: var(--muted, #666); margin-bottom: 12px;">У вас есть активная сессия в процессе.</p>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-primary" id="srs-resume-active-session" style="flex: 2;">▶️ Продолжить сессию</button>
+            <button class="btn-ghost" id="srs-abandon-active-session" style="flex: 1; color: var(--danger, #f44336);">❌ Завершить</button>
+          </div>
+        </div>
+      `;
+    }
+
+    const startBtnHtml = isSessionActive
+      ? ''
+      : `<button class="btn-primary" id="srs-start-session" data-testid="srs-start-btn" ${digest.availableCardCount === 0 ? 'disabled' : ''}>
+          ${digest.availableCardCount === 0 ? 'Всё повторено на сегодня!' : `▶️ Начать SRS (${digest.availableCardCount})`}
+        </button>`;
+
     const dashboardHtml = `
+      ${sessionBannerHtml}
       <div class="stat-row" data-testid="srs-stat-row">
         <div class="stat-box" data-testid="stat-reviews"><div class="stat-num accent">${digest.dueReviewCards}</div><div class="stat-cap">Повторения</div></div>
         <div class="stat-box" data-testid="stat-new"><div class="stat-num" style="color:var(--primary, #ff8a2b)">${digest.availableNewItems}</div><div class="stat-cap">Новые слова</div></div>
         <div class="stat-box" data-testid="stat-total"><div class="stat-num">${digest.durationText}</div><div class="stat-cap">Примерное время</div></div>
       </div>
-      <button class="btn-primary" id="srs-start-session" data-testid="srs-start-btn" ${digest.availableCardCount === 0 ? 'disabled' : ''}>
-        ${digest.availableCardCount === 0 ? 'Всё повторено на сегодня!' : `▶️ Начать SRS (${digest.availableCardCount})`}
-      </button>
+      ${startBtnHtml}
       <button class="btn-extra-review" id="srs-extra-review">➕ Практика без изменения расписания</button>
     `;
 
     if (context?.signal?.aborted) return;
 
     body.innerHTML = dashboardHtml;
+
+    const resumeBtn = $('#srs-resume-active-session');
+    if (resumeBtn) {
+      resumeBtn.onclick = async () => {
+        if (router) {
+          await router.navigate('srs', { mode: 'session' }, true);
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({ screen: 'srs', opt: { mode: 'session' } }, '', '');
+          }
+        }
+        renderFlash(state, dependencies);
+      };
+    }
+
+    const abandonBtn = $('#srs-abandon-active-session');
+    if (abandonBtn) {
+      abandonBtn.onclick = async () => {
+        await abandonActiveSession();
+        renderSrsDashboard({}, context);
+      };
+    }
 
     const startBtn = $('#srs-start-session');
     if (startBtn && digest.availableCardCount > 0) {

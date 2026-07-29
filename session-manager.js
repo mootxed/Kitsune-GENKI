@@ -63,8 +63,40 @@ export function clearSessionFromDB() {
   return sessionSaveQueue;
 }
 
+export function validateSessionRecord(record) {
+  if (!record || typeof record !== 'object') return false;
+  if (record.schemaVersion !== 1) return false;
+  if (!record.managerState || typeof record.managerState !== 'object') return false;
+  if (!Array.isArray(record.managerState.queue)) return false;
+
+  const stats = record.managerState.stats;
+  if (stats && typeof stats === 'object') {
+    for (const key of ['reviewed', 'remaining', 'total']) {
+      if (stats[key] !== undefined && (!Number.isFinite(stats[key]) || stats[key] < 0)) {
+        return false;
+      }
+    }
+  }
+
+  if (record.batcherState) {
+    if (typeof record.batcherState !== 'object') return false;
+    if (!Array.isArray(record.batcherState.batches)) return false;
+    const currentIdx = record.currentBatchIndex ?? 0;
+    if (
+      !Number.isInteger(currentIdx) ||
+      currentIdx < 0 ||
+      currentIdx >= record.batcherState.batches.length
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 /**
  * SessionManager управляет очередью карточек внутри одной сессии обучения.
+
  * Реализует логику краткосрочного повторения при ошибках.
  *
  * Основной принцип: "первая попытка" — только при первом показе карточки

@@ -4,6 +4,7 @@ import {
   saveSessionToDB,
   loadSessionFromDB,
   clearSessionFromDB,
+  validateSessionRecord,
 } from '../session-manager.js';
 import { SessionBatcher } from '../src/session-batcher.js';
 import {
@@ -209,6 +210,32 @@ describe('SRS Active Session Recovery & Batching', () => {
     expect(restoredManager.queue.length).toBe(3);
     expect(restoredManager.stats.total).toBe(3);
     expect(restoredManager.stats.remaining).toBe(3);
+  });
+
+  it('validates session record schema and structure using validateSessionRecord', () => {
+    expect(validateSessionRecord(null)).toBe(false);
+    expect(validateSessionRecord({})).toBe(false);
+    expect(validateSessionRecord({ schemaVersion: 2 })).toBe(false);
+
+    // Valid record
+    const valid = {
+      schemaVersion: 1,
+      managerState: { queue: [{ cardId: 'c1' }], stats: { reviewed: 1, remaining: 2, total: 3 } },
+      batcherState: { batches: [{ cards: ['c1'] }] },
+      currentBatchIndex: 0,
+    };
+    expect(validateSessionRecord(valid)).toBe(true);
+
+    // Invalid batch index out of bounds
+    const invalidIndex = { ...valid, currentBatchIndex: 5 };
+    expect(validateSessionRecord(invalidIndex)).toBe(false);
+
+    // Negative stats
+    const invalidStats = {
+      ...valid,
+      managerState: { queue: [{ cardId: 'c1' }], stats: { reviewed: -1 } },
+    };
+    expect(validateSessionRecord(invalidStats)).toBe(false);
   });
 
   it('rejects completely invalid/empty session record without crash', async () => {

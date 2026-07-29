@@ -3,7 +3,12 @@
 import { allCards, wordById } from '../../src/srs-helpers.js';
 import { SRS } from '../../srs.js';
 import { SessionBatcher } from '../../src/session-batcher.js';
-import { SessionManager, saveSessionToDB, clearSessionFromDB } from '../../session-manager.js';
+import {
+  SessionManager,
+  saveSessionToDB,
+  clearSessionFromDB,
+  validateSessionRecord,
+} from '../../session-manager.js';
 import {
   activePracticeMode,
   sessionBatcher,
@@ -25,6 +30,16 @@ import {
   clearActiveReviewAIContext,
 } from './state.js';
 
+export let activeSessionOrigin = null;
+
+export function setSessionOrigin(origin) {
+  activeSessionOrigin = origin;
+}
+
+export function getSessionOrigin() {
+  return activeSessionOrigin;
+}
+
 /**
  * Единая функция явного выхода из активной сессии.
  * Сбрасывает SessionManager, SessionBatcher, весь flash-state и удаляет запись из IndexedDB.
@@ -39,6 +54,7 @@ export function abandonActiveSession() {
   setFlashRevealed(false);
   setActivePracticeMode(null);
   clearActiveReviewAIContext();
+  setSessionOrigin(null);
   // flashCtx сохраняем — нужен для nav('chapter', flashCtx) после выхода
   return clearSessionFromDB();
 }
@@ -196,6 +212,11 @@ export function saveActiveSessionState() {
     schemaVersion: 1,
     sessionType: flashCtx ? 'chapter' : 'srs',
     chapterId: flashCtx || null,
+    sessionOrigin: activeSessionOrigin || {
+      type: flashCtx ? 'chapter' : 'srs',
+      chapterId: flashCtx || null,
+      initialCardIds: flashQueue.map((c) => c.id || c),
+    },
     createdAt: Date.now(),
     updatedAt: Date.now(),
     managerState: manager.toSerializableState(),
@@ -213,8 +234,12 @@ export function saveActiveSessionState() {
 }
 
 export async function restoreActiveSessionRecord(sessionRecord, state, dependencies) {
-  if (!sessionRecord || !sessionRecord.managerState) {
+  if (!validateSessionRecord(sessionRecord)) {
+    console.warn('[SessionRecovery] Record failed schema/structural validation');
     await clearSessionFromDB();
+    if (typeof dependencies?.recordDiagnosticError === 'function') {
+      dependencies.recordDiagnosticError('Запись active session не прошла валидацию структуры');
+    }
     return false;
   }
 
@@ -281,6 +306,7 @@ export async function restoreActiveSessionRecord(sessionRecord, state, dependenc
   setFlashIdx(sessionRecord.flashState?.flashIdx || 0);
   setFlashRevealed(sessionRecord.flashState?.flashRevealed || false);
   setFlashCtx(sessionRecord.chapterId || null);
+  setSessionOrigin(sessionRecord.sessionOrigin || null);
   reviewUndoStack.clear();
 
   return true;
