@@ -129,12 +129,27 @@ function renderStory(artifact, options) {
     attrs: { 'data-testid': 'sensei-story-artifact' },
   });
   const sentences = Array.isArray(artifact?.story) ? artifact.story : [];
+  let lastSpeaker = null;
+
   for (const sentence of sentences) {
     if (!sentence) continue;
     const article = el('article', { className: 'sensei-story-sentence' });
-    article.append(
-      el('strong', { className: 'sensei-story-speaker', text: sentence.speaker || '' })
-    );
+    const rawSpeaker = (sentence.speaker || '').trim();
+    const isNarrator =
+      !rawSpeaker ||
+      rawSpeaker === 'Рассказчик' ||
+      rawSpeaker === 'Narrator' ||
+      rawSpeaker === 'Голос';
+
+    if (!isNarrator) {
+      if (rawSpeaker !== lastSpeaker) {
+        article.append(el('div', { className: 'sensei-story-speaker', text: rawSpeaker }));
+        lastSpeaker = rawSpeaker;
+      }
+    } else {
+      lastSpeaker = null;
+    }
+
     const japanese = el('p', { className: 'sensei-story-japanese' });
     const tokens = Array.isArray(sentence.tokens) ? sentence.tokens : [];
     tokens.forEach((token, index) => {
@@ -168,7 +183,7 @@ function renderStory(artifact, options) {
   }
   const check = el('button', {
     className: 'sensei-story-check',
-    text: 'Проверить понимание',
+    text: '▶ Проверить понимание',
     attrs: { type: 'button' },
   });
   check.addEventListener('click', () => options.onCreateStoryQuiz?.(artifact, options.message));

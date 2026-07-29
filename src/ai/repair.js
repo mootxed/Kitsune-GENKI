@@ -30,7 +30,10 @@ export async function requestWithOneRepair({
     },
   ];
   const repairedRaw = await request(repairMessages);
-  const repaired = validateJsonResponse(repairedRaw, schema, additionalValidator);
+  const repairedValidator = additionalValidator
+    ? (data) => additionalValidator(data, { isRepairedAttempt: true })
+    : null;
+  const repaired = validateJsonResponse(repairedRaw, schema, repairedValidator);
   if (repaired.success) return { ...repaired, repaired: true, attempts: 2 };
   return {
     success: false,

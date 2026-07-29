@@ -279,7 +279,10 @@ export function generateDailyPlan(state, options = {}) {
 
   // 5. Priority 5: Practice Tasks (if capacity permits)
   if (currentMinutes < capacityMinutes && chapterMeta) {
-    const availablePractice = getAvailablePracticeTasks(state, activeChapterId, chapterMeta);
+    const availablePractice = getAvailablePracticeTasks(state, activeChapterId, chapterMeta, {
+      dateKey,
+      now,
+    });
     for (const pTask of availablePractice) {
       const isDone = cs?.checklist?.[pTask.id] === true;
       if (!isDone) {

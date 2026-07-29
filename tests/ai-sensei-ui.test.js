@@ -180,4 +180,54 @@ describe('AI Sensei UI integration', () => {
     expect(document.body.textContent).toContain('AI-история');
     expect(document.querySelector('[data-nav="ai-story"]')).not.toBeNull();
   });
+
+  it('toggles composer popover menu and closes on Escape', () => {
+    const state = baseState();
+    renderSensei(state, { save: vi.fn() });
+    const trigger = document.getElementById('sensei-menu-trigger');
+    const popover = document.getElementById('sensei-popover-menu');
+    expect(popover.classList.contains('hidden')).toBe(true);
+
+    trigger.click();
+    expect(popover.classList.contains('hidden')).toBe(false);
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+
+    popover.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(popover.classList.contains('hidden')).toBe(true);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('displays parameter chip when explicit action or word source is selected and allows clearing via x', () => {
+    const state = baseState();
+    renderSensei(state, { save: vi.fn() });
+    const input = document.getElementById('chat-input');
+    const starterBtn = document.querySelector('[data-sensei-action="explain_grammar"]');
+
+    starterBtn.click();
+    const chipsBar = document.getElementById('sensei-chips-bar');
+    expect(chipsBar.hidden).toBe(false);
+    expect(chipsBar.textContent).toContain('Грамматика');
+
+    const removeBtn = chipsBar.querySelector('[data-remove-chip="intent"]');
+    removeBtn.click();
+    expect(input.dataset.explicitIntent).toBeUndefined();
+    expect(chipsBar.hidden).toBe(true);
+  });
+
+  it('allows clearing chat history via popover menu with confirmation when history is non-empty', () => {
+    const state = baseState([{ role: 'user', content: 'Привет' }]);
+    const saveMock = vi.fn();
+    renderSensei(state, { save: saveMock });
+
+    const trigger = document.getElementById('sensei-menu-trigger');
+    trigger.click();
+
+    const clearBtn = document.getElementById('sensei-clear-history');
+    expect(clearBtn).not.toBeNull();
+
+    clearBtn.click();
+    expect(window.confirm).toHaveBeenCalledWith('Очистить всю историю AI Сенсея?');
+    expect(state.chatHistory).toEqual([]);
+    expect(saveMock).toHaveBeenCalled();
+  });
 });

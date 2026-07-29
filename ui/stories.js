@@ -111,8 +111,17 @@ function escapeHtmlLocal(s) {
     .replace(/"/g, '&quot;');
 }
 
+const expandedNoteIds = new Set();
+
+function isLongNote(content) {
+  if (!content) return false;
+  if (content.length > 500) return true;
+  const lines = content.split('\n').length;
+  return lines > 8;
+}
+
 // Вкладка «Заметки» — сохранённые ответы Сенсея
-function renderLibraryNotes(state, dependencies) {
+export function renderLibraryNotes(state, dependencies) {
   const { save } = deps || dependencies;
   const body = $('#library-body');
   if (!body) return;
@@ -124,22 +133,56 @@ function renderLibraryNotes(state, dependencies) {
   }
 
   body.innerHTML = notes
-    .map(
-      (n) => `
-      <div class="note-card" data-note-id="${escapeHtmlLocal(n.id)}">
-        <div class="note-head">
+    .map((n) => {
+      const isLong = isLongNote(n.content);
+      const isExpanded = expandedNoteIds.has(n.id);
+      const contentClass = isLong
+        ? isExpanded
+          ? 'note-content note-content-expanded'
+          : 'note-content note-content-collapsed'
+        : 'note-content note-content-expanded';
+
+      const toggleBtn = isLong
+        ? `<button type="button" class="btn-ghost note-toggle" aria-expanded="${isExpanded}" aria-controls="note-content-${escapeHtmlLocal(n.id)}">${isExpanded ? 'Свернуть' : 'Развернуть'}</button>`
+        : '';
+
+      return `
+      <article class="note-card" data-note-id="${escapeHtmlLocal(n.id)}">
+        <header class="note-head">
           <h3 class="note-title">${escapeHtmlLocal(n.title)}</h3>
           <span class="note-date">${escapeHtmlLocal(n.date || '')}</span>
-        </div>
-        <div class="note-content">${escapeHtmlLocal(n.content)}</div>
-        <button class="btn-ghost note-delete">🗑 Удалить</button>
-      </div>`
-    )
+        </header>
+        <div class="${contentClass}" id="note-content-${escapeHtmlLocal(n.id)}">${escapeHtmlLocal(n.content)}</div>
+        <footer class="note-actions">
+          ${toggleBtn}
+          <button type="button" class="btn-ghost note-delete">Удалить</button>
+        </footer>
+      </article>`;
+    })
     .join('');
 
+  body.querySelectorAll('.note-toggle').forEach((btn) => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const card = btn.closest('.note-card');
+      const id = card?.dataset.noteId;
+      if (!id) return;
+      if (expandedNoteIds.has(id)) {
+        expandedNoteIds.delete(id);
+      } else {
+        expandedNoteIds.add(id);
+      }
+      renderLibraryNotes(state, dependencies);
+    };
+  });
+
   body.querySelectorAll('.note-delete').forEach((btn) => {
-    btn.onclick = () => {
-      const id = btn.closest('.note-card').dataset.noteId;
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const card = btn.closest('.note-card');
+      const id = card?.dataset.noteId;
+      if (!id) return;
+      expandedNoteIds.delete(id);
       state.savedNotes = (state.savedNotes || []).filter((n) => n.id !== id);
       save();
       renderLibraryNotes(state, dependencies);

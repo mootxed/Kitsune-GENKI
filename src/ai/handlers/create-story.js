@@ -13,7 +13,7 @@ export const CreateStoryInputSchema = z
   })
   .strip();
 
-export const CREATE_STORY_PROMPT = `Создай естественную учебную историю на японском.
+export const CREATE_STORY_PROMPT = `Создай естественную учебную историю на японском языке с понятным сюжетом.
 Верни только JSON следующей точной структуры:
 {
   "type": "story",
@@ -21,7 +21,7 @@ export const CREATE_STORY_PROMPT = `Создай естественную уче
   "story": [
     {
       "sentence_id": 1,
-      "speaker": "Имя или Голос",
+      "speaker": "Рассказчик",
       "translation": "Перевод предложения на русский",
       "tokens": [
         {
@@ -39,7 +39,13 @@ export const CREATE_STORY_PROMPT = `Создай естественную уче
   ],
   "unknownWords": [ { "writing": "...", "reading": "...", "meaning": "..." } ]
 }
-Обязательные слова (requiredWords / первые слова W1..Wk) обязательны к использованию с указанием sourceToken: "W1". Дополнительные слова (supportingWords) являются необязательным поддерживающим контекстом. История содержит от 3 до 15 предложений. Каждый японский элемент (кроме пунктуации) — отдельный токен. История не меняет прогресс.`;
+ТРЕБОВАНИЯ К СЮЖЕТУ:
+1. История должна быть связным повествованием (завязка → действие → результат), а не набором изолированных фраз.
+2. Каждое следующее предложение логически продолжает предыдущее.
+3. ЗАПРЕЩЕНЫ несколько почти одинаковых приветствий подряд (например, "おはよう 山田さん" / "おはよう 田中さん" / "こんにちは"). Максимум одно приветствие на всю историю.
+4. Персонажи (speaker) должны быть постоянными (1-3 персонажа). Для закадрового описания используй speaker: "Рассказчик".
+5. Хотя бы одно действие должно изменять ситуацию. Финальное предложение должно завершать сцену.
+6. Целевые слова (requiredWords) используй естественно. При недостатке лексики в первой главе разрешено добавить простые служебные слова N5 (行く, 見る, 読む, 学校, 本, 一緒に) и указать их в unknownWords. Каждый японский элемент (кроме пунктуации) — отдельный токен.`;
 
 function norm(val) {
   return String(val || '')
@@ -78,7 +84,57 @@ export function isTokenMatchingWord(token, word) {
   return false;
 }
 
-export function validateStoryForMaterial(data, { length = 'short', words = [] } = {}) {
+export function validateStorySemantics(data) {
+  const story = data?.story;
+  if (!Array.isArray(story) || story.length === 0) {
+    return { success: false, issues: ['История пуста'] };
+  }
+
+  const issues = [];
+  const rawJapaneseSentences = story.map((s) =>
+    (s.tokens || []).map((t) => (t ? t.kanji || t.writing || '' : '')).join('')
+  );
+
+  const greetings = ['おはよう', 'こんにちは', 'こんばんは', 'さようなら', 'はじめまして'];
+  let greetingCount = 0;
+  for (const jText of rawJapaneseSentences) {
+    if (greetings.some((g) => jText.includes(g))) {
+      greetingCount++;
+    }
+  }
+
+  if (story.length >= 3 && greetingCount / story.length > 0.6) {
+    issues.push(
+      'История состоит преимущественно из повторяющихся приветствий (>60%). Добавь завязку, действие и результат. Сохрани целевые слова, но не повторяй один шаблон.'
+    );
+  }
+
+  const normalizedSentences = rawJapaneseSentences.map((s) => s.replace(/[。、！？\s]/gu, ''));
+  const uniqueSentences = new Set(normalizedSentences);
+  if (story.length >= 3 && uniqueSentences.size < Math.ceil(story.length * 0.7)) {
+    issues.push(
+      'История содержит повторяющиеся или одинаковые предложения. Каждое предложение должно развивать сюжет.'
+    );
+  }
+
+  const speakers = story
+    .map((s) => (s.speaker || '').trim())
+    .filter((sp) => sp && sp !== 'Рассказчик' && sp !== 'Narrator' && sp !== 'Голос');
+  const uniqueSpeakers = new Set(speakers);
+
+  if (story.length <= 5 && uniqueSpeakers.size > 3) {
+    issues.push('Слишком много разных персонажей для короткой истории.');
+  }
+
+  if (issues.length > 0) {
+    return { success: false, issues };
+  }
+
+  return { success: true };
+}
+
+export function validateStoryForMaterial(data, options = {}) {
+  const { length = 'short', words = [], isRepairedAttempt = false } = options;
   const story = data?.story;
   if (!Array.isArray(story) || story.length === 0) {
     return {
@@ -106,9 +162,23 @@ export function validateStoryForMaterial(data, { length = 'short', words = [] } 
     };
   }
 
+  const semantic = validateStorySemantics(data);
+  if (!semantic.success && !isRepairedAttempt) {
+    return {
+      success: false,
+      error: new z.ZodError(
+        semantic.issues.map((msg) => ({
+          code: 'custom',
+          path: ['story'],
+          message: msg,
+        }))
+      ),
+    };
+  }
+
   const allTokens = story.flatMap((s) => s.tokens || []);
-  const requiredLimits = { short: 6, medium: 9, long: 12 };
-  const maxRequired = requiredLimits[length] || 6;
+  const requiredLimits = { short: 4, medium: 7, long: 10 };
+  const maxRequired = requiredLimits[length] || 4;
   const requiredWords = words.slice(0, maxRequired);
 
   for (const promptWord of requiredWords) {
@@ -155,10 +225,11 @@ export function handleCreateStory(options) {
     systemPrompt: CREATE_STORY_PROMPT,
     inputSchema: CreateStoryInputSchema,
     outputSchema: StoryResponseSchema,
-    additionalValidator: (data) =>
+    additionalValidator: (data, validatorOpts) =>
       validateStoryForMaterial(data, {
         length: options.input?.length || 'short',
         words: options.context?.words || [],
+        ...validatorOpts,
       }),
     ...options,
   });

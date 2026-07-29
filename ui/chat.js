@@ -114,19 +114,30 @@ export function md(text) {
     .join('\n');
 }
 
+const ACTION_SHORT_TITLES = {
+  [AI_INTENTS.EXPLAIN_WORD]: 'Объяснить слово',
+  [AI_INTENTS.EXPLAIN_GRAMMAR]: 'Грамматика',
+  [AI_INTENTS.COMPARE_ITEMS]: 'Сравнить',
+  [AI_INTENTS.CREATE_STORY]: 'Создать историю',
+  [AI_INTENTS.GENERAL_QUESTION]: 'Свободный вопрос',
+};
+
 function starterMarkup() {
   return `
     <section class="sensei-starter" data-testid="sensei-starter">
       <div class="sensei-starter-intro">
-        <span aria-hidden="true">🦊</span>
-        <div><h2>Чем займёмся?</h2><p>Выберите учебное действие или задайте вопрос своими словами.</p></div>
+        <span class="sensei-starter-avatar" aria-hidden="true">🦊</span>
+        <div class="sensei-starter-text">
+          <h2>Чем займёмся?</h2>
+          <p>Выберите действие или задайте вопрос.</p>
+        </div>
       </div>
       <div class="sensei-starter-grid">
         ${STARTER_ACTIONS.map(
           (action) => `
             <button type="button" class="sensei-starter-card" data-sensei-action="${action.intent}">
-              <span aria-hidden="true">${action.icon}</span>
-              <strong>${action.title}</strong>
+              <span aria-hidden="true" class="sensei-starter-icon">${action.icon}</span>
+              <span class="sensei-starter-label">${ACTION_SHORT_TITLES[action.intent] || action.title}</span>
             </button>`
         ).join('')}
       </div>
@@ -135,30 +146,117 @@ function starterMarkup() {
 
 function chatShell(isEmpty) {
   return `
-    <div class="sensei-chat-toolbar">
-      <button type="button" id="sensei-clear-history" ${isEmpty ? 'disabled' : ''}>Очистить историю</button>
-    </div>
-    <div class="chat-area" id="chat-area" data-testid="chat-area">${isEmpty ? starterMarkup() : ''}</div>
-    <div class="sensei-privacy-note">
-      🔒 Для генерации ответа текст отправляется провайдеру OpenRouter. Не отправляйте персональные данные.
-    </div>
-    <div class="chat-input-bar">
-      <select id="sensei-action-menu" aria-label="Учебное действие">
-        <option value="">Свободный текст</option>
-        ${STARTER_ACTIONS.map(
-          (action) => `<option value="${action.intent}">${action.title}</option>`
-        ).join('')}
-      </select>
-      <select id="sensei-wordsource-menu" aria-label="Источник слов" title="Источник слов">
-        <option value="mixed">Смешанный источник</option>
-        <option value="user_dictionary">Мой словарь</option>
-        <option value="current_lesson">Текущий урок</option>
-        <option value="fsrs_difficult">Трудные слова</option>
-        <option value="fsrs_learned">Изученные слова</option>
-      </select>
-      <input type="text" id="chat-input" class="chat-input" placeholder="質問してください… Задайте вопрос" data-testid="chat-input" />
-      <button class="chat-send" id="chat-send" data-testid="chat-send-btn" aria-label="Отправить">➤</button>
-    </div>`;
+    <main class="sensei-chat-area" id="chat-area" data-testid="chat-area">${isEmpty ? starterMarkup() : ''}</main>
+    <footer class="sensei-composer">
+      <div class="sensei-chips-bar" id="sensei-chips-bar" hidden></div>
+      <div class="chat-input-bar">
+        <button type="button" class="sensei-composer-menu-btn" id="sensei-menu-trigger" aria-label="Параметры и действия" aria-expanded="false" aria-controls="sensei-popover-menu">＋</button>
+        <div class="chat-input-wrapper">
+          <textarea id="chat-input" class="chat-input" rows="1" placeholder="Задайте вопрос…" data-testid="chat-input" aria-label="Текст вопроса"></textarea>
+        </div>
+        <button type="button" class="chat-send" id="chat-send" data-testid="chat-send-btn" aria-label="Отправить">➤</button>
+      </div>
+      <div class="sensei-privacy-note">
+        🔒 Сообщения отправляются через OpenRouter
+      </div>
+
+      <div class="sensei-popover-menu hidden" id="sensei-popover-menu" role="dialog" aria-modal="true" aria-label="Настройки диалога">
+        <div class="sensei-popover-header">
+          <strong>Параметры запроса</strong>
+          <button type="button" class="sensei-popover-close" id="sensei-popover-close" aria-label="Закрыть">✕</button>
+        </div>
+        <div class="sensei-popover-section">
+          <label class="sensei-popover-label" for="sensei-action-menu">Учебное действие</label>
+          <select id="sensei-action-menu" class="sensei-popover-select" aria-label="Учебное действие">
+            <option value="">Свободный вопрос</option>
+            ${STARTER_ACTIONS.map(
+              (action) => `<option value="${action.intent}">${action.title}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div class="sensei-popover-section">
+          <label class="sensei-popover-label" for="sensei-wordsource-menu">Источник слов</label>
+          <select id="sensei-wordsource-menu" class="sensei-popover-select" aria-label="Источник слов" title="Источник слов">
+            <option value="mixed">Смешанный источник</option>
+            <option value="user_dictionary">Мой словарь</option>
+            <option value="current_lesson">Текущий урок</option>
+            <option value="fsrs_difficult">Трудные слова</option>
+            <option value="fsrs_learned">Изученные слова</option>
+          </select>
+        </div>
+        ${
+          !isEmpty
+            ? `
+          <div class="sensei-popover-section sensei-popover-danger">
+            <button type="button" class="sensei-clear-btn" id="sensei-clear-history">🗑️ Очистить историю</button>
+          </div>
+        `
+            : ''
+        }
+      </div>
+    </footer>`;
+}
+
+function updateSenseiChips() {
+  const chipsBar = $('#sensei-chips-bar');
+  const input = $('#chat-input');
+  const actionMenu = $('#sensei-action-menu');
+  const wordSourceMenu = $('#sensei-wordsource-menu');
+  if (!chipsBar || !input) return;
+
+  const chips = [];
+  const explicitIntent = input.dataset.explicitIntent;
+  if (explicitIntent) {
+    const action = STARTER_ACTIONS.find((item) => item.intent === explicitIntent);
+    const title = ACTION_SHORT_TITLES[explicitIntent] || action?.title || explicitIntent;
+    chips.push(`
+      <span class="sensei-chip" data-chip-type="intent">
+        ${escapeHtml(title)}
+        <button type="button" class="chip-remove" data-remove-chip="intent" aria-label="Сбросить действие">×</button>
+      </span>
+    `);
+  }
+
+  if (
+    wordSourceMenu &&
+    (wordSourceMenu.dataset.explicit === 'true' ||
+      (wordSourceMenu.value !== 'mixed' && wordSourceMenu.value !== 'user_dictionary'))
+  ) {
+    const selectedOption = wordSourceMenu.options[wordSourceMenu.selectedIndex];
+    if (selectedOption && wordSourceMenu.value !== 'mixed') {
+      chips.push(`
+        <span class="sensei-chip" data-chip-type="wordsource">
+          ${escapeHtml(selectedOption.textContent.trim())}
+          <button type="button" class="chip-remove" data-remove-chip="wordsource" aria-label="Сбросить источник">×</button>
+        </span>
+      `);
+    }
+  }
+
+  if (chips.length > 0) {
+    chipsBar.innerHTML = chips.join('');
+    chipsBar.hidden = false;
+    chipsBar.querySelectorAll('[data-remove-chip]').forEach((btn) => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const chipType = btn.dataset.removeChip;
+        if (chipType === 'intent') {
+          delete input.dataset.explicitIntent;
+          if (actionMenu) actionMenu.value = '';
+          input.placeholder = 'Задайте вопрос…';
+        } else if (chipType === 'wordsource') {
+          if (wordSourceMenu) {
+            wordSourceMenu.value = 'mixed';
+            delete wordSourceMenu.dataset.explicit;
+          }
+        }
+        updateSenseiChips();
+      };
+    });
+  } else {
+    chipsBar.innerHTML = '';
+    chipsBar.hidden = true;
+  }
 }
 
 function applyExplicitAction(intent) {
@@ -169,6 +267,7 @@ function applyExplicitAction(intent) {
   input.placeholder = action.prompt;
   const menu = $('#sensei-action-menu');
   if (menu) menu.value = intent;
+  updateSenseiChips();
   input.focus();
 }
 
@@ -365,7 +464,9 @@ export function renderSensei(state, dependencies = {}, renderOptions = {}) {
     globalThis.window?.$$ ||
     ((selector) => [...document.querySelectorAll(selector)]);
   selectAll('[data-senseitab]').forEach((tab) => {
-    tab.classList.toggle('active', tab.dataset.senseitab === senseiTab);
+    const isActive = tab.dataset.senseitab === senseiTab;
+    tab.classList.toggle('active', isActive);
+    tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
     tab.onclick = () => {
       senseiTab = tab.dataset.senseitab;
       renderSensei(state, dependencies);
@@ -382,19 +483,58 @@ export function renderSensei(state, dependencies = {}, renderOptions = {}) {
   document.querySelectorAll('[data-sensei-action]').forEach((button) => {
     button.addEventListener('click', () => applyExplicitAction(button.dataset.senseiAction));
   });
+
+  const triggerBtn = $('#sensei-menu-trigger');
+  const popoverMenu = $('#sensei-popover-menu');
+  const popoverClose = $('#sensei-popover-close');
+
+  function closePopover() {
+    if (popoverMenu) {
+      popoverMenu.classList.add('hidden');
+      triggerBtn?.setAttribute('aria-expanded', 'false');
+      triggerBtn?.focus();
+    }
+  }
+
+  function openPopover() {
+    if (popoverMenu) {
+      popoverMenu.classList.remove('hidden');
+      triggerBtn?.setAttribute('aria-expanded', 'true');
+      popoverClose?.focus();
+    }
+  }
+
+  if (triggerBtn && popoverMenu) {
+    triggerBtn.onclick = () => {
+      const isHidden = popoverMenu.classList.contains('hidden');
+      if (isHidden) openPopover();
+      else closePopover();
+    };
+    popoverClose?.addEventListener('click', closePopover);
+    popoverMenu.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closePopover();
+      }
+    });
+  }
+
   $('#sensei-action-menu')?.addEventListener('change', (event) => {
     const input = $('#chat-input');
     if (!input) return;
-    if (event.target.value) applyExplicitAction(event.target.value);
-    else {
+    if (event.target.value) {
+      applyExplicitAction(event.target.value);
+    } else {
       delete input.dataset.explicitIntent;
-      input.placeholder = '質問してください… Задайте вопрос';
+      input.placeholder = 'Задайте вопрос…';
+      updateSenseiChips();
     }
   });
+
   const wordSourceMenu = $('#sensei-wordsource-menu');
   if (wordSourceMenu) {
     wordSourceMenu.addEventListener('change', () => {
       wordSourceMenu.dataset.explicit = 'true';
+      updateSenseiChips();
     });
     const repository =
       dependencies.userDictionaryRepository ||
@@ -416,21 +556,35 @@ export function renderSensei(state, dependencies = {}, renderOptions = {}) {
         `;
           if (selectedValue) wordSourceMenu.value = selectedValue;
           if (isExplicit) wordSourceMenu.dataset.explicit = isExplicit;
+          updateSenseiChips();
         }
       })
       .catch(() => {});
   }
+
+  const inputEl = $('#chat-input');
+  if (inputEl) {
+    inputEl.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendChat(state, dependencies);
+      }
+    });
+    inputEl.addEventListener('input', () => {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = `${Math.min(inputEl.scrollHeight, 120)}px`;
+    });
+  }
+
   $('#chat-send').onclick = () => sendChat(state, dependencies);
-  $('#chat-input').addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') sendChat(state, dependencies);
-  });
-  $('#sensei-clear-history').addEventListener('click', () => {
+  $('#sensei-clear-history')?.addEventListener('click', () => {
     if (!globalThis.window?.confirm?.('Очистить всю историю AI Сенсея?')) return;
     chatHistory = clearChatHistory();
     state.chatHistory = chatHistory;
     dependencies.save?.();
     renderSensei(state, dependencies);
   });
+  updateSenseiChips();
   syncAvatars();
 }
 

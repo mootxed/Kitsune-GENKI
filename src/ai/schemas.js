@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { StorySentenceSchema } from '../ai-story-schema.js';
 import { AI_INTENTS, WORD_SOURCES } from './intents.js';
+import { validateAllQuizQuestions, filterInvalidQuizQuestions } from './quiz-validator.js';
 
 const cleanText = (max = 4_000) => z.string().trim().min(1).max(max);
 const nullableText = (max = 500) => z.string().trim().max(max).nullable().optional();
@@ -222,10 +223,8 @@ export function getQuizQuestionRange(intent, complexity = 'normal') {
   return { min: 3, max: 4 };
 }
 
-export function validateQuizForMaterial(
-  response,
-  { intent, complexity = 'normal', text = '' } = {}
-) {
+export function validateQuizForMaterial(response, options = {}) {
+  const { intent, complexity = 'normal', text = '', isRepairedAttempt = false } = options;
   const parsed = StructuredResponseSchema.safeParse(response);
   if (!parsed.success) return parsed;
   const isMandatoryQuiz = [
@@ -252,6 +251,42 @@ export function validateQuizForMaterial(
     return parsed;
   }
 
+  // Локальная семантическая проверка вопросов (verb form, explanation consistency)
+  const quizIssues = validateAllQuizQuestions(quiz.questions);
+  if (quizIssues.length > 0) {
+    if (!isRepairedAttempt) {
+      return {
+        success: false,
+        error: new z.ZodError(
+          quizIssues.map((msg) => ({
+            code: 'custom',
+            path: ['quiz', 'questions'],
+            message: msg,
+          }))
+        ),
+      };
+    }
+    // На повторной попытке отфильтровываем невалидные вопросы
+    const cleanedQuiz = filterInvalidQuizQuestions(quiz);
+    if (cleanedQuiz.questions.length === 0) {
+      if (parsed.data.type === 'explanation') {
+        parsed.data.quiz = undefined;
+        return parsed;
+      }
+      return {
+        success: false,
+        error: new z.ZodError([
+          {
+            code: 'custom',
+            path: ['quiz', 'questions'],
+            message: 'Все вопросы квиза были отклонены как невалидные',
+          },
+        ]),
+      };
+    }
+    parsed.data.quiz = cleanedQuiz;
+  }
+
   let effectiveComplexity = complexity;
   if (intent === AI_INTENTS.EXPLAIN_GRAMMAR) {
     const isComplexPattern =
@@ -265,14 +300,15 @@ export function validateQuizForMaterial(
   }
 
   const range = getQuizQuestionRange(intent, effectiveComplexity);
-  if (quiz.questions.length < range.min || quiz.questions.length > range.max) {
+  const minRequired = isRepairedAttempt ? 1 : range.min;
+  if (quiz.questions.length < minRequired || quiz.questions.length > range.max) {
     return {
       success: false,
       error: new z.ZodError([
         {
           code: 'custom',
           path: ['quiz', 'questions'],
-          message: `Ожидалось от ${range.min} до ${range.max} вопросов`,
+          message: `Ожидалось от ${minRequired} до ${range.max} вопросов`,
         },
       ]),
     };

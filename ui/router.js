@@ -47,6 +47,7 @@ export function initRouter(handlers) {
   // Устанавливаем глобальные алиасы для обратной совместимости
   window.nav = nav;
   window.updateTabIndicator = updateTabIndicator;
+  return router;
 }
 
 // ---------- Navigation function ----------
@@ -71,5 +72,5 @@ export function updateTabIndicator() {
 // ---------- Get current route ----------
 export function getCurrentRoute() {
   if (!router) return null;
-  return router.currentRoute || null;
+  return router.currentScreen || router.currentRoute || null;
 }

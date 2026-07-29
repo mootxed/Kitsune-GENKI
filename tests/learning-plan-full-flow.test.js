@@ -102,10 +102,16 @@ describe('full integrated learning-plan chapter flow', () => {
     expect(afterFirstBatch.tasks.some((task) => task.sourceId === 'L1_g1')).toBe(true);
     expect(getGrammarTopicStatus(state, 1, 'L1_g1', chapter1)).toBe('unlocked');
     expect(
-      completeGrammarTopicWithCheck(state, 1, 'L1_g1', {
-        passed: true,
-        score: 100,
-      }).completed
+      completeGrammarTopicWithCheck(
+        state,
+        1,
+        'L1_g1',
+        {
+          passed: true,
+          score: 100,
+        },
+        { dateKey: '2026-07-26', chapterMeta: chapter1 }
+      ).completed
     ).toBe(true);
 
     state.dailyPlan = null;

@@ -825,16 +825,20 @@ async function persistSnapshot(snapshot, generation) {
       return;
     }
 
-    console.log(
-      '[Store] Сохранение состояния (rev ' + snapshot.revision + '). XP:',
-      snapshot.xp,
-      'Chapters:',
-      Object.keys(snapshot.chapters).length
-    );
+    if (globalThis.__DEV__) {
+      console.log(
+        '[Store] Сохранение состояния (rev ' + (snapshot?.revision ?? 0) + '). XP:',
+        snapshot?.xp ?? 0,
+        'Chapters:',
+        Object.keys(snapshot?.chapters || {}).length
+      );
+    }
     await db.set(STORES.APP_STATE, 'state', snapshot);
     primaryStatePersisted = true;
     broadcastStateUpdated(snapshot.revision);
-    console.log('[Store] ✅ Состояние сохранено в IndexedDB');
+    if (globalThis.__DEV__) {
+      console.log('[Store] ✅ Состояние сохранено в IndexedDB');
+    }
 
     const pendingLogs = Array.isArray(snapshot.pendingReviewLogs) ? snapshot.pendingReviewLogs : [];
     const acknowledgedIds = [];

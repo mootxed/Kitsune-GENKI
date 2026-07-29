@@ -244,26 +244,48 @@
       </section>
 
       <!-- ===== SENSEI ===== -->
-      <section class="screen hidden" id="screen-sensei" data-testid="screen-sensei">
-        <header class="app-header">
-          <div class="app-header-left">
-            <span class="logo-fox">🦊</span>
-            <div><h1 class="app-title">AI Сенсей</h1></div>
+      <section
+        class="screen sensei-screen-layout hidden"
+        id="screen-sensei"
+        data-testid="screen-sensei"
+      >
+        <header class="sensei-header">
+          <div class="sensei-header-title">
+            <span class="sensei-avatar" aria-hidden="true">🦊</span>
+            <h1>AI Сенсей</h1>
           </div>
-          <div class="app-header-right">
-            <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
-            <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
+          <div class="sensei-header-actions">
+            <button
+              class="icon-btn"
+              data-nav="settings"
+              aria-label="Настройки Сенсея"
+              id="sensei-settings-btn"
+            >
+              ⚙️
+            </button>
           </div>
         </header>
-        <div class="lib-tabs">
-          <button class="lib-tab active" data-senseitab="chat" data-testid="senseitab-chat">
+        <nav class="sensei-tabs" role="tablist" aria-label="Вкладки Сенсея">
+          <button
+            class="sensei-tab active"
+            role="tab"
+            aria-selected="true"
+            data-senseitab="chat"
+            data-testid="senseitab-chat"
+          >
             Чат
           </button>
-          <button class="lib-tab" data-senseitab="tools" data-testid="senseitab-tools">
-            🛠️ Инструменты
+          <button
+            class="sensei-tab"
+            role="tab"
+            aria-selected="false"
+            data-senseitab="tools"
+            data-testid="senseitab-tools"
+          >
+            Инструменты
           </button>
-        </div>
-        <div class="screen-scroll" id="sensei-body"></div>
+        </nav>
+        <div class="sensei-main-container" id="sensei-body"></div>
       </section>
 
       <!-- ===== AI STORY GENERATOR ===== -->
