@@ -7,10 +7,7 @@ import { localCharDataLoader } from '../../src/kanji-loader.js';
 import { getAllKanji } from './mode-selector.js';
 import { markReviewAnswered, submitReview } from './review-fsrs.js';
 import { adaptDrawingContext } from './review-context-adapters.js';
-import {
-  renderPostReviewSenseiActions,
-  clearPostReviewSenseiActions,
-} from './sensei-review-panel.js';
+import { renderPostReviewSenseiActions } from './sensei-review-panel.js';
 import { shouldShowSenseiAction } from './sensei-review-actions.js';
 import { activeReviewAIContext, clearActiveReviewAIContext } from './state.js';
 import { lockCurrentReviewUI } from './card-modes.js';
@@ -200,19 +197,22 @@ export function initDrawingMode(
         toast(resultText);
 
         const currentKanjiItem = kanjiSequence[currentKanjiIndex] || {};
-        // aiAttempt формируется ДО submitReview
-        const aiAttempt = adaptDrawingContext({
-          kanji,
-          reading: currentKanjiItem.reading || romaji || '',
-          translation,
-          totalMistakes: totalDrawingMistakes,
-          hintUsed: drawingHintUsed,
-        });
+        // Для слов с несколькими кандзи AI-разбор временно отключаем (до поддержке посимвольной телеметрии)
+        const isMultiKanji = Array.isArray(kanjiSequence) && kanjiSequence.length > 1;
+        const aiAttempt = isMultiKanji
+          ? null
+          : adaptDrawingContext({
+              kanji,
+              reading: currentKanjiItem.reading || romaji || '',
+              translation,
+              totalMistakes: totalDrawingMistakes,
+              hintUsed: drawingHintUsed,
+            });
 
         const reviewRes = submitReview(card, quality, state, {
           mistakes: totalDrawingMistakes,
           hintUsed: drawingHintUsed,
-          aiAttempt,
+          ...(aiAttempt ? { aiAttempt } : {}),
         });
         if (!sessionManager) setFlashIdx(flashIdx + 1);
 

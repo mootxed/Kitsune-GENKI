@@ -120,6 +120,15 @@ export function buildReviewAttemptSnapshot({
       instruction: aiAttempt.instruction || null,
       contextSentence: aiAttempt.contextSentence || null,
       contextTranslation: aiAttempt.contextTranslation || null,
+      requiredForm: aiAttempt.modeSpecific?.requiredForm
+        ? typeof aiAttempt.modeSpecific.requiredForm === 'string'
+          ? aiAttempt.modeSpecific.requiredForm
+          : JSON.stringify(aiAttempt.modeSpecific.requiredForm)
+        : aiAttempt.requiredForm
+          ? typeof aiAttempt.requiredForm === 'string'
+            ? aiAttempt.requiredForm
+            : JSON.stringify(aiAttempt.requiredForm)
+          : null,
     },
 
     answer: {
@@ -128,7 +137,13 @@ export function buildReviewAttemptSnapshot({
       selectedOption: aiAttempt.selectedOption || null,
       correctOption: aiAttempt.correctOption || null,
       incorrectAttempts: Array.isArray(aiAttempt.incorrectAttempts)
-        ? aiAttempt.incorrectAttempts
+        ? aiAttempt.incorrectAttempts.map(({ rawAnswer, normalizedAnswer, selectedOption }) => ({
+            ...(rawAnswer !== undefined ? { rawAnswer: String(rawAnswer) } : {}),
+            ...(normalizedAnswer !== undefined
+              ? { normalizedAnswer: String(normalizedAnswer) }
+              : {}),
+            ...(selectedOption !== undefined ? { selectedOption: String(selectedOption) } : {}),
+          }))
         : [],
     },
 

@@ -52,7 +52,6 @@ export const IncorrectAttemptSchema = z
     rawAnswer: z.string().trim().max(500),
     normalizedAnswer: z.string().trim().max(500).optional(),
     selectedOption: z.string().trim().max(300).optional(),
-    timestamp: z.number().optional(),
   })
   .strip();
 
@@ -87,6 +86,7 @@ export const ReviewAttemptSnapshotSchema = z
         instruction: nullableStr(300),
         contextSentence: nullableStr(500),
         contextTranslation: nullableStr(500),
+        requiredForm: z.string().trim().max(300).nullish(),
       })
       .strict(),
 

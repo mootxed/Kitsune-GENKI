@@ -69,9 +69,7 @@ export function lockCurrentReviewUI() {
   const input = document.getElementById('typing-input');
   if (input) {
     input.disabled = true;
-    const newInput = input.cloneNode(true);
-    newInput.disabled = true;
-    input.parentNode?.replaceChild(newInput, input);
+    input.style.pointerEvents = 'none';
   }
 }
 

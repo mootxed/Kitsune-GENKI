@@ -2,7 +2,10 @@
 
 import { focusScreenHeading, announceNavigation, setScreenInert } from './src/a11y-helpers.js';
 import { clearActiveReviewAIContext } from './ui/flashcards/state.js';
-import { closeSenseiPanel } from './ui/flashcards/sensei-review-panel.js';
+import {
+  closeSenseiPanel,
+  clearPostReviewSenseiActions,
+} from './ui/flashcards/sensei-review-panel.js';
 
 // Human-readable screen titles for screen reader announcements
 const SCREEN_TITLES = {
@@ -86,6 +89,7 @@ export class Router {
     }
     if (this.currentScreen === 'srs' && name !== 'srs') {
       closeSenseiPanel();
+      clearPostReviewSenseiActions();
       clearActiveReviewAIContext();
     }
 

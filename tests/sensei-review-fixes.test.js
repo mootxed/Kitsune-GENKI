@@ -20,6 +20,7 @@ import {
   buildSenseiActionInput,
 } from '../ui/flashcards/sensei-review-actions.js';
 import { handleExplainReviewError } from '../src/ai/handlers/explain-review-error.js';
+import { validateReviewExplanation } from '../src/ai/schemas.js';
 import { importReviewExplanationToChat } from '../ui/chat.js';
 import { submitReview } from '../ui/flashcards/review-fsrs.js';
 import { SRS } from '../srs.js';
@@ -394,7 +395,7 @@ describe('AI Sensei & Review Lifecycle Fixes', () => {
         sentInput = JSON.stringify(messages);
         return JSON.stringify({
           type: 'review_explanation',
-          diagnosis: { category: 'no_error', message: 'Разбор' },
+          diagnosis: { category: 'kana_confusion', message: 'Разбор' },
           explanation: 'Подробное объяснение',
           comparison: [
             { form: '食べる', reading: 'たべる', role: 'Словарная форма', isExpected: true },
@@ -428,6 +429,77 @@ describe('AI Sensei & Review Lifecycle Fixes', () => {
       expect(sentInput).toContain('たべます');
     });
 
+    it('Validator reason enforcement: validateReviewExplanation validates reason consistency', () => {
+      const snapshotWithError = {
+        result: { outcome: 'incorrect', mistakes: 1 },
+        answer: { incorrectAttempts: [{ rawAnswer: 'bad' }] },
+      };
+
+      // reason === 'error' but category === 'no_error' -> should fail validation
+      const invalidRes = validateReviewExplanation(
+        { diagnosis: { category: 'no_error' }, quiz: { questions: [] } },
+        snapshotWithError,
+        null,
+        true, // isRepairedAttempt
+        'error'
+      );
+      expect(invalidRes.success).toBe(false);
+
+      // reason !== 'error' (e.g. slow_answer) but category !== 'no_error' -> should fail validation
+      const invalidSlowRes = validateReviewExplanation(
+        { diagnosis: { category: 'kana_confusion' }, quiz: { questions: [] } },
+        snapshotWithError,
+        null,
+        true,
+        'slow_answer'
+      );
+      expect(invalidSlowRes.success).toBe(false);
+
+      // reason !== 'error' and category === 'no_error' -> should succeed
+      const validSlowRes = validateReviewExplanation(
+        { diagnosis: { category: 'no_error' }, quiz: { questions: [] } },
+        snapshotWithError,
+        null,
+        true,
+        'slow_answer'
+      );
+      expect(validSlowRes.success).toBe(true);
+    });
+
+    it('Snapshot Schema & Hygiene: includes requiredForm and excludes timestamp from incorrectAttempts', () => {
+      const word = { writing: '食べる', reading: 'たべる', meanings: ['есть'], partOfSpeech: [] };
+      const card = { id: 'c1', reps: 1, stability: 5, lapses: 0 };
+      const aiAttempt = {
+        prompt: 'Напишите',
+        expectedAnswers: ['食べる'],
+        userAnswer: 'たべます',
+        mistakes: 1,
+        modeSpecific: { requiredForm: 'Словарная форма' },
+        incorrectAttempts: [
+          { rawAnswer: 'たべます', normalizedAnswer: 'たべます', timestamp: 9999999 },
+        ],
+      };
+
+      const snapshot = buildReviewAttemptSnapshot({
+        card,
+        word,
+        mode: 'context-sentence',
+        submitResult: { accepted: true },
+        aiAttempt,
+        srsCard: card,
+        reviewEvents: [],
+        responseTimeMs: 2000,
+      });
+
+      expect(snapshot).not.toBeNull();
+      expect(snapshot.task.requiredForm).toBe('Словарная форма');
+      expect(snapshot.answer.incorrectAttempts[0]).toEqual({
+        rawAnswer: 'たべます',
+        normalizedAnswer: 'たべます',
+      });
+      expect(snapshot.answer.incorrectAttempts[0].timestamp).toBeUndefined();
+    });
+
     it('Blocker 3: SessionManager.completeSupplementalPractice completes card without FSRS and advances getNextCard queue', () => {
       const card1 = { id: 'c1', state: 1 };
       const card2 = { id: 'c2', state: 1 };
@@ -443,7 +515,7 @@ describe('AI Sensei & Review Lifecycle Fixes', () => {
       expect(manager.getStats().remaining).toBe(1);
     });
 
-    it('Blocker 2 UI Lock: lockCurrentReviewUI disables controls in #srs-body', () => {
+    it('Blocker 2 UI Lock: lockCurrentReviewUI disables controls in #srs-body without detaching element', () => {
       document.body.innerHTML = `
         <div id="srs-body">
           <button class="quiz-option-btn" id="opt-1">Option 1</button>
@@ -453,11 +525,15 @@ describe('AI Sensei & Review Lifecycle Fixes', () => {
         </div>
       `;
 
+      const input = document.getElementById('typing-input');
       lockCurrentReviewUI();
 
       expect(document.getElementById('opt-1').disabled).toBe(true);
       expect(document.getElementById('opt-2').disabled).toBe(true);
       expect(document.getElementById('typing-check').disabled).toBe(true);
+      expect(input.disabled).toBe(true);
+      // Ensures node reference remains attached in DOM
+      expect(document.getElementById('typing-input')).toBe(input);
     });
 
     it('Lingering Actions Cleanup: clearPostReviewSenseiActions empties containers', () => {

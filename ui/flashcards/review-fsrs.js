@@ -157,6 +157,7 @@ export function submitReview(card, quality, state, context = null) {
     adjustedQuality = SRS.Quality.Good;
   }
   const wasLeech = isLeech(srsCard);
+  const reviewEventsBefore = [...(state.reviewEvents || [])];
   const sessionSnapshot = sessionManager?.createSnapshot() || null;
   const previousCard = SRS.serializeCard(srsCard);
   const cardStateBefore = sessionManager?.getCardState(card.id);
@@ -199,7 +200,9 @@ export function submitReview(card, quality, state, context = null) {
     activeReviewDependencies?.onReviewCommitted?.(srsCard, result.event);
   }
 
-  if (!wasLeech && isLeech(srsCard)) {
+  const postSrsCard = state.srs?.[card.id] || srsCard;
+  const nowLeech = isLeech(postSrsCard);
+  if (!wasLeech && nowLeech) {
     activeReviewDependencies?.toast?.(
       '🩸 Карточка часто забывается. Добавьте к ней мнемонику или личную подсказку.'
     );
@@ -219,7 +222,7 @@ export function submitReview(card, quality, state, context = null) {
   };
 
   // Строим AI-снапшот ТОЛЬКО при accepted/supplementalAccepted review и достаточном task context.
-  // Передаём previousCard (состояние ДО ответа) и журнал reviewEvents.
+  // Передаём previousCard (состояние ДО ответа, либо с isLeech=true при nowLeech) и pre-review журнал reviewEvents.
   if (result?.event && reviewContext.aiAttempt) {
     const { aiAttempt, mode: reviewMode, responseTimeMs } = reviewContext;
     const word = activeReviewState ? _wordFromStateById(activeReviewState, identity.itemId) : null;
@@ -228,14 +231,18 @@ export function submitReview(card, quality, state, context = null) {
         typeof crypto !== 'undefined' && crypto.randomUUID
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const snapshotCard =
+        nowLeech && !wasLeech
+          ? { ...previousCard, lapses: Math.max(4, previousCard.lapses || 4) }
+          : previousCard;
       const snapshot = buildReviewAttemptSnapshot({
-        card: previousCard,
+        card: snapshotCard,
         word,
         mode: reviewMode || mode,
         submitResult,
         aiAttempt,
-        srsCard: previousCard,
-        reviewEvents: state.reviewEvents || [],
+        srsCard: snapshotCard,
+        reviewEvents: reviewEventsBefore,
         responseTimeMs: responseTimeMs ?? timedContext.responseTimeMs,
       });
       if (snapshot) {

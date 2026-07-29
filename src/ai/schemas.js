@@ -429,7 +429,8 @@ export function validateReviewExplanation(
   data,
   snapshot,
   localDiagnosis,
-  isRepairedAttempt = false
+  isRepairedAttempt = false,
+  reason = 'error'
 ) {
   const minQ = isRepairedAttempt ? 0 : reviewQuizRange.min;
   const maxQ = reviewQuizRange.max;
@@ -443,6 +444,38 @@ export function validateReviewExplanation(
           code: 'custom',
           path: ['quiz', 'questions'],
           message: `Review quiz должен содержать от ${minQ} до ${maxQ} вопросов, получено: ${qCount}`,
+        },
+      ]),
+    };
+  }
+
+  const category = data?.diagnosis?.category;
+  const hasActualError =
+    snapshot?.result?.outcome === 'incorrect' ||
+    (snapshot?.result?.mistakes ?? 0) > 0 ||
+    (snapshot?.answer?.incorrectAttempts?.length ?? 0) > 0;
+
+  if (reason === 'error' && hasActualError && category === 'no_error') {
+    return {
+      success: false,
+      error: new z.ZodError([
+        {
+          code: 'custom',
+          path: ['diagnosis', 'category'],
+          message: `При ошибке пользователя (reason='error') category должна отражать суть ошибки, а не 'no_error'`,
+        },
+      ]),
+    };
+  }
+
+  if (reason !== 'error' && category !== 'no_error') {
+    return {
+      success: false,
+      error: new z.ZodError([
+        {
+          code: 'custom',
+          path: ['diagnosis', 'category'],
+          message: `При отсутствии ошибки (reason='${reason}') category должна быть 'no_error', а не '${category}'`,
         },
       ]),
     };
