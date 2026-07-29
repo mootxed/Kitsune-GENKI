@@ -44,6 +44,8 @@ jobs:
 
       - name: Build project
         run: npm run build
+        env:
+          VITE_BASE: /KotoKitsu/
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
