@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { parseAndValidateAIStory } from '../src/ai-story-parser.js';
 import { API } from '../services.js';
 import { renderAIStory } from '../ui/ai-story.js';
+import { setOpenRouterKey } from '../src/openrouter-key.js';
 
 describe('AI Story Zod Schema & Parser', () => {
   const validStoryData = {
@@ -390,6 +391,7 @@ describe('AI Story API Repair Retry & UI Integration', () => {
       errorType: 'SCHEMA_VALIDATION',
     });
 
+    await setOpenRouterKey('sk-or-v1-mock-key');
     renderAIStory(state, {});
 
     const promptInput = document.getElementById('ai-story-prompt');

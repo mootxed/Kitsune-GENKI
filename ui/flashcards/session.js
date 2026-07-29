@@ -3,8 +3,9 @@
 import { allCards, wordById } from '../../src/srs-helpers.js';
 import { SRS } from '../../srs.js';
 import { SessionBatcher } from '../../src/session-batcher.js';
-import { SessionManager } from '../../session-manager.js';
+import { SessionManager, saveSessionToDB, clearSessionFromDB } from '../../session-manager.js';
 import {
+  activePracticeMode,
   sessionBatcher,
   setSessionBatcher,
   currentBatchIndex,
@@ -15,6 +16,11 @@ import {
   setFlashCtx,
   setSessionManager,
   setActivePracticeMode,
+  getSessionManager,
+  getFlashQueue,
+  getFlashIdx,
+  getFlashRevealed,
+  getFlashCtx,
   reviewUndoStack,
 } from './state.js';
 
@@ -129,6 +135,7 @@ export function startNextBatchIfAny(state, dependencies) {
     onSave: dependencies.save,
   });
   setSessionManager(manager);
+  saveActiveSessionState();
   return true;
 }
 
@@ -149,6 +156,118 @@ export function resetSessionBatching() {
   setCurrentBatchIndex(0);
 }
 
+export function saveActiveSessionState() {
+  const manager = getSessionManager();
+  if (!manager) {
+    return;
+  }
+  if (manager.isSessionComplete()) {
+    if (!sessionBatcher || !sessionBatcher.hasNextBatch()) {
+      clearSessionFromDB();
+      return;
+    }
+  }
+
+  const batcher = sessionBatcher;
+  const flashQueue = getFlashQueue();
+  const flashIdx = getFlashIdx();
+  const flashRevealed = getFlashRevealed();
+  const flashCtx = getFlashCtx();
+
+  const sessionData = {
+    schemaVersion: 1,
+    sessionType: flashCtx ? 'chapter' : 'srs',
+    chapterId: flashCtx || null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    managerState: manager.toSerializableState(),
+    batcherState: batcher ? batcher.toSerializableState() : null,
+    currentBatchIndex: batcher ? batcher.getCurrentBatchIndex() : 0,
+    totalBatches: batcher ? batcher.getTotalBatches() : 1,
+    flashState: {
+      flashIdx,
+      flashRevealed,
+      activePracticeMode: activePracticeMode ?? null,
+    },
+  };
+
+  return saveSessionToDB(sessionData);
+}
+
+export async function restoreActiveSessionRecord(sessionRecord, state, dependencies) {
+  if (!sessionRecord || !sessionRecord.managerState) {
+    await clearSessionFromDB();
+    return false;
+  }
+
+  const lessons = dependencies?.LESSONS || [];
+  const srsCollection = state?.srs || {};
+
+  const cardsMap = new Map();
+  Object.values(srsCollection).forEach((card) => {
+    if (card && card.id) {
+      const word = wordById(card.id, lessons);
+      cardsMap.set(card.id, { ...card, word });
+    }
+  });
+
+  if (Array.isArray(sessionRecord.managerState.queue)) {
+    sessionRecord.managerState.queue.forEach((item) => {
+      const cardId = item.cardId || item.card?.id;
+      if (cardId && !cardsMap.has(cardId)) {
+        const word = wordById(cardId, lessons);
+        const srsCard = srsCollection[cardId] || (typeof item.card === 'object' ? item.card : null);
+        if (srsCard) {
+          cardsMap.set(cardId, { ...srsCard, word });
+        }
+      }
+    });
+  }
+
+  if (sessionRecord.batcherState) {
+    const batcher = new SessionBatcher([]);
+    batcher.restoreFromSerializableState(sessionRecord.batcherState);
+    setSessionBatcher(batcher);
+    setCurrentBatchIndex(sessionRecord.currentBatchIndex || 0);
+  } else {
+    setSessionBatcher(null);
+    setCurrentBatchIndex(0);
+  }
+
+  const manager = new SessionManager([], {
+    srs: SRS,
+    questsManager: dependencies?.QuestsManager || window?.QuestsManager || null,
+    state,
+    onSave: dependencies?.save,
+  });
+
+  const success = manager.restoreFromSerializableState(sessionRecord.managerState, cardsMap);
+  if (!success || manager.queue.length === 0) {
+    console.warn('[SessionRecovery] Failed to restore session queue or all cards are missing');
+    await clearSessionFromDB();
+    if (typeof dependencies?.recordDiagnosticError === 'function') {
+      dependencies.recordDiagnosticError(
+        'Не удалось восстановить очередь SRS-сессии: все карточки отсутствуют'
+      );
+    }
+    return false;
+  }
+
+  setSessionManager(manager);
+
+  const organizedCards = manager.queue.map((item) => ({
+    ...item.card,
+    forcedMode: item.forcedMode,
+  }));
+  setFlashQueue(organizedCards);
+  setFlashIdx(sessionRecord.flashState?.flashIdx || 0);
+  setFlashRevealed(sessionRecord.flashState?.flashRevealed || false);
+  setFlashCtx(sessionRecord.chapterId || null);
+  reviewUndoStack.clear();
+
+  return true;
+}
+
 export function startSessionWithCards(cards, chapterId = null, state = null, dependencies = {}) {
   if (!Array.isArray(cards) || cards.length === 0) return false;
 
@@ -165,6 +284,8 @@ export function startSessionWithCards(cards, chapterId = null, state = null, dep
   setFlashRevealed(false);
   setFlashCtx(chapterId);
   reviewUndoStack.clear();
+
+  saveActiveSessionState();
 
   const tabsContainer = document.getElementById('srs-tabs-container');
   if (tabsContainer) tabsContainer.classList.add('hidden');

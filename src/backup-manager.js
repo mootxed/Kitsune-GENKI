@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { db, initializeDB, STORES } from './db.js';
 import { getReviewLogs, syncReviewLogQueue } from './review-log.js';
 import { getOpenRouterKey, setOpenRouterKey, clearOpenRouterKey } from './openrouter-key.js';
+import { createPersistableState } from '../state/store.js';
 import {
   ImportProfileSchema,
   UserDictionaryEntrySchema,
@@ -239,10 +240,7 @@ export async function exportFullProgress() {
     }
 
     // КРИТИЧЕСКАЯ БЕЗОПАСНОСТЬ: API-ключ НЕ ИЗВЛЕКАЕТСЯ и НЕ ВКЛЮЧАЕТСЯ в бэкап ни при каких условиях!
-    const exportedState = JSON.parse(JSON.stringify(state));
-    if (exportedState.settings) {
-      exportedState.settings.openrouterKey = '';
-    }
+    const exportedState = createPersistableState(state);
 
     console.log('[Export] Данные для экспорта:', {
       hasState: !!exportedState,
@@ -322,26 +320,9 @@ export async function importFullProgress(data, preserveApiKey = true) {
       userDictionaryImportProfiles: await database.getAll(STORES.USER_DICTIONARY_IMPORT_PROFILES),
     };
 
-    // Импортированный API-ключ всегда игнорируется (безопасность):
-    // сохраняем текущий локальный ключ (если preserveApiKey === true) или сбрасываем
-    const currentApiKey = preserveApiKey
-      ? getOpenRouterKey() || snapshot.state?.settings?.openrouterKey || ''
-      : '';
+    const currentApiKey = preserveApiKey ? getOpenRouterKey() : '';
 
-    if (!preserveApiKey) {
-      await clearOpenRouterKey();
-    } else if (currentApiKey) {
-      await setOpenRouterKey(currentApiKey);
-    }
-
-    const stateToImport = data.data?.state ? { ...data.data.state } : null;
-
-    if (stateToImport) {
-      stateToImport.settings = {
-        ...stateToImport.settings,
-        openrouterKey: currentApiKey,
-      };
-    }
+    const stateToImport = data.data?.state ? createPersistableState(data.data.state) : null;
 
     const payload = {
       state: stateToImport,
@@ -369,6 +350,14 @@ export async function importFullProgress(data, preserveApiKey = true) {
         console.error('[Import] Ошибка при rollback snapshot:', rollbackErr);
       }
       return { success: false, error: 'Ошибка записи данных: ' + atomicErr.message };
+    }
+
+    // Импортированный API-ключ всегда игнорируется (безопасность):
+    // сохраняем текущий локальный ключ (если preserveApiKey === true) или сбрасываем
+    if (preserveApiKey && currentApiKey) {
+      await setOpenRouterKey(currentApiKey);
+    } else {
+      await clearOpenRouterKey();
     }
 
     // 3. Синхронизируем fallback localStorage если экспорт формата full_localstorage

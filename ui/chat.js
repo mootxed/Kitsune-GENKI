@@ -612,7 +612,7 @@ export async function sendChat(state, dependencies = {}) {
   const input = $('#chat-input');
   const text = input?.value.trim();
   if (!text) return;
-  if (!getOpenRouterKey() && !state?.settings?.openrouterKey && !dependencies.aiRequest) {
+  if (!getOpenRouterKey() && !dependencies.aiRequest) {
     getToast()('⚠️ Укажите API-ключ OpenRouter в настройках');
     return;
   }

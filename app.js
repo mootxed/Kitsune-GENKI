@@ -12,6 +12,11 @@ import { API } from './services.js';
 import { SRS } from './srs.js';
 import { SessionManager } from './session-manager.js';
 
+import { saveSessionToDB, loadSessionFromDB, clearSessionFromDB } from './session-manager.js';
+import { loadOpenRouterKeyFromDB } from './src/openrouter-key.js';
+import { saveActiveSessionState, restoreActiveSessionRecord } from './ui/flashcards/session.js';
+import { showSessionRecoveryModal } from './ui/session-recovery-modal.js';
+
 // IndexedDB модули
 import { initializeDB } from './src/db.js';
 import { migrateFromLocalStorage } from './src/migration.js';
@@ -488,6 +493,7 @@ export { calculateNextNotificationDate };
 
 // ===== ROUTER SETUP =====
 let router = null;
+let startSrsSessionFn = null;
 
 function setupRouter() {
   const dependencies = createDependencies();
@@ -519,12 +525,11 @@ function setupRouter() {
 
     // Явно переключаемся на экран SRS (снимаем inert и aria-hidden)
     if (router) {
-      router.navigate('srs');
+      router.navigate('srs', { mode: 'session' });
     } else {
       nav('srs');
     }
 
-    // Чистый старт сессии повторения карточек главы
     setSessionManager(null);
     setFlashCtx(chapterId);
     setFlashRevealed(false);
@@ -537,10 +542,8 @@ function setupRouter() {
       return;
     }
 
-    // Фиксируем выданные новые карточки до начала сессии.
     save();
 
-    // Инициализируем батчинг (20 карточек на батч)
     const batchInfo = initSessionBatching(sessionCards, LESSONS, 20);
 
     if (!activateSessionBatch(batchInfo, chapterId)) {
@@ -549,23 +552,20 @@ function setupRouter() {
       return;
     }
 
-    // Запускаем карточки
+    saveActiveSessionState();
     renderFlash(state, dependencies);
   };
 
-  // Назначаем функцию в dependencies
   dependencies.startChapterFlashcards = startChapterFlashcards;
 
-  // Функция запуска сессии повторения карточек
+  startSrsSessionFn = async () => startSrsSession();
   const startSrsSession = async () => {
-    // Явно переключаемся на экран SRS (снимаем inert и aria-hidden)
     if (router) {
-      router.navigate('srs');
+      router.navigate('srs', { mode: 'session' });
     } else {
       nav('srs');
     }
 
-    // Скрываем tabbar во время сессии
     const tabbar = document.querySelector('.tabbar');
     if (tabbar) {
       tabbar.style.display = 'none';
@@ -588,16 +588,13 @@ function setupRouter() {
         return;
       }
 
-      // Фиксируем выданные новые карточки сразу, чтобы лимит сохранялся между сессиями.
       save();
 
-      // Чистый старт сессии повторения
       setSessionManager(null);
       setFlashCtx(null);
       setFlashRevealed(false);
       setFlashIdx(0);
 
-      // Инициализируем батчинг (20 карточек на батч)
       const batchInfo = initSessionBatching(sessionCards, LESSONS, 20);
 
       if (!activateSessionBatch(batchInfo, null)) {
@@ -607,7 +604,8 @@ function setupRouter() {
         return;
       }
 
-      // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Полностью очищаем #srs-body от dashboard HTML
+      saveActiveSessionState();
+
       const srsBody = document.getElementById('srs-body');
       if (srsBody) {
         srsBody.innerHTML = '';
@@ -621,12 +619,14 @@ function setupRouter() {
     }
   };
 
-  // Рендер dashboard экрана SRS (меню с кнопками)
-  const renderSrsDashboard = async () => {
+  const renderSrsDashboard = async (options = {}, context = {}) => {
+    if (options?.mode === 'session') {
+      return;
+    }
+
     const body = $('#srs-body');
     if (!body) return;
 
-    // Восстанавливаем видимость header и tabbar на dashboard
     const srsScreen = document.getElementById('screen-srs');
     if (srsScreen) srsScreen.classList.remove('srs-session-active');
     document.body.classList.remove('srs-session-active');
@@ -641,14 +641,12 @@ function setupRouter() {
 
     document.getElementById('completion-overlay')?.classList.add('hidden');
 
-    // Показываем табы на dashboard
     const tabsContainerDashboard = document.getElementById('srs-tabs-container');
     if (tabsContainerDashboard) {
       tabsContainerDashboard.classList.remove('hidden');
       tabsContainerDashboard.style.display = '';
     }
 
-    // Привязка вкладок SRS (Повторение / Словарь / Частицы)
     $$('#srs-tabs-container .lib-tab').forEach((tab) => {
       tab.classList.toggle('active', tab.dataset.tab === 'repetition');
       tab.onclick = () => {
@@ -656,7 +654,7 @@ function setupRouter() {
           $$('#srs-tabs-container .lib-tab').forEach((t) =>
             t.classList.toggle('active', t === tab)
           );
-          renderDictionary(state, dependencies);
+          renderDictionary(state, dependencies, {}, context);
         } else if (tab.dataset.tab === 'particles') {
           $$('#srs-tabs-container .lib-tab').forEach((t) =>
             t.classList.toggle('active', t === tab)
@@ -665,18 +663,16 @@ function setupRouter() {
         } else if (tab.dataset.tab === 'user-dictionaries') {
           router.navigate('user-dictionaries');
         } else {
-          renderSrsDashboard();
+          renderSrsDashboard({}, context);
         }
       };
     });
 
-    // Подгружаем уроки для всех карточек в SRS (ленивая загрузка)
     await ensureLessonsForSrs();
+    if (context?.signal?.aborted) return;
 
     const digest = getDailyStudyDigest(state);
-
-    // ВСЕГДА показываем dashboard с кнопкой, даже если есть карточки к повтору
-    body.innerHTML = `
+    const dashboardHtml = `
       <div class="stat-row" data-testid="srs-stat-row">
         <div class="stat-box" data-testid="stat-reviews"><div class="stat-num accent">${digest.dueReviewCards}</div><div class="stat-cap">Повторения</div></div>
         <div class="stat-box" data-testid="stat-new"><div class="stat-num" style="color:var(--primary, #ff8a2b)">${digest.availableNewItems}</div><div class="stat-cap">Новые слова</div></div>
@@ -688,7 +684,10 @@ function setupRouter() {
       <button class="btn-extra-review" id="srs-extra-review">➕ Практика без изменения расписания</button>
     `;
 
-    // Привязываем обработчики к кнопкам
+    if (context?.signal?.aborted) return;
+
+    body.innerHTML = dashboardHtml;
+
     const startBtn = $('#srs-start-session');
     if (startBtn && digest.availableCardCount > 0) {
       startBtn.onclick = () => startSrsSession();
@@ -701,30 +700,31 @@ function setupRouter() {
   };
 
   router = initRouter({
-    home: () => renderHome(state, dependencies),
-    course: () => renderCourse(state, dependencies),
-    chapter: (id) => renderChapter(parseInt(id), state, dependencies),
-    srs: renderSrsDashboard,
-    profile: () => renderProfile(state, dependencies),
-    shop: () => renderShop(state, dependencies),
-    library: () => renderStories(state, dependencies),
-    sensei: () => renderSensei(state, dependencies),
-    settings: () => renderSettings(state, dependencies),
-    plan: () => renderPlan(state, dependencies),
-    quests: () => renderQuests(state, dependencies),
-    'ai-story': () => renderAIStory(state, dependencies),
-    crossword: () => renderCrossword(state, dependencies),
-    'word-search': () => renderWordSearch(state, dependencies),
-    onboarding: () => renderOnboarding(state, dependencies),
-    statistics: () => renderStatistics(state),
-    'user-dictionaries': (options) =>
+    home: (options, context) => renderHome(state, dependencies, options, context),
+    course: (options, context) => renderCourse(state, dependencies, options, context),
+    chapter: (id, context) => renderChapter(parseInt(id), state, dependencies, context),
+    srs: (options, context) => renderSrsDashboard(options, context),
+    profile: (options, context) => renderProfile(state, dependencies, options, context),
+    shop: (options, context) => renderShop(state, dependencies, options, context),
+    library: (options, context) => renderStories(state, dependencies, options, context),
+    sensei: (options, context) => renderSensei(state, dependencies, options, context),
+    settings: (options, context) => renderSettings(state, dependencies, options, context),
+    plan: (options, context) => renderPlan(state, dependencies, options, context),
+    quests: (options, context) => renderQuests(state, dependencies, options, context),
+    'ai-story': (options, context) => renderAIStory(state, dependencies, options, context),
+    crossword: (options, context) => renderCrossword(state, dependencies, options, context),
+    'word-search': (options, context) => renderWordSearch(state, dependencies, options, context),
+    onboarding: (options, context) => renderOnboarding(state, dependencies, options, context),
+    statistics: (options, context) => renderStatistics(state, options, context),
+    'user-dictionaries': (options, context) =>
       renderUserDictionaries(
         state,
         {
           ...dependencies,
           refreshRuntime: () => refreshUserDictionaryLesson(LESSONS, undefined, state),
         },
-        options
+        options,
+        context
       ),
   });
 
@@ -766,6 +766,7 @@ async function init() {
   try {
     // 1. Инициализация IndexedDB
     await initializeDB();
+    await loadOpenRouterKeyFromDB();
     // App reviews are persisted through the transactional outbox in app_state.
     // The optional SRS logger remains available for diagnostics and isolated use.
     SRS.setReviewLogger(null);
@@ -816,6 +817,35 @@ async function init() {
 
     state.initialized = true;
     checkStorageDegradedBanner();
+
+    // Проверка сохранённой незавершённой сессии
+    try {
+      const activeSession = await loadSessionFromDB();
+      if (activeSession && activeSession.managerState && !shouldShowOnboarding(state)) {
+        showSessionRecoveryModal(activeSession, {
+          onResume: async () => {
+            const dependencies = createDependencies();
+            const restored = await restoreActiveSessionRecord(activeSession, state, dependencies);
+            if (restored) {
+              nav('srs', { mode: 'session' });
+              renderFlash(state, dependencies);
+            } else {
+              await clearSessionFromDB();
+            }
+          },
+          onRestart: async () => {
+            await clearSessionFromDB();
+            if (startSrsSessionFn) startSrsSessionFn();
+          },
+          onCancel: async () => {
+            await clearSessionFromDB();
+            nav('srs');
+          },
+        });
+      }
+    } catch (err) {
+      console.warn('[Init] Ошибка при проверке невозобновленной сессии:', err);
+    }
 
     // Синхронизация аватаров
     syncAvatars();
@@ -980,6 +1010,7 @@ async function renderParticlesDictionary() {
 // Гарантируем принудительное немедленное сохранение данных в localStorage и IndexedDB
 function handleAppUnload() {
   save(true);
+  saveActiveSessionState();
 }
 
 window.addEventListener('beforeunload', handleAppUnload);

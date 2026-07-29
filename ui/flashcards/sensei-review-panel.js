@@ -420,8 +420,7 @@ export async function openSenseiPanel({ snapshot, actionType, reason, dependenci
     setLoading(panelContainer, true);
 
     try {
-      const apiKey =
-        getOpenRouterKey() || aiSettings?.openrouterKey || state?.settings?.openrouterKey;
+      const apiKey = getOpenRouterKey();
       if (!apiKey && !dependencies?.aiRequest) {
         setLoading(panelContainer, false);
         showErrorInContainer(panelContainer, 'API-ключ OpenRouter не указан', null);

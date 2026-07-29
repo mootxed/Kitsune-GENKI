@@ -37,6 +37,7 @@ import {
 } from './state.js';
 
 import { closeSenseiPanel } from './sensei-review-panel.js';
+import { saveActiveSessionState } from './session.js';
 
 function monotonicNow() {
   return typeof globalThis.performance !== 'undefined' &&
@@ -226,6 +227,8 @@ export function submitReview(card, quality, state, context = null) {
     quality: adjustedQuality,
   };
 
+  saveActiveSessionState();
+
   // Строим AI-снапшот ТОЛЬКО при accepted/supplementalAccepted review и достаточном task context.
   // Передаём previousCard (состояние ДО ответа, либо с isLeech=true при nowLeech) и pre-review журнал reviewEvents.
   if (result?.event && reviewContext.aiAttempt) {
@@ -344,6 +347,7 @@ export async function undoLastReview(state, dependencies, renderFlashFn) {
 
   document.getElementById('completion-overlay')?.classList.add('hidden');
   await dependencies.save(true);
+  saveActiveSessionState();
   dependencies.updateSrsBadge?.();
   dependencies.toast?.('↩️ Последний ответ отменён');
   if (typeof renderFlashFn === 'function') {

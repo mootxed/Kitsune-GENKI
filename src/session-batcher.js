@@ -132,4 +132,36 @@ export class SessionBatcher {
   getCurrentBatchIndex() {
     return this.currentBatchIndex;
   }
+
+  /**
+   * Сериализация состояния батчера (без дублирования тяжелых объёктов)
+   */
+  toSerializableState() {
+    return {
+      totalCards: (this.totalCards || []).map((c) => ({ id: c.id || c })),
+      batchSize: this.batchSize,
+      currentBatchIndex: this.currentBatchIndex,
+      batches: (this.batches || []).map((b) => ({
+        cards: (b.cards || []).map((c) => ({ id: c.id || c })),
+        isMiniSprint: b.isMiniSprint,
+        index: b.index,
+        total: b.total,
+      })),
+    };
+  }
+
+  /**
+   * Восстановление состояния батчера из снимка
+   */
+  restoreFromSerializableState(serialized) {
+    if (!serialized) return;
+    this.batchSize = serialized.batchSize || 20;
+    this.currentBatchIndex = serialized.currentBatchIndex || 0;
+    if (Array.isArray(serialized.totalCards)) {
+      this.totalCards = serialized.totalCards;
+    }
+    if (Array.isArray(serialized.batches)) {
+      this.batches = serialized.batches;
+    }
+  }
 }

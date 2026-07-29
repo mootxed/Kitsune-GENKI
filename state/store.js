@@ -12,6 +12,7 @@ import {
   migrateLegacyOpenRouterKey,
   getOpenRouterKey,
   setOpenRouterKey,
+  clearOpenRouterKey,
 } from '../src/openrouter-key.js';
 
 const LS_STATE = 'kitsune_state_v1';
@@ -429,22 +430,25 @@ export function runMigrations(loadedState) {
   return migratedState;
 }
 
+export function createPersistableState(targetState) {
+  if (!targetState) return null;
+  const snapshot =
+    typeof globalThis.structuredClone === 'function'
+      ? globalThis.structuredClone(targetState)
+      : JSON.parse(JSON.stringify(targetState));
+  if (snapshot && snapshot.settings) {
+    delete snapshot.settings.openrouterKey;
+  }
+  return snapshot;
+}
+
 function normalizeRuntimeShape(loadedState) {
   migrateLegacyOpenRouterKey(loadedState);
   const base = defaultState();
   const normalized = { ...base, ...loadedState };
   normalized.updatedAt = Number(loadedState.updatedAt) || 0;
   normalized.settings = { ...base.settings, ...(loadedState.settings || {}) };
-  Object.defineProperty(normalized.settings, 'openrouterKey', {
-    get() {
-      return getOpenRouterKey();
-    },
-    set(val) {
-      setOpenRouterKey(val);
-    },
-    enumerable: true,
-    configurable: true,
-  });
+  delete normalized.settings.openrouterKey;
   normalized.chatHistory = normalizeChatHistory(loadedState.chatHistory);
   normalized.priorKnowledgeChapterIds = Array.isArray(loadedState.priorKnowledgeChapterIds)
     ? [...new Set(loadedState.priorKnowledgeChapterIds.map(Number))]
@@ -799,10 +803,7 @@ function performSave() {
   compactReviewJournal(state);
   // Снимок делается до первого await, а записи выполняются строго по порядку.
   // Поэтому поздний review/Undo не может быть перезаписан более старым save.
-  const snapshot =
-    typeof globalThis.structuredClone === 'function'
-      ? globalThis.structuredClone(state)
-      : JSON.parse(JSON.stringify(state));
+  const snapshot = createPersistableState(state);
 
   // Синхронный бэкап в localStorage на случай быстрого закрытия вкладки/PWA
   try {
@@ -960,12 +961,19 @@ export async function resetApplicationData(options = {}) {
     STORES.USER_DICTIONARIES,
     STORES.USER_DICTIONARY_ENTRIES,
     STORES.USER_DICTIONARY_IMPORT_PROFILES,
+    STORES.ACTIVE_SESSION,
   ]) {
     try {
       if (storeName) await db.clear(storeName);
     } catch (err) {
       console.warn(`[Store] Ошибка очистки ${storeName}:`, err);
     }
+  }
+
+  try {
+    await clearOpenRouterKey();
+  } catch (err) {
+    console.warn('[Store] Ошибка очистки OpenRouter API-ключа:', err);
   }
 
   try {

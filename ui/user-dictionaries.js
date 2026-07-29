@@ -1043,24 +1043,29 @@ async function openImportWizard(
   renderStepOne();
 }
 
-export async function renderUserDictionaries(state, dependencies = {}, options = {}) {
+export async function renderUserDictionaries(state, dependencies = {}, options = {}, context = {}) {
   const body = document.getElementById('user-dictionaries-body');
   if (!body) return;
   if (options.dictionaryId) view.dictionaryId = options.dictionaryId;
   if (options.search || options.entryId) view.search = options.search || options.entryId || '';
   const repository = dependencies.repository || new UserDictionaryRepository();
-  body.replaceChildren(node('p', { text: 'Загрузка…', attrs: { 'aria-live': 'polite' } }));
+
   try {
+    let dictionary = null;
     if (view.dictionaryId) {
-      const dictionary = await repository.getDictionary(view.dictionaryId);
-      if (dictionary) {
-        await renderDictionaryEntries(body, repository, dictionary, state, dependencies);
-        return;
-      }
-      view.dictionaryId = null;
+      dictionary = await repository.getDictionary(view.dictionaryId);
+      if (!dictionary) view.dictionaryId = null;
     }
-    await renderDictionaryList(body, repository, state, dependencies);
+
+    if (context?.signal?.aborted) return;
+
+    if (dictionary) {
+      await renderDictionaryEntries(body, repository, dictionary, state, dependencies);
+    } else {
+      await renderDictionaryList(body, repository, state, dependencies);
+    }
   } catch (error) {
+    if (context?.signal?.aborted) return;
     body.replaceChildren(
       node('div', { className: 'empty-state' }, [
         node('h2', { text: 'Не удалось открыть словари' }),

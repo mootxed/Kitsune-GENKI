@@ -8,6 +8,7 @@ import {
   subscribe,
   CURRENT_VERSION,
 } from '../state/store.js';
+import { getOpenRouterKey } from '../src/openrouter-key.js';
 
 describe('Store - Версионирование и миграции', () => {
   const LS_STATE = 'kitsune_state_v1';
@@ -143,7 +144,8 @@ describe('Store - Версионирование и миграции', () => {
       await loadState();
 
       expect(state.version).toBe(CURRENT_VERSION);
-      expect(state.settings.openrouterKey).toBe('test_key');
+      expect(getOpenRouterKey()).toBe('test_key');
+      expect(state.settings).not.toHaveProperty('openrouterKey');
       expect(state.settings.darkMode).toBe('dark');
       // Проверяем что дефолтные настройки добавлены
       expect(state.settings.model).toBe('deepseek/deepseek-v4-flash');

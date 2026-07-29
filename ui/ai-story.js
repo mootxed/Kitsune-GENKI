@@ -56,7 +56,7 @@ export function renderAIStory(state, dependencies) {
   const toast = dependencies?.toast || window.toast || (() => {});
 
   // Check if OpenRouter key is configured
-  const apiKey = (getOpenRouterKey() || state?.settings?.openrouterKey || '').trim();
+  const apiKey = getOpenRouterKey().trim();
   if (!apiKey) {
     body.innerHTML = `
       <div class="card" style="text-align:center; padding: 24px;" data-testid="ai-story-no-key">

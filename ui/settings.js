@@ -49,7 +49,7 @@ export function renderSettings(state, dependencies) {
     <div class="set-group">
       <div class="set-item">
         <label>🔑 API-ключ OpenRouter</label>
-        <input type="password" id="set-key" value="${getOpenRouterKey()}" placeholder="sk-or-v1-..." data-testid="set-openrouter-key" />
+        <input type="password" id="set-key" value="" placeholder="sk-or-v1-..." data-testid="set-openrouter-key" />
         <div class="set-hint">Получите ключ на openrouter.ai. Хранится только на этом устройстве.</div>
         <div class="set-warning">⚠️ Ключ хранится локально в браузере. Не сохраняйте его на общем или чужом устройстве.</div>
       </div>
@@ -142,6 +142,11 @@ export function renderSettings(state, dependencies) {
       <div class="set-item"><button class="btn-ghost" id="btn-reset" style="color:var(--danger)" data-testid="reset-btn">Сбросить весь прогресс</button></div>
     </div>
     <div class="bottom-pad"></div>`;
+
+  const keyInput = $('#set-key');
+  if (keyInput) {
+    keyInput.value = getOpenRouterKey();
+  }
 
   const bindEvent = (id, event, fn) => {
     const e = $(id);

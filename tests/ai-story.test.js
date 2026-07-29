@@ -1,13 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderAIStory } from '../ui/ai-story.js';
 import { API } from '../services.js';
+import { setOpenRouterKey, clearOpenRouterKey } from '../src/openrouter-key.js';
 
 describe('AI-Story UI Renderer', () => {
   let state;
   let dependencies;
   let container;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await setOpenRouterKey('sk-or-v1-mock-key');
     document.body.innerHTML = `
       <section class="screen hidden" id="screen-ai-story">
         <header class="app-header">
@@ -20,7 +22,6 @@ describe('AI-Story UI Renderer', () => {
 
     state = {
       settings: {
-        openrouterKey: 'sk-or-v1-mock-key',
         aiPrivacyAccepted: true,
       },
       srs: {},
@@ -45,8 +46,8 @@ describe('AI-Story UI Renderer', () => {
     expect(container.innerHTML).not.toBe('');
   });
 
-  it('2. Без API-ключа показывается переход в настройки, а не пустота', () => {
-    state.settings.openrouterKey = '';
+  it('2. Без API-ключа показывается переход в настройки, а не пустота', async () => {
+    await clearOpenRouterKey();
     renderAIStory(state, dependencies);
 
     const noKeyCard = container.querySelector('[data-testid="ai-story-no-key"]');

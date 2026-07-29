@@ -493,7 +493,7 @@ export function renderDictionaryLessons(
   });
 }
 
-export async function renderDictionary(state, dependencies) {
+export async function renderDictionary(state, dependencies, options = {}, context = {}) {
   const { CONTENT_INDEX, ensureLesson } = dependencies;
 
   const content = $('#srs-body');
@@ -504,6 +504,8 @@ export async function renderDictionary(state, dependencies) {
   if (CONTENT_INDEX && ensureLesson) {
     await Promise.all(CONTENT_INDEX.map((ch) => ensureLesson(ch.id).catch(() => null)));
   }
+
+  if (context?.signal?.aborted) return;
 
   const presentTopics = new Set();
   if (dependencies.LESSONS) {

@@ -3,25 +3,34 @@
 import { db, STORES } from './src/db.js';
 import { broadcastSessionEnded } from './src/tab-sync.js';
 
+let sessionPersistenceGeneration = 0;
+let sessionSaveQueue = Promise.resolve();
+
 export async function saveSessionToDB(sessionData) {
   if (!db) return;
-  try {
-    if (typeof db.putRecord === 'function') {
-      await db.putRecord(STORES.ACTIVE_SESSION, {
-        id: 'current',
-        data: sessionData,
-        updatedAt: Date.now(),
-      });
-    } else if (typeof db.set === 'function') {
-      await db.set(STORES.ACTIVE_SESSION, 'current', {
-        id: 'current',
-        data: sessionData,
-        updatedAt: Date.now(),
-      });
-    }
-  } catch (err) {
-    console.warn('[SessionManager] Failed to save active session to DB:', err);
-  }
+  const currentGen = sessionPersistenceGeneration;
+  sessionSaveQueue = sessionSaveQueue
+    .catch(() => undefined)
+    .then(async () => {
+      if (currentGen !== sessionPersistenceGeneration) {
+        return;
+      }
+      try {
+        const record = {
+          id: 'current',
+          data: sessionData,
+          updatedAt: Date.now(),
+        };
+        if (typeof db.putRecord === 'function') {
+          await db.putRecord(STORES.ACTIVE_SESSION, record);
+        } else if (typeof db.set === 'function') {
+          await db.set(STORES.ACTIVE_SESSION, 'current', record);
+        }
+      } catch (err) {
+        console.warn('[SessionManager] Failed to save active session to DB:', err);
+      }
+    });
+  return sessionSaveQueue;
 }
 
 export async function loadSessionFromDB() {
@@ -36,6 +45,7 @@ export async function loadSessionFromDB() {
 }
 
 export async function clearSessionFromDB() {
+  sessionPersistenceGeneration++;
   broadcastSessionEnded();
   if (!db || typeof db.delete !== 'function') return;
   try {
@@ -385,7 +395,8 @@ class SessionManager {
   toSerializableState() {
     return {
       queue: this.queue.map((item) => ({
-        card: item.card,
+        cardId: item.card?.id || item.cardId,
+        card: item.card?.id ? undefined : item.card,
         forcedMode: item.forcedMode,
         sessionLapses: item.sessionLapses,
         isFirstAttempt: item.isFirstAttempt,
@@ -396,11 +407,73 @@ class SessionManager {
     };
   }
 
-  restoreFromSerializableState(serialized) {
-    if (!serialized || !Array.isArray(serialized.queue)) return;
-    this.queue = serialized.queue;
-    this.stats = { ...serialized.stats };
-    this.currentIndex = serialized.currentIndex || 0;
+  restoreFromSerializableState(serialized, cardsMap = null) {
+    if (!serialized || !Array.isArray(serialized.queue)) return false;
+
+    if (!cardsMap && Array.isArray(this.queue) && this.queue.length > 0) {
+      const fallbackMap = new Map();
+      this.queue.forEach((item) => {
+        const cardObj = item?.card || item;
+        if (cardObj && cardObj.id) fallbackMap.set(cardObj.id, cardObj);
+      });
+      cardsMap = fallbackMap;
+    }
+
+    const restoredQueue = [];
+
+    for (const savedItem of serialized.queue) {
+      const cardId = savedItem.cardId || savedItem.card?.id;
+      let card =
+        typeof savedItem.card === 'object' && savedItem.card !== null ? savedItem.card : null;
+
+      if (cardsMap && cardId) {
+        const actualCard =
+          typeof cardsMap.get === 'function' ? cardsMap.get(cardId) : cardsMap[cardId];
+        if (actualCard) {
+          card = actualCard;
+        }
+      }
+
+      if (!card) {
+        // Skipped missing card per refinement #2
+        continue;
+      }
+
+      restoredQueue.push({
+        card,
+        forcedMode: savedItem.forcedMode || null,
+        sessionLapses: savedItem.sessionLapses || 0,
+        isFirstAttempt: savedItem.isFirstAttempt !== false,
+        completed: savedItem.completed === true,
+      });
+    }
+
+    if (restoredQueue.length === 0) {
+      return false;
+    }
+
+    this.queue = restoredQueue;
+    this.currentIndex = Math.min(serialized.currentIndex || 0, restoredQueue.length - 1);
+
+    const total = restoredQueue.length;
+    const reviewed = restoredQueue.filter((item) => item.completed).length;
+    const remaining = total - reviewed;
+    const relearned = restoredQueue.filter((item) => item.sessionLapses > 0).length;
+    const perfect = restoredQueue.filter(
+      (item) => item.completed && item.sessionLapses === 0
+    ).length;
+    const attempted = restoredQueue.filter((item) => !item.isFirstAttempt).length;
+
+    this.stats = {
+      total,
+      reviewed,
+      attempted: Math.max(attempted, perfect + relearned),
+      perfect,
+      relearned,
+      remaining,
+    };
+
+    return true;
   }
 }
 
