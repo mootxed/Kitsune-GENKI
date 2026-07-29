@@ -2,7 +2,6 @@
 
 /* ===== CSS Variables & Themes ===== */
 :root,
-
 [data-theme='light'] {
   --orange: #ff4b2b;
   --orange-dark: #e63946;

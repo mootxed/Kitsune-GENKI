@@ -63,8 +63,12 @@
 }
 
 @keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 .srp-header {
@@ -112,13 +116,21 @@
   color: #991b1b;
 }
 
-.srp-explanation, .srp-examples, .srp-breakdown, .srp-mnemonic-text, .srp-quiz {
+.srp-explanation,
+.srp-examples,
+.srp-breakdown,
+.srp-mnemonic-text,
+.srp-quiz {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.srp-explanation h4, .srp-examples h4, .srp-breakdown h4, .srp-quiz h4, .srp-comparison h4 {
+.srp-explanation h4,
+.srp-examples h4,
+.srp-breakdown h4,
+.srp-quiz h4,
+.srp-comparison h4 {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
@@ -134,7 +146,8 @@
   font-size: 0.9em;
 }
 
-.srp-comparison-table th, .srp-comparison-table td {
+.srp-comparison-table th,
+.srp-comparison-table td {
   padding: 8px 10px;
   border: 1px solid var(--border, #e2e8f0);
   text-align: left;
@@ -197,8 +210,12 @@
   border-radius: 4px;
 }
 
-.srp-quiz-result.correct { color: #15803d; }
-.srp-quiz-result.incorrect { color: #b91c1c; }
+.srp-quiz-result.correct {
+  color: #15803d;
+}
+.srp-quiz-result.incorrect {
+  color: #b91c1c;
+}
 
 .srp-footer {
   margin-top: 20px;
@@ -208,7 +225,8 @@
   justify-content: flex-end;
 }
 
-.srp-loading, .srp-error {
+.srp-loading,
+.srp-error {
   padding: 20px;
   text-align: center;
 }
