@@ -98,12 +98,18 @@ export function submitReview(card, quality, state, context = null) {
       };
     }
 
+    if (sessionManager) {
+      sessionManager.completeSupplementalPractice(card.id, {
+        correct: quality !== SRS.Quality.Again,
+      });
+    }
+
     // Supplemental practice: FSRS schedule / state IS NOT MUTATED and no SRS review event is stored
     const submitResult = {
       accepted: false,
       supplementalAccepted: true,
       firstAttempt: false,
-      cardCompleted: false,
+      cardCompleted: true,
       reviewEvent: null,
       xpEligible: false,
       quality,

@@ -559,3 +559,11 @@ export function renderPostReviewSenseiActions({
 
   container.append(senseiRow);
 }
+
+/**
+ * Очищает контейнеры кнопок AI Сенсея.
+ */
+export function clearPostReviewSenseiActions() {
+  document.getElementById('sensei-post-review-actions')?.replaceChildren();
+  document.getElementById('review-feedback-actions')?.replaceChildren();
+}

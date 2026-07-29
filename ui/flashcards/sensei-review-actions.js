@@ -75,13 +75,13 @@ export function shouldShowSenseiAction(snapshot) {
   if (hasError && isDrawing) {
     actions.push({
       actionType: 'explain_more',
-      reason: 'error',
+      reason: 'writing_guidance',
       label: '📖 Объяснить написание',
     });
     if (isLeech) {
       actions.push({
         actionType: 'mnemonic',
-        reason: 'error',
+        reason: 'writing_guidance',
         label: '🧠 Мнемоника',
       });
     }
@@ -90,11 +90,12 @@ export function shouldShowSenseiAction(snapshot) {
 
   // Приоритет 2: hint или медленный ответ при fragile/leech
   if (hintUsed || isSlowFragile) {
-    const reason = hintUsed
+    const baseReason = hintUsed
       ? 'hint_used'
       : responseTimeBand === 'slow'
         ? 'slow_answer'
         : 'recent_lapse';
+    const reason = isDrawing ? 'writing_guidance' : baseReason;
     actions.push({
       actionType: 'explain_more',
       reason,

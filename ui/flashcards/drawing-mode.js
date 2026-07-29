@@ -7,9 +7,13 @@ import { localCharDataLoader } from '../../src/kanji-loader.js';
 import { getAllKanji } from './mode-selector.js';
 import { markReviewAnswered, submitReview } from './review-fsrs.js';
 import { adaptDrawingContext } from './review-context-adapters.js';
-import { renderPostReviewSenseiActions } from './sensei-review-panel.js';
+import {
+  renderPostReviewSenseiActions,
+  clearPostReviewSenseiActions,
+} from './sensei-review-panel.js';
 import { shouldShowSenseiAction } from './sensei-review-actions.js';
 import { activeReviewAIContext, clearActiveReviewAIContext } from './state.js';
+import { lockCurrentReviewUI } from './card-modes.js';
 
 import {
   kanjiSequence,
@@ -67,6 +71,9 @@ export function initDrawingMode(
   renderFlashFn,
   renderMultipleChoiceModeFn
 ) {
+  const reviewedCard = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+  let reviewResolved = false;
+
   const { save, XP_CARD, appAddXP, updateSrsBadge, markActivity, toast } = dependencies;
 
   const target = document.getElementById('kanji-writer-target');
@@ -99,7 +106,7 @@ export function initDrawingMode(
   // Если в слове нет кандзи - переключаемся на режим множественного выбора
   if (!kanjiSequence || kanjiSequence.length === 0) {
     console.warn('[initDrawingMode] No kanji found, switching to multiple choice mode');
-    const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+    const card = reviewedCard;
     const word = wordById(card.id, dependencies.LESSONS);
 
     if (word && typeof renderMultipleChoiceModeFn === 'function') {
@@ -172,10 +179,14 @@ export function initDrawingMode(
         }
 
         // Все кандзи нарисованы
+        if (reviewResolved) return;
+        reviewResolved = true;
+        lockCurrentReviewUI();
+
         const quality = SRS.qualityFromDrawingMistakes(totalDrawingMistakes, {
           hintUsed: drawingHintUsed,
         });
-        const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+        const card = reviewedCard;
         markReviewAnswered(card.id);
 
         const resultText =

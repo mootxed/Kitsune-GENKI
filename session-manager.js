@@ -272,6 +272,32 @@ class SessionManager {
   }
 
   /**
+   * Завершает карточку в режиме supplemental practice без вызова FSRS алгоритма и review events.
+   * @param {string} cardId - ID карточки
+   * @param {Object} options - { correct: boolean }
+   */
+  completeSupplementalPractice(cardId, { correct = true } = {}) {
+    const item = this.queue.find((entry) => entry.card.id === cardId && !entry.completed);
+    if (!item) return false;
+
+    const wasFirst = item.isFirstAttempt;
+    item.completed = true;
+    item.isFirstAttempt = false;
+
+    if (wasFirst) {
+      this.stats.attempted++;
+      if (correct) {
+        this.stats.perfect++;
+      } else {
+        this.stats.relearned++;
+      }
+    }
+    this.stats.reviewed++;
+    this.stats.remaining = Math.max(0, this.stats.remaining - 1);
+    return true;
+  }
+
+  /**
    * Откинуть карточку назад в очереди
    * @private
    * @param {number} currentIndex - текущий индекс карточки

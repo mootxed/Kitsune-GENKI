@@ -43,8 +43,37 @@ import {
   adaptSentenceBuildingContext,
   adaptContextProductionContext,
 } from './review-context-adapters.js';
-import { renderPostReviewSenseiActions } from './sensei-review-panel.js';
+import {
+  renderPostReviewSenseiActions,
+  clearPostReviewSenseiActions,
+} from './sensei-review-panel.js';
 import { shouldShowSenseiAction } from './sensei-review-actions.js';
+
+export function lockCurrentReviewUI() {
+  const container = document.getElementById('srs-body');
+  if (container) {
+    container.querySelectorAll('button, input, select').forEach((el) => {
+      el.disabled = true;
+      el.style.pointerEvents = 'none';
+    });
+  }
+  document
+    .querySelectorAll(
+      '.word-chip, .srs-kana-key, .quiz-option-btn, .typing-check, .srs-keyboard-backspace, #sentence-check-btn, #sentence-clear-btn'
+    )
+    .forEach((el) => {
+      el.disabled = true;
+      el.style.pointerEvents = 'none';
+      el.onclick = null;
+    });
+  const input = document.getElementById('typing-input');
+  if (input) {
+    input.disabled = true;
+    const newInput = input.cloneNode(true);
+    newInput.disabled = true;
+    input.parentNode?.replaceChild(newInput, input);
+  }
+}
 
 function finishReviewStep(result, state, dependencies) {
   const renderFlashFn = dependencies?.renderFlashFn || dependencies?.renderFlash;
@@ -53,6 +82,8 @@ function finishReviewStep(result, state, dependencies) {
   const XP_CARD = dependencies?.XP_CARD;
   const markActivity = dependencies?.markActivity;
   const updateSrsBadge = dependencies?.updateSrsBadge;
+
+  lockCurrentReviewUI();
 
   if (!sessionManager) setFlashIdx(flashIdx + 1);
 
@@ -327,6 +358,9 @@ export function generateParticleQuiz(particle, lessonData, state, LESSONS) {
 export function renderTypingMode(word, state, dependencies, modeConfig = {}, _renderFlashFn) {
   const { showCompletionScreen, nav } = dependencies;
 
+  const reviewedCard = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+  let reviewResolved = false;
+
   const body = $('#srs-body');
   const displayWriting = word.writing;
   const displayTranslation = word.translation;
@@ -388,7 +422,7 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
       </div>
     </div>`;
 
-  const reviewCardId = (sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx])?.id;
+  const reviewCardId = reviewedCard?.id;
   startReviewTiming(reviewCardId || word.id, typingMode);
 
   const input = $('#typing-input');
@@ -400,7 +434,7 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
 
   $$('.srs-kana-key').forEach((btn) => {
     btn.onclick = () => {
-      if (isChecked) return;
+      if (isChecked || reviewResolved) return;
       const letter = btn.dataset.letter;
       input.value += letter;
     };
@@ -408,18 +442,20 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
 
   if (backspaceBtn) {
     backspaceBtn.onclick = () => {
-      if (isChecked) return;
+      if (isChecked || reviewResolved) return;
       input.value = input.value.slice(0, -1);
     };
   }
 
   const handleCheck = () => {
-    if (isChecked) return;
+    if (isChecked || reviewResolved) return;
 
     const userAnswer = normalizeKanaAnswer(input.value);
     const isCorrect = acceptedAnswers.some((answer) => answer === userAnswer);
 
     if (isCorrect) {
+      reviewResolved = true;
+      lockCurrentReviewUI();
       input.classList.add('correct');
       input.classList.remove('incorrect', 'shake-error');
 
@@ -451,10 +487,10 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
 
         isChecked = false;
       } else {
+        reviewResolved = true;
+        lockCurrentReviewUI();
         input.classList.add('incorrect');
         input.classList.remove('correct', 'shake-error');
-        input.disabled = true;
-        checkBtn.disabled = true;
 
         const allAnswers = acceptedAnswers.join(' или ');
         hintMessage.innerHTML = `<p style="color: var(--danger); margin: 8px 0;">❌ Неправильно</p><p style="margin: 4px 0;">Правильный ответ: <strong style="color: var(--primary);">${allAnswers}</strong></p>`;
@@ -472,7 +508,7 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
 
   // Typing mode handleRating: aiAttempt строится ДО submitReview
   const handleRating = (quality, _userAnswer, _typingMistakes, _hintUsed, _firstAttemptCorrect) => {
-    const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+    const card = reviewedCard;
 
     const aiAttempt = adaptTypingContext({
       word,
@@ -512,6 +548,7 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
     exitBtn.onclick = (e) => {
       e.preventDefault();
       e.stopImmediatePropagation();
+      clearPostReviewSenseiActions();
 
       const tabbar = document.querySelector('.tabbar');
       if (tabbar) tabbar.style.display = '';
@@ -537,6 +574,7 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
             ],
             onContinue: () => {
               setSessionManager(null);
+              clearPostReviewSenseiActions();
               flashCtx ? nav('chapter', flashCtx) : nav('srs');
             },
           });
@@ -544,6 +582,7 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
         }
       }
       setSessionManager(null);
+      clearPostReviewSenseiActions();
       flashCtx ? nav('chapter', flashCtx) : nav('srs');
     };
   }
@@ -596,7 +635,10 @@ function formatRequiredForm(rf) {
 export function renderContextProductionMode(word, state, dependencies, renderFlashFn) {
   const { showCompletionScreen, nav } = dependencies;
 
-  const currentCard = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+  const reviewedCard = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+  let reviewResolved = false;
+
+  const currentCard = reviewedCard;
   const task = selectProductionTask(word, currentCard, state.reviewEvents || []);
 
   if (!task) {
@@ -663,7 +705,7 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
       </div>
     </div>`;
 
-  const reviewCardId = (sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx])?.id;
+  const reviewCardId = reviewedCard?.id;
   startReviewTiming(reviewCardId || word.id, CARD_MODES.CONTEXT_PRODUCTION);
 
   const input = $('#typing-input');
@@ -675,20 +717,20 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
 
   $$('.srs-kana-key').forEach((btn) => {
     btn.onclick = () => {
-      if (isChecked) return;
+      if (isChecked || reviewResolved) return;
       input.value += btn.dataset.letter;
     };
   });
 
   if (backspaceBtn) {
     backspaceBtn.onclick = () => {
-      if (isChecked) return;
+      if (isChecked || reviewResolved) return;
       input.value = input.value.slice(0, -1);
     };
   }
 
   const handleRating = (quality, _userAnswer, _typingMistakes, _hintUsed, _firstAttemptCorrect) => {
-    const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+    const card = reviewedCard;
 
     const cpAttempt = adaptContextProductionContext({
       task,
@@ -711,11 +753,13 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
   };
 
   const handleCheck = () => {
-    if (isChecked) return;
+    if (isChecked || reviewResolved) return;
 
     const evaluation = evaluateProductionAnswer(input.value, task);
 
     if (evaluation.correct) {
+      reviewResolved = true;
+      lockCurrentReviewUI();
       input.classList.add('correct');
       input.classList.remove('incorrect', 'shake-error');
       isChecked = true;
@@ -756,10 +800,10 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
 
         isChecked = false;
       } else {
+        reviewResolved = true;
+        lockCurrentReviewUI();
         input.classList.add('incorrect');
         input.classList.remove('correct', 'shake-error');
-        input.disabled = true;
-        if (checkBtn) checkBtn.disabled = true;
         isChecked = true;
 
         const allAnswers = acceptedAnswers.join(' / ');
@@ -798,6 +842,7 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
     exitBtn.onclick = (e) => {
       e.preventDefault();
       e.stopImmediatePropagation();
+      clearPostReviewSenseiActions();
 
       const tabbar = document.querySelector('.tabbar');
       if (tabbar) tabbar.style.display = '';
@@ -823,6 +868,7 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
             ],
             onContinue: () => {
               setSessionManager(null);
+              clearPostReviewSenseiActions();
               flashCtx ? nav('chapter', flashCtx) : nav('srs');
             },
           });
@@ -830,6 +876,7 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
         }
       }
       setSessionManager(null);
+      clearPostReviewSenseiActions();
       flashCtx ? nav('chapter', flashCtx) : nav('srs');
     };
   }
@@ -843,6 +890,9 @@ export function renderMultipleChoiceMode(
   _renderFlashFn
 ) {
   const { showCompletionScreen, nav, LESSONS } = dependencies;
+
+  const reviewedCard = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+  let reviewResolved = false;
 
   const body = $('#srs-body');
   const displayTranslation = word.translation;
@@ -889,7 +939,7 @@ export function renderMultipleChoiceMode(
       </div>
     </div>`;
 
-  const reviewCardId = (sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx])?.id;
+  const reviewCardId = reviewedCard?.id;
   startReviewTiming(reviewCardId || word.id, modeConfig.mode || CARD_MODES.MULTIPLE_CHOICE);
 
   const mcIncorrectAttempts = [];
@@ -901,7 +951,7 @@ export function renderMultipleChoiceMode(
     _mistakeCount,
     _firstAttemptCorrect
   ) => {
-    const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+    const card = reviewedCard;
     const mcMode = modeConfig.mode || CARD_MODES.MULTIPLE_CHOICE;
 
     const mcAttempt = adaptMultipleChoiceContext({
@@ -928,14 +978,16 @@ export function renderMultipleChoiceMode(
 
   $$('.quiz-option-btn').forEach((btn) => {
     btn.onclick = () => {
-      if (btn.disabled) return;
+      if (btn.disabled || reviewResolved) return;
 
       const selectedWordId = btn.dataset.wordId;
       const isCorrect = selectedWordId === word.id;
 
       if (isCorrect) {
+        if (reviewResolved) return;
+        reviewResolved = true;
         btn.classList.add('correct');
-        btn.disabled = true;
+        lockCurrentReviewUI();
 
         const quality = SRS.qualityFromMistakes(mistakeCount);
         markReviewAnswered(reviewCardId || word.id);
@@ -956,7 +1008,9 @@ export function renderMultipleChoiceMode(
         });
 
         if (mistakeCount >= 2) {
-          $$('.quiz-option-btn').forEach((b) => (b.disabled = true));
+          if (reviewResolved) return;
+          reviewResolved = true;
+          lockCurrentReviewUI();
 
           let correctText = null;
           $$('.quiz-option-btn').forEach((b) => {
@@ -986,6 +1040,7 @@ export function renderMultipleChoiceMode(
     exitBtn.onclick = (e) => {
       e.preventDefault();
       e.stopImmediatePropagation();
+      clearPostReviewSenseiActions();
 
       const tabbar = document.querySelector('.tabbar');
       if (tabbar) tabbar.style.display = '';
@@ -1011,6 +1066,7 @@ export function renderMultipleChoiceMode(
             ],
             onContinue: () => {
               setSessionManager(null);
+              clearPostReviewSenseiActions();
               flashCtx ? nav('chapter', flashCtx) : nav('srs');
             },
           });
@@ -1018,6 +1074,7 @@ export function renderMultipleChoiceMode(
         }
       }
       setSessionManager(null);
+      clearPostReviewSenseiActions();
       flashCtx ? nav('chapter', flashCtx) : nav('srs');
     };
   }
@@ -1025,6 +1082,10 @@ export function renderMultipleChoiceMode(
 
 export function renderSentenceBuilding(particleCard, state, dependencies, renderFlashFn) {
   const { showCompletionScreen, nav, LESSONS } = dependencies;
+
+  const reviewedCard =
+    particleCard || (sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx]);
+  let reviewResolved = false;
 
   const body = $('#srs-body');
   let mistakeCount = 0;
@@ -1102,6 +1163,7 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
 
     $$('#sentence-word-pool .word-chip.available').forEach((chip) => {
       chip.onclick = () => {
+        if (reviewResolved) return;
         const word = chip.textContent;
         userSentence.push(word);
         updateUI();
@@ -1110,6 +1172,7 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
 
     $$('#sentence-user-area .word-chip.selected').forEach((chip) => {
       chip.onclick = () => {
+        if (reviewResolved) return;
         const index = parseInt(chip.dataset.index);
         userSentence.splice(index, 1);
         updateUI();
@@ -1157,6 +1220,7 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
 
   if (clearBtn) {
     clearBtn.onclick = () => {
+      if (reviewResolved) return;
       userSentence = [];
       updateUI();
       if (feedback) {
@@ -1167,7 +1231,7 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
   }
 
   const handleRating = (quality, _quizData, _userSentence, _mistakeCount) => {
-    const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+    const card = reviewedCard;
 
     const sbAttempt = adaptSentenceBuildingContext({
       quizData: _quizData ?? {
@@ -1192,6 +1256,8 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
 
   if (checkBtn) {
     checkBtn.onclick = () => {
+      if (reviewResolved) return;
+
       if (userSentence.length === 0) {
         if (feedback) {
           feedback.textContent = '⚠️ Составьте предложение из слов';
@@ -1206,6 +1272,8 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
       const isCorrect = userAnswer === correctAnswer;
 
       if (isCorrect) {
+        reviewResolved = true;
+        lockCurrentReviewUI();
         if (feedback) {
           feedback.innerHTML = '✅ Правильно!';
           feedback.className = 'sentence-feedback correct';
@@ -1240,6 +1308,8 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
           }
           announce(`Неправильно. Попробуйте ещё раз. Подсказка: ${correctWords[0]} — первое слово`);
         } else {
+          reviewResolved = true;
+          lockCurrentReviewUI();
           if (feedback) {
             feedback.innerHTML = `❌ Неправильно.<br>Правильный порядок: <strong lang="ja">${correctAnswer}</strong>`;
             feedback.className = 'sentence-feedback incorrect';
@@ -1247,8 +1317,6 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
           }
           announce(`Неправильно. Правильный порядок: ${correctAnswer}`);
 
-          if (checkBtn) checkBtn.disabled = true;
-          if (clearBtn) clearBtn.disabled = true;
           markReviewAnswered(particleCard.id);
 
           setTimeout(
@@ -1271,6 +1339,7 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
     exitBtn.onclick = (e) => {
       e.preventDefault();
       e.stopImmediatePropagation();
+      clearPostReviewSenseiActions();
 
       const tabbar = document.querySelector('.tabbar');
       if (tabbar) tabbar.style.display = '';
@@ -1296,6 +1365,7 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
             ],
             onContinue: () => {
               setSessionManager(null);
+              clearPostReviewSenseiActions();
               flashCtx ? nav('chapter', flashCtx) : nav('srs');
             },
           });
@@ -1303,6 +1373,7 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
         }
       }
       setSessionManager(null);
+      clearPostReviewSenseiActions();
       flashCtx ? nav('chapter', flashCtx) : nav('srs');
     };
   }
@@ -1310,6 +1381,10 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
 
 export function renderParticleQuizMode(particleCard, state, dependencies, renderFlashFn) {
   const { showCompletionScreen, nav, LESSONS } = dependencies;
+
+  const reviewedCard =
+    particleCard || (sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx]);
+  let reviewResolved = false;
 
   const body = $('#srs-body');
   let mistakeCount = 0;
@@ -1382,7 +1457,7 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
   const pqIncorrectAttempts = [];
 
   const handleRating = (quality, _selectedParticle, _mistakeCount) => {
-    const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+    const card = reviewedCard;
 
     const pqAttempt = adaptParticleQuizContext({
       quizData: { sentence, correctParticle, options, russianHint },
@@ -1404,14 +1479,16 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
 
   $$('.quiz-option-btn').forEach((btn) => {
     btn.onclick = () => {
-      if (btn.disabled) return;
+      if (btn.disabled || reviewResolved) return;
 
       const selectedParticle = btn.dataset.particle;
       const isCorrect = selectedParticle === correctParticle;
 
       if (isCorrect) {
+        if (reviewResolved) return;
+        reviewResolved = true;
         btn.classList.add('correct');
-        btn.disabled = true;
+        lockCurrentReviewUI();
 
         const quality = SRS.qualityFromMistakes(mistakeCount);
         markReviewAnswered(particleCard.id);
@@ -1430,7 +1507,9 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
         });
 
         if (mistakeCount >= 2) {
-          $$('.quiz-option-btn').forEach((b) => (b.disabled = true));
+          if (reviewResolved) return;
+          reviewResolved = true;
+          lockCurrentReviewUI();
 
           $$('.quiz-option-btn').forEach((b) => {
             if (b.dataset.particle === correctParticle) {
@@ -1452,6 +1531,7 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
     exitBtn.onclick = (e) => {
       e.preventDefault();
       e.stopImmediatePropagation();
+      clearPostReviewSenseiActions();
 
       const tabbar = document.querySelector('.tabbar');
       if (tabbar) tabbar.style.display = '';
@@ -1477,6 +1557,7 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
             ],
             onContinue: () => {
               setSessionManager(null);
+              clearPostReviewSenseiActions();
               flashCtx ? nav('chapter', flashCtx) : nav('srs');
             },
           });
@@ -1484,6 +1565,7 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
         }
       }
       setSessionManager(null);
+      clearPostReviewSenseiActions();
       flashCtx ? nav('chapter', flashCtx) : nav('srs');
     };
   }

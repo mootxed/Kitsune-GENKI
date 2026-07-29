@@ -23,6 +23,9 @@ import { handleExplainReviewError } from '../src/ai/handlers/explain-review-erro
 import { importReviewExplanationToChat } from '../ui/chat.js';
 import { submitReview } from '../ui/flashcards/review-fsrs.js';
 import { SRS } from '../srs.js';
+import { SessionManager } from '../session-manager.js';
+import { lockCurrentReviewUI } from '../ui/flashcards/card-modes.js';
+import { clearPostReviewSenseiActions } from '../ui/flashcards/sensei-review-panel.js';
 import { clearActiveReviewAIContext } from '../ui/flashcards/state.js';
 
 describe('AI Sensei & Review Lifecycle Fixes', () => {
@@ -358,6 +361,134 @@ describe('AI Sensei & Review Lifecycle Fixes', () => {
       expect(msg).not.toBeNull();
       expect(state.chatHistory).toHaveLength(1);
       expect(state.chatHistory[0].artifact._importedFromReviewPanel).toBe(true);
+    });
+  });
+
+  describe('Blocker Fixes & Safeguards', () => {
+    it('Blocker 1: handleExplainReviewError input schema preserves incorrectAttempts array', async () => {
+      let sentInput = null;
+      const snapshot = {
+        schemaVersion: 1,
+        item: { writing: '食べる', reading: 'たべる', meanings: ['есть'], partOfSpeech: [] },
+        skill: 'recall',
+        mode: 'typing',
+        task: { prompt: 'Напишите слово' },
+        answer: {
+          expectedAnswers: ['食べる'],
+          userAnswer: '食べる',
+          incorrectAttempts: [
+            { rawAnswer: 'たべます', normalizedAnswer: 'たべます', timestamp: 123456 },
+          ],
+        },
+        result: {
+          outcome: 'correct',
+          mistakes: 1,
+          hintUsed: false,
+          firstAttemptCorrect: false,
+          responseTimeBand: 'normal',
+        },
+        memoryContext: { stage: 'developing', isLeech: false, recentLapse: false },
+      };
+
+      const mockRequest = async (messages) => {
+        sentInput = JSON.stringify(messages);
+        return JSON.stringify({
+          type: 'review_explanation',
+          diagnosis: { category: 'no_error', message: 'Разбор' },
+          explanation: 'Подробное объяснение',
+          comparison: [
+            { form: '食べる', reading: 'たべる', role: 'Словарная форма', isExpected: true },
+          ],
+          examples: [{ japanese: 'ご飯を食べる。', translation: 'Есть еду.' }],
+          quiz: {
+            questions: [
+              {
+                id: 'q1',
+                type: 'usage',
+                prompt: 'Вопрос',
+                topic: 'Тема',
+                options: [
+                  { text: 'Вариант 1', isCorrect: true },
+                  { text: 'Вариант 2', isCorrect: false },
+                ],
+                explanation: 'Объяснение',
+              },
+            ],
+          },
+        });
+      };
+
+      const res = await handleExplainReviewError({
+        input: { attempt: snapshot, localDiagnosis: null, reason: 'error' },
+        request: mockRequest,
+      });
+
+      expect(res.success).toBe(true);
+      expect(sentInput).toContain('incorrectAttempts');
+      expect(sentInput).toContain('たべます');
+    });
+
+    it('Blocker 3: SessionManager.completeSupplementalPractice completes card without FSRS and advances getNextCard queue', () => {
+      const card1 = { id: 'c1', state: 1 };
+      const card2 = { id: 'c2', state: 1 };
+      const manager = new SessionManager([card1, card2]);
+
+      expect(manager.getNextCard().id).toBe('c1');
+
+      const ok = manager.completeSupplementalPractice('c1', { correct: true });
+      expect(ok).toBe(true);
+      expect(manager.getNextCard().id).toBe('c2');
+      expect(manager.getStats().reviewed).toBe(1);
+      expect(manager.getStats().perfect).toBe(1);
+      expect(manager.getStats().remaining).toBe(1);
+    });
+
+    it('Blocker 2 UI Lock: lockCurrentReviewUI disables controls in #srs-body', () => {
+      document.body.innerHTML = `
+        <div id="srs-body">
+          <button class="quiz-option-btn" id="opt-1">Option 1</button>
+          <button class="quiz-option-btn" id="opt-2">Option 2</button>
+          <input id="typing-input" value="test" />
+          <button id="typing-check">Check</button>
+        </div>
+      `;
+
+      lockCurrentReviewUI();
+
+      expect(document.getElementById('opt-1').disabled).toBe(true);
+      expect(document.getElementById('opt-2').disabled).toBe(true);
+      expect(document.getElementById('typing-check').disabled).toBe(true);
+    });
+
+    it('Lingering Actions Cleanup: clearPostReviewSenseiActions empties containers', () => {
+      document.body.innerHTML = `
+        <div id="sensei-post-review-actions"><button id="old-btn">Old</button></div>
+        <div id="review-feedback-actions"><button id="old-btn-2">Old 2</button></div>
+      `;
+
+      clearPostReviewSenseiActions();
+
+      expect(document.getElementById('sensei-post-review-actions').children.length).toBe(0);
+      expect(document.getElementById('review-feedback-actions').children.length).toBe(0);
+    });
+
+    it('Drawing Guidance: shouldShowSenseiAction returns reason: writing_guidance for drawing error', () => {
+      const snapshot = {
+        mode: 'drawing',
+        task: { prompt: 'Нарисуйте 日' },
+        result: {
+          outcome: 'incorrect',
+          mistakes: 2,
+          hintUsed: false,
+          firstAttemptCorrect: false,
+          responseTimeBand: 'normal',
+        },
+        memoryContext: { stage: 'developing', isLeech: false, recentLapse: false },
+      };
+
+      const decision = shouldShowSenseiAction(snapshot);
+      expect(decision.show).toBe(true);
+      expect(decision.actions[0].reason).toBe('writing_guidance');
     });
   });
 });

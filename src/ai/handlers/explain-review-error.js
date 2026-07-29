@@ -14,7 +14,7 @@
 import { z } from 'zod';
 import { ReviewExplanationSchema, validateReviewExplanation } from '../schemas.js';
 import { runStructuredHandler } from '../handler-runner.js';
-import { DIAGNOSIS_CATEGORIES } from '../review-attempt-schema.js';
+import { DIAGNOSIS_CATEGORIES, IncorrectAttemptSchema } from '../review-attempt-schema.js';
 
 const ExplainReviewErrorInputSchema = z
   .object({
@@ -39,6 +39,7 @@ const ExplainReviewErrorInputSchema = z
         userAnswer: z.string().nullish(),
         selectedOption: z.string().nullish(),
         correctOption: z.string().nullish(),
+        incorrectAttempts: z.array(IncorrectAttemptSchema).default([]),
       }),
 
       result: z.object({
@@ -66,6 +67,56 @@ const ExplainReviewErrorInputSchema = z
   .strip();
 
 function buildSystemPrompt(localDiagnosis, reason = 'error', attempt = null) {
+  if (reason === 'writing_guidance') {
+    return `Ты — AI Сенсей, учитель японского языка. Пользователь тренировал написание иероглифа/слова.
+Дай руководство по написанию СТРОГО на русском языке.
+НЕ утверждай, что пользователь совершил конкретную ошибку в штрихе (данные отдельных штрихов не передаются).
+Объясни:
+- порядок штрихов
+- ключевые элементы (радикалы/графемы) и компоненты
+- визуальную мнемонику для запоминания формы
+- типичные ошибки при написании вообще.
+
+Установи category: "no_error" в поле diagnosis.
+
+ОБЯЗАТЕЛЬНАЯ СТРУКТУРА ОТВЕТА (JSON):
+{
+  "type": "review_explanation",
+  "diagnosis": {
+    "category": "no_error",
+    "message": "Руководство по написанию и структуре слова/иероглифа"
+  },
+  "explanation": "Подробное руководство по порядку штрихов, элементам и мнемонике (2–5 предложений)",
+  "comparison": [
+    { "form": "Правильное написание", "reading": "чтение или null", "role": "Эталонная форма", "isExpected": true }
+  ],
+  "examples": [
+    { "japanese": "Пример использования.", "reading": null, "translation": "Перевод." }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "id": "q1",
+        "type": "kanji_confusion|reading|usage",
+        "prompt": "Вопрос на понимание структуры или применения",
+        "topic": "Тема",
+        "options": [{ "text": "Вариант", "isCorrect": true }, { "text": "Вариант 2", "isCorrect": false }],
+        "explanation": "Объяснение ответа"
+      }
+    ]
+  }
+}
+
+ДОПУСТИМЫЕ КАТЕГОРИИ ДИАГНОЗА:
+${DIAGNOSIS_CATEGORIES.join(', ')}
+
+ПРАВИЛА КВИЗА:
+- 1–3 вопроса на закрепление материала
+- Ровно один isCorrect: true в каждом вопросе
+
+Верни ТОЛЬКО валидный JSON без markdown-обёрток.`;
+  }
+
   const isNoError = reason !== 'error' || attempt?.result?.mistakes === 0;
 
   if (isNoError) {
