@@ -31,6 +31,7 @@ import {
 } from './state.js';
 
 export let activeSessionOrigin = null;
+let sessionCreatedAt = null;
 
 export function setSessionOrigin(origin) {
   activeSessionOrigin = origin;
@@ -55,6 +56,7 @@ export function abandonActiveSession() {
   setActivePracticeMode(null);
   clearActiveReviewAIContext();
   setSessionOrigin(null);
+  sessionCreatedAt = null;
   // flashCtx сохраняем — нужен для nav('chapter', flashCtx) после выхода
   return clearSessionFromDB();
 }
@@ -208,6 +210,10 @@ export function saveActiveSessionState() {
   const flashRevealed = getFlashRevealed();
   const flashCtx = getFlashCtx();
 
+  if (!sessionCreatedAt) {
+    sessionCreatedAt = Date.now();
+  }
+
   const sessionData = {
     schemaVersion: 1,
     sessionType: flashCtx ? 'chapter' : 'srs',
@@ -217,7 +223,7 @@ export function saveActiveSessionState() {
       chapterId: flashCtx || null,
       initialCardIds: flashQueue.map((c) => c.id || c),
     },
-    createdAt: Date.now(),
+    createdAt: sessionCreatedAt,
     updatedAt: Date.now(),
     managerState: manager.toSerializableState(),
     batcherState: batcher ? batcher.toSerializableState() : null,

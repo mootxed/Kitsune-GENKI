@@ -12,12 +12,18 @@ import { API } from './services.js';
 import { SRS } from './srs.js';
 import { SessionManager } from './session-manager.js';
 
-import { saveSessionToDB, loadSessionFromDB, clearSessionFromDB } from './session-manager.js';
+import {
+  saveSessionToDB,
+  loadSessionFromDB,
+  clearSessionFromDB,
+  validateSessionRecord,
+} from './session-manager.js';
 import { loadOpenRouterKeyFromDB } from './src/openrouter-key.js';
 import {
   saveActiveSessionState,
   restoreActiveSessionRecord,
   abandonActiveSession,
+  setSessionOrigin,
 } from './ui/flashcards/session.js';
 import { getSessionManager } from './ui/flashcards/state.js';
 import { showSessionRecoveryModal } from './ui/session-recovery-modal.js';
@@ -549,6 +555,11 @@ function setupRouter() {
       return;
     }
 
+    setSessionOrigin({
+      type: 'chapter',
+      chapterId,
+      initialCardIds: sessionCards.map((card) => card.id),
+    });
     saveActiveSessionState();
 
     // ТОЛЬКО ТЕПЕРЬ переключаем роутер, когда менеджер полностью готов!
@@ -599,6 +610,11 @@ function setupRouter() {
         return;
       }
 
+      setSessionOrigin({
+        type: 'srs',
+        chapterId: null,
+        initialCardIds: sessionCards.map((card) => card.id),
+      });
       saveActiveSessionState();
 
       // ТОЛЬКО ТЕПЕРЬ переключаем роутер, когда менеджер полностью готов!
@@ -717,7 +733,7 @@ function setupRouter() {
         <div class="stat-box" data-testid="stat-total"><div class="stat-num">${digest.durationText}</div><div class="stat-cap">Примерное время</div></div>
       </div>
       ${startBtnHtml}
-      <button class="btn-extra-review" id="srs-extra-review">➕ Практика без изменения расписания</button>
+      ${isSessionActive ? '' : '<button class="btn-extra-review" id="srs-extra-review">➕ Практика без изменения расписания</button>'}
     `;
 
     if (context?.signal?.aborted) return;
@@ -752,7 +768,7 @@ function setupRouter() {
 
     const extraBtn = $('#srs-extra-review');
     if (extraBtn) {
-      extraBtn.onclick = () => startExtraReview(state, dependencies);
+      extraBtn.onclick = () => startExtraReview(state, dependencies, renderFlash);
     }
   };
 
@@ -878,7 +894,11 @@ async function init() {
     // Проверка сохранённой незавершённой сессии
     try {
       const activeSession = await loadSessionFromDB();
-      if (activeSession && activeSession.managerState && !shouldShowOnboarding(state)) {
+      if (activeSession && !validateSessionRecord(activeSession)) {
+        // Повреждённая/несовместимая запись — тихо очищаем до показа модала
+        await clearSessionFromDB();
+        console.warn('[Init] Повреждённая запись active session очищена при старте');
+      } else if (activeSession && !shouldShowOnboarding(state)) {
         showSessionRecoveryModal(activeSession, {
           onResume: async () => {
             const dependencies = createDependencies();
@@ -896,8 +916,13 @@ async function init() {
             await clearSessionFromDB();
             if (sessionType === 'chapter' && chapterId && startChapterFlashcardsFn) {
               const due = dueCards(state.srs, chapterId);
-              const chapterCards = due && due.length > 0 ? due : allCards(state.srs, chapterId);
-              startChapterFlashcardsFn(chapterId, chapterCards);
+              if (!due || due.length === 0) {
+                // Нет due-карточек — возвращаем пользователя к главе без запуска сессии
+                toast('Нет карточек для повторения в этой главе');
+                nav('chapter', chapterId);
+                return;
+              }
+              startChapterFlashcardsFn(chapterId, due);
             } else if (startSrsSessionFn) {
               startSrsSessionFn();
             }
