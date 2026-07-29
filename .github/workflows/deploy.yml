@@ -38,18 +38,28 @@ jobs:
       - name: Check legal metadata & compliance
         run: npm run legal:check
 
-      - name: Build project
+      - name: Build project for E2E
         run: npm run build
-        env:
-          VITE_BASE: /KotoKitsu/
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+
+      - name: Print E2E environment diagnostics
+        run: |
+          echo "VITE_BASE: ${VITE_BASE:-(default /)}"
+          echo "dist/index.html script/link tags:"
+          grep -E '<(script|link)' dist/index.html || true
+          echo "Playwright baseURL: http://127.0.0.1:3000/"
 
       - name: Run E2E tests
         run: npm run test:e2e
         env:
           CI: true
+
+      - name: Build project for GitHub Pages
+        run: npm run build
+        env:
+          VITE_BASE: /KotoKitsu/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
