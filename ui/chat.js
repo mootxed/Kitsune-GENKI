@@ -772,8 +772,8 @@ export function getSenseiTab() {
  * @param {object} artifact — ReviewExplanation или MnemonicArtifact
  * @param {import('../src/ai/review-attempt-schema.js').ReviewAttemptSnapshot} snapshot
  */
-export function importReviewExplanationToChat(artifact, snapshot) {
-  if (!artifact || !snapshot) return;
+export function importReviewExplanationToChat(artifact, snapshot, state = null) {
+  if (!artifact || !snapshot) return null;
 
   const intent =
     artifact.type === 'mnemonic' ? AI_INTENTS.CREATE_MNEMONIC : AI_INTENTS.EXPLAIN_REVIEW_ERROR;
@@ -807,4 +807,8 @@ export function importReviewExplanationToChat(artifact, snapshot) {
   });
 
   chatHistory.push(chatMessage);
+  if (state) {
+    state.chatHistory = chatHistory;
+  }
+  return chatMessage;
 }

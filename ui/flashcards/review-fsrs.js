@@ -3,7 +3,12 @@
 import { markCardIntroduced } from '../../src/srs-limits.js';
 import { SRS } from '../../srs.js';
 import { adjustQualityByTime, isLeech, undoReviewEvent } from '../../src/card-behavior.js';
-import { modeCanSchedule, parseCardIdentity } from '../../src/knowledge-model.js';
+import { wordById } from '../../src/srs-helpers.js';
+import {
+  modeCanSchedule,
+  parseCardIdentity,
+  SUPPLEMENTAL_PRACTICE_MODES,
+} from '../../src/knowledge-model.js';
 import { compactReviewJournal, enqueueReviewLog } from '../../src/review-journal.js';
 import { buildReviewAttemptSnapshot } from '../../src/ai/review-context-builder.js';
 import {
@@ -80,15 +85,60 @@ export function submitReview(card, quality, state, context = null) {
   const srsCard = state.srs[card.id];
   const mode = activePracticeMode === 'preview' ? 'preview' : reviewContext.mode;
   if (!srsCard || !modeCanSchedule(srsCard, mode)) {
-    sessionManager?.skipCard(card.id);
-    return {
+    const isSupplemental = SUPPLEMENTAL_PRACTICE_MODES.includes(mode);
+    if (!isSupplemental) {
+      sessionManager?.skipCard(card.id);
+      return {
+        accepted: false,
+        firstAttempt: false,
+        cardCompleted: false,
+        reviewEvent: null,
+        xpEligible: false,
+        quality,
+      };
+    }
+
+    // Supplemental practice: FSRS schedule / state IS NOT MUTATED and no SRS review event is stored
+    const submitResult = {
       accepted: false,
+      supplementalAccepted: true,
       firstAttempt: false,
       cardCompleted: false,
       reviewEvent: null,
       xpEligible: false,
       quality,
     };
+
+    if (reviewContext.aiAttempt && srsCard) {
+      const identity = parseCardIdentity(srsCard);
+      const word =
+        _wordFromStateById(state, identity.itemId) ||
+        (activeReviewState ? _wordFromStateById(activeReviewState, identity.itemId) : null);
+      if (word) {
+        const cardSessionId =
+          typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const snapshot = buildReviewAttemptSnapshot({
+          card: srsCard,
+          word,
+          mode,
+          submitResult,
+          aiAttempt: reviewContext.aiAttempt,
+          srsCard,
+          reviewEvents: state.reviewEvents || [],
+          responseTimeMs: reviewContext.responseTimeMs ?? timedContext.responseTimeMs,
+        });
+        if (snapshot) {
+          const aiCtx = { snapshot, cardSessionId, attemptId: null, quizAnswers: {} };
+          setActiveReviewAIContext(aiCtx);
+          submitResult._snapshotReady = true;
+          submitResult._cardSessionId = cardSessionId;
+        }
+      }
+    }
+
+    return submitResult;
   }
 
   markCardIntroduced(srsCard);
@@ -162,11 +212,10 @@ export function submitReview(card, quality, state, context = null) {
     quality: adjustedQuality,
   };
 
-  // Строим AI-снапшот ТОЛЬКО при accepted review и достаточном task context.
-  // Не сохраняем в state приложения, не вызываем save.
+  // Строим AI-снапшот ТОЛЬКО при accepted/supplementalAccepted review и достаточном task context.
+  // Передаём previousCard (состояние ДО ответа) и журнал reviewEvents.
   if (result?.event && reviewContext.aiAttempt) {
     const { aiAttempt, mode: reviewMode, responseTimeMs } = reviewContext;
-    // Не создаём при технических режимах (проверка внутри builder)
     const word = activeReviewState ? _wordFromStateById(activeReviewState, identity.itemId) : null;
     if (word) {
       const cardSessionId =
@@ -174,19 +223,18 @@ export function submitReview(card, quality, state, context = null) {
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const snapshot = buildReviewAttemptSnapshot({
-        card: srsCard,
+        card: previousCard,
         word,
         mode: reviewMode || mode,
         submitResult,
         aiAttempt,
-        srsCard,
+        srsCard: previousCard,
+        reviewEvents: state.reviewEvents || [],
         responseTimeMs: responseTimeMs ?? timedContext.responseTimeMs,
       });
       if (snapshot) {
         const aiCtx = { snapshot, cardSessionId, attemptId: null, quizAnswers: {} };
         setActiveReviewAIContext(aiCtx);
-        // Рендер кнопок будет вызван из post-review helper в card-modes.js
-        // через renderPostReviewSenseiActions, передавая dependencies
         submitResult._snapshotReady = true;
         submitResult._cardSessionId = cardSessionId;
       }
@@ -201,11 +249,25 @@ export function submitReview(card, quality, state, context = null) {
  * Используется только для построения AI-снапшота.
  */
 function _wordFromStateById(state, itemId) {
-  const lessons = activeReviewDependencies?.LESSONS || [];
+  if (Array.isArray(state?.dictionary)) {
+    const w = state.dictionary.find((x) => x.id === itemId);
+    if (w) return w;
+  }
+  if (Array.isArray(state?.vocabulary)) {
+    const w = state.vocabulary.find((x) => x.id === itemId);
+    if (w) return w;
+  }
+  const lessons = activeReviewDependencies?.LESSONS || state?.lessons || [];
   for (const lesson of lessons) {
     const wordList = lesson.words || lesson.vocabulary || [];
     const w = wordList.find((x) => x.id === itemId);
     if (w) return w;
+  }
+  try {
+    const w = wordById(itemId);
+    if (w) return w;
+  } catch {
+    // wordById throws if dictionary isn't initialized yet
   }
   return null;
 }

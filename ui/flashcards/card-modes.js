@@ -32,6 +32,7 @@ import {
   sessionManager,
   setSessionManager,
   activeReviewAIContext,
+  clearActiveReviewAIContext,
 } from './state.js';
 
 import { announce } from '../../src/a11y-helpers.js';
@@ -43,6 +44,58 @@ import {
   adaptContextProductionContext,
 } from './review-context-adapters.js';
 import { renderPostReviewSenseiActions } from './sensei-review-panel.js';
+import { shouldShowSenseiAction } from './sensei-review-actions.js';
+
+function finishReviewStep(result, state, dependencies) {
+  const renderFlashFn = dependencies?.renderFlashFn || dependencies?.renderFlash;
+  const save = dependencies?.save;
+  const appAddXP = dependencies?.appAddXP;
+  const XP_CARD = dependencies?.XP_CARD;
+  const markActivity = dependencies?.markActivity;
+  const updateSrsBadge = dependencies?.updateSrsBadge;
+
+  if (!sessionManager) setFlashIdx(flashIdx + 1);
+
+  if (result?.xpEligible && typeof appAddXP === 'function' && XP_CARD) {
+    appAddXP(XP_CARD);
+  }
+  if (typeof save === 'function') save(true);
+  if (typeof markActivity === 'function') markActivity();
+  setFlashRevealed(false);
+
+  const snapshot = activeReviewAIContext?.snapshot;
+  const decision = shouldShowSenseiAction(snapshot);
+
+  if (result?._snapshotReady && result._cardSessionId && decision.show && decision.actions.length) {
+    renderPostReviewSenseiActions({
+      snapshot,
+      cardSessionId: result._cardSessionId,
+      dependencies,
+    });
+
+    let container =
+      document.getElementById('sensei-post-review-actions') ||
+      document.getElementById('review-feedback-actions');
+    if (container && !container.querySelector('.srp-continue-btn')) {
+      const continueBtn = document.createElement('button');
+      continueBtn.type = 'button';
+      continueBtn.className = 'btn-primary srp-continue-btn';
+      continueBtn.textContent = 'Продолжить ➔';
+      continueBtn.style.marginTop = '12px';
+      continueBtn.onclick = () => {
+        container.innerHTML = '';
+        clearActiveReviewAIContext();
+        if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
+        if (typeof updateSrsBadge === 'function') updateSrsBadge();
+      };
+      container.append(continueBtn);
+    }
+  } else {
+    clearActiveReviewAIContext();
+    if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
+    if (typeof updateSrsBadge === 'function') updateSrsBadge();
+  }
+}
 
 // Конвертер Хирагана → Катакана
 const HIRAGANA_TO_KATAKANA = {
@@ -271,9 +324,8 @@ export function generateParticleQuiz(particle, lessonData, state, LESSONS) {
   };
 }
 
-export function renderTypingMode(word, state, dependencies, modeConfig = {}, renderFlashFn) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav, markActivity } =
-    dependencies;
+export function renderTypingMode(word, state, dependencies, modeConfig = {}, _renderFlashFn) {
+  const { showCompletionScreen, nav } = dependencies;
 
   const body = $('#srs-body');
   const displayWriting = word.writing;
@@ -344,6 +396,8 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, ren
   const hintMessage = $('#typing-hint-message');
   const backspaceBtn = $('#srs-backspace');
 
+  const typingIncorrectAttempts = [];
+
   $$('.srs-kana-key').forEach((btn) => {
     btn.onclick = () => {
       if (isChecked) return;
@@ -378,6 +432,11 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, ren
       }, 500);
     } else {
       typingMistakes++;
+      typingIncorrectAttempts.push({
+        rawAnswer: input.value,
+        normalizedAnswer: userAnswer,
+        timestamp: Date.now(),
+      });
 
       if (typingMistakes === 1) {
         input.classList.add('shake-error', 'incorrect');
@@ -424,6 +483,7 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, ren
       firstAttemptCorrect: _firstAttemptCorrect ?? null,
       displayCategory,
       displayQuestion,
+      incorrectAttempts: typingIncorrectAttempts,
     });
 
     const result = submitReview(card, quality, state, {
@@ -431,26 +491,8 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, ren
       hintUsed: aiAttempt.hintUsed,
       aiAttempt,
     });
-    if (!sessionManager) setFlashIdx(flashIdx + 1);
 
-    if (result?.xpEligible) {
-      appAddXP(XP_CARD);
-    }
-    save(true);
-    markActivity();
-    setFlashRevealed(false);
-
-    // Рендерим кнопки Сенсея ПЕРЕД renderFlashFn (следующая карточка очистит контекст)
-    if (result?._snapshotReady && result._cardSessionId) {
-      renderPostReviewSenseiActions({
-        snapshot: activeReviewAIContext?.snapshot,
-        cardSessionId: result._cardSessionId,
-        dependencies,
-      });
-    }
-
-    if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
-    updateSrsBadge();
+    finishReviewStep(result, state, dependencies);
   };
 
   if (checkBtn) {
@@ -552,8 +594,7 @@ function formatRequiredForm(rf) {
 }
 
 export function renderContextProductionMode(word, state, dependencies, renderFlashFn) {
-  const { save, showCompletionScreen, XP_CARD, appAddXP, updateSrsBadge, nav, markActivity } =
-    dependencies;
+  const { showCompletionScreen, nav } = dependencies;
 
   const currentCard = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
   const task = selectProductionTask(word, currentCard, state.reviewEvents || []);
@@ -630,6 +671,8 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
   const hintMessage = $('#typing-hint-message');
   const backspaceBtn = $('#srs-backspace');
 
+  const cpIncorrectAttempts = [];
+
   $$('.srs-kana-key').forEach((btn) => {
     btn.onclick = () => {
       if (isChecked) return;
@@ -653,6 +696,7 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
       mistakes: _typingMistakes ?? typingMistakes,
       hintUsed: _hintUsed ?? hintUsed,
       firstAttemptCorrect: _firstAttemptCorrect ?? null,
+      incorrectAttempts: cpIncorrectAttempts,
     });
 
     const result = submitReview(card, quality, state, {
@@ -662,23 +706,8 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
       hintUsed: cpAttempt?.hintUsed ?? hintUsed,
       ...(cpAttempt ? { aiAttempt: cpAttempt } : {}),
     });
-    if (!sessionManager) setFlashIdx(flashIdx + 1);
 
-    if (result?.xpEligible) {
-      appAddXP(XP_CARD);
-    }
-    save(true);
-    markActivity();
-    setFlashRevealed(false);
-    if (result?._snapshotReady && result._cardSessionId) {
-      renderPostReviewSenseiActions({
-        snapshot: activeReviewAIContext?.snapshot,
-        cardSessionId: result._cardSessionId,
-        dependencies,
-      });
-    }
-    if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
-    updateSrsBadge();
+    finishReviewStep(result, state, dependencies);
   };
 
   const handleCheck = () => {
@@ -705,6 +734,11 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
       }, 500);
     } else {
       typingMistakes++;
+      cpIncorrectAttempts.push({
+        rawAnswer: input.value,
+        normalizedAnswer: normalizeKanaAnswer(input.value),
+        timestamp: Date.now(),
+      });
 
       if (typingMistakes === 1) {
         input.classList.add('shake-error', 'incorrect');
@@ -806,18 +840,9 @@ export function renderMultipleChoiceMode(
   state,
   dependencies,
   modeConfig = {},
-  renderFlashFn
+  _renderFlashFn
 ) {
-  const {
-    save,
-    showCompletionScreen,
-    XP_CARD,
-    appAddXP,
-    updateSrsBadge,
-    nav,
-    markActivity,
-    LESSONS,
-  } = dependencies;
+  const { showCompletionScreen, nav, LESSONS } = dependencies;
 
   const body = $('#srs-body');
   const displayTranslation = word.translation;
@@ -867,6 +892,8 @@ export function renderMultipleChoiceMode(
   const reviewCardId = (sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx])?.id;
   startReviewTiming(reviewCardId || word.id, modeConfig.mode || CARD_MODES.MULTIPLE_CHOICE);
 
+  const mcIncorrectAttempts = [];
+
   const handleRating = (
     quality,
     _selectedText,
@@ -887,6 +914,7 @@ export function renderMultipleChoiceMode(
       firstAttemptCorrect: _firstAttemptCorrect ?? null,
       contextSentence: modeConfig.contextSentence ?? null,
       contextTranslation: modeConfig.hint ?? null,
+      incorrectAttempts: mcIncorrectAttempts,
     });
 
     const result = submitReview(card, quality, state, {
@@ -894,23 +922,8 @@ export function renderMultipleChoiceMode(
       hintUsed: false,
       aiAttempt: mcAttempt,
     });
-    if (!sessionManager) setFlashIdx(flashIdx + 1);
 
-    if (result?.xpEligible) {
-      appAddXP(XP_CARD);
-    }
-    save(true);
-    markActivity();
-    setFlashRevealed(false);
-    if (result?._snapshotReady && result._cardSessionId) {
-      renderPostReviewSenseiActions({
-        snapshot: activeReviewAIContext?.snapshot,
-        cardSessionId: result._cardSessionId,
-        dependencies,
-      });
-    }
-    if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
-    updateSrsBadge();
+    finishReviewStep(result, state, dependencies);
   };
 
   $$('.quiz-option-btn').forEach((btn) => {
@@ -936,6 +949,11 @@ export function renderMultipleChoiceMode(
         btn.classList.add('incorrect');
         btn.disabled = true;
         mistakeCount++;
+        mcIncorrectAttempts.push({
+          rawAnswer: btn.textContent.trim(),
+          selectedOption: btn.textContent.trim(),
+          timestamp: Date.now(),
+        });
 
         if (mistakeCount >= 2) {
           $$('.quiz-option-btn').forEach((b) => (b.disabled = true));
@@ -1006,16 +1024,7 @@ export function renderMultipleChoiceMode(
 }
 
 export function renderSentenceBuilding(particleCard, state, dependencies, renderFlashFn) {
-  const {
-    save,
-    showCompletionScreen,
-    XP_CARD,
-    appAddXP,
-    updateSrsBadge,
-    nav,
-    markActivity,
-    LESSONS,
-  } = dependencies;
+  const { showCompletionScreen, nav, LESSONS } = dependencies;
 
   const body = $('#srs-body');
   let mistakeCount = 0;
@@ -1144,6 +1153,8 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
   const checkBtn = $('#sentence-check-btn');
   const feedback = $('#sentence-feedback');
 
+  const sbIncorrectAttempts = [];
+
   if (clearBtn) {
     clearBtn.onclick = () => {
       userSentence = [];
@@ -1167,6 +1178,7 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
       },
       mistakes: _mistakeCount ?? mistakeCount,
       firstAttemptCorrect: (_mistakeCount ?? mistakeCount) === 0 ? true : null,
+      incorrectAttempts: sbIncorrectAttempts,
     });
 
     const result = submitReview(card, quality, state, {
@@ -1174,23 +1186,8 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
       hintUsed: sbAttempt.hintUsed,
       aiAttempt: sbAttempt,
     });
-    if (!sessionManager) setFlashIdx(flashIdx + 1);
 
-    if (result?.xpEligible) {
-      appAddXP(XP_CARD);
-    }
-    save(true);
-    markActivity();
-    setFlashRevealed(false);
-    if (result?._snapshotReady && result._cardSessionId) {
-      renderPostReviewSenseiActions({
-        snapshot: activeReviewAIContext?.snapshot,
-        cardSessionId: result._cardSessionId,
-        dependencies,
-      });
-    }
-    if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
-    updateSrsBadge();
+    finishReviewStep(result, state, dependencies);
   };
 
   if (checkBtn) {
@@ -1229,6 +1226,11 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
         );
       } else {
         mistakeCount++;
+        sbIncorrectAttempts.push({
+          rawAnswer: userAnswer,
+          selectedOption: userAnswer,
+          timestamp: Date.now(),
+        });
 
         if (mistakeCount === 1) {
           if (feedback) {
@@ -1307,16 +1309,7 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
 }
 
 export function renderParticleQuizMode(particleCard, state, dependencies, renderFlashFn) {
-  const {
-    save,
-    showCompletionScreen,
-    XP_CARD,
-    appAddXP,
-    updateSrsBadge,
-    nav,
-    markActivity,
-    LESSONS,
-  } = dependencies;
+  const { showCompletionScreen, nav, LESSONS } = dependencies;
 
   const body = $('#srs-body');
   let mistakeCount = 0;
@@ -1386,6 +1379,8 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
 
   startReviewTiming(particleCard.id, CARD_MODES.PARTICLE_QUIZ);
 
+  const pqIncorrectAttempts = [];
+
   const handleRating = (quality, _selectedParticle, _mistakeCount) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
@@ -1395,6 +1390,7 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
       mistakes: _mistakeCount ?? mistakeCount,
       firstAttemptCorrect: (_mistakeCount ?? mistakeCount) === 0 ? true : null,
       localParticleRule: null,
+      incorrectAttempts: pqIncorrectAttempts,
     });
 
     const result = submitReview(card, quality, state, {
@@ -1402,23 +1398,8 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
       hintUsed: pqAttempt.hintUsed,
       aiAttempt: pqAttempt,
     });
-    if (!sessionManager) setFlashIdx(flashIdx + 1);
 
-    if (result?.xpEligible) {
-      appAddXP(XP_CARD);
-    }
-    save(true);
-    markActivity();
-    setFlashRevealed(false);
-    if (result?._snapshotReady && result._cardSessionId) {
-      renderPostReviewSenseiActions({
-        snapshot: activeReviewAIContext?.snapshot,
-        cardSessionId: result._cardSessionId,
-        dependencies,
-      });
-    }
-    if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
-    updateSrsBadge();
+    finishReviewStep(result, state, dependencies);
   };
 
   $$('.quiz-option-btn').forEach((btn) => {
@@ -1442,6 +1423,11 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
         btn.classList.add('incorrect');
         btn.disabled = true;
         mistakeCount++;
+        pqIncorrectAttempts.push({
+          rawAnswer: selectedParticle,
+          selectedOption: selectedParticle,
+          timestamp: Date.now(),
+        });
 
         if (mistakeCount >= 2) {
           $$('.quiz-option-btn').forEach((b) => (b.disabled = true));

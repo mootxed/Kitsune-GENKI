@@ -8,7 +8,8 @@ import { getAllKanji } from './mode-selector.js';
 import { markReviewAnswered, submitReview } from './review-fsrs.js';
 import { adaptDrawingContext } from './review-context-adapters.js';
 import { renderPostReviewSenseiActions } from './sensei-review-panel.js';
-import { activeReviewAIContext } from './state.js';
+import { shouldShowSenseiAction } from './sensei-review-actions.js';
+import { activeReviewAIContext, clearActiveReviewAIContext } from './state.js';
 
 import {
   kanjiSequence,
@@ -132,7 +133,7 @@ export function initDrawingMode(
 
     currentWriter.quiz({
       leniency: 1.2,
-      onMistake: (strokeData) => {
+      onMistake: (_strokeData) => {
         const nextCharacterMistakes = drawingMistakes + 1;
         setDrawingMistakes(nextCharacterMistakes);
         setTotalDrawingMistakes(totalDrawingMistakes + 1);
@@ -143,7 +144,7 @@ export function initDrawingMode(
           toast('💡 Слишком много ошибок. Дорисуйте по контуру');
         }
       },
-      onComplete: (summaryData) => {
+      onComplete: (_summaryData) => {
         setCurrentKanjiIndex(currentKanjiIndex + 1);
 
         if (currentKanjiIndex < kanjiSequence.length) {
@@ -214,18 +215,40 @@ export function initDrawingMode(
         setKanjiSequence([]);
         setCurrentKanjiIndex(0);
 
-        if (reviewRes?._snapshotReady && reviewRes._cardSessionId) {
+        const showSensei =
+          reviewRes?._snapshotReady &&
+          reviewRes._cardSessionId &&
+          shouldShowSenseiAction(activeReviewAIContext?.snapshot).show;
+
+        if (showSensei) {
           renderPostReviewSenseiActions({
             snapshot: activeReviewAIContext?.snapshot,
             cardSessionId: reviewRes._cardSessionId,
             dependencies,
           });
-        }
 
-        setTimeout(() => {
+          let container =
+            document.getElementById('sensei-post-review-actions') ||
+            document.getElementById('review-feedback-actions');
+          if (container && !container.querySelector('.srp-continue-btn')) {
+            const continueBtn = document.createElement('button');
+            continueBtn.type = 'button';
+            continueBtn.className = 'btn-primary srp-continue-btn';
+            continueBtn.textContent = 'Продолжить ➔';
+            continueBtn.style.marginTop = '12px';
+            continueBtn.onclick = () => {
+              container.innerHTML = '';
+              clearActiveReviewAIContext();
+              if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
+              updateSrsBadge?.();
+            };
+            container.append(continueBtn);
+          }
+        } else {
+          clearActiveReviewAIContext();
           if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
           updateSrsBadge?.();
-        }, 300);
+        }
       },
     });
   }

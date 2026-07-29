@@ -93,7 +93,7 @@ import {
 } from './ui/flashcards.js';
 import { renderShop, SHOP_ITEMS } from './ui/shop.js';
 import { renderStories, openWordBottomSheet, closeWordBottomSheet } from './ui/stories.js';
-import { renderSensei, setChatHistory } from './ui/chat.js';
+import { renderSensei, setChatHistory, importReviewExplanationToChat } from './ui/chat.js';
 import { renderSettings } from './ui/settings.js';
 import { renderCrossword } from './ui/crossword.js';
 import { renderParticlesList } from './ui/particles.js';
@@ -137,7 +137,14 @@ function save(immediate = false) {
 // ===== DEPENDENCIES ОБЪЕКТ =====
 function createDependencies() {
   return {
-    // State functions
+    // State functions & getters
+    state,
+    getAISettings: () => state.settings,
+    acceptAIPrivacy: () => {
+      if (state?.settings) state.settings.aiPrivacyAccepted = true;
+      return save();
+    },
+    importReviewExplanationToChat,
     save,
     loadState,
     chState,

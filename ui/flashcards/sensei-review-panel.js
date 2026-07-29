@@ -229,19 +229,29 @@ function buildPanel({ artifact, actionType, snapshot, dependencies, cardSessionI
     const ctx = activeReviewAIContext;
     const quizAnswers = ctx?.quizAnswers || {};
 
-    const quizSection = renderPanelQuiz(artifact.quiz, quizAnswers, (questionId, selectedIndex) => {
-      // Токен: только обновляем если контекст не изменился
-      const current = activeReviewAIContext;
-      if (!current || current.cardSessionId !== cardSessionId || current.attemptId !== attemptId) {
-        return;
-      }
-      if (!current.quizAnswers) current.quizAnswers = {};
-      current.quizAnswers[questionId] = selectedIndex;
-      // Перерисовываем квиз-секцию
-      const newQuizSection = renderPanelQuiz(artifact.quiz, current.quizAnswers, () => {});
-      if (quizSection && newQuizSection) quizSection.replaceWith(newQuizSection);
-    });
-    if (quizSection) body.append(quizSection);
+    let activeQuizNode = null;
+    const renderQuizInstance = (answers) => {
+      return renderPanelQuiz(artifact.quiz, answers, (questionId, selectedIndex) => {
+        const current = activeReviewAIContext;
+        if (
+          !current ||
+          current.cardSessionId !== cardSessionId ||
+          current.attemptId !== attemptId
+        ) {
+          return;
+        }
+        if (!current.quizAnswers) current.quizAnswers = {};
+        current.quizAnswers[questionId] = selectedIndex;
+        const newQuizSection = renderQuizInstance(current.quizAnswers);
+        if (activeQuizNode && newQuizSection) {
+          activeQuizNode.replaceWith(newQuizSection);
+          activeQuizNode = newQuizSection;
+        }
+      });
+    };
+
+    activeQuizNode = renderQuizInstance(quizAnswers);
+    if (activeQuizNode) body.append(activeQuizNode);
   }
 
   if (artifact.type === 'mnemonic') {
@@ -290,7 +300,8 @@ function buildPanel({ artifact, actionType, snapshot, dependencies, cardSessionI
   });
   chatBtn.addEventListener('click', () => {
     if (typeof dependencies?.importReviewExplanationToChat === 'function') {
-      dependencies.importReviewExplanationToChat(artifact, snapshot);
+      dependencies.importReviewExplanationToChat(artifact, snapshot, dependencies?.state);
+      dependencies?.save?.();
     }
     setSenseiTab('chat');
     dependencies?.nav?.('sensei');
@@ -350,9 +361,10 @@ function showErrorInContainer(container, message, onRetry) {
  * @param {object} params
  * @param {import('../../src/ai/review-attempt-schema.js').ReviewAttemptSnapshot} params.snapshot
  * @param {'explain_error'|'explain_more'|'mnemonic'} params.actionType
- * @param {object} params.dependencies — { nav, save, aiRequest, state }
+ * @param {string} [params.reason]
+ * @param {object} params.dependencies — { nav, save, aiRequest, state, getAISettings, acceptAIPrivacy }
  */
-export async function openSenseiPanel({ snapshot, actionType, dependencies }) {
+export async function openSenseiPanel({ snapshot, actionType, reason, dependencies }) {
   const currentCtx = activeReviewAIContext;
   if (!currentCtx) return;
 
@@ -366,7 +378,10 @@ export async function openSenseiPanel({ snapshot, actionType, dependencies }) {
 
   // Проверяем согласие на передачу данных в AI
   const state = dependencies?.state;
-  const accepted = await ensureAIPrivacyDisclosure(state, dependencies?.save);
+  const aiSettings = dependencies?.getAISettings ? dependencies.getAISettings() : state?.settings;
+  const privacySaver = dependencies?.acceptAIPrivacy || dependencies?.save;
+
+  const accepted = await ensureAIPrivacyDisclosure(state, privacySaver);
   if (!accepted) return;
 
   // Async race: убедимся что карточка не сменилась пока шёл privacy modal
@@ -390,7 +405,8 @@ export async function openSenseiPanel({ snapshot, actionType, dependencies }) {
   setLoading(panelContainer, true);
 
   const localDiagnosis = actionType !== 'mnemonic' ? diagnoseReviewError(snapshot) : null;
-  const input = buildSenseiActionInput(snapshot, actionType, localDiagnosis);
+  const actionReason = reason || (actionType === 'explain_more' ? 'slow_answer' : 'error');
+  const input = buildSenseiActionInput(snapshot, actionType, localDiagnosis, actionReason);
 
   const doRequest = async () => {
     // Race check
@@ -403,7 +419,7 @@ export async function openSenseiPanel({ snapshot, actionType, dependencies }) {
     setLoading(panelContainer, true);
 
     try {
-      const apiKey = state?.settings?.openrouterKey;
+      const apiKey = aiSettings?.openrouterKey || state?.settings?.openrouterKey;
       if (!apiKey && !dependencies?.aiRequest) {
         setLoading(panelContainer, false);
         showErrorInContainer(panelContainer, 'API-ключ OpenRouter не указан', null);
@@ -420,7 +436,8 @@ export async function openSenseiPanel({ snapshot, actionType, dependencies }) {
         return;
       }
 
-      const request = dependencies?.aiRequest || createAIRequestClient(state?.settings);
+      const request =
+        dependencies?.aiRequest || createAIRequestClient(aiSettings || state?.settings);
       const handler = actionType === 'mnemonic' ? handleCreateMnemonic : handleExplainReviewError;
 
       const result = await handler({ input, context: null, request });
@@ -476,19 +493,21 @@ export async function openSenseiPanel({ snapshot, actionType, dependencies }) {
 
 // ---------------------------------------------------------------------------
 // Post-review helper — ЕДИНАЯ точка рендера кнопок Сенсея
-// Вызывается из review-fsrs.js после записи результата.
 // ---------------------------------------------------------------------------
 
 /**
- * Рендерит кнопки AI Сенсея в контейнере #review-feedback-actions.
- * Единственная точка вызова — не дублируется в режимах.
+ * Рендерит кнопки AI Сенсея в контейнере #review-feedback-actions или #sensei-post-review-actions.
  *
  * @param {object} params
  * @param {import('../../src/ai/review-attempt-schema.js').ReviewAttemptSnapshot} params.snapshot
  * @param {string} params.cardSessionId — UUID показа карточки
  * @param {object} params.dependencies
  */
-export function renderPostReviewSenseiActions({ snapshot, cardSessionId, dependencies }) {
+export function renderPostReviewSenseiActions({
+  snapshot,
+  cardSessionId: _cardSessionId,
+  dependencies,
+}) {
   if (!snapshot) return;
 
   const decision = shouldShowSenseiAction(snapshot);
@@ -497,11 +516,26 @@ export function renderPostReviewSenseiActions({ snapshot, cardSessionId, depende
   // Находим или создаём якорь #review-feedback-actions
   let container = document.getElementById('review-feedback-actions');
   if (!container) {
-    // Вставляем в .flash-wrap если якорь не существует
-    const flashWrap = document.querySelector('.flash-wrap');
-    if (!flashWrap) return;
-    container = el('div', { id: 'review-feedback-actions', className: 'review-feedback-actions' });
-    flashWrap.append(container);
+    let persistentWrap = document.getElementById('sensei-post-review-actions');
+    if (!persistentWrap) {
+      const srsScreen = document.getElementById('screen-srs');
+      if (srsScreen) {
+        persistentWrap = el('div', {
+          id: 'sensei-post-review-actions',
+          className: 'sensei-post-review-actions',
+        });
+        srsScreen.append(persistentWrap);
+      } else {
+        const flashWrap = document.querySelector('.flash-wrap');
+        if (!flashWrap) return;
+        persistentWrap = el('div', {
+          id: 'review-feedback-actions',
+          className: 'review-feedback-actions',
+        });
+        flashWrap.append(persistentWrap);
+      }
+    }
+    container = persistentWrap;
   }
 
   // Очищаем предыдущие кнопки
@@ -510,15 +544,15 @@ export function renderPostReviewSenseiActions({ snapshot, cardSessionId, depende
   const senseiRow = el('div', { className: 'srp-actions-row' });
   senseiRow.append(el('span', { className: 'srp-actions-label', text: '🦊 AI Сенсей:' }));
 
-  decision.actions.forEach(({ actionType, label }) => {
+  decision.actions.forEach(({ actionType, reason, label }) => {
     const btn = el('button', {
       type: 'button',
       className: 'srp-action-btn',
       text: label,
-      attrs: { 'data-action': actionType },
+      attrs: { 'data-action': actionType, 'data-reason': reason || '' },
     });
     btn.addEventListener('click', () => {
-      openSenseiPanel({ snapshot, actionType, dependencies });
+      openSenseiPanel({ snapshot, actionType, reason, dependencies });
     });
     senseiRow.append(btn);
   });

@@ -61,10 +61,56 @@ const ExplainReviewErrorInputSchema = z
       })
       .nullable()
       .optional(),
+    reason: z.string().optional(),
   })
   .strip();
 
-function buildSystemPrompt(localDiagnosis) {
+function buildSystemPrompt(localDiagnosis, reason = 'error', attempt = null) {
+  const isNoError = reason !== 'error' || attempt?.result?.mistakes === 0;
+
+  if (isNoError) {
+    return `Ты — AI Сенсей, учитель японского языка. Пользователь успешно ответил (или воспользовался подсказкой / задумался) и запросил подробное объяснение материала.
+Проанализируй карточку и дай подробный разбор СТРОГО на русском языке.
+НЕ утверждай, что пользователь совершил ошибку. Установи category: "no_error" в поле diagnosis.
+
+ОБЯЗАТЕЛЬНАЯ СТРУКТУРА ОТВЕТА (JSON):
+{
+  "type": "review_explanation",
+  "diagnosis": {
+    "category": "no_error",
+    "message": "Разбор употребления и особенностей слова"
+  },
+  "explanation": "Подробное объяснение грамматических и смысловых нюансов (2–5 предложений)",
+  "comparison": [
+    { "form": "Словарная форма", "reading": "чтение", "role": "Базовая форма", "isExpected": true }
+  ],
+  "examples": [
+    { "japanese": "Пример на японском.", "reading": null, "translation": "Перевод." }
+  ],
+  "quiz": {
+    "questions": [
+      {
+        "id": "q1",
+        "type": "verb_form|particle|translation|dictionary_form|natural_sentence|usage|reading",
+        "prompt": "Вопрос для закрепления",
+        "topic": "Тема",
+        "options": [{ "text": "Вариант", "isCorrect": true }, { "text": "Вариант 2", "isCorrect": false }],
+        "explanation": "Объяснение ответа"
+      }
+    ]
+  }
+}
+
+ДОПУСТИМЫЕ КАТЕГОРИИ ДИАГНОЗА:
+${DIAGNOSIS_CATEGORIES.join(', ')}
+
+ПРАВИЛА КВИЗА:
+- 1–3 вопроса на закрепление материала
+- Ровно один isCorrect: true в каждом вопросе
+
+Верни ТОЛЬКО валидный JSON без markdown-обёрток.`;
+  }
+
   const diagHint =
     localDiagnosis && localDiagnosis.category !== 'unknown'
       ? `\nЛОКАЛЬНЫЙ ДИАГНОЗ (уверенность: ${localDiagnosis.confidence}): «${localDiagnosis.category}».
@@ -124,23 +170,24 @@ ${DIAGNOSIS_CATEGORIES.join(', ')}
  * Запускает explain_review_error handler.
  *
  * @param {object} options
- * @param {object} options.input — { attempt, localDiagnosis }
+ * @param {object} options.input — { attempt, localDiagnosis, reason }
  * @param {object} options.context — AI context (recentMessages)
  * @param {Function} options.request — AI request client
  */
 export function handleExplainReviewError(options) {
   const localDiagnosis = options.input?.localDiagnosis || null;
   const attempt = options.input?.attempt;
+  const reason = options.input?.reason || 'error';
 
   return runStructuredHandler({
     handlerName: 'explain_review_error',
-    systemPrompt: buildSystemPrompt(localDiagnosis),
+    systemPrompt: buildSystemPrompt(localDiagnosis, reason, attempt),
     input: options.input,
     inputSchema: ExplainReviewErrorInputSchema,
     outputSchema: ReviewExplanationSchema,
     context: options.context,
     request: options.request,
     additionalValidator: (data, opts) =>
-      validateReviewExplanation(data, attempt, localDiagnosis, opts?.isRepairedAttempt),
+      validateReviewExplanation(data, attempt, localDiagnosis, opts?.isRepairedAttempt, reason),
   });
 }

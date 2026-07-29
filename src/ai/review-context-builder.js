@@ -47,8 +47,8 @@ function computeOutcome(result, aiAttempt) {
 function hasSufficientContext(mode, aiAttempt, submitResult) {
   // Технические режимы — не создавать snapshot
   if (['system-fallback', 'preview', 'debug-skip'].includes(mode)) return false;
-  // Review не был принят FSRS
-  if (!submitResult?.accepted) return false;
+  // Review не был принят FSRS и не является признанной дополнительной практикой
+  if (!submitResult?.accepted && !submitResult?.supplementalAccepted) return false;
   // Нет task context
   if (!aiAttempt?.prompt && !aiAttempt?.expectedAnswers?.length) return false;
   return true;
@@ -64,6 +64,7 @@ function hasSufficientContext(mode, aiAttempt, submitResult) {
  * @param {object} params.submitResult — результат submitReview()
  * @param {object} params.aiAttempt — контекст из адаптера режима
  * @param {object} params.srsCard — srs-запись (для memory context)
+ * @param {Array} [params.reviewEvents] — журнал событий повторения
  * @param {number} params.responseTimeMs — время ответа в мс
  * @returns {ReviewAttemptSnapshot|null}
  */
@@ -74,6 +75,7 @@ export function buildReviewAttemptSnapshot({
   submitResult,
   aiAttempt,
   srsCard,
+  reviewEvents = [],
   responseTimeMs,
 }) {
   if (!hasSufficientContext(mode, aiAttempt, submitResult)) {
@@ -83,7 +85,7 @@ export function buildReviewAttemptSnapshot({
   const identity = parseCardIdentity(card);
   const skill = identity.skill || 'recognition';
 
-  const memoryContext = buildMemoryContext(srsCard, LEECH_THRESHOLD);
+  const memoryContext = buildMemoryContext(srsCard, reviewEvents, LEECH_THRESHOLD);
   const responseTimeBand = computeResponseTimeBand(responseTimeMs, mode);
 
   const mistakes = Number(aiAttempt.mistakes ?? 0);
@@ -125,6 +127,9 @@ export function buildReviewAttemptSnapshot({
       userAnswer: aiAttempt.userAnswer || null,
       selectedOption: aiAttempt.selectedOption || null,
       correctOption: aiAttempt.correctOption || null,
+      incorrectAttempts: Array.isArray(aiAttempt.incorrectAttempts)
+        ? aiAttempt.incorrectAttempts
+        : [],
     },
 
     result: {

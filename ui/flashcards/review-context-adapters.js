@@ -52,6 +52,7 @@ export function adaptTypingContext({
   firstAttemptCorrect,
   displayCategory,
   displayQuestion,
+  incorrectAttempts = [],
 }) {
   const promptText = displayQuestion
     ? `${displayCategory || 'Слово'}: ${displayQuestion}`
@@ -66,6 +67,7 @@ export function adaptTypingContext({
     correctOption: acceptedAnswers?.[0] || null,
     contextSentence: null,
     contextTranslation: null,
+    incorrectAttempts: Array.isArray(incorrectAttempts) ? incorrectAttempts : [],
     mistakes: Number(mistakes) || 0,
     hintUsed: Boolean(hintUsed),
     firstAttemptCorrect: firstAttemptCorrect ?? null,
@@ -77,19 +79,11 @@ export function adaptTypingContext({
 // ---------------------------------------------------------------------------
 
 /**
- * @param {object} word — целевое слово
- * @param {string} displayQuestion — текст вопроса
- * @param {string} selectedText — текст выбранного варианта
- * @param {string} correctText — текст правильного варианта
- * @param {string} mode — режим (multiple-choice | reverse-multiple-choice | context-sentence)
- * @param {number} mistakes
- * @param {boolean|null} firstAttemptCorrect
- * @param {string|null} contextSentence
- * @param {string|null} contextTranslation
+ * @param {object} params
  * @returns {AIAttemptContext}
  */
 export function adaptMultipleChoiceContext({
-  word,
+  word: _word,
   displayQuestion,
   selectedText,
   correctText,
@@ -98,6 +92,7 @@ export function adaptMultipleChoiceContext({
   firstAttemptCorrect,
   contextSentence,
   contextTranslation,
+  incorrectAttempts = [],
 }) {
   const isReverse = mode === 'reverse-multiple-choice';
   const direction = isReverse ? 'Japanese → Russian' : 'Russian → Japanese';
@@ -111,6 +106,7 @@ export function adaptMultipleChoiceContext({
     correctOption: correctText || null,
     contextSentence: contextSentence || null,
     contextTranslation: contextTranslation || null,
+    incorrectAttempts: Array.isArray(incorrectAttempts) ? incorrectAttempts : [],
     mistakes: Number(mistakes) || 0,
     hintUsed: false,
     firstAttemptCorrect: firstAttemptCorrect ?? null,
@@ -123,11 +119,7 @@ export function adaptMultipleChoiceContext({
 // ---------------------------------------------------------------------------
 
 /**
- * @param {object} quizData — { sentence, correctParticle, options, russianHint }
- * @param {string} selectedParticle
- * @param {number} mistakes
- * @param {boolean|null} firstAttemptCorrect
- * @param {string|null} localParticleRule — краткое правило если известно
+ * @param {object} params
  * @returns {AIAttemptContext}
  */
 export function adaptParticleQuizContext({
@@ -136,6 +128,7 @@ export function adaptParticleQuizContext({
   mistakes,
   firstAttemptCorrect,
   localParticleRule,
+  incorrectAttempts = [],
 }) {
   const sentence = quizData?.sentence || '';
   // Заменяем [_] на пустой слот для AI-контекста
@@ -150,6 +143,7 @@ export function adaptParticleQuizContext({
     correctOption: quizData?.correctParticle || null,
     contextSentence: sentenceWithSlot || null,
     contextTranslation: quizData?.russianHint || null,
+    incorrectAttempts: Array.isArray(incorrectAttempts) ? incorrectAttempts : [],
     mistakes: Number(mistakes) || 0,
     hintUsed: false,
     firstAttemptCorrect: firstAttemptCorrect ?? null,
@@ -165,12 +159,15 @@ export function adaptParticleQuizContext({
 // ---------------------------------------------------------------------------
 
 /**
- * @param {object} quizData — { correctWords: string[], userSentence: string[], russianHint: string }
- * @param {number} mistakes
- * @param {boolean|null} firstAttemptCorrect
+ * @param {object} params
  * @returns {AIAttemptContext}
  */
-export function adaptSentenceBuildingContext({ quizData, mistakes, firstAttemptCorrect }) {
+export function adaptSentenceBuildingContext({
+  quizData,
+  mistakes,
+  firstAttemptCorrect,
+  incorrectAttempts = [],
+}) {
   const correctSentence = (quizData?.correctWords || []).join(' ');
   const userSentence = (quizData?.userSentence || []).join(' ');
 
@@ -183,6 +180,7 @@ export function adaptSentenceBuildingContext({ quizData, mistakes, firstAttemptC
     correctOption: correctSentence || null,
     contextSentence: null,
     contextTranslation: quizData?.russianHint || null,
+    incorrectAttempts: Array.isArray(incorrectAttempts) ? incorrectAttempts : [],
     mistakes: Number(mistakes) || 0,
     hintUsed: Number(mistakes) > 0,
     firstAttemptCorrect: firstAttemptCorrect ?? null,
@@ -199,11 +197,7 @@ export function adaptSentenceBuildingContext({ quizData, mistakes, firstAttemptC
 // ---------------------------------------------------------------------------
 
 /**
- * @param {object} task — production task { prompt, meaningCue, requiredForm, acceptedAnswers, hint }
- * @param {string} userAnswer — введённый текст (нормализованный)
- * @param {number} mistakes
- * @param {boolean} hintUsed
- * @param {boolean|null} firstAttemptCorrect
+ * @param {object} params
  * @returns {AIAttemptContext}
  */
 export function adaptContextProductionContext({
@@ -212,6 +206,7 @@ export function adaptContextProductionContext({
   mistakes,
   hintUsed,
   firstAttemptCorrect,
+  incorrectAttempts = [],
 }) {
   if (!task) {
     // Legacy card без структурированного задания — не создавать snapshot
@@ -227,6 +222,7 @@ export function adaptContextProductionContext({
     correctOption: task.acceptedAnswers?.[0] || null,
     contextSentence: null,
     contextTranslation: null,
+    incorrectAttempts: Array.isArray(incorrectAttempts) ? incorrectAttempts : [],
     mistakes: Number(mistakes) || 0,
     hintUsed: Boolean(hintUsed),
     firstAttemptCorrect: firstAttemptCorrect ?? null,
@@ -242,18 +238,21 @@ export function adaptContextProductionContext({
 // ---------------------------------------------------------------------------
 
 /**
- * @param {string} kanji — целевой кандзи
- * @param {string} reading — чтение
- * @param {string} translation — перевод
- * @param {number} totalMistakes — всего ошибок при рисовании
- * @param {boolean} hintUsed
+ * @param {object} params
  * @returns {AIAttemptContext}
  *
  * НЕ передаёт изображение canvas или stroke data.
  */
-export function adaptDrawingContext({ kanji, reading, translation, totalMistakes, hintUsed }) {
+export function adaptDrawingContext({
+  kanji,
+  reading,
+  translation,
+  totalMistakes,
+  hintUsed,
+  incorrectAttempts = [],
+}) {
   return {
-    prompt: `Напишите кандзи: ${kanji}`,
+    prompt: `По переводу «${translation || ''}»${reading ? ` (чтение: ${reading})` : ''} напишите кандзи`,
     instruction: `Чтение: ${reading || ''}, значение: ${translation || ''}`,
     expectedAnswers: kanji ? [kanji] : [],
     userAnswer: null, // Canvas не передаётся
@@ -261,12 +260,13 @@ export function adaptDrawingContext({ kanji, reading, translation, totalMistakes
     correctOption: kanji || null,
     contextSentence: null,
     contextTranslation: null,
+    incorrectAttempts: Array.isArray(incorrectAttempts) ? incorrectAttempts : [],
     mistakes: Number(totalMistakes) || 0,
     hintUsed: Boolean(hintUsed),
     firstAttemptCorrect: totalMistakes === 0 ? true : null,
     modeSpecific: {
       targetKanji: kanji,
-      // Нет canvas, нет strokes — только счётчик ошибок
+      completedKanji: totalMistakes === 0,
     },
   };
 }

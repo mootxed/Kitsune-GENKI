@@ -3,6 +3,8 @@ export const LEECH_THRESHOLD = 8;
 export const RESPONSE_TIME_THRESHOLDS = Object.freeze({
   'multiple-choice': Object.freeze({ fast: 3_000, slow: 10_000 }),
   multipleChoice: Object.freeze({ fast: 3_000, slow: 10_000 }),
+  'reverse-multiple-choice': Object.freeze({ fast: 3_000, slow: 10_000 }),
+  'context-sentence': Object.freeze({ fast: 5_000, slow: 15_000 }),
   'particle-quiz': Object.freeze({ fast: 3_000, slow: 10_000 }),
   typing: Object.freeze({ fast: 5_000, slow: 15_000 }),
   'sentence-building': Object.freeze({ fast: 5_000, slow: 15_000 }),

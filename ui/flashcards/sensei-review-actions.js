@@ -44,25 +44,26 @@ export function shouldShowSenseiAction(snapshot) {
   const hasError =
     outcome === 'incorrect' ||
     mistakes > 0 ||
-    // firstAttemptCorrect: только если явно false И есть подтверждение через outcome/mistakes
     (firstAttemptCorrect === false && (outcome === 'incorrect' || mistakes > 0));
 
   const isSlowFragile =
     (responseTimeBand === 'slow' && (stage === 'fragile' || stage === 'leech')) || recentLapse;
 
+  const isDrawing = mode === 'drawing';
   const actions = [];
 
-  // Приоритет 1: ошибка
-  if (hasError) {
+  // В Drawing нет текстового ответа — не предлагаем "Разобрать ошибку"
+  if (hasError && !isDrawing) {
     actions.push({
       actionType: 'explain_error',
+      reason: 'error',
       label: '🔍 Разобрать ошибку',
     });
 
-    // При leech + ошибке — показываем обе кнопки
     if (isLeech) {
       actions.push({
         actionType: 'mnemonic',
+        reason: 'error',
         label: '🧠 Мнемоника',
       });
     }
@@ -70,11 +71,34 @@ export function shouldShowSenseiAction(snapshot) {
     return { show: true, actions };
   }
 
-  // Приоритет 2: hint или медленный ответ при fragile/leech
-  if (hintUsed || isSlowFragile) {
+  // Для Drawing при ошибке показываем "Объяснить написание"
+  if (hasError && isDrawing) {
     actions.push({
       actionType: 'explain_more',
-      label: '📖 Объяснить подробнее',
+      reason: 'error',
+      label: '📖 Объяснить написание',
+    });
+    if (isLeech) {
+      actions.push({
+        actionType: 'mnemonic',
+        reason: 'error',
+        label: '🧠 Мнемоника',
+      });
+    }
+    return { show: true, actions };
+  }
+
+  // Приоритет 2: hint или медленный ответ при fragile/leech
+  if (hintUsed || isSlowFragile) {
+    const reason = hintUsed
+      ? 'hint_used'
+      : responseTimeBand === 'slow'
+        ? 'slow_answer'
+        : 'recent_lapse';
+    actions.push({
+      actionType: 'explain_more',
+      reason,
+      label: isDrawing ? '📖 Объяснить написание' : '📖 Объяснить подробнее',
     });
     return { show: true, actions };
   }
@@ -83,6 +107,7 @@ export function shouldShowSenseiAction(snapshot) {
   if (isLeech) {
     actions.push({
       actionType: 'mnemonic',
+      reason: 'recent_lapse',
       label: '🧠 Придумать мнемонику',
     });
     return { show: true, actions };
@@ -98,9 +123,15 @@ export function shouldShowSenseiAction(snapshot) {
  * @param {import('../src/ai/review-attempt-schema.js').ReviewAttemptSnapshot} snapshot
  * @param {'explain_error'|'explain_more'|'mnemonic'} actionType
  * @param {object|null} localDiagnosis
+ * @param {string} [reason]
  * @returns {object}
  */
-export function buildSenseiActionInput(snapshot, actionType, localDiagnosis = null) {
+export function buildSenseiActionInput(
+  snapshot,
+  actionType,
+  localDiagnosis = null,
+  reason = 'error'
+) {
   if (actionType === 'mnemonic') {
     return {
       item: snapshot.item,
@@ -115,5 +146,6 @@ export function buildSenseiActionInput(snapshot, actionType, localDiagnosis = nu
   return {
     attempt: snapshot,
     localDiagnosis: localDiagnosis || null,
+    reason: reason || (actionType === 'explain_more' ? 'slow_answer' : 'error'),
   };
 }

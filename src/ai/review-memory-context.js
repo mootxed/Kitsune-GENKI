@@ -44,21 +44,47 @@ export function computeMemoryStage(srsCard, lapseThreshold = LEECH_THRESHOLD) {
  * Определяет, был ли недавний провал (lapse) за последние N дней.
  *
  * @param {object} srsCard
- * @param {number} withinDays
- * @param {number} now
+ * @param {Array} [reviewEvents]
+ * @param {number} [withinDays]
+ * @param {number} [now]
  * @returns {boolean}
  */
-export function hasRecentLapse(srsCard, withinDays = RECENT_LAPSE_DAYS, now = Date.now()) {
-  if (!srsCard || !Number.isInteger(srsCard.lapses) || srsCard.lapses === 0) return false;
+export function hasRecentLapse(
+  srsCard,
+  reviewEvents = [],
+  withinDays = RECENT_LAPSE_DAYS,
+  now = Date.now()
+) {
+  if (!srsCard) return false;
+  const cardId = srsCard.id || srsCard.card_id || srsCard.cardId;
 
-  // Если последнее событие было провалом (Again=0) — проверяем дату
+  if (Array.isArray(reviewEvents) && reviewEvents.length && cardId) {
+    const cardEvents = reviewEvents.filter(
+      (ev) =>
+        (ev?.cardId === cardId || ev?.card_id === cardId) &&
+        !ev.undoneAt &&
+        (ev.eventType === 'review' || !ev.eventType)
+    );
+
+    if (cardEvents.length > 0) {
+      cardEvents.sort((a, b) => (b.reviewedAt || 0) - (a.reviewedAt || 0));
+      const latest = cardEvents[0];
+      const isLapse = latest.effectiveRating === 0;
+      const reviewTime = latest.reviewedAt;
+      const isRecent = Number.isFinite(reviewTime) && now - reviewTime <= withinDays * DAY_MS;
+      return Boolean(isLapse && isRecent);
+    }
+  }
+
+  // Fallback если журнал событий не передан: проверяем lapses > 0 и недавность last_review
+  if (!Number.isInteger(srsCard.lapses) || srsCard.lapses === 0) return false;
+
   const lastReview = srsCard.last_review ?? srsCard.lastReview;
   if (!lastReview) return false;
 
   const reviewTime = typeof lastReview === 'string' ? new Date(lastReview).getTime() : lastReview;
   if (!Number.isFinite(reviewTime)) return false;
 
-  // last_review был недавно + есть хотя бы один lapse
   const daysSinceReview = (now - reviewTime) / DAY_MS;
   return daysSinceReview <= withinDays && srsCard.lapses > 0;
 }
@@ -68,14 +94,15 @@ export function hasRecentLapse(srsCard, withinDays = RECENT_LAPSE_DAYS, now = Da
  * Никакие точные FSRS-числа не выходят за пределы этой функции.
  *
  * @param {object} srsCard — запись из state.srs
- * @param {number} lapseThreshold
+ * @param {Array} [reviewEvents] — журнал событий повторения
+ * @param {number} [lapseThreshold]
  * @returns {{ stage: string, isLeech: boolean, recentLapse: boolean }}
  */
-export function buildMemoryContext(srsCard, lapseThreshold = LEECH_THRESHOLD) {
+export function buildMemoryContext(srsCard, reviewEvents = [], lapseThreshold = LEECH_THRESHOLD) {
   return {
     stage: computeMemoryStage(srsCard, lapseThreshold),
     isLeech: isLeech(srsCard, lapseThreshold),
-    recentLapse: hasRecentLapse(srsCard),
+    recentLapse: hasRecentLapse(srsCard, reviewEvents),
   };
 }
 

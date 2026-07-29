@@ -29,6 +29,7 @@ export const MEMORY_STAGES = ['new', 'fragile', 'developing', 'stable', 'leech']
 
 // Категории диагноза ошибки (ограниченный enum)
 export const DIAGNOSIS_CATEGORIES = [
+  'no_error',
   'wrong_meaning',
   'wrong_reading',
   'wrong_writing',
@@ -45,6 +46,15 @@ export const DIAGNOSIS_CATEGORIES = [
   'context_misunderstanding',
   'unknown',
 ];
+
+export const IncorrectAttemptSchema = z
+  .object({
+    rawAnswer: z.string().trim().max(500),
+    normalizedAnswer: z.string().trim().max(500).optional(),
+    selectedOption: z.string().trim().max(300).optional(),
+    timestamp: z.number().optional(),
+  })
+  .strip();
 
 /**
  * Схема ReviewAttemptSnapshot — передаётся AI-модели.
@@ -87,6 +97,7 @@ export const ReviewAttemptSnapshotSchema = z
         userAnswer: nullableStr(500),
         selectedOption: nullableStr(300),
         correctOption: nullableStr(300),
+        incorrectAttempts: z.array(IncorrectAttemptSchema).max(10).default([]),
       })
       .strict(),
 
@@ -129,6 +140,7 @@ export const AIAttemptContextSchema = z
     correctOption: nullableStr(300),
     contextSentence: nullableStr(500),
     contextTranslation: nullableStr(500),
+    incorrectAttempts: z.array(IncorrectAttemptSchema).max(10).default([]),
     // Дополнительные данные по режиму
     modeSpecific: z.record(z.string(), z.unknown()).optional(),
   })

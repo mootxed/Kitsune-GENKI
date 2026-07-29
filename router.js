@@ -1,6 +1,8 @@
 /* router.js — Navigation and routing controller */
 
 import { focusScreenHeading, announceNavigation, setScreenInert } from './src/a11y-helpers.js';
+import { clearActiveReviewAIContext } from './ui/flashcards/state.js';
+import { closeSenseiPanel } from './ui/flashcards/sensei-review-panel.js';
 
 // Human-readable screen titles for screen reader announcements
 const SCREEN_TITLES = {
@@ -81,6 +83,10 @@ export class Router {
       if (typeof window.cleanupCrossword === 'function') {
         window.cleanupCrossword();
       }
+    }
+    if (this.currentScreen === 'srs' && name !== 'srs') {
+      closeSenseiPanel();
+      clearActiveReviewAIContext();
     }
 
     // Восстанавливаем tabbar для обычных экранов
