@@ -32,7 +32,7 @@ import {
   renderParticleQuizMode,
 } from './flashcards/card-modes.js';
 
-import { startNextBatchIfAny } from './flashcards/session.js';
+import { startNextBatchIfAny, abandonActiveSession } from './flashcards/session.js';
 
 // Re-exports for 100% backward compatibility
 export {
@@ -121,7 +121,7 @@ export function renderFlash(state, dependencies) {
           { icon: '🪙', label: `+${stats.reviewed} XP` },
         ],
         onContinue: () => {
-          setSessionManager(null);
+          abandonActiveSession();
           flashCtx ? nav('chapter', flashCtx) : nav('srs');
         },
       });
@@ -318,14 +318,14 @@ export function renderFlash(state, dependencies) {
                 { icon: '🪙', label: `+${stats.reviewed} XP` },
               ],
               onContinue: () => {
-                setSessionManager(null);
+                abandonActiveSession();
                 flashCtx ? nav('chapter', flashCtx) : nav('srs');
               },
             });
             return;
           }
         }
-        setSessionManager(null);
+        abandonActiveSession();
         flashCtx ? nav('chapter', flashCtx) : nav('srs');
       };
     }

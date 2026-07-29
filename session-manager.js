@@ -44,15 +44,23 @@ export async function loadSessionFromDB() {
   }
 }
 
-export async function clearSessionFromDB() {
+export function clearSessionFromDB() {
   sessionPersistenceGeneration++;
   broadcastSessionEnded();
-  if (!db || typeof db.delete !== 'function') return;
-  try {
-    await db.delete(STORES.ACTIVE_SESSION, 'current');
-  } catch (err) {
-    console.warn('[SessionManager] Failed to clear active session from DB:', err);
-  }
+  if (!db) return Promise.resolve();
+
+  sessionSaveQueue = sessionSaveQueue
+    .catch(() => undefined)
+    .then(async () => {
+      if (typeof db.delete !== 'function') return;
+      try {
+        await db.delete(STORES.ACTIVE_SESSION, 'current');
+      } catch (err) {
+        console.warn('[SessionManager] Failed to clear active session from DB:', err);
+      }
+    });
+
+  return sessionSaveQueue;
 }
 
 /**

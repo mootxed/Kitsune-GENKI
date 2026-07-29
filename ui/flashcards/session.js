@@ -22,7 +22,26 @@ import {
   getFlashRevealed,
   getFlashCtx,
   reviewUndoStack,
+  clearActiveReviewAIContext,
 } from './state.js';
+
+/**
+ * Единая функция явного выхода из активной сессии.
+ * Сбрасывает SessionManager, SessionBatcher, весь flash-state и удаляет запись из IndexedDB.
+ * Используется во всех card-режимах вместо дублированной очистки по каждому обработчику.
+ */
+export function abandonActiveSession() {
+  setSessionManager(null);
+  setSessionBatcher(null);
+  setCurrentBatchIndex(0);
+  setFlashQueue([]);
+  setFlashIdx(0);
+  setFlashRevealed(false);
+  setActivePracticeMode(null);
+  clearActiveReviewAIContext();
+  // flashCtx сохраняем — нужен для nav('chapter', flashCtx) после выхода
+  return clearSessionFromDB();
+}
 
 export function startExtraReview(state, dependencies, renderFlashFn) {
   const { toast } = dependencies;
@@ -163,8 +182,7 @@ export function saveActiveSessionState() {
   }
   if (manager.isSessionComplete()) {
     if (!sessionBatcher || !sessionBatcher.hasNextBatch()) {
-      clearSessionFromDB();
-      return;
+      return clearSessionFromDB();
     }
   }
 

@@ -1,13 +1,49 @@
 // ui/session-recovery-modal.js - Модальное окно восстановления активной SRS-сессии
 
+/**
+ * Вычисляет агрегированную статистику по всем батчам сохранённой сессии.
+ * Используется в модальном окне восстановления.
+ * @param {Object} sessionRecord
+ * @returns {{ reviewed: number, remaining: number, total: number }}
+ */
+export function getSessionRecoverySummary(sessionRecord) {
+  const managerStats = sessionRecord?.managerState?.stats || {};
+  const batcherState = sessionRecord?.batcherState;
+  const currentBatchIdx = sessionRecord?.currentBatchIndex ?? 0;
+
+  const reviewedInCurrent = managerStats.reviewed ?? 0;
+  const remainingInCurrent = managerStats.remaining ?? 0;
+
+  if (!batcherState?.batches?.length) {
+    // Нет данных о батчах — считаем только текущий менеджер
+    const total = managerStats.total ?? reviewedInCurrent + remainingInCurrent;
+    return { reviewed: reviewedInCurrent, remaining: remainingInCurrent, total };
+  }
+
+  const batches = batcherState.batches;
+
+  // Суммируем фактические размеры уже завершённых батчей (до текущего)
+  const completedBatchCards = batches
+    .slice(0, currentBatchIdx)
+    .reduce((sum, batch) => sum + (batch.cards?.length || 0), 0);
+
+  // Суммируем фактические размеры будущих батчей (после текущего)
+  const futureCards = batches
+    .slice(currentBatchIdx + 1)
+    .reduce((sum, batch) => sum + (batch.cards?.length || 0), 0);
+
+  const reviewed = completedBatchCards + reviewedInCurrent;
+  const remaining = remainingInCurrent + futureCards;
+  const total = reviewed + remaining;
+
+  return { reviewed, remaining, total };
+}
+
 export function showSessionRecoveryModal(sessionRecord, { onResume, onRestart, onCancel }) {
   const existing = document.getElementById('session-recovery-modal-overlay');
   if (existing) existing.remove();
 
-  const managerStats = sessionRecord?.managerState?.stats || {};
-  const reviewed = managerStats.reviewed ?? 0;
-  const remaining = managerStats.remaining ?? 0;
-  const total = managerStats.total ?? reviewed + remaining;
+  const { reviewed, remaining, total } = getSessionRecoverySummary(sessionRecord);
   const typeText =
     sessionRecord?.sessionType === 'chapter'
       ? `Глава ${sessionRecord.chapterId || ''}`

@@ -15,6 +15,7 @@ import { SessionManager } from './session-manager.js';
 import { saveSessionToDB, loadSessionFromDB, clearSessionFromDB } from './session-manager.js';
 import { loadOpenRouterKeyFromDB } from './src/openrouter-key.js';
 import { saveActiveSessionState, restoreActiveSessionRecord } from './ui/flashcards/session.js';
+import { getSessionManager } from './ui/flashcards/state.js';
 import { showSessionRecoveryModal } from './ui/session-recovery-modal.js';
 
 // IndexedDB модули
@@ -494,6 +495,7 @@ export { calculateNextNotificationDate };
 // ===== ROUTER SETUP =====
 let router = null;
 let startSrsSessionFn = null;
+let startChapterFlashcardsFn = null;
 
 function setupRouter() {
   const dependencies = createDependencies();
@@ -525,7 +527,10 @@ function setupRouter() {
 
     // Явно переключаемся на экран SRS (снимаем inert и aria-hidden)
     if (router) {
-      router.navigate('srs', { mode: 'session' });
+      router.navigate('srs', { mode: 'session' }, true);
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({ screen: 'srs', opt: { mode: 'session' } }, '', '');
+      }
     } else {
       nav('srs');
     }
@@ -556,12 +561,16 @@ function setupRouter() {
     renderFlash(state, dependencies);
   };
 
+  startChapterFlashcardsFn = startChapterFlashcards;
   dependencies.startChapterFlashcards = startChapterFlashcards;
 
   startSrsSessionFn = async () => startSrsSession();
   const startSrsSession = async () => {
     if (router) {
-      router.navigate('srs', { mode: 'session' });
+      router.navigate('srs', { mode: 'session' }, true);
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({ screen: 'srs', opt: { mode: 'session' } }, '', '');
+      }
     } else {
       nav('srs');
     }
@@ -621,7 +630,12 @@ function setupRouter() {
 
   const renderSrsDashboard = async (options = {}, context = {}) => {
     if (options?.mode === 'session') {
-      return;
+      if (getSessionManager()) {
+        return;
+      }
+      if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+        window.history.replaceState({ screen: 'srs' }, '', '');
+      }
     }
 
     const body = $('#srs-body');
@@ -834,8 +848,16 @@ async function init() {
             }
           },
           onRestart: async () => {
+            const sessionType = activeSession?.sessionType;
+            const chapterId = activeSession?.chapterId;
             await clearSessionFromDB();
-            if (startSrsSessionFn) startSrsSessionFn();
+            if (sessionType === 'chapter' && chapterId && startChapterFlashcardsFn) {
+              const due = dueCards(state.srs, chapterId);
+              const chapterCards = due && due.length > 0 ? due : allCards(state.srs, chapterId);
+              startChapterFlashcardsFn(chapterId, chapterCards);
+            } else if (startSrsSessionFn) {
+              startSrsSessionFn();
+            }
           },
           onCancel: async () => {
             await clearSessionFromDB();

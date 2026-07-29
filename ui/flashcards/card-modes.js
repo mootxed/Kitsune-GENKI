@@ -34,6 +34,7 @@ import {
   activeReviewAIContext,
   clearActiveReviewAIContext,
 } from './state.js';
+import { abandonActiveSession } from './session.js';
 
 import { announce } from '../../src/a11y-helpers.js';
 import {
@@ -557,6 +558,7 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
       const tabsContainer = document.getElementById('srs-tabs-container');
       if (tabsContainer) tabsContainer.classList.remove('hidden');
 
+      const _flashCtx = flashCtx;
       if (sessionManager) {
         const stats = sessionManager.getStats();
         if (stats.reviewed > 0) {
@@ -571,17 +573,17 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
               { icon: '🪙', label: `+${stats.reviewed} XP` },
             ],
             onContinue: () => {
-              setSessionManager(null);
+              abandonActiveSession();
               clearPostReviewSenseiActions();
-              flashCtx ? nav('chapter', flashCtx) : nav('srs');
+              _flashCtx ? nav('chapter', _flashCtx) : nav('srs');
             },
           });
           return;
         }
       }
-      setSessionManager(null);
+      abandonActiveSession();
       clearPostReviewSenseiActions();
-      flashCtx ? nav('chapter', flashCtx) : nav('srs');
+      _flashCtx ? nav('chapter', _flashCtx) : nav('srs');
     };
   }
 }
@@ -851,6 +853,7 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
       const tabsContainer = document.getElementById('srs-tabs-container');
       if (tabsContainer) tabsContainer.classList.remove('hidden');
 
+      const _flashCtx = flashCtx;
       if (sessionManager) {
         const stats = sessionManager.getStats();
         if (stats.reviewed > 0) {
@@ -865,17 +868,17 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
               { icon: '🪙', label: `+${stats.reviewed} XP` },
             ],
             onContinue: () => {
-              setSessionManager(null);
+              abandonActiveSession();
               clearPostReviewSenseiActions();
-              flashCtx ? nav('chapter', flashCtx) : nav('srs');
+              _flashCtx ? nav('chapter', _flashCtx) : nav('srs');
             },
           });
           return;
         }
       }
-      setSessionManager(null);
+      abandonActiveSession();
       clearPostReviewSenseiActions();
-      flashCtx ? nav('chapter', flashCtx) : nav('srs');
+      _flashCtx ? nav('chapter', _flashCtx) : nav('srs');
     };
   }
 }
@@ -1049,6 +1052,7 @@ export function renderMultipleChoiceMode(
       const tabsContainer = document.getElementById('srs-tabs-container');
       if (tabsContainer) tabsContainer.classList.remove('hidden');
 
+      const _flashCtx = flashCtx;
       if (sessionManager) {
         const stats = sessionManager.getStats();
         if (stats.reviewed > 0) {
@@ -1063,17 +1067,17 @@ export function renderMultipleChoiceMode(
               { icon: '🪙', label: `+${stats.reviewed} XP` },
             ],
             onContinue: () => {
-              setSessionManager(null);
+              abandonActiveSession();
               clearPostReviewSenseiActions();
-              flashCtx ? nav('chapter', flashCtx) : nav('srs');
+              _flashCtx ? nav('chapter', _flashCtx) : nav('srs');
             },
           });
           return;
         }
       }
-      setSessionManager(null);
+      abandonActiveSession();
       clearPostReviewSenseiActions();
-      flashCtx ? nav('chapter', flashCtx) : nav('srs');
+      _flashCtx ? nav('chapter', _flashCtx) : nav('srs');
     };
   }
 }
@@ -1348,6 +1352,7 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
       const tabsContainer = document.getElementById('srs-tabs-container');
       if (tabsContainer) tabsContainer.classList.remove('hidden');
 
+      const _flashCtx = flashCtx;
       if (sessionManager) {
         const stats = sessionManager.getStats();
         if (stats.reviewed > 0) {
@@ -1362,17 +1367,17 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
               { icon: '🪙', label: `+${stats.reviewed} XP` },
             ],
             onContinue: () => {
-              setSessionManager(null);
+              abandonActiveSession();
               clearPostReviewSenseiActions();
-              flashCtx ? nav('chapter', flashCtx) : nav('srs');
+              _flashCtx ? nav('chapter', _flashCtx) : nav('srs');
             },
           });
           return;
         }
       }
-      setSessionManager(null);
+      abandonActiveSession();
       clearPostReviewSenseiActions();
-      flashCtx ? nav('chapter', flashCtx) : nav('srs');
+      _flashCtx ? nav('chapter', _flashCtx) : nav('srs');
     };
   }
 }
@@ -1540,6 +1545,7 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
       const tabsContainer = document.getElementById('srs-tabs-container');
       if (tabsContainer) tabsContainer.classList.remove('hidden');
 
+      const _flashCtx = flashCtx;
       if (sessionManager) {
         const stats = sessionManager.getStats();
         if (stats.reviewed > 0) {
@@ -1554,17 +1560,17 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
               { icon: '🪙', label: `+${stats.reviewed} XP` },
             ],
             onContinue: () => {
-              setSessionManager(null);
+              abandonActiveSession();
               clearPostReviewSenseiActions();
-              flashCtx ? nav('chapter', flashCtx) : nav('srs');
+              _flashCtx ? nav('chapter', _flashCtx) : nav('srs');
             },
           });
           return;
         }
       }
-      setSessionManager(null);
+      abandonActiveSession();
       clearPostReviewSenseiActions();
-      flashCtx ? nav('chapter', flashCtx) : nav('srs');
+      _flashCtx ? nav('chapter', _flashCtx) : nav('srs');
     };
   }
 }

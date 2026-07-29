@@ -36,18 +36,24 @@ import { getOrGenerateDailyPlan } from '../src/daily-plan.js';
 import { openGrammarLesson } from './grammar-lesson.js';
 
 // ---------- Render: Chapter ----------
-export async function renderChapter(id, state, dependencies) {
+export async function renderChapter(id, state, dependencies, context = {}) {
+  const { signal } = context;
   // Лениво подгружаем контент главы перед отображением
   try {
     await ensureLesson(id);
   } catch (e) {
     console.error('Не удалось загрузить главу:', e);
   }
+  if (signal?.aborted) return;
+
   const l = getLesson(id);
   const toast = dependencies?.toast || window.toast || (() => {});
   if (!l) {
-    toast('Глава не найдена');
-    window.nav('home');
+    // Не уводить пользователя, если навигация уже устарела
+    if (!signal?.aborted) {
+      toast('Глава не найдена');
+      window.nav('home');
+    }
     return;
   }
 
@@ -55,6 +61,7 @@ export async function renderChapter(id, state, dependencies) {
   const migration = materializeLegacyChapterEvidence(cs, l);
   if (migration?.changed) {
     await save(true);
+    if (signal?.aborted) return;
   }
   const progress = getChapterProgress(state, id, l);
 
@@ -91,6 +98,7 @@ export async function renderChapter(id, state, dependencies) {
     });
     if (batchRes.created) {
       await save(true);
+      if (signal?.aborted) return;
       getOrGenerateDailyPlan(state, {
         dateKey: today,
         activeChapterId: id,
@@ -218,6 +226,8 @@ export async function renderChapter(id, state, dependencies) {
     state?.workbookSettings?.enabled === false
       ? `<p class="muted" style="font-size:12px;margin:4px 0 8px;color:var(--muted,#888);">Задания Workbook отключены в Плане обучения.</p>`
       : '';
+
+  if (signal?.aborted) return;
 
   body.innerHTML = `
     <!-- Верхний прогресс главы (3 блока сводки) -->
