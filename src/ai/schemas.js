@@ -337,3 +337,146 @@ export function validateQuizForMaterial(response, options = {}) {
 export function getCorrectOptionIndex(question) {
   return question.options.findIndex((option) => option.isCorrect);
 }
+
+// ---------------------------------------------------------------------------
+// Review Explanation (explain_review_error handler)
+// Handler-specific schema — not added to StructuredResponseSchema.
+// Quiz questions are limited to 1–4 per the SRS integration spec.
+// ---------------------------------------------------------------------------
+
+import { DIAGNOSIS_CATEGORIES } from './review-attempt-schema.js';
+
+const reviewQuizRange = { min: 1, max: 4 };
+
+export const ReviewQuizSchema = z
+  .object({
+    questions: z.array(QuizQuestionSchema).min(0).max(reviewQuizRange.max),
+  })
+  .strip();
+
+export const ComparisonEntrySchema = z
+  .object({
+    form: cleanText(300),
+    reading: nullableText(300),
+    role: cleanText(300),
+    isExpected: z.boolean(),
+  })
+  .strip();
+
+export const ReviewExplanationSchema = z
+  .object({
+    type: z.literal('review_explanation'),
+
+    diagnosis: z
+      .object({
+        category: z.enum(DIAGNOSIS_CATEGORIES),
+        message: cleanText(500),
+      })
+      .strip(),
+
+    explanation: cleanText(3_000),
+
+    comparison: z.array(ComparisonEntrySchema).min(1).max(6),
+
+    examples: z.array(ExampleSchema).max(6).default([]),
+
+    quiz: ReviewQuizSchema,
+  })
+  .strip();
+
+// ---------------------------------------------------------------------------
+// Mnemonic (create_mnemonic handler)
+// ---------------------------------------------------------------------------
+
+export const MnemonicBreakdownSchema = z
+  .object({
+    element: cleanText(50),
+    cue: cleanText(300),
+  })
+  .strip();
+
+export const MnemonicSchema = z
+  .object({
+    type: z.literal('mnemonic'),
+
+    mnemonic: cleanText(1_000),
+
+    breakdown: z.array(MnemonicBreakdownSchema).max(8).default([]),
+
+    warning: nullableText(300),
+
+    example: z
+      .object({
+        japanese: cleanText(500),
+        translation: cleanText(500),
+      })
+      .strip()
+      .nullable()
+      .optional(),
+  })
+  .strip();
+
+/**
+ * Validates review quiz question count and diagnosis consistency.
+ * Called as additionalValidator in handleExplainReviewError.
+ *
+ * @param {object} data — parsed ReviewExplanationSchema data
+ * @param {object} snapshot — ReviewAttemptSnapshot for diagnosis verification
+ * @param {object} localDiagnosis — local diagnosis hint
+ * @param {boolean} isRepairedAttempt
+ */
+export function validateReviewExplanation(
+  data,
+  snapshot,
+  localDiagnosis,
+  isRepairedAttempt = false
+) {
+  const minQ = isRepairedAttempt ? 0 : reviewQuizRange.min;
+  const maxQ = reviewQuizRange.max;
+  const qCount = data?.quiz?.questions?.length ?? 0;
+
+  if (qCount < minQ || qCount > maxQ) {
+    return {
+      success: false,
+      error: new z.ZodError([
+        {
+          code: 'custom',
+          path: ['quiz', 'questions'],
+          message: `Review quiz должен содержать от ${minQ} до ${maxQ} вопросов, получено: ${qCount}`,
+        },
+      ]),
+    };
+  }
+
+  // Проверяем согласованность диагноза со снапшотом
+  // Если localDiagnosis high confidence — модель не должна ставить несовместимый диагноз
+  if (
+    localDiagnosis?.confidence === 'high' &&
+    localDiagnosis.category !== 'unknown' &&
+    data?.diagnosis?.category !== localDiagnosis.category &&
+    data?.diagnosis?.category !== 'unknown'
+  ) {
+    // Мягкая проверка: предупреждаем, но не блокируем repair
+    // (модель могла уточнить; полный блок только на очевидное противоречие)
+    const incompatiblePairs = {
+      polite_instead_of_dictionary_form: ['wrong_meaning', 'wrong_reading', 'wrong_writing'],
+      dictionary_instead_of_polite_form: ['wrong_meaning', 'wrong_reading', 'wrong_writing'],
+      wrong_particle: ['wrong_meaning', 'wrong_word_order'],
+    };
+    const blocked = incompatiblePairs[localDiagnosis.category] || [];
+    if (blocked.includes(data.diagnosis.category)) {
+      return {
+        success: false,
+        error: new z.ZodError([
+          {
+            code: 'custom',
+            path: ['diagnosis', 'category'],
+            message: `Диагноз «${data.diagnosis.category}» противоречит локальному диагнозу «${localDiagnosis.category}»`,
+          },
+        ]),
+      };
+    }
+  }
+
+  return { success: true, data };
+}

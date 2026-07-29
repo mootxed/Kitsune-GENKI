@@ -757,3 +757,54 @@ export function getChatHistory() {
 export function getSenseiTab() {
   return senseiTab;
 }
+
+/**
+ * Импортирует объяснение ошибки из панели карточки в историю AI-чата.
+ * Вызывается при нажатии «Продолжить в чате» в sensei-review-panel.js.
+ *
+ * Формирует строго типизированное сообщение:
+ *  - type: 'explanation'
+ *  - intent: 'explain_review_error'
+ *  - artifact.type: 'review_explanation'
+ *
+ * НЕ создаёт review event, НЕ меняет FSRS, НЕ вызывает submitReview.
+ *
+ * @param {object} artifact — ReviewExplanation или MnemonicArtifact
+ * @param {import('../src/ai/review-attempt-schema.js').ReviewAttemptSnapshot} snapshot
+ */
+export function importReviewExplanationToChat(artifact, snapshot) {
+  if (!artifact || !snapshot) return;
+
+  const intent =
+    artifact.type === 'mnemonic' ? AI_INTENTS.CREATE_MNEMONIC : AI_INTENTS.EXPLAIN_REVIEW_ERROR;
+
+  // Краткий текст для превью в чате
+  let messageText = '';
+  if (artifact.type === 'review_explanation') {
+    messageText = artifact.explanation || artifact.diagnosis?.message || 'Разбор ошибки';
+  } else if (artifact.type === 'mnemonic') {
+    messageText = artifact.mnemonic || 'Мнемоника для карточки';
+  }
+
+  const chatMessage = createAssistantChatMessage({
+    text: messageText,
+    intent,
+    type: 'explanation',
+    artifact: {
+      ...artifact,
+      // Обязательный тег для нормализации chatHistory
+      _importedFromReviewPanel: true,
+    },
+    context: {
+      // Передаём только публичные данные слова (не FSRS)
+      reviewItem: {
+        writing: snapshot.item?.writing,
+        reading: snapshot.item?.reading,
+        meanings: snapshot.item?.meanings?.slice(0, 3),
+      },
+      reviewOutcome: snapshot.result?.outcome,
+    },
+  });
+
+  chatHistory.push(chatMessage);
+}

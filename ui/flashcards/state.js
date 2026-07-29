@@ -34,6 +34,33 @@ export let drawingHintUsed = false;
 export let kanjiSequence = [];
 export let currentKanjiIndex = 0;
 
+/**
+ * Временный AI-контекст текущей карточки.
+ *
+ * Очищается при:
+ *  - переходе к следующей карточке
+ *  - Undo
+ *  - смене сессии (setFlashQueue, setSessionManager)
+ *
+ * НЕ записывается в state приложения и НЕ вызывает save().
+ * Ответы мини-квиза панели хранятся здесь же (quizAnswers).
+ *
+ * Поля:
+ *  - snapshot: ReviewAttemptSnapshot
+ *  - attemptId: string (UUID конкретного запроса)
+ *  - cardSessionId: string (UUID конкретного показа карточки)
+ *  - quizAnswers: Record<questionId, selectedIndex>
+ */
+export let activeReviewAIContext = null;
+
+export function setActiveReviewAIContext(ctx) {
+  activeReviewAIContext = ctx;
+}
+
+export function clearActiveReviewAIContext() {
+  activeReviewAIContext = null;
+}
+
 export function setActiveReviewTiming(timing) {
   activeReviewTiming = timing;
 }
@@ -86,6 +113,7 @@ export function setCurrentKanjiIndex(idx) {
 export function setFlashQueue(queue) {
   flashQueue = queue;
   reviewUndoStack.clear();
+  clearActiveReviewAIContext();
 }
 
 export function setFlashIdx(idx) {
@@ -101,7 +129,10 @@ export function setFlashCtx(ctx) {
 }
 
 export function setSessionManager(manager) {
-  if (sessionManager !== manager) reviewUndoStack.clear();
+  if (sessionManager !== manager) {
+    reviewUndoStack.clear();
+    clearActiveReviewAIContext();
+  }
   sessionManager = manager;
   if (manager) activePracticeMode = null;
 }

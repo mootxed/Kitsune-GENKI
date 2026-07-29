@@ -6,6 +6,10 @@ import HanziWriter from 'hanzi-writer';
 import { localCharDataLoader } from '../../src/kanji-loader.js';
 import { getAllKanji } from './mode-selector.js';
 import { markReviewAnswered, submitReview } from './review-fsrs.js';
+import { adaptDrawingContext } from './review-context-adapters.js';
+import { renderPostReviewSenseiActions } from './sensei-review-panel.js';
+import { activeReviewAIContext } from './state.js';
+
 import {
   kanjiSequence,
   setKanjiSequence,
@@ -183,9 +187,20 @@ export function initDrawingMode(
                 : '📝 Нарисовано с подсказками';
         toast(resultText);
 
+        const currentKanjiItem = kanjiSequence[currentKanjiIndex] || {};
+        // aiAttempt формируется ДО submitReview
+        const aiAttempt = adaptDrawingContext({
+          kanji,
+          reading: currentKanjiItem.reading || romaji || '',
+          translation,
+          totalMistakes: totalDrawingMistakes,
+          hintUsed: drawingHintUsed,
+        });
+
         const reviewRes = submitReview(card, quality, state, {
           mistakes: totalDrawingMistakes,
           hintUsed: drawingHintUsed,
+          aiAttempt,
         });
         if (!sessionManager) setFlashIdx(flashIdx + 1);
 
@@ -198,6 +213,14 @@ export function initDrawingMode(
 
         setKanjiSequence([]);
         setCurrentKanjiIndex(0);
+
+        if (reviewRes?._snapshotReady && reviewRes._cardSessionId) {
+          renderPostReviewSenseiActions({
+            snapshot: activeReviewAIContext?.snapshot,
+            cardSessionId: reviewRes._cardSessionId,
+            dependencies,
+          });
+        }
 
         setTimeout(() => {
           if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);

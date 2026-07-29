@@ -5,6 +5,7 @@ import { SRS } from '../../srs.js';
 import { adjustQualityByTime, isLeech, undoReviewEvent } from '../../src/card-behavior.js';
 import { modeCanSchedule, parseCardIdentity } from '../../src/knowledge-model.js';
 import { compactReviewJournal, enqueueReviewLog } from '../../src/review-journal.js';
+import { buildReviewAttemptSnapshot } from '../../src/ai/review-context-builder.js';
 import {
   activeReviewTiming,
   setActiveReviewTiming,
@@ -21,7 +22,11 @@ import {
   setCurrentKanjiIndex,
   setTotalDrawingMistakes,
   setDrawingHintUsed,
+  setActiveReviewAIContext,
+  clearActiveReviewAIContext,
 } from './state.js';
+
+import { closeSenseiPanel } from './sensei-review-panel.js';
 
 function monotonicNow() {
   return typeof globalThis.performance !== 'undefined' &&
@@ -148,7 +153,7 @@ export function submitReview(card, quality, state, context = null) {
   const cardCompleted = sessionManager ? cardStateAfter === null || cardStateAfter.completed : true;
   const xpEligible = !wasCompletedBefore && cardCompleted;
 
-  return {
+  const submitResult = {
     accepted: true,
     firstAttempt: isFirstAttempt,
     cardCompleted,
@@ -156,6 +161,53 @@ export function submitReview(card, quality, state, context = null) {
     xpEligible,
     quality: adjustedQuality,
   };
+
+  // Строим AI-снапшот ТОЛЬКО при accepted review и достаточном task context.
+  // Не сохраняем в state приложения, не вызываем save.
+  if (result?.event && reviewContext.aiAttempt) {
+    const { aiAttempt, mode: reviewMode, responseTimeMs } = reviewContext;
+    // Не создаём при технических режимах (проверка внутри builder)
+    const word = activeReviewState ? _wordFromStateById(activeReviewState, identity.itemId) : null;
+    if (word) {
+      const cardSessionId =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const snapshot = buildReviewAttemptSnapshot({
+        card: srsCard,
+        word,
+        mode: reviewMode || mode,
+        submitResult,
+        aiAttempt,
+        srsCard,
+        responseTimeMs: responseTimeMs ?? timedContext.responseTimeMs,
+      });
+      if (snapshot) {
+        const aiCtx = { snapshot, cardSessionId, attemptId: null, quizAnswers: {} };
+        setActiveReviewAIContext(aiCtx);
+        // Рендер кнопок будет вызван из post-review helper в card-modes.js
+        // через renderPostReviewSenseiActions, передавая dependencies
+        submitResult._snapshotReady = true;
+        submitResult._cardSessionId = cardSessionId;
+      }
+    }
+  }
+
+  return submitResult;
+}
+
+/**
+ * Находит слово по itemId из LESSONS через activeReviewDependencies.
+ * Используется только для построения AI-снапшота.
+ */
+function _wordFromStateById(state, itemId) {
+  const lessons = activeReviewDependencies?.LESSONS || [];
+  for (const lesson of lessons) {
+    const wordList = lesson.words || lesson.vocabulary || [];
+    const w = wordList.find((x) => x.id === itemId);
+    if (w) return w;
+  }
+  return null;
 }
 
 export function latestUndoableEvent(state) {
@@ -204,6 +256,9 @@ export async function undoLastReview(state, dependencies, renderFlashFn) {
   setFlashIdx(previous?.flashIdx ?? flashIdx);
   setFlashRevealed(previous?.flashRevealed ?? false);
   setActiveReviewTiming(null);
+  // При Undo очищаем AI-снапшот и закрываем панель
+  clearActiveReviewAIContext();
+  closeSenseiPanel();
   setKanjiSequence([]);
   setCurrentKanjiIndex(0);
   setTotalDrawingMistakes(0);

@@ -31,8 +31,18 @@ import {
   flashCtx,
   sessionManager,
   setSessionManager,
+  activeReviewAIContext,
 } from './state.js';
+
 import { announce } from '../../src/a11y-helpers.js';
+import {
+  adaptTypingContext,
+  adaptMultipleChoiceContext,
+  adaptParticleQuizContext,
+  adaptSentenceBuildingContext,
+  adaptContextProductionContext,
+} from './review-context-adapters.js';
+import { renderPostReviewSenseiActions } from './sensei-review-panel.js';
 
 // Конвертер Хирагана → Катакана
 const HIRAGANA_TO_KATAKANA = {
@@ -360,10 +370,11 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, ren
       input.classList.remove('incorrect', 'shake-error');
 
       const quality = SRS.qualityFromMistakes(typingMistakes);
+      const firstAttemptCorrect = typingMistakes === 0;
       markReviewAnswered(reviewCardId || word.id);
 
       setTimeout(() => {
-        handleRating(quality);
+        handleRating(quality, userAnswer, typingMistakes, typingMistakes > 0, firstAttemptCorrect);
       }, 500);
     } else {
       typingMistakes++;
@@ -392,7 +403,7 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, ren
         markReviewAnswered(reviewCardId || word.id);
 
         setTimeout(() => {
-          handleRating(SRS.Quality.Again);
+          handleRating(SRS.Quality.Again, userAnswer, typingMistakes, true, false);
         }, 1000);
       }
     }
@@ -400,12 +411,25 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, ren
     isChecked = typingMistakes >= 2 || isCorrect;
   };
 
-  const handleRating = (quality) => {
+  // Typing mode handleRating: aiAttempt строится ДО submitReview
+  const handleRating = (quality, _userAnswer, _typingMistakes, _hintUsed, _firstAttemptCorrect) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
+    const aiAttempt = adaptTypingContext({
+      word,
+      acceptedAnswers,
+      userAnswer: _userAnswer ?? null,
+      mistakes: _typingMistakes ?? typingMistakes,
+      hintUsed: _hintUsed ?? typingMistakes > 0,
+      firstAttemptCorrect: _firstAttemptCorrect ?? null,
+      displayCategory,
+      displayQuestion,
+    });
+
     const result = submitReview(card, quality, state, {
-      mistakes: typingMistakes,
-      hintUsed: typingMistakes > 0,
+      mistakes: aiAttempt.mistakes,
+      hintUsed: aiAttempt.hintUsed,
+      aiAttempt,
     });
     if (!sessionManager) setFlashIdx(flashIdx + 1);
 
@@ -415,6 +439,16 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, ren
     save(true);
     markActivity();
     setFlashRevealed(false);
+
+    // Рендерим кнопки Сенсея ПЕРЕД renderFlashFn (следующая карточка очистит контекст)
+    if (result?._snapshotReady && result._cardSessionId) {
+      renderPostReviewSenseiActions({
+        snapshot: activeReviewAIContext?.snapshot,
+        cardSessionId: result._cardSessionId,
+        dependencies,
+      });
+    }
+
     if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
     updateSrsBadge();
   };
@@ -610,14 +644,23 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
     };
   }
 
-  const handleRating = (quality) => {
+  const handleRating = (quality, _userAnswer, _typingMistakes, _hintUsed, _firstAttemptCorrect) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+
+    const cpAttempt = adaptContextProductionContext({
+      task,
+      userAnswer: _userAnswer ?? null,
+      mistakes: _typingMistakes ?? typingMistakes,
+      hintUsed: _hintUsed ?? hintUsed,
+      firstAttemptCorrect: _firstAttemptCorrect ?? null,
+    });
 
     const result = submitReview(card, quality, state, {
       mode: CARD_MODES.CONTEXT_PRODUCTION,
       taskId: task.id,
-      mistakes: typingMistakes,
-      hintUsed,
+      mistakes: cpAttempt?.mistakes ?? typingMistakes,
+      hintUsed: cpAttempt?.hintUsed ?? hintUsed,
+      ...(cpAttempt ? { aiAttempt: cpAttempt } : {}),
     });
     if (!sessionManager) setFlashIdx(flashIdx + 1);
 
@@ -627,6 +670,13 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
     save(true);
     markActivity();
     setFlashRevealed(false);
+    if (result?._snapshotReady && result._cardSessionId) {
+      renderPostReviewSenseiActions({
+        snapshot: activeReviewAIContext?.snapshot,
+        cardSessionId: result._cardSessionId,
+        dependencies,
+      });
+    }
     if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
     updateSrsBadge();
   };
@@ -645,7 +695,13 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
       markReviewAnswered(reviewCardId || word.id);
 
       setTimeout(() => {
-        handleRating(quality);
+        handleRating(
+          quality,
+          normalizeKanaAnswer(input.value),
+          typingMistakes,
+          hintUsed,
+          typingMistakes === 0 && !hintUsed
+        );
       }, 500);
     } else {
       typingMistakes++;
@@ -681,7 +737,13 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
         markReviewAnswered(reviewCardId || word.id);
 
         setTimeout(() => {
-          handleRating(SRS.Quality.Again);
+          handleRating(
+            SRS.Quality.Again,
+            normalizeKanaAnswer(input.value),
+            typingMistakes,
+            true,
+            false
+          );
         }, 1200);
       }
     }
@@ -758,8 +820,8 @@ export function renderMultipleChoiceMode(
   } = dependencies;
 
   const body = $('#srs-body');
-  const displayKanji = word.kanji || word.writing;
   const displayTranslation = word.translation;
+
   const displayCategory = modeConfig.category || word.category || 'Слово';
   const displayQuestion = modeConfig.question || displayTranslation;
   const displayHint = modeConfig.hint || 'Выберите правильное слово';
@@ -805,12 +867,32 @@ export function renderMultipleChoiceMode(
   const reviewCardId = (sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx])?.id;
   startReviewTiming(reviewCardId || word.id, modeConfig.mode || CARD_MODES.MULTIPLE_CHOICE);
 
-  const handleRating = (quality) => {
+  const handleRating = (
+    quality,
+    _selectedText,
+    _correctText,
+    _mistakeCount,
+    _firstAttemptCorrect
+  ) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
+    const mcMode = modeConfig.mode || CARD_MODES.MULTIPLE_CHOICE;
+
+    const mcAttempt = adaptMultipleChoiceContext({
+      word,
+      displayQuestion,
+      selectedText: _selectedText ?? null,
+      correctText: _correctText ?? null,
+      mode: mcMode,
+      mistakes: _mistakeCount ?? mistakeCount,
+      firstAttemptCorrect: _firstAttemptCorrect ?? null,
+      contextSentence: modeConfig.contextSentence ?? null,
+      contextTranslation: modeConfig.hint ?? null,
+    });
 
     const result = submitReview(card, quality, state, {
-      mistakes: mistakeCount,
+      mistakes: mcAttempt.mistakes,
       hintUsed: false,
+      aiAttempt: mcAttempt,
     });
     if (!sessionManager) setFlashIdx(flashIdx + 1);
 
@@ -820,6 +902,13 @@ export function renderMultipleChoiceMode(
     save(true);
     markActivity();
     setFlashRevealed(false);
+    if (result?._snapshotReady && result._cardSessionId) {
+      renderPostReviewSenseiActions({
+        snapshot: activeReviewAIContext?.snapshot,
+        cardSessionId: result._cardSessionId,
+        dependencies,
+      });
+    }
     if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
     updateSrsBadge();
   };
@@ -837,9 +926,11 @@ export function renderMultipleChoiceMode(
 
         const quality = SRS.qualityFromMistakes(mistakeCount);
         markReviewAnswered(reviewCardId || word.id);
+        const selectedText = btn.textContent.trim();
+        const correctText = selectedText; // isCorrect=true, so they match
 
         setTimeout(() => {
-          handleRating(quality);
+          handleRating(quality, selectedText, correctText, mistakeCount, mistakeCount === 0);
         }, 600);
       } else {
         btn.classList.add('incorrect');
@@ -849,15 +940,23 @@ export function renderMultipleChoiceMode(
         if (mistakeCount >= 2) {
           $$('.quiz-option-btn').forEach((b) => (b.disabled = true));
 
+          let correctText = null;
           $$('.quiz-option-btn').forEach((b) => {
             if (b.dataset.wordId === word.id) {
               b.classList.add('correct');
+              correctText = b.textContent.trim();
             }
           });
           markReviewAnswered(reviewCardId || word.id);
 
           setTimeout(() => {
-            handleRating(SRS.Quality.Again);
+            handleRating(
+              SRS.Quality.Again,
+              btn.textContent.trim(),
+              correctText,
+              mistakeCount,
+              false
+            );
           }, 1000);
         }
       }
@@ -1056,12 +1155,24 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
     };
   }
 
-  const handleRating = (quality) => {
+  const handleRating = (quality, _quizData, _userSentence, _mistakeCount) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
+    const sbAttempt = adaptSentenceBuildingContext({
+      quizData: _quizData ?? {
+        correctWords,
+        userSentence: _userSentence ?? userSentence,
+        russianHint,
+        shuffledWords,
+      },
+      mistakes: _mistakeCount ?? mistakeCount,
+      firstAttemptCorrect: (_mistakeCount ?? mistakeCount) === 0 ? true : null,
+    });
+
     const result = submitReview(card, quality, state, {
-      mistakes: mistakeCount,
-      hintUsed: mistakeCount > 0,
+      mistakes: sbAttempt.mistakes,
+      hintUsed: sbAttempt.hintUsed,
+      aiAttempt: sbAttempt,
     });
     if (!sessionManager) setFlashIdx(flashIdx + 1);
 
@@ -1071,6 +1182,13 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
     save(true);
     markActivity();
     setFlashRevealed(false);
+    if (result?._snapshotReady && result._cardSessionId) {
+      renderPostReviewSenseiActions({
+        snapshot: activeReviewAIContext?.snapshot,
+        cardSessionId: result._cardSessionId,
+        dependencies,
+      });
+    }
     if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
     updateSrsBadge();
   };
@@ -1098,9 +1216,17 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
         }
         announce('Правильно!');
 
-        const quality = SRS.qualityFromMistakes(mistakeCount);
         markReviewAnswered(particleCard.id);
-        setTimeout(() => handleRating(quality), 800);
+        setTimeout(
+          () =>
+            handleRating(
+              SRS.qualityFromMistakes(mistakeCount),
+              { correctWords, userSentence, russianHint, shuffledWords },
+              userSentence,
+              mistakeCount
+            ),
+          800
+        );
       } else {
         mistakeCount++;
 
@@ -1123,7 +1249,16 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
           if (clearBtn) clearBtn.disabled = true;
           markReviewAnswered(particleCard.id);
 
-          setTimeout(() => handleRating(SRS.Quality.Again), 2000);
+          setTimeout(
+            () =>
+              handleRating(
+                SRS.Quality.Again,
+                { correctWords, userSentence, russianHint, shuffledWords },
+                userSentence,
+                mistakeCount
+              ),
+            2000
+          );
         }
       }
     };
@@ -1251,12 +1386,21 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
 
   startReviewTiming(particleCard.id, CARD_MODES.PARTICLE_QUIZ);
 
-  const handleRating = (quality) => {
+  const handleRating = (quality, _selectedParticle, _mistakeCount) => {
     const card = sessionManager ? sessionManager.getNextCard() : flashQueue[flashIdx];
 
+    const pqAttempt = adaptParticleQuizContext({
+      quizData: { sentence, correctParticle, options, russianHint },
+      selectedParticle: _selectedParticle ?? null,
+      mistakes: _mistakeCount ?? mistakeCount,
+      firstAttemptCorrect: (_mistakeCount ?? mistakeCount) === 0 ? true : null,
+      localParticleRule: null,
+    });
+
     const result = submitReview(card, quality, state, {
-      mistakes: mistakeCount,
-      hintUsed: mistakeCount > 0,
+      mistakes: pqAttempt.mistakes,
+      hintUsed: pqAttempt.hintUsed,
+      aiAttempt: pqAttempt,
     });
     if (!sessionManager) setFlashIdx(flashIdx + 1);
 
@@ -1266,6 +1410,13 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
     save(true);
     markActivity();
     setFlashRevealed(false);
+    if (result?._snapshotReady && result._cardSessionId) {
+      renderPostReviewSenseiActions({
+        snapshot: activeReviewAIContext?.snapshot,
+        cardSessionId: result._cardSessionId,
+        dependencies,
+      });
+    }
     if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
     updateSrsBadge();
   };
@@ -1285,7 +1436,7 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
         markReviewAnswered(particleCard.id);
 
         setTimeout(() => {
-          handleRating(quality);
+          handleRating(quality, selectedParticle, mistakeCount);
         }, 600);
       } else {
         btn.classList.add('incorrect');
@@ -1303,7 +1454,7 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
           markReviewAnswered(particleCard.id);
 
           setTimeout(() => {
-            handleRating(SRS.Quality.Again);
+            handleRating(SRS.Quality.Again, selectedParticle, mistakeCount);
           }, 1000);
         }
       }

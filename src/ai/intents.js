@@ -8,6 +8,9 @@ export const AI_INTENTS = Object.freeze({
   CREATE_STORY: 'create_story',
   CREATE_QUIZ: 'create_quiz',
   CLARIFY_REQUEST: 'clarify_request',
+  // Review-specific intents — triggered from card UI, not the chat composer
+  EXPLAIN_REVIEW_ERROR: 'explain_review_error',
+  CREATE_MNEMONIC: 'create_mnemonic',
 });
 
 export const WORD_SOURCES = Object.freeze([

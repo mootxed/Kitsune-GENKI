@@ -1,0 +1,214 @@
+/* styles.css additions for AI Sensei Review Panel */
+
+.srp-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.srp-actions-label {
+  font-weight: 600;
+  font-size: 0.9em;
+  color: var(--primary, #6366f1);
+}
+
+.srp-action-btn {
+  padding: 6px 12px;
+  font-size: 0.85em;
+  border-radius: 6px;
+  border: 1px solid var(--primary, #6366f1);
+  background: var(--surface, #ffffff);
+  color: var(--primary, #6366f1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.srp-action-btn:hover {
+  background: var(--primary, #6366f1);
+  color: #ffffff;
+}
+
+/* Modal Overlay & Bottom Sheet Panel */
+
+.srp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.srp-container {
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+  background: var(--bg-card, #ffffff);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.25s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.srp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.srp-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-main, #1e293b);
+}
+
+.srp-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--text-muted, #64748b);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.srp-close:hover {
+  background: var(--bg-hover, #f1f5f9);
+}
+
+.srp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.srp-diagnosis {
+  padding: 10px 14px;
+  background: #fef2f2;
+  border-left: 4px solid #ef4444;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #991b1b;
+}
+
+.srp-explanation, .srp-examples, .srp-breakdown, .srp-mnemonic-text, .srp-quiz {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.srp-explanation h4, .srp-examples h4, .srp-breakdown h4, .srp-quiz h4, .srp-comparison h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.srp-comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+  font-size: 0.9em;
+}
+
+.srp-comparison-table th, .srp-comparison-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--border, #e2e8f0);
+  text-align: left;
+}
+
+.srp-comparison-table tr.expected {
+  background: #f0fdf4;
+  font-weight: 600;
+}
+
+.srp-example {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  background: var(--bg-hover, #f8fafc);
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+.srp-quiz-question {
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.srp-quiz-question legend {
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.srp-quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  margin-top: 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border, #cbd5e1);
+  background: var(--surface, #ffffff);
+  cursor: pointer;
+}
+
+.srp-quiz-option.correct {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #15803d;
+}
+
+.srp-quiz-option.incorrect {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+
+.srp-quiz-result {
+  margin-top: 8px;
+  font-size: 0.85em;
+  padding: 6px;
+  border-radius: 4px;
+}
+
+.srp-quiz-result.correct { color: #15803d; }
+.srp-quiz-result.incorrect { color: #b91c1c; }
+
+.srp-footer {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border, #e2e8f0);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.srp-loading, .srp-error {
+  padding: 20px;
+  text-align: center;
+}
