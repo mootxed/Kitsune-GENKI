@@ -1,0 +1,242 @@
+{
+  "version": 4,
+  "particles_dictionary": "data/particles-dictionary.json",
+  "chapters": [
+    {
+      "id": 1,
+      "title": "Модуль 1 — Знакомство и базовые предложения",
+      "lesson": "./lessons/lesson-01.json",
+      "story": "./stories/story-01.json",
+      "vocabCount": 80,
+      "grammarCount": 5,
+      "estimatedItems": 100,
+      "importanceWeight": 2,
+      "estimatedMinutes": 105,
+      "storyMeta": {
+        "storyId": 1,
+        "title": "Знакомство в университете",
+        "titleJP": "大学で出会い",
+        "cover_url": "image/Story1.webp",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Модуль 2 — Указательные слова и покупки",
+      "lesson": "./lessons/lesson-02.json",
+      "story": "./stories/story-02.json",
+      "vocabCount": 48,
+      "grammarCount": 9,
+      "estimatedItems": 84,
+      "importanceWeight": 1.5,
+      "estimatedMinutes": 125,
+      "storyMeta": {
+        "storyId": 2,
+        "title": "Покупки",
+        "titleJP": "買い物",
+        "cover_url": "image/Story2.webp",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Модуль 3 — Повседневные действия",
+      "lesson": "./lessons/lesson-03.json",
+      "story": "./stories/story-03.json",
+      "vocabCount": 56,
+      "grammarCount": 11,
+      "estimatedItems": 100,
+      "importanceWeight": 1.5,
+      "estimatedMinutes": 135,
+      "storyMeta": {
+        "storyId": 3,
+        "title": "Планы на выходные",
+        "titleJP": "週末の予定",
+        "cover_url": "image/Story3.webp",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Модуль 4 — Дни недели и время",
+      "lesson": "./lessons/lesson-04.json",
+      "story": "./stories/story-04.json",
+      "vocabCount": 62,
+      "grammarCount": 13,
+      "estimatedItems": 114,
+      "importanceWeight": 1,
+      "estimatedMinutes": 145,
+      "storyMeta": {
+        "storyId": 4,
+        "title": "Встреча в парке",
+        "titleJP": "公園で会いました",
+        "cover_url": "image/Story4.webp",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Модуль 5 — Описание предмета и места",
+      "lesson": "./lessons/lesson-05.json",
+      "story": "./stories/story-05.json",
+      "vocabCount": 51,
+      "grammarCount": 8,
+      "estimatedItems": 83,
+      "importanceWeight": 1.5,
+      "estimatedMinutes": 115,
+      "storyMeta": {
+        "storyId": 5,
+        "title": "Выходные в кафе",
+        "titleJP": "カフェで週末",
+        "cover_url": "image/Story5.webp",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Модуль 6 — Приглашение и поездки",
+      "lesson": "./lessons/lesson-06.json",
+      "story": "./stories/story-06.json",
+      "vocabCount": 47,
+      "grammarCount": 9,
+      "estimatedItems": 83,
+      "importanceWeight": 1.5,
+      "estimatedMinutes": 120,
+      "storyMeta": {
+        "storyId": 6,
+        "title": "Первый день занятий",
+        "titleJP": "最初の授業の日",
+        "cover_url": "image/Story6.webp",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Модуль 7 — Семья и внешний вид",
+      "lesson": "./lessons/lesson-07.json",
+      "story": "./stories/story-07.json",
+      "vocabCount": 52,
+      "grammarCount": 8,
+      "estimatedItems": 84,
+      "importanceWeight": 1,
+      "estimatedMinutes": 110,
+      "storyMeta": {
+        "storyId": 7,
+        "title": "Новый друг в классе",
+        "titleJP": "クラスの新しい友達",
+        "cover_url": "image/Story7.webp",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Модуль 8 — Бытовые ситуации",
+      "lesson": "./lessons/lesson-08.json",
+      "story": "./stories/story-08.json",
+      "vocabCount": 55,
+      "grammarCount": 10,
+      "estimatedItems": 95,
+      "importanceWeight": 1.5,
+      "estimatedMinutes": 130,
+      "storyMeta": {
+        "storyId": 8,
+        "title": "Выходной день",
+        "titleJP": "休みの日",
+        "cover_url": "image/Story8.webp",
+        "rewards": {
+          "xp": 20,
+          "coins": 15
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Модуль 9 — Прошлое и впечатления",
+      "lesson": "./lessons/lesson-09.json",
+      "story": "./stories/story-09.json",
+      "vocabCount": 55,
+      "grammarCount": 7,
+      "estimatedItems": 83,
+      "importanceWeight": 1,
+      "estimatedMinutes": 115,
+      "storyMeta": {
+        "storyId": 9,
+        "title": "Концерт",
+        "titleJP": "コンサート",
+        "cover_url": "image/Story9.webp"
+      }
+    },
+    {
+      "id": 10,
+      "title": "Модуль 10 — Сравнение и планирование",
+      "lesson": "./lessons/lesson-10.json",
+      "story": "./stories/story-10.json",
+      "vocabCount": 56,
+      "grammarCount": 10,
+      "estimatedItems": 96,
+      "importanceWeight": 1,
+      "estimatedMinutes": 130,
+      "storyMeta": {
+        "storyId": 10,
+        "title": "Зимние каникулы",
+        "titleJP": "冬休み",
+        "cover_url": "image/Story10.webp"
+      }
+    },
+    {
+      "id": 11,
+      "title": "Модуль 11 — Желания и просьбы",
+      "lesson": "./lessons/lesson-11.json",
+      "story": "./stories/story-11.json",
+      "vocabCount": 61,
+      "grammarCount": 10,
+      "estimatedItems": 101,
+      "importanceWeight": 0.7,
+      "estimatedMinutes": 145,
+      "storyMeta": {
+        "storyId": 11,
+        "title": "Планы на лето",
+        "titleJP": "夏の予定",
+        "cover_url": "image/Story11.webp"
+      }
+    },
+    {
+      "id": 12,
+      "title": "Модуль 12 — Мечты и намерения",
+      "lesson": "./lessons/lesson-12.json",
+      "story": "./stories/story-12.json",
+      "vocabCount": 53,
+      "grammarCount": 7,
+      "estimatedItems": 81,
+      "importanceWeight": 1,
+      "estimatedMinutes": 110,
+      "storyMeta": {
+        "storyId": 12,
+        "title": "Болезнь",
+        "titleJP": "病気",
+        "cover_url": "image/Story12.webp"
+      }
+    }
+  ]
+}

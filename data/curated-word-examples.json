@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "examples": [
+    {
+      "id": "curated-hayai-early-01",
+      "targetWordId": "L3_V046",
+      "japanese": "朝は早いです",
+      "reading": "あさははやいです",
+      "translation": "Утро раннее",
+      "minLesson": 3
+    },
+    {
+      "id": "curated-hayai-early-02",
+      "targetWordId": "L3_V046",
+      "japanese": "朝ごはんは七時です。早いですね。",
+      "reading": "あさごはんはしちじです。はやいですね。",
+      "translation": "Завтрак в семь часов. Это рано, не так ли?",
+      "minLesson": 3
+    }
+  ]
+}

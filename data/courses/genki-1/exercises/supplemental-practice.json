@@ -1,0 +1,1759 @@
+{
+  "schemaVersion": 1,
+  "chapters": [
+    {
+      "chapterId": 1,
+      "practice": [
+        {
+          "id": "L01-wb-cg-01",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第1課-1",
+          "title": "Связка です: представление человека",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L1_g1"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L01-wb-cg-02",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第1課-2",
+          "title": "Вопросы с か и вопросительными словами",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L1_g2"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L01-wb-cg-03",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第1課-3",
+          "title": "Притяжательные и описательные конструкции с の",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L1_g3"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L01-wb-cg-04",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第1課-4",
+          "title": "Время и телефонные номера",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L1_g4",
+            "L1_g5"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L01-wb-cg-05",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第1課-5",
+          "title": "Анкета и краткое представление себя",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L1_g1",
+            "L1_g2",
+            "L1_g3"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L01-wb-cg-06",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第1課-6",
+          "title": "Аудирование: личные данные, время и номера",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L1_g1",
+            "L1_g2",
+            "L1_g4",
+            "L1_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L01-wb-rw-01",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第1課-1",
+          "title": "Чтение и письмо: урок 1, часть 1",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L01-wb-rw-02",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第1課-2",
+          "title": "Чтение и письмо: урок 1, часть 2",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L01-wb-rw-03",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第1課-3",
+          "title": "Чтение и письмо: урок 1, часть 3",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L01-wb-rw-04",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第1課-4",
+          "title": "Чтение и письмо: урок 1, часть 4",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L01-wb-rw-05",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第1課-5",
+          "title": "Чтение и письмо: урок 1, часть 5",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L01-wb-rw-06",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第1課-6",
+          "title": "Чтение и письмо: урок 1, часть 6",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L01-wb-rw-07",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第1課-7",
+          "title": "Чтение и письмо: урок 1, часть 7",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        }
+      ]
+    },
+    {
+      "chapterId": 2,
+      "practice": [
+        {
+          "id": "L02-wb-cg-01",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第2課-1",
+          "title": "Числа, цены и вопрос いくら",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L2_g1"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L02-wb-cg-02",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第2課-2",
+          "title": "Указательные местоимения これ・それ・あれ",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L2_g2"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L02-wb-cg-03",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第2課-3",
+          "title": "Указательные определения この・その・あの",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L2_g3"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L02-wb-cg-04",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第2課-4",
+          "title": "Местоимения места ここ・そこ・あそこ и だれの",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L2_g4"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L02-wb-cg-05",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第2課-5",
+          "title": "Частица も и отрицательная форма じゃないです",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L2_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L02-wb-cg-06",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第2課-6",
+          "title": "Личные вопросы и отрицательные ответы",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L2_g2",
+            "L2_g4",
+            "L2_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L02-wb-cg-07",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第2課-7",
+          "title": "Аудирование: цены, принадлежность и личные данные",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L2_g1",
+            "L2_g2",
+            "L2_g3",
+            "L2_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L02-wb-rw-01",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第2課-1",
+          "title": "Чтение и письмо: урок 2, часть 1",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L02-wb-rw-02",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第2課-2",
+          "title": "Чтение и письмо: урок 2, часть 2",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L02-wb-rw-03",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第2課-3",
+          "title": "Чтение и письмо: урок 2, часть 3",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L02-wb-rw-04",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第2課-4",
+          "title": "Чтение и письмо: урок 2, часть 4",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L02-wb-rw-05",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第2課-5",
+          "title": "Чтение и письмо: урок 2, часть 5",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        }
+      ]
+    },
+    {
+      "chapterId": 3,
+      "practice": [
+        {
+          "id": "L03-wb-cg-01",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第3課-1",
+          "title": "Формы глаголов настоящего времени",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L3_g1"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L03-wb-cg-02",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第3課-2",
+          "title": "Прямое дополнение с を",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L3_g2"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L03-wb-cg-03",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第3課-3",
+          "title": "Место действия で и направление に",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L3_g3"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L03-wb-cg-04",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第3課-4",
+          "title": "Время действия, に и наречия времени",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L3_g4"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L03-wb-cg-05",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第3課-5",
+          "title": "Приглашения с ～ませんか",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L3_g5"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L03-wb-cg-06",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第3課-6",
+          "title": "Наречия частотности",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L3_g6"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L03-wb-cg-07",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第3課-7",
+          "title": "Ответы о повседневных привычках",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L3_g1",
+            "L3_g2",
+            "L3_g3",
+            "L3_g4",
+            "L3_g6"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L03-wb-cg-08",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第3課-8",
+          "title": "Аудирование: распорядок и занятия на выходных",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L3_g1",
+            "L3_g3",
+            "L3_g4",
+            "L3_g6"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L03-wb-rw-01",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第3課-2",
+          "title": "Чтение и письмо: урок 3",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        }
+      ]
+    },
+    {
+      "chapterId": 4,
+      "practice": [
+        {
+          "id": "L04-wb-cg-01",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第4課-1",
+          "title": "Конструкции あります・います",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L4_g1"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L04-wb-cg-02",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第4課-2",
+          "title": "Расположение предметов и мест",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L4_g2"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L04-wb-cg-03",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第4課-3",
+          "title": "Прошедшее время существительных и な-прилагательных",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L4_g3"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L04-wb-cg-04",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第4課-4",
+          "title": "Прошедшие формы глаголов",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L4_g4"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L04-wb-cg-05",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第4課-5",
+          "title": "Действия в прошлом и наречия частотности",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L4_g4",
+            "L4_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L04-wb-cg-06",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第4課-6",
+          "title": "Частица も в нескольких позициях",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L4_g6"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L04-wb-cg-07",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第4課-7",
+          "title": "Продолжительность действия и частицы",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L4_g7"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L04-wb-cg-08",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第4課-8",
+          "title": "Личные вопросы о месте, времени и прошлом",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L4_g1",
+            "L4_g2",
+            "L4_g3",
+            "L4_g4",
+            "L4_g7"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L04-wb-cg-09",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第4課-9",
+          "title": "Аудирование: действия и события выходных",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L4_g4",
+            "L4_g5",
+            "L4_g7"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L04-wb-rw-01",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第4課-2",
+          "title": "Чтение и письмо: урок 4",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        }
+      ]
+    },
+    {
+      "chapterId": 5,
+      "practice": [
+        {
+          "id": "L05-wb-cg-01",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第5課-1",
+          "title": "Настоящие формы い- и な-прилагательных",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L5_g1"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L05-wb-cg-02",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第5課-2",
+          "title": "Утвердительные и отрицательные описания",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L5_g1",
+            "L5_g2"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L05-wb-cg-03",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第5課-3",
+          "title": "Прошедшие формы прилагательных",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L5_g3"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L05-wb-cg-04",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第5課-4",
+          "title": "Описание событий в прошлом прилагательными",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L5_g3",
+            "L5_g4"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L05-wb-cg-05",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第5課-5",
+          "title": "Прилагательные перед существительными",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L5_g5"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L05-wb-cg-06",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第5課-6",
+          "title": "好き・きらい и частица が",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L5_g6"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L05-wb-cg-07",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第5課-7",
+          "title": "Предложения и приглашения с ～ましょう",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L5_g7"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L05-wb-cg-08",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第5課-8",
+          "title": "Рассказ о поездке и предпочтениях",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L5_g3",
+            "L5_g5",
+            "L5_g6"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L05-wb-cg-09",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第5課-9",
+          "title": "Аудирование: качества людей и предпочтения",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L5_g1",
+            "L5_g5",
+            "L5_g6"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L05-wb-rw-01",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第5課-2",
+          "title": "Чтение и письмо: урок 5",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        }
+      ]
+    },
+    {
+      "chapterId": 6,
+      "practice": [
+        {
+          "id": "L06-wb-cg-01",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第6課-1",
+          "title": "Образование て-формы глаголов",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L6_g1"
+          ],
+          "estimatedMinutes": 15,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L06-wb-cg-02",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第6課-2",
+          "title": "Дополнительная тренировка て-формы",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L6_g1"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L06-wb-cg-03",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第6課-3",
+          "title": "Просьбы с ～てください",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L6_g2"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L06-wb-cg-04",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第6課-4",
+          "title": "Последовательность действий через て-форму",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L6_g3"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L06-wb-cg-05",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第6課-5",
+          "title": "Разрешение с ～てもいいですか",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L6_g4"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L06-wb-cg-06",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第6課-6",
+          "title": "Запрет с ～てはいけません",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L6_g5"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L06-wb-cg-07",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第6課-7",
+          "title": "Причина с から и предложение помощи",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L6_g6",
+            "L6_g7"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L06-wb-cg-08",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第6課-8",
+          "title": "Обобщающая практика て-формы",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L6_g1",
+            "L6_g2",
+            "L6_g3",
+            "L6_g4",
+            "L6_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L06-wb-cg-09",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第6課-9",
+          "title": "Аудирование: правила, просьбы и планы",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L6_g2",
+            "L6_g4",
+            "L6_g5",
+            "L6_g6"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L06-wb-rw-01",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第6課-2",
+          "title": "Чтение и письмо: урок 6",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        }
+      ]
+    },
+    {
+      "chapterId": 7,
+      "practice": [
+        {
+          "id": "L07-wb-cg-01",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第7課-1",
+          "title": "Группы глаголов и て-форма",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L7_g1"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L07-wb-cg-02",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第7課-2",
+          "title": "Действие в процессе: ～ています",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L7_g2"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L07-wb-cg-03",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第7課-3",
+          "title": "Состояния и привычные действия с ～ています",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L7_g2",
+            "L7_g3"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L07-wb-cg-04",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第7課-4",
+          "title": "Описание внешности человека",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L7_g4"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L07-wb-cg-05",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第7課-5",
+          "title": "Соединение описаний с ～くて・～で",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L7_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L07-wb-cg-06",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第7課-6",
+          "title": "Цель движения с に行く",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L7_g6"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L07-wb-cg-07",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第7課-7",
+          "title": "Счёт людей и семейные отношения",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L7_g7"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L07-wb-cg-08",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第7課-8",
+          "title": "Личные вопросы о семье и состоянии",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L7_g2",
+            "L7_g3",
+            "L7_g7"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L07-wb-cg-09",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第7課-9",
+          "title": "Аудирование: внешность, семья и действия",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L7_g2",
+            "L7_g4",
+            "L7_g5",
+            "L7_g7"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L07-wb-rw-01",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第7課-2",
+          "title": "Чтение и письмо: урок 7",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        }
+      ]
+    },
+    {
+      "chapterId": 8,
+      "practice": [
+        {
+          "id": "L08-wb-cg-01",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第8課-1",
+          "title": "Краткие формы глаголов",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L8_g1"
+          ],
+          "estimatedMinutes": 15,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L08-wb-cg-02",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第8課-2",
+          "title": "Неформальная речь в настоящем времени",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L8_g1",
+            "L8_g2"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L08-wb-cg-03",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第8課-3",
+          "title": "Цитирование мыслей с と思います",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L8_g3"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L08-wb-cg-04",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第8課-4",
+          "title": "Передача речи с と言っていました",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L8_g4"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L08-wb-cg-05",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第8課-5",
+          "title": "Определительные придаточные предложения",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L8_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L08-wb-cg-06",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第8課-6",
+          "title": "もう・まだ и завершённость действия",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L8_g6"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L08-wb-cg-07",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第8課-7",
+          "title": "Вопросительное слово + か",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L8_g7"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L08-wb-cg-08",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第8課-8",
+          "title": "Обобщающая практика кратких форм",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L8_g1",
+            "L8_g2",
+            "L8_g3",
+            "L8_g4",
+            "L8_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L08-wb-cg-09",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第8課-9",
+          "title": "Аудирование: мнения, сообщения и действия",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L8_g3",
+            "L8_g4",
+            "L8_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L08-wb-rw-01",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第8課-2",
+          "title": "Чтение и письмо: урок 8",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        }
+      ]
+    },
+    {
+      "chapterId": 9,
+      "practice": [
+        {
+          "id": "L09-wb-cg-01",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第9課-1",
+          "title": "Краткие формы прошедшего времени",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L9_g1"
+          ],
+          "estimatedMinutes": 15,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L09-wb-cg-02",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第9課-2",
+          "title": "Неформальная речь в прошедшем времени",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L9_g1",
+            "L9_g2"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L09-wb-cg-03",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第9課-3",
+          "title": "Мысли о прошлом с と思います",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L9_g3"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L09-wb-cg-04",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第9課-4",
+          "title": "Передача сообщений о прошлом",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L9_g4"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L09-wb-cg-05",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第9課-5",
+          "title": "Определительные придаточные в прошлом",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L9_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L09-wb-cg-06",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第9課-6",
+          "title": "もう・まだ с прошедшим действием",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L9_g6"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L09-wb-cg-07",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第9課-7",
+          "title": "Объяснение причины с から",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L9_g7"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L09-wb-cg-08",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第9課-8",
+          "title": "Личные вопросы о прошлом опыте",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L9_g1",
+            "L9_g2",
+            "L9_g5",
+            "L9_g7"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L09-wb-cg-09",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第9課-9",
+          "title": "Аудирование: события и впечатления",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L9_g1",
+            "L9_g3",
+            "L9_g4"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L09-wb-rw-01",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第9課-2",
+          "title": "Чтение и письмо: урок 9",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        }
+      ]
+    },
+    {
+      "chapterId": 10,
+      "practice": [
+        {
+          "id": "L10-wb-cg-01",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第10課-1",
+          "title": "Сравнение двух предметов",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L10_g1"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L10-wb-cg-02",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第10課-2",
+          "title": "Выбор между вариантами с どちら・ほう",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L10_g2"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L10-wb-cg-03",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第10課-3",
+          "title": "Превосходная степень с いちばん",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L10_g3"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L10-wb-cg-04",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第10課-4",
+          "title": "Намерение с ～つもりです",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L10_g4"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L10-wb-cg-05",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第10課-5",
+          "title": "Изменение состояния с ～くなる・～になる",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L10_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L10-wb-cg-06",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第10課-6",
+          "title": "Неопределённые местоимения с か・も",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L10_g6"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L10-wb-cg-07",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第10課-7",
+          "title": "Причина и ожидания с から",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L10_g7"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L10-wb-cg-08",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第10課-8",
+          "title": "Аудирование: сравнения и планы",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L10_g1",
+            "L10_g2",
+            "L10_g3",
+            "L10_g4"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L10-wb-rw-01",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第10課-2",
+          "title": "Чтение и письмо: урок 10",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        }
+      ]
+    },
+    {
+      "chapterId": 11,
+      "practice": [
+        {
+          "id": "L11-wb-cg-01",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第11課-1",
+          "title": "Желание с ～たいです",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L11_g1"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L11-wb-cg-02",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第11課-2",
+          "title": "Перечисление действий с ～たり～たりする",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L11_g2"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L11-wb-cg-03",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第11課-3",
+          "title": "Опыт с ～たことがあります",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L11_g3"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L11-wb-cg-04",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第11課-4",
+          "title": "Объяснение причины с ので",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L11_g4"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L11-wb-cg-05",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第11課-5",
+          "title": "Личные вопросы о желаниях и опыте",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L11_g1",
+            "L11_g2",
+            "L11_g3",
+            "L11_g4"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L11-wb-cg-06",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第11課-6",
+          "title": "Аудирование: планы, опыт и занятия",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L11_g1",
+            "L11_g2",
+            "L11_g3"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L11-wb-rw-01",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第11課-2",
+          "title": "Чтение и письмо: урок 11",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        }
+      ]
+    },
+    {
+      "chapterId": 12,
+      "practice": [
+        {
+          "id": "L12-wb-cg-01",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第12課-1",
+          "title": "Объяснение ситуации с ～んです",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L12_g1"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L12-wb-cg-02",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第12課-2",
+          "title": "Совет с ～ほうがいいです",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L12_g2"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L12-wb-cg-03",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第12課-3",
+          "title": "Предположение с ～でしょう",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L12_g3"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L12-wb-cg-04",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第12課-4",
+          "title": "Причина с ので",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L12_g4"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L12-wb-cg-05",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第12課-5",
+          "title": "Обязанность с ～なければいけません・～なきゃ",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L12_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L12-wb-cg-06",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第12課-6",
+          "title": "Вероятность и прогноз",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L12_g3",
+            "L12_g4"
+          ],
+          "estimatedMinutes": 10,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L12-wb-cg-07",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第12課-7",
+          "title": "Личные вопросы о здоровье и обязанностях",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L12_g1",
+            "L12_g2",
+            "L12_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L12-wb-cg-08",
+          "type": "external-practice",
+          "section": "conversation-grammar",
+          "exercise": "第12課-8",
+          "title": "Аудирование: симптомы, советы и обязанности",
+          "description": "Выполнить соответствующее упражнение в рабочей тетради и сверить результат после самостоятельной попытки.",
+          "relatedGrammarIds": [
+            "L12_g1",
+            "L12_g2",
+            "L12_g4",
+            "L12_g5"
+          ],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        },
+        {
+          "id": "L12-wb-rw-01",
+          "type": "external-practice",
+          "section": "reading-writing",
+          "exercise": "読み書き編 第12課-2",
+          "title": "Чтение и письмо: урок 12",
+          "description": "Практика чтения, письма, каны и/или кандзи по разделу 読み書き編.",
+          "relatedGrammarIds": [],
+          "estimatedMinutes": 12,
+          "required": true,
+          "completionMode": "manual"
+        }
+      ]
+    }
+  ]
+}

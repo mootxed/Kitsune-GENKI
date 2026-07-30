@@ -1,0 +1,549 @@
+{
+  "schemaVersion": 1,
+  "chapterId": 3,
+  "passingScorePercent": 67,
+  "topics": [
+    {
+      "id": "L3_g1",
+      "noteId": 1,
+      "title": "Спряжение глаголов в непрошедшем времени",
+      "subtitle": "Спряжение глаголов в непрошедшем времени",
+      "summary": "Вежливые формы выражают привычные или будущие действия.",
+      "formula": "Verb stem + ます / ません",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Вежливые формы выражают привычные или будущие действия."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "のみます。",
+          "reading": "のみます",
+          "translation": "Пью / буду пить.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L3_g1_q1",
+          "type": "single-choice",
+          "prompt": "Какая вежливая форма のむ?",
+          "options": [
+            {
+              "id": "a",
+              "text": "のみます"
+            },
+            {
+              "id": "b",
+              "text": "のむます"
+            },
+            {
+              "id": "c",
+              "text": "のんます"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Вежливые формы выражают привычные или будущие действия.",
+          "grammarRefs": [
+            "L3_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L3_g1_q2",
+          "type": "fill-blank",
+          "prompt": "Поставьте たべる в отрицательную вежливую форму: ___",
+          "acceptedAnswers": [
+            "たべません"
+          ],
+          "explanation": "Вежливые формы выражают привычные или будущие действия.",
+          "grammarRefs": [
+            "L3_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L3_g1_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «буду учиться».",
+          "tokens": [
+            "べんきょう",
+            "し",
+            "ます"
+          ],
+          "correctOrder": [
+            "べんきょう",
+            "し",
+            "ます"
+          ],
+          "explanation": "Вежливые формы выражают привычные или будущие действия.",
+          "grammarRefs": [
+            "L3_g1"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L3_g2",
+      "noteId": 2,
+      "title": "Привычные и будущие действия",
+      "subtitle": "Привычные и будущие действия",
+      "summary": "Контекст определяет привычное или будущее значение формы.",
+      "formula": "～ます = habitual / future",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L3_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Контекст определяет привычное или будущее значение формы."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "まいにちテレビをみます。",
+          "reading": "まいにちテレビをみます",
+          "translation": "Каждый день смотрю телевизор.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L3_g2_q1",
+          "type": "single-choice",
+          "prompt": "Какое предложение описывает привычку?",
+          "options": [
+            {
+              "id": "a",
+              "text": "まいにちテレビをみます。"
+            },
+            {
+              "id": "b",
+              "text": "あしたテレビをみます。"
+            },
+            {
+              "id": "c",
+              "text": "きのうテレビをみました。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Контекст определяет привычное или будущее значение формы.",
+          "grammarRefs": [
+            "L3_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L3_g2_q2",
+          "type": "fill-blank",
+          "prompt": "Вставьте слово для будущего: ___ おおさかにいきます。",
+          "acceptedAnswers": [
+            "あした"
+          ],
+          "explanation": "Контекст определяет привычное или будущее значение формы.",
+          "grammarRefs": [
+            "L3_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L3_g2_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я часто слушаю музыку».",
+          "tokens": [
+            "わたし",
+            "は",
+            "よく",
+            "おんがく",
+            "を",
+            "ききます"
+          ],
+          "correctOrder": [
+            "わたし",
+            "は",
+            "よく",
+            "おんがく",
+            "を",
+            "ききます"
+          ],
+          "explanation": "Контекст определяет привычное или будущее значение формы.",
+          "grammarRefs": [
+            "L3_g2"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L3_g3",
+      "noteId": 3,
+      "title": "Частицы を・で・に・へ",
+      "subtitle": "Частицы を・で・に・へ",
+      "summary": "を отмечает объект, で место действия, に/へ направление.",
+      "formula": "N を V / Place で V / Destination に・へ V",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L3_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "を отмечает объект, で место действия, に/へ направление."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "としょかんでほんをよみます。",
+          "reading": "としょかんでほんをよみます",
+          "translation": "Читаю книгу в библиотеке.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L3_g3_q1",
+          "type": "single-choice",
+          "prompt": "Какая частица отмечает прямой объект?",
+          "options": [
+            {
+              "id": "a",
+              "text": "を"
+            },
+            {
+              "id": "b",
+              "text": "で"
+            },
+            {
+              "id": "c",
+              "text": "へ"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "を отмечает объект, で место действия, に/へ направление.",
+          "grammarRefs": [
+            "L3_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L3_g3_q2",
+          "type": "fill-blank",
+          "prompt": "としょかん ___ べんきょうします。",
+          "acceptedAnswers": [
+            "で"
+          ],
+          "explanation": "を отмечает объект, で место действия, に/へ направление.",
+          "grammarRefs": [
+            "L3_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L3_g3_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я иду в школу».",
+          "tokens": [
+            "わたし",
+            "は",
+            "がっこう",
+            "に",
+            "いきます"
+          ],
+          "correctOrder": [
+            "わたし",
+            "は",
+            "がっこう",
+            "に",
+            "いきます"
+          ],
+          "explanation": "を отмечает объект, で место действия, に/へ направление.",
+          "grammarRefs": [
+            "L3_g3"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L3_g4",
+      "noteId": 4,
+      "title": "Частица に с временем",
+      "subtitle": "Частица に с временем",
+      "summary": "に используется после точного времени и дней недели.",
+      "formula": "Time に V",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L3_g3"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "に используется после точного времени и дней недели."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "じゅういちじにねます。",
+          "reading": "じゅういちじにねます",
+          "translation": "Ложусь в 11.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L3_g4_q1",
+          "type": "single-choice",
+          "prompt": "Где нужна частица に?",
+          "options": [
+            {
+              "id": "a",
+              "text": "げつようびにべんきょうします。"
+            },
+            {
+              "id": "b",
+              "text": "あしたにべんきょうします。"
+            },
+            {
+              "id": "c",
+              "text": "まいにちにべんきょうします。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "に используется после точного времени и дней недели.",
+          "grammarRefs": [
+            "L3_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L3_g4_q2",
+          "type": "fill-blank",
+          "prompt": "しちじ ___ おきます。",
+          "acceptedAnswers": [
+            "に"
+          ],
+          "explanation": "に используется после точного времени и дней недели.",
+          "grammarRefs": [
+            "L3_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L3_g4_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «В воскресенье пойду в библиотеку».",
+          "tokens": [
+            "にちようび",
+            "に",
+            "としょかん",
+            "に",
+            "いきます"
+          ],
+          "correctOrder": [
+            "にちようび",
+            "に",
+            "としょかん",
+            "に",
+            "いきます"
+          ],
+          "explanation": "に используется после точного времени и дней недели.",
+          "grammarRefs": [
+            "L3_g4"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L3_g5",
+      "noteId": 5,
+      "title": "～ませんか",
+      "subtitle": "～ませんか",
+      "summary": "Отрицательная вопросительная форма используется для приглашения.",
+      "formula": "Verb ませんか",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L3_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Отрицательная вопросительная форма используется для приглашения."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "ひるごはんをたべませんか。",
+          "reading": "ひるごはんをたべませんか",
+          "translation": "Не хотите пообедать?",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L3_g5_q1",
+          "type": "single-choice",
+          "prompt": "Как пригласить посмотреть фильм?",
+          "options": [
+            {
+              "id": "a",
+              "text": "えいがをみませんか。"
+            },
+            {
+              "id": "b",
+              "text": "えいがをみません。"
+            },
+            {
+              "id": "c",
+              "text": "えいがをみましたか。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Отрицательная вопросительная форма используется для приглашения.",
+          "grammarRefs": [
+            "L3_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L3_g5_q2",
+          "type": "fill-blank",
+          "prompt": "いっしょにコーヒーをのみ ___。",
+          "acceptedAnswers": [
+            "ませんか"
+          ],
+          "explanation": "Отрицательная вопросительная форма используется для приглашения.",
+          "grammarRefs": [
+            "L3_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L3_g5_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Не хотите пойти в библиотеку?»",
+          "tokens": [
+            "としょかん",
+            "に",
+            "いき",
+            "ません",
+            "か"
+          ],
+          "correctOrder": [
+            "としょかん",
+            "に",
+            "いき",
+            "ません",
+            "か"
+          ],
+          "explanation": "Отрицательная вопросительная форма используется для приглашения.",
+          "grammarRefs": [
+            "L3_g5"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L3_g6",
+      "noteId": 6,
+      "title": "Наречия частотности",
+      "subtitle": "Наречия частотности",
+      "summary": "あまり и ぜんぜん требуют отрицательной формы.",
+      "formula": "よく / ときどき / あまり～ません / ぜんぜん～ません",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "あまり и ぜんぜん требуют отрицательной формы."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "ぜんぜんテレビをみません。",
+          "reading": "ぜんぜんテレビをみません",
+          "translation": "Совсем не смотрю телевизор.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L3_g6_q1",
+          "type": "single-choice",
+          "prompt": "Какое предложение правильно?",
+          "options": [
+            {
+              "id": "a",
+              "text": "あまりテレビをみません。"
+            },
+            {
+              "id": "b",
+              "text": "あまりテレビをみます。"
+            },
+            {
+              "id": "c",
+              "text": "ぜんぜんテレビをみます。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "あまり и ぜんぜん требуют отрицательной формы.",
+          "grammarRefs": [
+            "L3_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L3_g6_q2",
+          "type": "fill-blank",
+          "prompt": "わたしは ___ としょかんにいきます。 («часто»)",
+          "acceptedAnswers": [
+            "よく"
+          ],
+          "explanation": "あまり и ぜんぜん требуют отрицательной формы.",
+          "grammarRefs": [
+            "L3_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L3_g6_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я совсем не пью кофе».",
+          "tokens": [
+            "わたし",
+            "は",
+            "ぜんぜん",
+            "コーヒー",
+            "を",
+            "のみません"
+          ],
+          "correctOrder": [
+            "わたし",
+            "は",
+            "ぜんぜん",
+            "コーヒー",
+            "を",
+            "のみません"
+          ],
+          "explanation": "あまり и ぜんぜん требуют отрицательной формы.",
+          "grammarRefs": [
+            "L3_g6"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    }
+  ]
+}

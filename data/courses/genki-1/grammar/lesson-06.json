@@ -1,0 +1,632 @@
+{
+  "schemaVersion": 1,
+  "chapterId": 6,
+  "passingScorePercent": 67,
+  "topics": [
+    {
+      "id": "L6_g1",
+      "noteId": 1,
+      "title": "て-форма глаголов",
+      "subtitle": "て-форма глаголов",
+      "summary": "て-форма служит основой для многих конструкций.",
+      "formula": "Verb→て/で",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "て-форма служит основой для многих конструкций."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "よむ → よんで",
+          "reading": "よむ → よんで",
+          "translation": "читать → читая/и читать",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L6_g1_q1",
+          "type": "single-choice",
+          "prompt": "Какая て-форма のむ?",
+          "options": [
+            {
+              "id": "a",
+              "text": "のんで"
+            },
+            {
+              "id": "b",
+              "text": "のみて"
+            },
+            {
+              "id": "c",
+              "text": "のって"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "て-форма служит основой для многих конструкций.",
+          "grammarRefs": [
+            "L6_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g1_q2",
+          "type": "fill-blank",
+          "prompt": "Запишите て-форму かく: ___",
+          "acceptedAnswers": [
+            "かいて"
+          ],
+          "explanation": "て-форма служит основой для многих конструкций.",
+          "grammarRefs": [
+            "L6_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g1_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите преобразование する.",
+          "tokens": [
+            "する",
+            "→",
+            "して"
+          ],
+          "correctOrder": [
+            "する",
+            "→",
+            "して"
+          ],
+          "explanation": "て-форма служит основой для многих конструкций.",
+          "grammarRefs": [
+            "L6_g1"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L6_g2",
+      "noteId": 2,
+      "title": "～てください",
+      "subtitle": "～てください",
+      "summary": "Конструкция выражает вежливую просьбу.",
+      "formula": "Verb-て + ください",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L6_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Конструкция выражает вежливую просьбу."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "きょうかしょをよんでください。",
+          "reading": "きょうかしょをよんでください",
+          "translation": "Пожалуйста, прочитайте учебник.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L6_g2_q1",
+          "type": "single-choice",
+          "prompt": "Как попросить «Пожалуйста, подождите»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "まってください。"
+            },
+            {
+              "id": "b",
+              "text": "まちください。"
+            },
+            {
+              "id": "c",
+              "text": "まつください。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Конструкция выражает вежливую просьбу.",
+          "grammarRefs": [
+            "L6_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g2_q2",
+          "type": "fill-blank",
+          "prompt": "ここになまえをかい ___。",
+          "acceptedAnswers": [
+            "てください"
+          ],
+          "explanation": "Конструкция выражает вежливую просьбу.",
+          "grammarRefs": [
+            "L6_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g2_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Пожалуйста, откройте окно».",
+          "tokens": [
+            "まど",
+            "を",
+            "あけて",
+            "ください"
+          ],
+          "correctOrder": [
+            "まど",
+            "を",
+            "あけて",
+            "ください"
+          ],
+          "explanation": "Конструкция выражает вежливую просьбу.",
+          "grammarRefs": [
+            "L6_g2"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L6_g3",
+      "noteId": 3,
+      "title": "Соединение действий через て-форму",
+      "subtitle": "Соединение действий через て-форму",
+      "summary": "Предшествующие действия ставятся в て-форму, время задаёт последний глагол.",
+      "formula": "V1-て、V2",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L6_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Предшествующие действия ставятся в て-форму, время задаёт последний глагол."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "としょかんにいって、ほんをかります。",
+          "reading": "としょかんにいって、ほんをかります",
+          "translation": "Пойду в библиотеку и возьму книгу.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L6_g3_q1",
+          "type": "single-choice",
+          "prompt": "Как соединить «встать и позавтракать»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "おきて、あさごはんをたべます。"
+            },
+            {
+              "id": "b",
+              "text": "おきますと、あさごはんをたべます。"
+            },
+            {
+              "id": "c",
+              "text": "おきるを、あさごはんをたべます。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Предшествующие действия ставятся в て-форму, время задаёт последний глагол.",
+          "grammarRefs": [
+            "L6_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g3_q2",
+          "type": "fill-blank",
+          "prompt": "うちにかえ ___、しゅくだいをしました。",
+          "acceptedAnswers": [
+            "って"
+          ],
+          "explanation": "Предшествующие действия ставятся в て-форму, время задаёт последний глагол.",
+          "grammarRefs": [
+            "L6_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g3_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я принял душ и лёг спать».",
+          "tokens": [
+            "シャワー",
+            "を",
+            "あびて",
+            "ねました"
+          ],
+          "correctOrder": [
+            "シャワー",
+            "を",
+            "あびて",
+            "ねました"
+          ],
+          "explanation": "Предшествующие действия ставятся в て-форму, время задаёт последний глагол.",
+          "grammarRefs": [
+            "L6_g3"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L6_g4",
+      "noteId": 4,
+      "title": "～てもいいです",
+      "subtitle": "～てもいいです",
+      "summary": "Конструкция сообщает или спрашивает разрешение.",
+      "formula": "Verb-て + もいいです（か）",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L6_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Конструкция сообщает или спрашивает разрешение."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "ここにすわってもいいですか。",
+          "reading": "ここにすわってもいいですか",
+          "translation": "Можно здесь сесть?",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L6_g4_q1",
+          "type": "single-choice",
+          "prompt": "Как спросить «Можно открыть окно?»",
+          "options": [
+            {
+              "id": "a",
+              "text": "まどをあけてもいいですか。"
+            },
+            {
+              "id": "b",
+              "text": "まどをあけてはいけませんか。"
+            },
+            {
+              "id": "c",
+              "text": "まどをあけませんか。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Конструкция сообщает или спрашивает разрешение.",
+          "grammarRefs": [
+            "L6_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g4_q2",
+          "type": "fill-blank",
+          "prompt": "しゃしんをとって ___ ですか。",
+          "acceptedAnswers": [
+            "もいい"
+          ],
+          "explanation": "Конструкция сообщает или спрашивает разрешение.",
+          "grammarRefs": [
+            "L6_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g4_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Можно пользоваться телефоном».",
+          "tokens": [
+            "スマホ",
+            "を",
+            "つかって",
+            "も",
+            "いい",
+            "です"
+          ],
+          "correctOrder": [
+            "スマホ",
+            "を",
+            "つかって",
+            "も",
+            "いい",
+            "です"
+          ],
+          "explanation": "Конструкция сообщает или спрашивает разрешение.",
+          "grammarRefs": [
+            "L6_g4"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L6_g5",
+      "noteId": 5,
+      "title": "～てはいけません",
+      "subtitle": "～てはいけません",
+      "summary": "Конструкция выражает строгий запрет.",
+      "formula": "Verb-て + はいけません",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L6_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Конструкция выражает строгий запрет."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "ここでたばこをすってはいけません。",
+          "reading": "ここでたばこをすってはいけません",
+          "translation": "Здесь нельзя курить.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L6_g5_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Здесь нельзя фотографировать»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "ここでしゃしんをとってはいけません。"
+            },
+            {
+              "id": "b",
+              "text": "ここでしゃしんをとってもいいです。"
+            },
+            {
+              "id": "c",
+              "text": "ここでしゃしんをとりませんか。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Конструкция выражает строгий запрет.",
+          "grammarRefs": [
+            "L6_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g5_q2",
+          "type": "fill-blank",
+          "prompt": "このへやにはいって ___。",
+          "acceptedAnswers": [
+            "はいけません"
+          ],
+          "explanation": "Конструкция выражает строгий запрет.",
+          "grammarRefs": [
+            "L6_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g5_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Нельзя есть в библиотеке».",
+          "tokens": [
+            "としょかん",
+            "で",
+            "たべて",
+            "は",
+            "いけません"
+          ],
+          "correctOrder": [
+            "としょかん",
+            "で",
+            "たべて",
+            "は",
+            "いけません"
+          ],
+          "explanation": "Конструкция выражает строгий запрет.",
+          "grammarRefs": [
+            "L6_g5"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L6_g6",
+      "noteId": 6,
+      "title": "～から",
+      "subtitle": "～から",
+      "summary": "から связывает причину и следствие.",
+      "formula": "Reason から、Result",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "から связывает причину и следствие."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "あしたテストがありますから、べんきょうします。",
+          "reading": "あしたテストがありますから、べんきょうします",
+          "translation": "Так как завтра тест, буду учиться.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L6_g6_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я не пойду, потому что занят»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "いそがしいですから、いきません。"
+            },
+            {
+              "id": "b",
+              "text": "いそがしいですが、いきます。"
+            },
+            {
+              "id": "c",
+              "text": "いそがしいまで、いきません。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "から связывает причину и следствие.",
+          "grammarRefs": [
+            "L6_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g6_q2",
+          "type": "fill-blank",
+          "prompt": "さむいです ___、まどをしめます。",
+          "acceptedAnswers": [
+            "から"
+          ],
+          "explanation": "から связывает причину и следствие.",
+          "grammarRefs": [
+            "L6_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g6_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я устал, поэтому рано лягу спать».",
+          "tokens": [
+            "つかれました",
+            "から",
+            "はやく",
+            "ねます"
+          ],
+          "correctOrder": [
+            "つかれました",
+            "から",
+            "はやく",
+            "ねます"
+          ],
+          "explanation": "から связывает причину и следствие.",
+          "grammarRefs": [
+            "L6_g6"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L6_g7",
+      "noteId": 7,
+      "title": "～ましょうか",
+      "subtitle": "～ましょうか",
+      "summary": "В контексте помощи конструкция означает «Давайте я…?»",
+      "formula": "Verb stem + ましょうか",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L6_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "В контексте помощи конструкция означает «Давайте я…?»"
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "にもつをもちましょうか。",
+          "reading": "にもつをもちましょうか",
+          "translation": "Давайте я понесу багаж?",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L6_g7_q1",
+          "type": "single-choice",
+          "prompt": "Как предложить открыть окно за собеседника?",
+          "options": [
+            {
+              "id": "a",
+              "text": "まどをあけましょうか。"
+            },
+            {
+              "id": "b",
+              "text": "まどをあけませんか。"
+            },
+            {
+              "id": "c",
+              "text": "まどをあけたいですか。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "В контексте помощи конструкция означает «Давайте я…?»",
+          "grammarRefs": [
+            "L6_g7"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g7_q2",
+          "type": "fill-blank",
+          "prompt": "わたしがやり ___。",
+          "acceptedAnswers": [
+            "ましょうか"
+          ],
+          "explanation": "В контексте помощи конструкция означает «Давайте я…?»",
+          "grammarRefs": [
+            "L6_g7"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L6_g7_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Давайте я позвоню учителю?»",
+          "tokens": [
+            "せんせい",
+            "に",
+            "でんわし",
+            "ましょう",
+            "か"
+          ],
+          "correctOrder": [
+            "せんせい",
+            "に",
+            "でんわし",
+            "ましょう",
+            "か"
+          ],
+          "explanation": "В контексте помощи конструкция означает «Давайте я…?»",
+          "grammarRefs": [
+            "L6_g7"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    }
+  ]
+}

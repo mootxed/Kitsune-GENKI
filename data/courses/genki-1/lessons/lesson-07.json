@@ -1,0 +1,670 @@
+{
+  "schemaVersion": 2,
+  "version": 1,
+  "lesson": {
+    "lesson_id": 7,
+    "title": "Урок 7",
+    "language": "japanese",
+    "created_at": "2026-06-28",
+    "importance_weight": 1,
+    "particles": [
+      "が",
+      "で"
+    ],
+    "vocabulary": [
+      {
+        "id": "L7_V053",
+        "lesson": 7,
+        "writtenForm": "家族",
+        "reading": "かぞく",
+        "meaning": "семья",
+        "lexemeId": "__none"
+      },
+      {
+        "id": "L7_V002",
+        "lesson": 7,
+        "writtenForm": "おじいさん",
+        "reading": "おじいさん",
+        "meaning": "дедушка; пожилой мужчина",
+        "category": "nouns",
+        "romaji": "ojiisan",
+        "partOfSpeech": "noun",
+        "lexemeId": "おじいさん_おじいさん_noun_дедушка"
+      },
+      {
+        "id": "L7_V003",
+        "lesson": 7,
+        "writtenForm": "おばあさん",
+        "reading": "おばあさん",
+        "meaning": "бабушка; пожилая женщина",
+        "category": "nouns",
+        "romaji": "obaasan",
+        "partOfSpeech": "noun",
+        "lexemeId": "おばあさん_おばあさん_noun_бабушка"
+      },
+      {
+        "id": "L7_V004",
+        "lesson": 7,
+        "writtenForm": "お兄さん",
+        "reading": "おにいさん",
+        "meaning": "старший брат",
+        "category": "nouns",
+        "romaji": "oniisan",
+        "partOfSpeech": "noun",
+        "lexemeId": "お兄さん_お兄さん_noun_старшийбрат"
+      },
+      {
+        "id": "L7_V005",
+        "lesson": 7,
+        "writtenForm": "お姉さん",
+        "reading": "おねえさん",
+        "meaning": "старшая сестра",
+        "category": "nouns",
+        "romaji": "oneesan",
+        "partOfSpeech": "noun",
+        "lexemeId": "お姉さん_お姉さん_noun_старшаясестра"
+      },
+      {
+        "id": "L7_V006",
+        "lesson": 7,
+        "writtenForm": "父",
+        "reading": "ちち",
+        "meaning": "мой отец",
+        "category": "nouns",
+        "romaji": "chichi",
+        "partOfSpeech": "noun",
+        "lexemeId": "ちち_父_noun_мойотец"
+      },
+      {
+        "id": "L7_V007",
+        "lesson": 7,
+        "writtenForm": "母",
+        "reading": "はは",
+        "meaning": "моя мать",
+        "category": "nouns",
+        "romaji": "haha",
+        "partOfSpeech": "noun",
+        "lexemeId": "はは_母_noun_моямать"
+      },
+      {
+        "id": "L7_V008",
+        "lesson": 7,
+        "writtenForm": "兄",
+        "reading": "あに",
+        "meaning": "мой старший брат",
+        "category": "nouns",
+        "romaji": "ani",
+        "partOfSpeech": "noun",
+        "lexemeId": "あに_兄_noun_мойстаршийбрат"
+      },
+      {
+        "id": "L7_V009",
+        "lesson": 7,
+        "writtenForm": "姉",
+        "reading": "あね",
+        "meaning": "моя старшая сестра",
+        "category": "nouns",
+        "romaji": "ane",
+        "partOfSpeech": "noun",
+        "lexemeId": "あね_姉_noun_моястаршаясестра"
+      },
+      {
+        "id": "L7_V010",
+        "lesson": 7,
+        "writtenForm": "妹",
+        "reading": "いもうと",
+        "meaning": "младшая сестра",
+        "category": "nouns",
+        "romaji": "imooto",
+        "partOfSpeech": "noun",
+        "lexemeId": "いもうと_妹_noun_младшаясестра"
+      },
+      {
+        "id": "L7_V011",
+        "lesson": 7,
+        "writtenForm": "弟",
+        "reading": "おとうと",
+        "meaning": "младший брат",
+        "category": "nouns",
+        "romaji": "otooto",
+        "partOfSpeech": "noun",
+        "lexemeId": "おとうと_弟_noun_младшийбрат"
+      },
+      {
+        "id": "L7_V012",
+        "lesson": 7,
+        "writtenForm": "兄弟",
+        "reading": "きょうだい",
+        "meaning": "братья и сёстры",
+        "category": "nouns",
+        "romaji": "kyoodai",
+        "partOfSpeech": "noun",
+        "lexemeId": "きょうだい_兄弟_noun_братьяисестры"
+      },
+      {
+        "id": "L7_V013",
+        "lesson": 7,
+        "writtenForm": "男の人",
+        "reading": "おとこのひと",
+        "meaning": "мужчина",
+        "category": "nouns",
+        "romaji": "otoko no hito",
+        "partOfSpeech": "noun",
+        "lexemeId": "おとこのひと_おとこのひと_noun_мужчина"
+      },
+      {
+        "id": "L7_V014",
+        "lesson": 7,
+        "writtenForm": "女の人",
+        "reading": "おんなのひと",
+        "meaning": "женщина",
+        "category": "nouns",
+        "romaji": "onna no hito",
+        "partOfSpeech": "noun",
+        "lexemeId": "おんなのひと_おんなのひと_noun_женщина"
+      },
+      {
+        "id": "L7_V015",
+        "lesson": 7,
+        "writtenForm": "会社",
+        "reading": "かいしゃ",
+        "meaning": "компания",
+        "category": "nouns",
+        "romaji": "kaisha",
+        "partOfSpeech": "noun",
+        "lexemeId": "かいしゃ_かいしゃ_noun_компания"
+      },
+      {
+        "id": "L7_V016",
+        "lesson": 7,
+        "writtenForm": "食堂",
+        "reading": "しょくどう",
+        "meaning": "столовая",
+        "category": "nouns",
+        "romaji": "shokudoo",
+        "partOfSpeech": "noun",
+        "lexemeId": "しょくどう_しょくどう_noun_кафетерий"
+      },
+      {
+        "id": "L7_V017",
+        "lesson": 7,
+        "writtenForm": "デパート",
+        "reading": "デパート",
+        "meaning": "универмаг",
+        "category": "nouns",
+        "romaji": "depaato",
+        "partOfSpeech": "noun",
+        "lexemeId": "デパート_デパート_noun_универмаг"
+      },
+      {
+        "id": "L7_V018",
+        "lesson": 7,
+        "writtenForm": "髪",
+        "reading": "かみ",
+        "meaning": "волосы",
+        "category": "nouns",
+        "romaji": "kami",
+        "partOfSpeech": "noun",
+        "lexemeId": "かみ_髪_noun_волосы"
+      },
+      {
+        "id": "L7_V019",
+        "lesson": 7,
+        "writtenForm": "口",
+        "reading": "くち",
+        "meaning": "рот",
+        "category": "nouns",
+        "romaji": "kuchi",
+        "partOfSpeech": "noun",
+        "lexemeId": "くち_口_noun_рот"
+      },
+      {
+        "id": "L7_V020",
+        "lesson": 7,
+        "writtenForm": "目",
+        "reading": "め",
+        "meaning": "глаз",
+        "category": "nouns",
+        "romaji": "me",
+        "partOfSpeech": "noun",
+        "lexemeId": "め_目_noun_глаз"
+      },
+      {
+        "id": "L7_V021",
+        "lesson": 7,
+        "writtenForm": "眼鏡",
+        "reading": "めがね",
+        "meaning": "очки",
+        "category": "nouns",
+        "romaji": "megane",
+        "partOfSpeech": "noun",
+        "lexemeId": "めがね_めがね_noun_очки"
+      },
+      {
+        "id": "L7_V022",
+        "lesson": 7,
+        "writtenForm": "歌",
+        "reading": "うた",
+        "meaning": "песня",
+        "category": "nouns",
+        "romaji": "uta",
+        "partOfSpeech": "noun",
+        "lexemeId": "うた_うた_noun_песня"
+      },
+      {
+        "id": "L7_V023",
+        "lesson": 7,
+        "writtenForm": "サークル",
+        "reading": "サークル",
+        "meaning": "кружок; студенческий клуб",
+        "category": "nouns",
+        "romaji": "saakuru",
+        "partOfSpeech": "noun",
+        "lexemeId": "サークル_サークル_noun_клубпоинтересам"
+      },
+      {
+        "id": "L7_V024",
+        "lesson": 7,
+        "writtenForm": "車",
+        "reading": "くるま",
+        "meaning": "машина; автомобиль",
+        "category": "nouns",
+        "romaji": "kuruma",
+        "partOfSpeech": "noun",
+        "lexemeId": "くるま_車_noun_автомобиль"
+      },
+      {
+        "id": "L7_V025",
+        "lesson": 7,
+        "writtenForm": "長い",
+        "reading": "ながい",
+        "meaning": "длинный",
+        "category": "i-adjectives",
+        "romaji": "nagai",
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "ながい_長い_adjective_длинный"
+      },
+      {
+        "id": "L7_V026",
+        "lesson": 7,
+        "writtenForm": "短い",
+        "reading": "みじかい",
+        "meaning": "короткий (о длине)",
+        "category": "i-adjectives",
+        "romaji": "mijikai",
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "みじかい_短い_adjective_короткий"
+      },
+      {
+        "id": "L7_V027",
+        "lesson": 7,
+        "writtenForm": "速い",
+        "reading": "はやい",
+        "meaning": "быстрый",
+        "category": "i-adjectives",
+        "romaji": "hayai",
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "はやい_はやい_adjective_быстрый"
+      },
+      {
+        "id": "L7_V028",
+        "lesson": 7,
+        "writtenForm": "背が高い",
+        "reading": "せがたかい",
+        "meaning": "высокий (о росте)",
+        "category": "i-adjectives",
+        "romaji": "se ga takai",
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "せがたかい_せがたかい_adjective_высокий"
+      },
+      {
+        "id": "L7_V029",
+        "lesson": 7,
+        "writtenForm": "背が低い",
+        "reading": "せがひくい",
+        "meaning": "низкий (о росте)",
+        "category": "i-adjectives",
+        "romaji": "se ga hikui",
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "せがひくい_せがひくい_adjective_низкий"
+      },
+      {
+        "id": "L7_V030",
+        "lesson": 7,
+        "writtenForm": "頭がいい",
+        "reading": "あたまがいい",
+        "meaning": "умный; сообразительный",
+        "category": "i-adjectives",
+        "romaji": "atama ga ii",
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "あたまがいい_あたまがいい_adjective_сообразительный"
+      },
+      {
+        "id": "L7_V031",
+        "lesson": 7,
+        "writtenForm": "かわいい",
+        "reading": "かわいい",
+        "meaning": "милый",
+        "category": "i-adjectives",
+        "romaji": "kawaii",
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "かわいい_かわいい_adjective_милый"
+      },
+      {
+        "id": "L7_V032",
+        "lesson": 7,
+        "writtenForm": "親切",
+        "reading": "しんせつ",
+        "meaning": "добрый; любезный",
+        "category": "na-adjectives",
+        "romaji": "shinsetsu (na)",
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "しんせつ（な）_しんせつ（な）_adjective_добрый"
+      },
+      {
+        "id": "L7_V033",
+        "lesson": 7,
+        "writtenForm": "便利",
+        "reading": "べんり",
+        "meaning": "удобный",
+        "category": "na-adjectives",
+        "romaji": "benri (na)",
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "べんり（な）_べんり（な）_adjective_удобный"
+      },
+      {
+        "id": "L7_V034",
+        "lesson": 7,
+        "writtenForm": "歌う",
+        "reading": "うたう",
+        "meaning": "петь",
+        "category": "verbs_u",
+        "romaji": "utau",
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "うたう_うたう_verb_godan_петь",
+        "particlePatterns": [
+          "を"
+        ]
+      },
+      {
+        "id": "L7_V035",
+        "lesson": 7,
+        "writtenForm": "かぶる",
+        "reading": "かぶる",
+        "meaning": "надевать на голову",
+        "category": "verbs_u",
+        "romaji": "kaburu",
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "かぶる_かぶる_verb_godan_надевать",
+        "particlePatterns": [
+          "を"
+        ]
+      },
+      {
+        "id": "L7_V036",
+        "lesson": 7,
+        "writtenForm": "はく",
+        "reading": "はく",
+        "meaning": "надевать ниже пояса",
+        "category": "verbs_u",
+        "romaji": "haku",
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "はく_履く_verb_godan_надевать",
+        "particlePatterns": [
+          "を"
+        ]
+      },
+      {
+        "id": "L7_V037",
+        "lesson": 7,
+        "writtenForm": "知る",
+        "reading": "しる",
+        "meaning": "узнавать",
+        "category": "verbs_u",
+        "romaji": "shiru",
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "しる_知る_verb_godan_получатьинформацию",
+        "particlePatterns": [
+          "を"
+        ]
+      },
+      {
+        "id": "L7_V038",
+        "lesson": 7,
+        "writtenForm": "住む",
+        "reading": "すむ",
+        "meaning": "жить; проживать",
+        "category": "verbs_u",
+        "romaji": "sumu",
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "すむ_住む_verb_godan_жить"
+      },
+      {
+        "id": "L7_V039",
+        "lesson": 7,
+        "writtenForm": "働く",
+        "reading": "はたらく",
+        "meaning": "работать",
+        "category": "verbs_u",
+        "romaji": "hataraku",
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "はたらく_はたらく_verb_godan_работать"
+      },
+      {
+        "id": "L7_V040",
+        "lesson": 7,
+        "writtenForm": "太る",
+        "reading": "ふとる",
+        "meaning": "набирать вес",
+        "category": "verbs_u",
+        "romaji": "futoru",
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "ふとる_ふとる_verb_godan_прибавлятьввесе"
+      },
+      {
+        "id": "L7_V054",
+        "lesson": 7,
+        "writtenForm": "太っています",
+        "reading": "ふとっています",
+        "meaning": "быть полным",
+        "lexemeId": "__none"
+      },
+      {
+        "id": "L7_V041",
+        "lesson": 7,
+        "writtenForm": "かける",
+        "reading": "かける",
+        "meaning": "надевать (очки)",
+        "category": "verbs_ru",
+        "romaji": "megane o kakeru",
+        "partOfSpeech": "verb",
+        "verbClass": "ichidan",
+        "lexemeId": "（めがねを）かける_（めがねを）かける_verb_ichidan_надеватьочки"
+      },
+      {
+        "id": "L7_V042",
+        "lesson": 7,
+        "writtenForm": "着る",
+        "reading": "きる",
+        "meaning": "надевать одежду выше пояса",
+        "category": "verbs_ru",
+        "romaji": "kiru",
+        "partOfSpeech": "verb",
+        "verbClass": "ichidan",
+        "lexemeId": "きる_着る_verb_ichidan_надевать",
+        "particlePatterns": [
+          "を"
+        ]
+      },
+      {
+        "id": "L7_V043",
+        "lesson": 7,
+        "writtenForm": "やせる",
+        "reading": "やせる",
+        "meaning": "худеть",
+        "category": "verbs_ru",
+        "romaji": "yaseru",
+        "partOfSpeech": "verb",
+        "verbClass": "ichidan",
+        "lexemeId": "やせる_やせる_verb_ichidan_терятьвес"
+      },
+      {
+        "id": "L7_V055",
+        "lesson": 7,
+        "writtenForm": "やせています",
+        "reading": "やせています",
+        "meaning": "быть худым",
+        "lexemeId": "__none"
+      },
+      {
+        "id": "L7_V044",
+        "lesson": 7,
+        "writtenForm": "結婚する",
+        "reading": "けっこんする",
+        "meaning": "жениться; выходить замуж",
+        "category": "verbs_irr",
+        "romaji": "kekkon suru",
+        "partOfSpeech": "verb",
+        "verbClass": "irregular",
+        "lexemeId": "けっこんする_結婚する_verb_irregular_выходитьзамужскемто",
+        "particlePatterns": [
+          "と"
+        ]
+      },
+      {
+        "id": "L7_V045",
+        "lesson": 7,
+        "writtenForm": "〜が",
+        "reading": "〜が",
+        "meaning": "..., но",
+        "category": "adverbs",
+        "romaji": "... ga",
+        "note": "..., но (соединительный союз в предложении)",
+        "partOfSpeech": "adverb",
+        "lexemeId": "～が_～が_adverb_но"
+      },
+      {
+        "id": "L7_V046",
+        "lesson": 7,
+        "writtenForm": "何も",
+        "reading": "なにも",
+        "meaning": "ничего не...",
+        "category": "adverbs",
+        "romaji": "nanimo",
+        "partOfSpeech": "adverb",
+        "lexemeId": "なにも_なにも_adverb_ничегоне"
+      },
+      {
+        "id": "L7_V047",
+        "lesson": 7,
+        "writtenForm": "〜人",
+        "reading": "〜にん",
+        "meaning": "счётчик людей",
+        "category": "adverbs",
+        "romaji": "... nin",
+        "partOfSpeech": "adverb",
+        "lexemeId": "～にん_～にん_adverb_счетныйсуффиксдлялюдей"
+      },
+      {
+        "id": "L7_V050",
+        "lesson": 7,
+        "writtenForm": "別に",
+        "reading": "べつに",
+        "meaning": "ничего особенного",
+        "category": "adverbs",
+        "romaji": "betsu ni",
+        "partOfSpeech": "adverb",
+        "lexemeId": "べつに_べつに_adverb_ничегоособенного"
+      },
+      {
+        "id": "L7_V051",
+        "lesson": 7,
+        "writtenForm": "もちろん",
+        "reading": "もちろん",
+        "meaning": "конечно",
+        "category": "expressions",
+        "romaji": "mochiron",
+        "partOfSpeech": "expression",
+        "lexemeId": "もちろん_もちろん_expression_конечно"
+      },
+      {
+        "id": "L7_V052",
+        "lesson": 7,
+        "writtenForm": "よかったら",
+        "reading": "よかったら",
+        "meaning": "если хотите; если вам удобно",
+        "category": "expressions",
+        "romaji": "yokattara",
+        "partOfSpeech": "expression",
+        "lexemeId": "よかったら_よかったら_expression_есливамугодно"
+      }
+    ],
+    "notes": [
+      {
+        "id": "L7_g1",
+        "noteId": 1,
+        "title": "Грамматика 1: Длительное состояние и процесс действия (Конструкция ～ている)",
+        "content": "Сочетание Te-формы глагола со вспомогательным глаголом 'いる' (iru) выражает:\n1. Действие, происходящее в данный момент времени (Action in Progress). Характерно для активных глаголов деятельности (например, 食べる taberu, 読む yomu).\nПример: ソラさんは今勉強しています (Сора сейчас учится).\n2. Стабильное состояние, являющееся результатом завершенного в прошлом изменения (Result of a Change). Применяется к глаголам изменения состояния (например, 結婚する kekkon suru — жениться, 持つ motsu — взять в руки/владеть, 知る shiru — узнать).\nПример: 山下先生は結婚しています (Преподаватель Ямашита женат  $$букв. вошел в состояние брака и пребывает в нем$$  ).\n- Спряжение вспомогательного глагола 'いる' происходит по правилам стандартных Ru-глаголов (います / いません / いました / いませんでした)."
+      },
+      {
+        "id": "L7_g2",
+        "noteId": 2,
+        "title": "Грамматика 2: Конструкция ～ている с конкретными глаголами состояния",
+        "content": "Обратите внимание на значение ряда глаголов в форме на ～ている:\n- 知る (shiru) → 知っています (shitteimasu — я знаю / мне известно). Отрицание: 知りません (shirimasen — я не знаю). Форма '知っていません' не существует!\n- 太る (futoru) → 太っています (futotteimasu — полный, толстый).\n- やせる (yaseru) → やせています (yaseteimasu — худой, стройный).\n- 着る (kiru) → 着ています (kiteimasu — одет в...  $$в данный момент$$  ).\n- 住む (sumu) → 住んでいます (sundeimasu — живет / проживает в  $$место に$$  ).\n- 行く/来る (iku/kuru) → 行っています / 来ています выражают завершенный приезд/уход объекта («он уехал в...» / «он пришел в гости  $$и сейчас здесь$$  »), а не движение в процессе."
+      },
+      {
+        "id": "L7_g3",
+        "noteId": 3,
+        "title": "Грамматика 3: Описание внешности человека (Схема Aさんは身体の一部がAdjectiveです)",
+        "content": "Для описания физических качеств или частей тела человека используется специальная синтаксическая структура:\n  $$Человек A$$   は  $$Часть тела$$   が  $$Прилагательное$$   です。\nПримеры:\n- トムさんは髪が长いです (У Тома длинные волосы / Том длинноволосый).\n- 私は目が悪いです (У меня плохое зрение).\n- Идиоматические сочетания:\n  - 背が高い (se ga takai — высокий рост).\n  - 背が低い (se ga hikui — низкий рост).\n  - 頭がいい (atama ga ii — умный)."
+      },
+      {
+        "id": "L7_g4",
+        "noteId": 4,
+        "title": "Грамматика 4: Соединение предложений через Te-формы прилагательных и существительных",
+        "content": "Для связывания двух или более качеств в единое предложение правила изменения слов выглядят так:\n1. い-прилагательные: Конечная буква 'い' заменяется на 'くて' (например: 安い → 安くて 'дешёвый и...'; исключение: いい → よくて 'хороший и...').\n2. な-прилагательные: К корню добавляется 'で' (например: 元気 → 元気で 'здоровый и...').\n3. Существительные (конструкция Noun + です): Связка です заменяется на 'де' (например: 日本人です → 日本人で 'японец и...').\n\nПримеры:\n- あの店の食べ物は安くて、おいしいです (Еда в том магазине дешёвая и вкусная).\n- ホテルはきれいで、よかったです (Отель был чистым, и это было здорово).\n- 山下先生は日本人で、五十さいぐらいです (Преподаватель Ямашита — японец, ему около 50 лет).\nВремя всего предложения определяется по самому последнему слову."
+      },
+      {
+        "id": "L7_g5",
+        "noteId": 5,
+        "title": "Грамматика 5: Выражение цели движения (Схема Stem + に行く/来る/帰る)",
+        "content": "Если человек совершает перемещение в пространстве ради выполнения конкретного действия («пошел купить», «приехал учиться»), то цель выражается с помощью основы вежливого глагола (stem), к которой добавляется целевая частица 'に' и глагол движения.\n- Основа вежливого глагола (Stem) получается отбрасыванием окончания 'ます' от вежливой формы (например: 食べる → 食べ, 読む → 読み, 勉強する → 勉強し).\nПримеры:\n- デパートにかばんを買いに行きました (Я ходил в универмаг купить сумку).\n- メアリーさんは日本に日本語を勉強しに来ました (Мэри приехала в Японию учить японский язык)."
+      },
+      {
+        "id": "L7_g6",
+        "noteId": 6,
+        "title": "Грамматика 6: Счёт людей и суффикс ～人 (nin)",
+        "content": "Для подсчёта людей используется специальный суффикс '～人' (nin), при этом числительные 1 и 2 имеют уникальное чтение:\n- 1 человек: 一人 (ひとり hitori)\n- 2 человека: 二人 (ふたり futari)\n- 3 человека: 三人 (さんにん sannin)\n- 4 человека: 四人 (よにん yonin — обратите внимание на чтение 'yo', а не 'yon')\n- 5 человек: 五人 (ごにん gonin)\n\nПорядок слов при подсчете в предложении:\n  $$Группа / Место に$$  $$Категория людей が$$  $$Количество$$   います。\nПример: 私のクラスにインドネシア人の学生が一人います (В моём классе есть один студент-индонезиец)."
+      },
+      {
+        "id": "L7_g7",
+        "noteId": 7,
+        "title": "Особенности выражений: Использование глагола 遊ぶ (asobu) — развлекаться",
+        "content": "Японский глагол 遊ぶ (asobu) переводится как 'играть' или 'весело проводить время'. Однако его нельзя использовать в значении игры на музыкальных инструментах, настольных играх или в спорте. Запомните соответствия:\n- Гулять/развлекаться с друзьями: 友だちと遊ぶ\n- Играть в теннис/спорт: テニスをする (используется する)\n- Играть в компьютерные игры: ゲームをする\n- Играть в карты: トランプをする\n- Играть на гитаре/инструменте: ギターを弾く (ひく hiku)"
+      },
+      {
+        "id": "L7_g8",
+        "noteId": 8,
+        "title": "Особенности выражений: Разница между 知る (shiru) и わかる (wakaru) при незнании",
+        "content": "Если вам задают вопрос, на который вы не знаете ответа (например, учебный вопрос или что-то, о чём стоило подумать/вспомнить), вежливым ответом будет わかりません (wakarimasen — 'я не понимаю / не знаю').\n\nИспользование слова 知りません (shirimasen — 'мне это неизвестно / я не знаю') в такой ситуации может прозвучать довольно резко и грубо, как бы намекая собеседнику: 'Я этого не знаю, и это вообще не моё дело / меня это не волнует'."
+      }
+    ],
+    "cultural_notes": []
+  }
+}

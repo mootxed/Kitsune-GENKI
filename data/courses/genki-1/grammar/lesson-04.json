@@ -1,0 +1,719 @@
+{
+  "schemaVersion": 1,
+  "chapterId": 4,
+  "passingScorePercent": 67,
+  "topics": [
+    {
+      "id": "L4_g1",
+      "noteId": 1,
+      "title": "X が あります／います",
+      "subtitle": "X が あります／います",
+      "summary": "あります для неодушевлённого, います для людей и животных.",
+      "formula": "Place に X が あります / います",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "あります для неодушевлённого, います для людей и животных."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "こうえんにねこがいます。",
+          "reading": "こうえんにねこがいます",
+          "translation": "В парке есть кошка.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L4_g1_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «В комнате есть стол»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "へやにつくえがあります。"
+            },
+            {
+              "id": "b",
+              "text": "へやにつくえがいます。"
+            },
+            {
+              "id": "c",
+              "text": "へやでつくえをあります。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "あります для неодушевлённого, います для людей и животных.",
+          "grammarRefs": [
+            "L4_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g1_q2",
+          "type": "fill-blank",
+          "prompt": "こうえんにこどもが ___。",
+          "acceptedAnswers": [
+            "います"
+          ],
+          "explanation": "あります для неодушевлённого, います для людей и животных.",
+          "grammarRefs": [
+            "L4_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g1_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «В библиотеке есть книги».",
+          "tokens": [
+            "としょかん",
+            "に",
+            "ほん",
+            "が",
+            "あります"
+          ],
+          "correctOrder": [
+            "としょかん",
+            "に",
+            "ほん",
+            "が",
+            "あります"
+          ],
+          "explanation": "あります для неодушевлённого, います для людей и животных.",
+          "grammarRefs": [
+            "L4_g1"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L4_g2",
+      "noteId": 2,
+      "title": "あります: владение и события",
+      "subtitle": "あります: владение и события",
+      "summary": "あります выражает наличие вещи и проведение события.",
+      "formula": "X が あります / Place で Event が あります",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L4_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "あります выражает наличие вещи и проведение события."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "きょうとでおまつりがあります。",
+          "reading": "きょうとでおまつりがあります",
+          "translation": "В Киото будет фестиваль.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L4_g2_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «У меня нет телевизора»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "テレビがありません。"
+            },
+            {
+              "id": "b",
+              "text": "テレビをいません。"
+            },
+            {
+              "id": "c",
+              "text": "テレビじゃありません。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "あります выражает наличие вещи и проведение события.",
+          "grammarRefs": [
+            "L4_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g2_q2",
+          "type": "fill-blank",
+          "prompt": "おおさか ___ コンサートがあります。",
+          "acceptedAnswers": [
+            "で"
+          ],
+          "explanation": "あります выражает наличие вещи и проведение события.",
+          "grammarRefs": [
+            "L4_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g2_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «В пятницу будет экзамен».",
+          "tokens": [
+            "きんようび",
+            "に",
+            "しけん",
+            "が",
+            "あります"
+          ],
+          "correctOrder": [
+            "きんようび",
+            "に",
+            "しけん",
+            "が",
+            "あります"
+          ],
+          "explanation": "あります выражает наличие вещи и проведение события.",
+          "grammarRefs": [
+            "L4_g2"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L4_g3",
+      "noteId": 3,
+      "title": "Слова местоположения",
+      "subtitle": "Слова местоположения",
+      "summary": "Ориентир соединяется со словом места через の.",
+      "formula": "X は Y の Location です",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Ориентир соединяется со словом места через の."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "かさはつくえのしたです。",
+          "reading": "かさはつくえのしたです",
+          "translation": "Зонт под столом.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L4_g3_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Банк рядом с библиотекой»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "ぎんこうはとしょかんのとなりです。"
+            },
+            {
+              "id": "b",
+              "text": "ぎんこうはとしょかんでとなりです。"
+            },
+            {
+              "id": "c",
+              "text": "ぎんこうのとしょかんはとなりです。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Ориентир соединяется со словом места через の.",
+          "grammarRefs": [
+            "L4_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g3_q2",
+          "type": "fill-blank",
+          "prompt": "かばんはつくえ ___ うえです。",
+          "acceptedAnswers": [
+            "の"
+          ],
+          "explanation": "Ориентир соединяется со словом места через の.",
+          "grammarRefs": [
+            "L4_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g3_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Ресторан между банком и почтой».",
+          "tokens": [
+            "レストラン",
+            "は",
+            "ぎんこう",
+            "と",
+            "ゆうびんきょく",
+            "の",
+            "あいだ",
+            "です"
+          ],
+          "correctOrder": [
+            "レストラン",
+            "は",
+            "ぎんこう",
+            "と",
+            "ゆうびんきょく",
+            "の",
+            "あいだ",
+            "です"
+          ],
+          "explanation": "Ориентир соединяется со словом места через の.",
+          "grammarRefs": [
+            "L4_g3"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L4_g4",
+      "noteId": 4,
+      "title": "となり и よこ",
+      "subtitle": "となり и よこ",
+      "summary": "となり обычно для однотипных объектов, よこ — универсальнее.",
+      "formula": "X の となり / X の よこ",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L4_g3"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "となり обычно для однотипных объектов, よこ — универсальнее."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "かばんはつくえのよこです。",
+          "reading": "かばんはつくえのよこです",
+          "translation": "Сумка сбоку от стола.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L4_g4_q1",
+          "type": "single-choice",
+          "prompt": "Как естественнее сказать «Сумка рядом со столом»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "かばんはつくえのよこです。"
+            },
+            {
+              "id": "b",
+              "text": "かばんはつくえのとなりです。"
+            },
+            {
+              "id": "c",
+              "text": "かばんはつくえのあいだです。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "となり обычно для однотипных объектов, よこ — универсальнее.",
+          "grammarRefs": [
+            "L4_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g4_q2",
+          "type": "fill-blank",
+          "prompt": "Два соседних дома: いえの ___",
+          "acceptedAnswers": [
+            "となり"
+          ],
+          "explanation": "となり обычно для однотипных объектов, よこ — универсальнее.",
+          "grammarRefs": [
+            "L4_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g4_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Аптека рядом с больницей».",
+          "tokens": [
+            "くすりや",
+            "は",
+            "びょういん",
+            "の",
+            "となり",
+            "です"
+          ],
+          "correctOrder": [
+            "くすりや",
+            "は",
+            "びょういん",
+            "の",
+            "となり",
+            "です"
+          ],
+          "explanation": "となり обычно для однотипных объектов, よこ — универсальнее.",
+          "grammarRefs": [
+            "L4_g4"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L4_g5",
+      "noteId": 5,
+      "title": "Прошедшее время существительных",
+      "subtitle": "Прошедшее время существительных",
+      "summary": "Связка です имеет прошедшие утвердительную и отрицательную формы.",
+      "formula": "N でした / N じゃなかったです",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Связка です имеет прошедшие утвердительную и отрицательную формы."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "がくせいでした。",
+          "reading": "がくせいでした",
+          "translation": "Был студентом.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L4_g5_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Вчера был выходной»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "きのうはやすみでした。"
+            },
+            {
+              "id": "b",
+              "text": "きのうはやすみました。"
+            },
+            {
+              "id": "c",
+              "text": "きのうはやすみですた。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Связка です имеет прошедшие утвердительную и отрицательную формы.",
+          "grammarRefs": [
+            "L4_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g5_q2",
+          "type": "fill-blank",
+          "prompt": "せんせい ___。 («не был учителем»)",
+          "acceptedAnswers": [
+            "じゃなかったです",
+            "じゃありませんでした"
+          ],
+          "explanation": "Связка です имеет прошедшие утвердительную и отрицательную формы.",
+          "grammarRefs": [
+            "L4_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g5_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Это была японская книга».",
+          "tokens": [
+            "これは",
+            "にほんのほん",
+            "でした"
+          ],
+          "correctOrder": [
+            "これは",
+            "にほんのほん",
+            "でした"
+          ],
+          "explanation": "Связка です имеет прошедшие утвердительную и отрицательную формы.",
+          "grammarRefs": [
+            "L4_g5"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L4_g6",
+      "noteId": 6,
+      "title": "Прошедшее время глаголов",
+      "subtitle": "Прошедшее время глаголов",
+      "summary": "Вежливые глаголы образуют прошедшее заменой окончания.",
+      "formula": "～ます → ～ました / ～ませんでした",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Вежливые глаголы образуют прошедшее заменой окончания."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "きのうべんきょうしました。",
+          "reading": "きのうべんきょうしました",
+          "translation": "Вчера учился.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L4_g6_q1",
+          "type": "single-choice",
+          "prompt": "Какая прошедшая форма よみます?",
+          "options": [
+            {
+              "id": "a",
+              "text": "よみました"
+            },
+            {
+              "id": "b",
+              "text": "よんでいます"
+            },
+            {
+              "id": "c",
+              "text": "よみません"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Вежливые глаголы образуют прошедшее заменой окончания.",
+          "grammarRefs": [
+            "L4_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g6_q2",
+          "type": "fill-blank",
+          "prompt": "Поставьте いきません в прошедшее отрицание: ___",
+          "acceptedAnswers": [
+            "いきませんでした"
+          ],
+          "explanation": "Вежливые глаголы образуют прошедшее заменой окончания.",
+          "grammarRefs": [
+            "L4_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g6_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Вчера не смотрел телевизор».",
+          "tokens": [
+            "きのう",
+            "テレビ",
+            "を",
+            "みませんでした"
+          ],
+          "correctOrder": [
+            "きのう",
+            "テレビ",
+            "を",
+            "みませんでした"
+          ],
+          "explanation": "Вежливые глаголы образуют прошедшее заменой окончания.",
+          "grammarRefs": [
+            "L4_g6"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L4_g7",
+      "noteId": 7,
+      "title": "Частица も после других частиц",
+      "subtitle": "Частица も после других частиц",
+      "summary": "После に, で, と и へ частица も добавляется после падежа.",
+      "formula": "にも / でも / とも",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "После に, で, と и へ частица も добавляется после падежа."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "おおさかにもいきました。",
+          "reading": "おおさかにもいきました",
+          "translation": "В Осаку тоже ездил.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L4_g7_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я тоже учился в кафе»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "カフェでもべんきょうしました。"
+            },
+            {
+              "id": "b",
+              "text": "カフェもでべんきょうしました。"
+            },
+            {
+              "id": "c",
+              "text": "カフェをもべんきょうしました。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "После に, で, と и へ частица も добавляется после падежа.",
+          "grammarRefs": [
+            "L4_g7"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g7_q2",
+          "type": "fill-blank",
+          "prompt": "きょうとにいきました。おおさか ___ いきました。",
+          "acceptedAnswers": [
+            "にも"
+          ],
+          "explanation": "После に, で, と и へ частица も добавляется после падежа.",
+          "grammarRefs": [
+            "L4_g7"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g7_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «С Елена я тоже разговаривал».",
+          "tokens": [
+            "エレナさん",
+            "と",
+            "も",
+            "はなしました"
+          ],
+          "correctOrder": [
+            "エレナさん",
+            "と",
+            "も",
+            "はなしました"
+          ],
+          "explanation": "После に, で, と и へ частица も добавляется после падежа.",
+          "grammarRefs": [
+            "L4_g7"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L4_g8",
+      "noteId": 8,
+      "title": "Длительность ～時間",
+      "subtitle": "Длительность ～時間",
+      "summary": "Выражение длительности употребляется без частицы.",
+      "formula": "Duration + V / ～時間半 / ～ぐらい",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Выражение длительности употребляется без частицы."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "さんじかんぐらいべんきょうしました。",
+          "reading": "さんじかんぐらいべんきょうしました",
+          "translation": "Учился около трёх часов.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L4_g8_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я ждал один час»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "いちじかんまちました。"
+            },
+            {
+              "id": "b",
+              "text": "いちじかんにまちました。"
+            },
+            {
+              "id": "c",
+              "text": "いちじかんでまちました。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Выражение длительности употребляется без частицы.",
+          "grammarRefs": [
+            "L4_g8"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g8_q2",
+          "type": "fill-blank",
+          "prompt": "Запишите «около полутора часов»: ___",
+          "acceptedAnswers": [
+            "いちじかんはんぐらい",
+            "一時間半ぐらい"
+          ],
+          "explanation": "Выражение длительности употребляется без частицы.",
+          "grammarRefs": [
+            "L4_g8"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L4_g8_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Я спал восемь часов».",
+          "tokens": [
+            "はちじかん",
+            "ねました"
+          ],
+          "correctOrder": [
+            "はちじかん",
+            "ねました"
+          ],
+          "explanation": "Выражение длительности употребляется без частицы.",
+          "grammarRefs": [
+            "L4_g8"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    }
+  ]
+}

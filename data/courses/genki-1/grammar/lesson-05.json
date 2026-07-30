@@ -1,0 +1,450 @@
+{
+  "schemaVersion": 1,
+  "chapterId": 5,
+  "passingScorePercent": 67,
+  "topics": [
+    {
+      "id": "L5_g1",
+      "noteId": 1,
+      "title": "Настоящее время прилагательных",
+      "subtitle": "Настоящее время прилагательных",
+      "summary": "Классы прилагательных образуют отрицание по-разному.",
+      "formula": "い→くないです / な→じゃないです",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Классы прилагательных образуют отрицание по-разному."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "さむくないです。",
+          "reading": "さむくないです",
+          "translation": "Не холодно.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L5_g1_q1",
+          "type": "single-choice",
+          "prompt": "Какое отрицание для たかい?",
+          "options": [
+            {
+              "id": "a",
+              "text": "たかくないです"
+            },
+            {
+              "id": "b",
+              "text": "たかいじゃないです"
+            },
+            {
+              "id": "c",
+              "text": "たかくありませんでした"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Классы прилагательных образуют отрицание по-разному.",
+          "grammarRefs": [
+            "L5_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L5_g1_q2",
+          "type": "fill-blank",
+          "prompt": "Поставьте げんき в настоящее отрицание: ___",
+          "acceptedAnswers": [
+            "げんきじゃないです",
+            "げんきじゃありません"
+          ],
+          "explanation": "Классы прилагательных образуют отрицание по-разному.",
+          "grammarRefs": [
+            "L5_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L5_g1_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Эта книга интересная».",
+          "tokens": [
+            "このほん",
+            "は",
+            "おもしろい",
+            "です"
+          ],
+          "correctOrder": [
+            "このほん",
+            "は",
+            "おもしろい",
+            "です"
+          ],
+          "explanation": "Классы прилагательных образуют отрицание по-разному.",
+          "grammarRefs": [
+            "L5_g1"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L5_g2",
+      "noteId": 2,
+      "title": "Прошедшее время прилагательных",
+      "subtitle": "Прошедшее время прилагательных",
+      "summary": "Прошедшие формы зависят от класса прилагательного.",
+      "formula": "い→かったです / な→でした",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L5_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Прошедшие формы зависят от класса прилагательного."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "たのしかったです。",
+          "reading": "たのしかったです",
+          "translation": "Было весело.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L5_g2_q1",
+          "type": "single-choice",
+          "prompt": "Какая прошедшая форма おもしろい?",
+          "options": [
+            {
+              "id": "a",
+              "text": "おもしろかったです"
+            },
+            {
+              "id": "b",
+              "text": "おもしろいでした"
+            },
+            {
+              "id": "c",
+              "text": "おもしろくでした"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Прошедшие формы зависят от класса прилагательного.",
+          "grammarRefs": [
+            "L5_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L5_g2_q2",
+          "type": "fill-blank",
+          "prompt": "Поставьте きれい в прошедшее отрицание: ___",
+          "acceptedAnswers": [
+            "きれいじゃなかったです",
+            "きれいじゃありませんでした"
+          ],
+          "explanation": "Прошедшие формы зависят от класса прилагательного.",
+          "grammarRefs": [
+            "L5_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L5_g2_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Вчера было холодно».",
+          "tokens": [
+            "きのう",
+            "は",
+            "さむかった",
+            "です"
+          ],
+          "correctOrder": [
+            "きのう",
+            "は",
+            "さむかった",
+            "です"
+          ],
+          "explanation": "Прошедшие формы зависят от класса прилагательного.",
+          "grammarRefs": [
+            "L5_g2"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L5_g3",
+      "noteId": 3,
+      "title": "Прилагательное перед существительным",
+      "subtitle": "Прилагательное перед существительным",
+      "summary": "い-прилагательное ставится напрямую, な-прилагательное требует な.",
+      "formula": "い-Adj + N / な-Adj + な + N",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [
+        "L5_g1"
+      ],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "い-прилагательное ставится напрямую, な-прилагательное требует な."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "きれいなしゃしん",
+          "reading": "きれいなしゃしん",
+          "translation": "красивая фотография",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L5_g3_q1",
+          "type": "single-choice",
+          "prompt": "Как правильно сказать «тихий город»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "しずかなまち"
+            },
+            {
+              "id": "b",
+              "text": "しずかいまち"
+            },
+            {
+              "id": "c",
+              "text": "しずかのまち"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "い-прилагательное ставится напрямую, な-прилагательное требует な.",
+          "grammarRefs": [
+            "L5_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L5_g3_q2",
+          "type": "fill-blank",
+          "prompt": "Дополните: おもしろい ___",
+          "acceptedAnswers": [
+            "えいが"
+          ],
+          "explanation": "い-прилагательное ставится напрямую, な-прилагательное требует な.",
+          "grammarRefs": [
+            "L5_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L5_g3_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «интересная японская книга».",
+          "tokens": [
+            "おもしろい",
+            "にほんの",
+            "ほん"
+          ],
+          "correctOrder": [
+            "おもしろい",
+            "にほんの",
+            "ほん"
+          ],
+          "explanation": "い-прилагательное ставится напрямую, な-прилагательное требует な.",
+          "grammarRefs": [
+            "L5_g3"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L5_g4",
+      "noteId": 4,
+      "title": "好き・嫌い",
+      "subtitle": "好き・嫌い",
+      "summary": "Объект симпатии или антипатии отмечается が.",
+      "formula": "X は Y が 好き/嫌いです",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Объект симпатии или антипатии отмечается が."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "わたしはねこがすきです。",
+          "reading": "わたしはねこがすきです",
+          "translation": "Я люблю кошек.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L5_g4_q1",
+          "type": "single-choice",
+          "prompt": "Какая частица нужна: コーヒー ___ すきです?",
+          "options": [
+            {
+              "id": "a",
+              "text": "が"
+            },
+            {
+              "id": "b",
+              "text": "を"
+            },
+            {
+              "id": "c",
+              "text": "で"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Объект симпатии или антипатии отмечается が.",
+          "grammarRefs": [
+            "L5_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L5_g4_q2",
+          "type": "fill-blank",
+          "prompt": "さかなが ___ です。 («не люблю»)",
+          "acceptedAnswers": [
+            "きらい"
+          ],
+          "explanation": "Объект симпатии или антипатии отмечается が.",
+          "grammarRefs": [
+            "L5_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L5_g4_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Елена очень любит японский язык».",
+          "tokens": [
+            "エレナさん",
+            "は",
+            "にほんご",
+            "が",
+            "だいすき",
+            "です"
+          ],
+          "correctOrder": [
+            "エレナさん",
+            "は",
+            "にほんご",
+            "が",
+            "だいすき",
+            "です"
+          ],
+          "explanation": "Объект симпатии или антипатии отмечается が.",
+          "grammarRefs": [
+            "L5_g4"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L5_g5",
+      "noteId": 5,
+      "title": "～ましょう／～ましょうか",
+      "subtitle": "～ましょう／～ましょうか",
+      "summary": "ましょう предлагает совместное действие, ましょうか — более мягкий вариант.",
+      "formula": "Verb stem + ましょう / ましょうか",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "ましょう предлагает совместное действие, ましょうか — более мягкий вариант."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "いっしょにたべましょう。",
+          "reading": "いっしょにたべましょう",
+          "translation": "Давайте поедим вместе.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L5_g5_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Давайте посмотрим фильм»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "えいがをみましょう。"
+            },
+            {
+              "id": "b",
+              "text": "えいがをみません。"
+            },
+            {
+              "id": "c",
+              "text": "えいがをみたいです。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "ましょう предлагает совместное действие, ましょうか — более мягкий вариант.",
+          "grammarRefs": [
+            "L5_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L5_g5_q2",
+          "type": "fill-blank",
+          "prompt": "コーヒーをのみ ___。",
+          "acceptedAnswers": [
+            "ましょうか"
+          ],
+          "explanation": "ましょう предлагает совместное действие, ましょうか — более мягкий вариант.",
+          "grammarRefs": [
+            "L5_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L5_g5_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Давайте вместе пойдём в парк».",
+          "tokens": [
+            "いっしょに",
+            "こうえん",
+            "に",
+            "いきましょう"
+          ],
+          "correctOrder": [
+            "いっしょに",
+            "こうえん",
+            "に",
+            "いきましょう"
+          ],
+          "explanation": "ましょう предлагает совместное действие, ましょうか — более мягкий вариант.",
+          "grammarRefs": [
+            "L5_g5"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    }
+  ]
+}

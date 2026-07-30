@@ -1,0 +1,540 @@
+{
+  "schemaVersion": 1,
+  "chapterId": 12,
+  "passingScorePercent": 67,
+  "topics": [
+    {
+      "id": "L12_g1",
+      "noteId": 1,
+      "title": "～んです",
+      "subtitle": "～んです",
+      "summary": "Конструкция добавляет объяснительный оттенок.",
+      "formula": "Short predicate + んです",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Конструкция добавляет объяснительный оттенок."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "あたまがいたいんです。",
+          "reading": "あたまがいたいんです",
+          "translation": "Дело в том, что болит голова.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L12_g1_q1",
+          "type": "single-choice",
+          "prompt": "Как объяснить «Дело в том, что я занят»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "いそがしいんです。"
+            },
+            {
+              "id": "b",
+              "text": "いそがしいなんです。"
+            },
+            {
+              "id": "c",
+              "text": "いそがしいですん。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Конструкция добавляет объяснительный оттенок.",
+          "grammarRefs": [
+            "L12_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L12_g1_q2",
+          "type": "fill-blank",
+          "prompt": "きょうはにちようび ___。",
+          "acceptedAnswers": [
+            "なんです"
+          ],
+          "explanation": "Конструкция добавляет объяснительный оттенок.",
+          "grammarRefs": [
+            "L12_g1"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L12_g1_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите вопрос «Что случилось?»",
+          "tokens": [
+            "どうした",
+            "ん",
+            "です",
+            "か"
+          ],
+          "correctOrder": [
+            "どうした",
+            "ん",
+            "です",
+            "か"
+          ],
+          "explanation": "Конструкция добавляет объяснительный оттенок.",
+          "grammarRefs": [
+            "L12_g1"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L12_g2",
+      "noteId": 2,
+      "title": "～すぎる",
+      "subtitle": "～すぎる",
+      "summary": "Конструкция сообщает о превышении нормы.",
+      "formula": "Verb/Adj stem + すぎる",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Конструкция сообщает о превышении нормы."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "たべすぎました。",
+          "reading": "たべすぎました",
+          "translation": "Слишком много съел.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L12_g2_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «слишком холодно»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "さむすぎます。"
+            },
+            {
+              "id": "b",
+              "text": "さむいすぎます。"
+            },
+            {
+              "id": "c",
+              "text": "さむくすぎます。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Конструкция сообщает о превышении нормы.",
+          "grammarRefs": [
+            "L12_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L12_g2_q2",
+          "type": "fill-blank",
+          "prompt": "のみ ___ ました。 («слишком много выпил»)",
+          "acceptedAnswers": [
+            "すぎ"
+          ],
+          "explanation": "Конструкция сообщает о превышении нормы.",
+          "grammarRefs": [
+            "L12_g2"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L12_g2_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Эта комната слишком тихая».",
+          "tokens": [
+            "このへや",
+            "は",
+            "しずかすぎます"
+          ],
+          "correctOrder": [
+            "このへや",
+            "は",
+            "しずかすぎます"
+          ],
+          "explanation": "Конструкция сообщает о превышении нормы.",
+          "grammarRefs": [
+            "L12_g2"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L12_g3",
+      "noteId": 3,
+      "title": "～ほうがいいです",
+      "subtitle": "～ほうがいいです",
+      "summary": "Утвердительный совет использует た-форму, отрицательный — ない-форму.",
+      "formula": "V-た ほうがいい / V-ない ほうがいい",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Утвердительный совет использует た-форму, отрицательный — ない-форму."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "もっとやさいをたべたほうがいいです。",
+          "reading": "もっとやさいをたべたほうがいいです",
+          "translation": "Лучше есть больше овощей.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L12_g3_q1",
+          "type": "single-choice",
+          "prompt": "Как посоветовать «Лучше лечь спать рано»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "はやくねたほうがいいです。"
+            },
+            {
+              "id": "b",
+              "text": "はやくねるほうがいいです。"
+            },
+            {
+              "id": "c",
+              "text": "はやくねないほうがいいです。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Утвердительный совет использует た-форму, отрицательный — ない-форму.",
+          "grammarRefs": [
+            "L12_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L12_g3_q2",
+          "type": "fill-blank",
+          "prompt": "おさけをのみ ___ ほうがいいです。 («лучше не пить слишком много»)",
+          "acceptedAnswers": [
+            "すぎない"
+          ],
+          "explanation": "Утвердительный совет использует た-форму, отрицательный — ない-форму.",
+          "grammarRefs": [
+            "L12_g3"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L12_g3_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Лучше обратиться к врачу».",
+          "tokens": [
+            "いしゃ",
+            "に",
+            "いった",
+            "ほう",
+            "が",
+            "いい",
+            "です"
+          ],
+          "correctOrder": [
+            "いしゃ",
+            "に",
+            "いった",
+            "ほう",
+            "が",
+            "いい",
+            "です"
+          ],
+          "explanation": "Утвердительный совет использует た-форму, отрицательный — ない-форму.",
+          "grammarRefs": [
+            "L12_g3"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L12_g4",
+      "noteId": 4,
+      "title": "～ので",
+      "subtitle": "～ので",
+      "summary": "ので мягко и объективно объясняет причину.",
+      "formula": "Short reason + ので、Result",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "ので мягко и объективно объясняет причину."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "あたまがいたいので、やすみます。",
+          "reading": "あたまがいたいので、やすみます",
+          "translation": "Так как болит голова, отдохну.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L12_g4_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Так как воскресенье, банк закрыт»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "にちようびなので、ぎんこうはやすみです。"
+            },
+            {
+              "id": "b",
+              "text": "にちようびだので、ぎんこうはやすみです。"
+            },
+            {
+              "id": "c",
+              "text": "にちようびので、ぎんこうはやすみです。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "ので мягко и объективно объясняет причину.",
+          "grammarRefs": [
+            "L12_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L12_g4_q2",
+          "type": "fill-blank",
+          "prompt": "いそがしい ___、いけません。",
+          "acceptedAnswers": [
+            "ので"
+          ],
+          "explanation": "ので мягко и объективно объясняет причину.",
+          "grammarRefs": [
+            "L12_g4"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L12_g4_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Поскольку тихо, здесь удобно учиться».",
+          "tokens": [
+            "しずか",
+            "なので",
+            "ここ",
+            "は",
+            "べんきょうしやすい",
+            "です"
+          ],
+          "correctOrder": [
+            "しずか",
+            "なので",
+            "ここ",
+            "は",
+            "べんきょうしやすい",
+            "です"
+          ],
+          "explanation": "ので мягко и объективно объясняет причину.",
+          "grammarRefs": [
+            "L12_g4"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L12_g5",
+      "noteId": 5,
+      "title": "～なければいけません／～なきゃいけません",
+      "subtitle": "～なければいけません／～なきゃいけません",
+      "summary": "Конструкция выражает обязанность или необходимость.",
+      "formula": "V-なければいけません",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "Конструкция выражает обязанность или необходимость."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "くすりをのまなければいけません。",
+          "reading": "くすりをのまなければいけません",
+          "translation": "Нужно принять лекарство.",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L12_g5_q1",
+          "type": "single-choice",
+          "prompt": "Как сказать «Я должен учиться»?",
+          "options": [
+            {
+              "id": "a",
+              "text": "べんきょうしなければいけません。"
+            },
+            {
+              "id": "b",
+              "text": "べんきょうするほうがいいです。"
+            },
+            {
+              "id": "c",
+              "text": "べんきょうしてはいけません。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "Конструкция выражает обязанность или необходимость.",
+          "grammarRefs": [
+            "L12_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L12_g5_q2",
+          "type": "fill-blank",
+          "prompt": "Разговорное «нужно идти»: いか ___。",
+          "acceptedAnswers": [
+            "なきゃ",
+            "なきゃいけません"
+          ],
+          "explanation": "Конструкция выражает обязанность или необходимость.",
+          "grammarRefs": [
+            "L12_g5"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L12_g5_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Завтра нужно рано встать».",
+          "tokens": [
+            "あした",
+            "はやく",
+            "おきなければ",
+            "いけません"
+          ],
+          "correctOrder": [
+            "あした",
+            "はやく",
+            "おきなければ",
+            "いけません"
+          ],
+          "explanation": "Конструкция выражает обязанность или необходимость.",
+          "grammarRefs": [
+            "L12_g5"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    },
+    {
+      "id": "L12_g6",
+      "noteId": 6,
+      "title": "～でしょうか",
+      "subtitle": "～でしょうか",
+      "summary": "でしょうか смягчает предположение или вопрос.",
+      "formula": "Short predicate + でしょうか",
+      "estimatedMinutes": 8,
+      "requiredVocabularyIds": [],
+      "prerequisiteGrammarIds": [],
+      "explanation": [
+        {
+          "type": "paragraph",
+          "text": "でしょうか смягчает предположение или вопрос."
+        }
+      ],
+      "examples": [
+        {
+          "japanese": "あしたはあめでしょうか。",
+          "reading": "あしたはあめでしょうか",
+          "translation": "Интересно, завтра будет дождь?",
+          "highlight": []
+        }
+      ],
+      "quiz": [
+        {
+          "id": "L12_g6_q1",
+          "type": "single-choice",
+          "prompt": "Как спросить «Томат — овощ?»",
+          "options": [
+            {
+              "id": "a",
+              "text": "トマトはやさいでしょうか。"
+            },
+            {
+              "id": "b",
+              "text": "トマトはやさいだでしょうか。"
+            },
+            {
+              "id": "c",
+              "text": "トマトはやさいですかでしょう。"
+            }
+          ],
+          "correctOptionId": "a",
+          "explanation": "でしょうか смягчает предположение или вопрос.",
+          "grammarRefs": [
+            "L12_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L12_g6_q2",
+          "type": "fill-blank",
+          "prompt": "らいしゅうはさむい ___。",
+          "acceptedAnswers": [
+            "でしょうか"
+          ],
+          "explanation": "でしょうか смягчает предположение или вопрос.",
+          "grammarRefs": [
+            "L12_g6"
+          ],
+          "vocabularyRefs": []
+        },
+        {
+          "id": "L12_g6_q3",
+          "type": "sentence-order",
+          "prompt": "Соберите «Интересно, учитель придёт?»",
+          "tokens": [
+            "せんせい",
+            "は",
+            "くる",
+            "でしょう",
+            "か"
+          ],
+          "correctOrder": [
+            "せんせい",
+            "は",
+            "くる",
+            "でしょう",
+            "か"
+          ],
+          "explanation": "でしょうか смягчает предположение или вопрос.",
+          "grammarRefs": [
+            "L12_g6"
+          ],
+          "vocabularyRefs": []
+        }
+      ]
+    }
+  ]
+}
