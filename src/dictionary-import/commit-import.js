@@ -1,4 +1,4 @@
-import { makeCardId, SKILLS } from '../knowledge-model.js';
+import { knowledgeItemIdForWord, makeCardId, SKILLS } from '../knowledge-model.js';
 import { SRS } from '../../srs.js';
 import { createKnowledgeItemFromUserEntry } from '../user-dictionaries/knowledge-item-adapter.js';
 import {
@@ -126,15 +126,17 @@ export async function commitDictionaryImport({
   if (nextState) {
     for (const entry of entries.filter((value) => value.learningEnabled)) {
       const item = createKnowledgeItemFromUserEntry(entry);
+      const itemId = knowledgeItemIdForWord(item);
       for (const skill of item.capabilities.skills.filter(
         (candidate) => candidate === SKILLS.RECOGNITION
       )) {
-        const cardId = makeCardId(entry.id, skill);
+        const cardId = makeCardId(itemId, skill);
         if (!nextState.srs[cardId]) {
           nextState.srs[cardId] = {
             ...SRS.newCard(cardId),
             id: cardId,
-            itemId: entry.id,
+            itemId,
+            dictionaryId: item.dictionaryId,
             skill,
             knowledgeType: 'vocabulary',
             sourceType: 'user-dictionary',

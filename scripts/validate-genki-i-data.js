@@ -67,11 +67,15 @@ export async function validateGenkiData() {
   const errors = [];
   const words = [];
   const wordIds = new Set();
-  const identities = new Set();
+  const referenceIds = new Set();
   const grammarIds = new Set();
   const lessonCounts = new Map();
   const vocabularyRefs = [];
   const grammarRefs = [];
+  const dictionaryDocument = await readJson('public/data/dictionary/entries.json');
+  const dictionaryEntries = new Map(
+    (dictionaryDocument.entries || []).map((entry) => [entry.id, entry])
+  );
 
   for (let lessonId = 1; lessonId <= 12; lessonId++) {
     const suffix = String(lessonId).padStart(2, '0');
@@ -89,37 +93,84 @@ export async function validateGenkiData() {
 
     for (const [index, word] of (lesson?.vocabulary || []).entries()) {
       const location = `${relativePath}.lesson.vocabulary[${index}]`;
-      for (const field of ['id', 'lesson', 'writtenForm', 'reading', 'meaning']) {
+      for (const field of [
+        'id',
+        'localId',
+        'courseId',
+        'dictionaryId',
+        'introducedIn',
+        'courseMeaning',
+      ]) {
         addError(
           errors,
           word[field] !== null && word[field] !== undefined && String(word[field]).trim() !== '',
           `${location}: ${field} is required`
         );
       }
-      addError(errors, Number(word.lesson) === lessonId, `${location}: lesson mismatch`);
+      addError(errors, word.courseId === 'genki-1', `${location}: courseId must be genki-1`);
       addError(
         errors,
-        new RegExp(`^L${lessonId}_V\\d+$`, 'u').test(word.id),
-        `${location}: ID must belong to lesson ${lessonId}`
+        word.introducedIn === `genki-1:lesson-${lessonId}`,
+        `${location}: introducedIn mismatch`
       );
-      for (const legacyField of ['kanji', 'writing', 'translation']) {
+      addError(
+        errors,
+        new RegExp(`^L${lessonId}_V\\d+$`, 'u').test(word.localId),
+        `${location}: localId must belong to lesson ${lessonId}`
+      );
+      addError(
+        errors,
+        word.id === `genki-1:vocabulary:${word.localId}`,
+        `${location}: reference ID is not namespaced`
+      );
+      for (const legacyField of [
+        'kanji',
+        'writing',
+        'translation',
+        'writtenForm',
+        'reading',
+        'meaning',
+        'meanings',
+        'partOfSpeech',
+        'verbClass',
+        'adjectiveClass',
+        'transitivity',
+        'tokenForms',
+        'lexemeId',
+      ]) {
         addError(
           errors,
           !Object.hasOwn(word, legacyField),
-          `${location}: legacy field ${legacyField} is forbidden`
+          `${location}: global field ${legacyField} is forbidden in a course reference`
         );
       }
-      addError(errors, word.writtenForm !== '-', `${location}: "-" is not a written form`);
-      addError(errors, !wordIds.has(word.id), `${location}: duplicate ID ${word.id}`);
-      wordIds.add(word.id);
-      const identity = `${word.writtenForm.normalize('NFKC')}\u0000${word.reading.normalize('NFKC')}`;
       addError(
         errors,
-        !identities.has(identity),
-        `${location}: late duplicate ${word.writtenForm} / ${word.reading}`
+        !referenceIds.has(word.id),
+        `${location}: duplicate reference ID ${word.id}`
       );
-      identities.add(identity);
-      words.push(word);
+      referenceIds.add(word.id);
+      addError(
+        errors,
+        !wordIds.has(word.localId),
+        `${location}: duplicate local ID ${word.localId}`
+      );
+      wordIds.add(word.localId);
+      const dictionaryEntry = dictionaryEntries.get(word.dictionaryId);
+      addError(
+        errors,
+        Boolean(dictionaryEntry),
+        `${location}: missing dictionary entry ${word.dictionaryId}`
+      );
+      if (dictionaryEntry) {
+        addError(
+          errors,
+          dictionaryEntry.meanings.includes(word.courseMeaning) ||
+            typeof word.courseMeaning === 'string',
+          `${location}: invalid courseMeaning`
+        );
+        words.push({ ...dictionaryEntry, ...word });
+      }
       collectVocabularyRefs(word, location, vocabularyRefs);
       collectGrammarRefs(word, location, grammarRefs);
     }

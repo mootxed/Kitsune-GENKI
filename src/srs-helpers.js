@@ -1,6 +1,7 @@
 /* src/srs-helpers.js — pure queries over SRS records */
 import { SRS } from '../srs.js';
 import { parseCardIdentity } from './knowledge-model.js';
+import { getDictionaryEntry } from './dictionary/dictionary-store.js';
 import { isPriorKnowledge, shouldChapterHaveVocabularyCards } from './chapter-progress.js';
 import {
   canonicalizeKnowledgeItemId,
@@ -34,9 +35,16 @@ export function wordById(wordId, lessons) {
   for (const l of lessons) {
     // Поддерживаем оба формата: words и vocabulary
     const wordList = l.words || l.vocabulary || [];
-    const w = wordList.find((x) => x.id === itemId);
+    const w = wordList.find(
+      (x) =>
+        canonicalizeKnowledgeItemId(x.id) === itemId ||
+        canonicalizeKnowledgeItemId(x.dictionaryId || x.knowledgeItemId) === itemId
+    );
     if (w) return w;
   }
+
+  const dictionaryEntry = getDictionaryEntry(itemId);
+  if (dictionaryEntry) return dictionaryEntry;
 
   console.warn(`[wordById] Word not found: ${wordId}. Lessons count: ${lessons.length}`);
   return null;

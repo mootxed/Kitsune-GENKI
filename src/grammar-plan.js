@@ -9,7 +9,11 @@ import {
   isVocabularyItemIntroduced,
 } from './vocabulary-unlock-plan.js';
 import { dueCards } from './srs-helpers.js';
-import { canonicalLessonId, sameLessonId } from './courses/course-context.js';
+import {
+  canonicalizeKnowledgeItemId,
+  canonicalLessonId,
+  sameLessonId,
+} from './courses/course-context.js';
 
 export const HEAVY_VOCABULARY_DUE_THRESHOLD = 25;
 
@@ -271,7 +275,14 @@ export function getGrammarTopicPrerequisiteStatus(state, chapterId, topic, chapt
 
   const srs = state?.srs || {};
   for (const vId of reqVocabIds) {
-    const cards = Object.values(srs).filter((c) => c && (c.itemId === vId || c.wordId === vId));
+    const canonicalVocabularyId = canonicalizeKnowledgeItemId(vId);
+    const cards = Object.values(srs).filter(
+      (card) =>
+        card &&
+        [card.itemId, card.wordId].some(
+          (itemId) => canonicalizeKnowledgeItemId(itemId) === canonicalVocabularyId
+        )
+    );
     const allLocked = cards.length > 0 && cards.every((c) => c.planLocked === true);
     const isIntroduced = isVocabularyItemIntroduced(state, vId);
 

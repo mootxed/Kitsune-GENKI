@@ -1,6 +1,7 @@
 import { SRS } from '../../srs.js';
 import {
   cardsForItem,
+  knowledgeItemIdForWord,
   makeCardId,
   parseCardIdentity,
   vocabularySkillsReadyForIntroduction,
@@ -30,22 +31,24 @@ function removeItemProgress(state, entryId) {
 export function syncUserEntryCards(entry, state, now = Date.now()) {
   if (!entry.learningEnabled) return { added: 0, changed: false };
   const item = createKnowledgeItemFromUserEntry(entry);
+  const itemId = knowledgeItemIdForWord(item);
   const capabilities = getUserEntryCapabilities(entry);
   const availableSkills = new Set(capabilities.skills);
   const skills = vocabularySkillsReadyForIntroduction(
     item,
     state.reviewEvents || [],
-    state.masteryArchive?.[entry.id],
+    state.masteryArchive?.[itemId],
     now
   );
   let added = 0;
   let changed = false;
   // Создаём/возобновляем карточки доступных навыков
   for (const skill of skills) {
-    const cardId = makeCardId(entry.id, skill);
+    const cardId = makeCardId(itemId, skill);
     if (!state.srs[cardId]) {
       state.srs[cardId] = SRS.newCard(cardId, {
-        itemId: entry.id,
+        itemId,
+        dictionaryId: item.dictionaryId,
         skill,
         knowledgeType: 'vocabulary',
         sourceType: 'user-dictionary',
@@ -68,7 +71,7 @@ export function syncUserEntryCards(entry, state, now = Date.now()) {
   // Возобновляем или приостанавливаем карточки в зависимости от доступности навыков (capabilities)
   for (const [cardId, card] of Object.entries(state.srs || {})) {
     const identity = parseCardIdentity(cardId);
-    if (identity.itemId !== entry.id) continue;
+    if (identity.itemId !== itemId) continue;
     if (!availableSkills.has(identity.skill)) {
       if (!card.suspended) {
         state.srs[cardId] = {
@@ -101,7 +104,8 @@ export async function setUserEntriesLearningEnabled({ repository, entries, enabl
     if (enabled) {
       syncUserEntryCards(entry, nextState);
     } else {
-      for (const card of cardsForItem(nextState.srs, entry.id)) {
+      const itemId = entry.globalDictionaryId || entry.id;
+      for (const card of cardsForItem(nextState.srs, itemId)) {
         nextState.srs[card.id] = { ...card, suspended: true, suspendedReason: 'learning-disabled' };
       }
     }
@@ -117,7 +121,9 @@ export async function deleteUserEntriesWithProgress({ repository, entries, state
     masteryArchive: { ...(state.masteryArchive || {}) },
   };
   let removedCards = 0;
-  for (const entry of entries) removedCards += removeItemProgress(nextState, entry.id);
+  for (const entry of entries) {
+    removedCards += removeItemProgress(nextState, entry.globalDictionaryId || entry.id);
+  }
   await (
     await repository.db()
   ).atomicDictionaryCommit({
@@ -140,7 +146,9 @@ export async function deleteUserDictionaryWithProgress({
     masteryArchive: { ...(state.masteryArchive || {}) },
   };
   let removedCards = 0;
-  for (const entry of entries) removedCards += removeItemProgress(nextState, entry.id);
+  for (const entry of entries) {
+    removedCards += removeItemProgress(nextState, entry.globalDictionaryId || entry.id);
+  }
   await (
     await repository.db()
   ).atomicDeleteDictionary({
@@ -178,7 +186,8 @@ export async function updateUserEntryWithSync({ repository, entry, state }) {
     syncUserEntryCards(normalized, nextState);
   } else {
     // Если обучение выключено — убеждаемся, что все карточки suspended
-    for (const card of cardsForItem(nextState.srs, normalized.id)) {
+    const itemId = normalized.globalDictionaryId || normalized.id;
+    for (const card of cardsForItem(nextState.srs, itemId)) {
       if (!card.suspended) {
         nextState.srs[card.id] = { ...card, suspended: true, suspendedReason: 'learning-disabled' };
       }

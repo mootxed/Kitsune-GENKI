@@ -38,8 +38,12 @@ export function buildVocabularyReferenceIndex(lessons = []) {
     const chapterId = target.id || target.lesson_id;
     const words = target.words || target.vocabulary || [];
     for (const w of words) {
-      const vId = String(w.id || w);
-      vocabIndex.set(vId, { chapterId, word: w });
+      const reference = { chapterId, word: w };
+      for (const vocabularyId of [w?.id || w, w?.localId, w?.dictionaryId]) {
+        if (vocabularyId != null && vocabularyId !== '') {
+          vocabIndex.set(String(vocabularyId), reference);
+        }
+      }
     }
   }
   return vocabIndex;

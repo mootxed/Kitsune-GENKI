@@ -148,6 +148,18 @@
       "productionEligibility": "per-item"
     },
     {
+      "path": "public/data/dictionary/",
+      "contentType": "global-dictionary",
+      "author": "KotoKitsu contributors",
+      "sourceType": "derived",
+      "containsOriginalContent": true,
+      "externalMaterialsConsulted": true,
+      "copiesThirdPartyText": false,
+      "answerKeyBundled": false,
+      "reviewStatus": "reviewed",
+      "productionEligibility": "per-item"
+    },
+    {
       "path": "public/data/particles-dictionary.json",
       "contentType": "particles-dictionary",
       "author": "Mootxed",

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "1",
+  "entries": "./entries.json",
+  "tokenIndex": "./token-index.json",
+  "aliases": "./aliases.json"
+}

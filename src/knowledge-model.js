@@ -21,6 +21,10 @@ export const SKILLS = Object.freeze({
 const CARD_SEPARATOR = '::';
 const KNOWN_SKILLS = new Set(Object.values(SKILLS));
 
+export function knowledgeItemIdForWord(word) {
+  return String(word?.knowledgeItemId || word?.dictionaryId || word?.id || '');
+}
+
 export function makeCardId(itemId, skill = SKILLS.RECOGNITION) {
   if (typeof itemId !== 'string' || itemId.length === 0) {
     throw new Error('[Knowledge] itemId обязателен');
@@ -90,14 +94,9 @@ export function vocabularySkillsReadyForIntroduction(
 ) {
   const applicable = vocabularySkills(word, options);
   const day = localDateKey(now);
-  const recognitionReady = hasEarlierCleanSuccess(
-    events,
-    archive,
-    word.id,
-    SKILLS.RECOGNITION,
-    day
-  );
-  const recallReady = hasEarlierCleanSuccess(events, archive, word.id, SKILLS.RECALL, day);
+  const itemId = knowledgeItemIdForWord(word);
+  const recognitionReady = hasEarlierCleanSuccess(events, archive, itemId, SKILLS.RECOGNITION, day);
+  const recallReady = hasEarlierCleanSuccess(events, archive, itemId, SKILLS.RECALL, day);
 
   return applicable.filter((skill) => {
     if (skill === SKILLS.RECOGNITION) return true;

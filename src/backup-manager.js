@@ -4,6 +4,8 @@ import { getReviewLogs, syncReviewLogQueue } from './review-log.js';
 import { getOpenRouterKey, setOpenRouterKey, clearOpenRouterKey } from './openrouter-key.js';
 import { createPersistableState, runMigrations } from '../state/store.js';
 import { migrateGenki1ReviewLogEntriesV15 } from './courses/genki-1/migrations/state-v15.js';
+import { migrateDictionaryReviewLogEntriesV16 } from './dictionary/state-v16.js';
+import { DICTIONARY_CONTENT_VERSION } from './dictionary/dictionary-contract.js';
 import {
   ImportProfileSchema,
   UserDictionaryEntrySchema,
@@ -17,8 +19,8 @@ const LS_LAST_ACTIVITY_DAY = 'kitsune_last_activity_day';
 const LS_THEME = 'kitsune_theme';
 
 // Версия схемы для совместимости при будущих изменениях
-const SCHEMA_VERSION = '6.0'; // Версия формата бэкапа (не версия схемы IndexedDB)
-const LEGACY_SCHEMA_VERSIONS = new Set(['2.0', '3.0', '4.0', '5.0']);
+const SCHEMA_VERSION = '7.0'; // Версия формата бэкапа (не версия схемы IndexedDB)
+const LEGACY_SCHEMA_VERSIONS = new Set(['2.0', '3.0', '4.0', '5.0', '6.0']);
 
 // ---------- Zod Validation Schemas ----------
 
@@ -176,7 +178,7 @@ export const BackupSchema = z
       .optional()
       .default(SCHEMA_VERSION)
       .refine((val) => val === SCHEMA_VERSION || LEGACY_SCHEMA_VERSIONS.has(val), {
-        message: `Несовместимая версия схемы данных (поддерживаются ${SCHEMA_VERSION}, 5.0, 4.0, 3.0 и 2.0)`,
+        message: `Несовместимая версия схемы данных (поддерживаются ${SCHEMA_VERSION}, 6.0, 5.0, 4.0, 3.0 и 2.0)`,
       }),
     timestamp: z.string().max(100).optional(),
     data: z
@@ -193,6 +195,18 @@ export const BackupSchema = z
           .optional()
           .default([]),
         userDictionaryImportProfiles: z.array(ImportProfileSchema).max(500).optional().default([]),
+        dictionary: z
+          .object({
+            schemaVersion: z.literal(1),
+            curatedContentVersion: z.string().min(1).max(100),
+            userEntries: z.array(z.unknown()).max(20_000).default([]),
+            aliases: z.record(z.string().max(500), z.string().max(500)).default({}),
+            tokenForms: z
+              .record(z.string().max(500), z.array(z.string().max(2_000)).max(500))
+              .default({}),
+          })
+          .strict()
+          .optional(),
       })
       .passthrough(),
   })
@@ -268,6 +282,35 @@ export async function exportFullProgress() {
         userDictionaries,
         userDictionaryEntries,
         userDictionaryImportProfiles,
+        dictionary: {
+          schemaVersion: 1,
+          curatedContentVersion: DICTIONARY_CONTENT_VERSION,
+          userEntries: userDictionaryEntries.filter(
+            (entry) => entry.source?.type === 'ai' || entry.globalDictionaryId
+          ),
+          aliases: Object.fromEntries(
+            userDictionaryEntries
+              .filter((entry) => entry.globalDictionaryId)
+              .map((entry) => [entry.id, entry.globalDictionaryId])
+          ),
+          tokenForms: Object.fromEntries(
+            userDictionaryEntries
+              .filter((entry) => entry.globalDictionaryId)
+              .map((entry) => [
+                entry.globalDictionaryId,
+                [
+                  ...new Set(
+                    [
+                      entry.writing,
+                      entry.reading,
+                      ...(entry.alternativeWritings || []),
+                      ...(entry.tokenForms || []),
+                    ].filter(Boolean)
+                  ),
+                ],
+              ])
+          ),
+        },
       },
     };
 
@@ -330,14 +373,29 @@ export async function importFullProgress(data, preserveApiKey = true) {
       ? createPersistableState(runMigrations(data.data.state))
       : null;
 
+    const dictionaryUserEntries = (data.data?.dictionary?.userEntries || [])
+      .map((entry) => UserDictionaryEntrySchema.safeParse(entry))
+      .filter((result) => result.success)
+      .map((result) => result.data);
+    const userDictionaryEntries = [
+      ...new Map(
+        [...(data.data?.userDictionaryEntries || []), ...dictionaryUserEntries].map((entry) => [
+          entry.id,
+          entry,
+        ])
+      ).values(),
+    ];
+
     const payload = {
       state: stateToImport,
       lessonVersion: data.data?.lessonVersion ?? null,
       lastActivityDay: data.data?.lastActivityDay ?? null,
       theme: data.data?.theme ?? null,
-      reviewLog: migrateGenki1ReviewLogEntriesV15(data.data?.reviewLog),
+      reviewLog: migrateDictionaryReviewLogEntriesV16(
+        migrateGenki1ReviewLogEntriesV15(data.data?.reviewLog)
+      ),
       userDictionaries: data.data?.userDictionaries || [],
-      userDictionaryEntries: data.data?.userDictionaryEntries || [],
+      userDictionaryEntries,
       userDictionaryImportProfiles: data.data?.userDictionaryImportProfiles || [],
     };
 

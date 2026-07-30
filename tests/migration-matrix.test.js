@@ -5,8 +5,8 @@ import { runMigrations } from '../state/store.js';
 import { validateImportData } from '../src/backup-manager.js';
 import { STORES, STORE_SCHEMAS } from '../src/db.js';
 
-describe('Migration Test Matrix: State v1 → v15', () => {
-  it('migrates a minimal v1 state up to v15 without loss of progress fields', () => {
+describe('Migration Test Matrix: State v1 → v16', () => {
+  it('migrates a minimal v1 state up to v16 without loss of progress fields', () => {
     const v1State = {
       version: 1,
       xp: 1500,
@@ -50,7 +50,7 @@ describe('Migration Test Matrix: State v1 → v15', () => {
 
     const migrated = runMigrations(v1State);
 
-    expect(migrated.version).toBe(15);
+    expect(migrated.version).toBe(16);
     // Verify XP preserved
     expect(migrated.xp).toBe(1500);
     expect(migrated.level).toBe(4);
@@ -77,7 +77,7 @@ describe('Migration Test Matrix: State v1 → v15', () => {
       state = runMigrations(state);
       expect(state.version).toBeGreaterThanOrEqual(targetVer);
     }
-    expect(state.version).toBe(15);
+    expect(state.version).toBe(16);
     expect(state.xp).toBe(500);
   });
 });
@@ -101,8 +101,8 @@ describe('Migration Test Matrix: IndexedDB v4/v6 → v7', () => {
   });
 });
 
-describe('Migration Test Matrix: Backup 2.0 → 6.0', () => {
-  const versions = ['2.0', '3.0', '4.0', '5.0', '6.0'];
+describe('Migration Test Matrix: Backup 2.0 → 7.0', () => {
+  const versions = ['2.0', '3.0', '4.0', '5.0', '6.0', '7.0'];
 
   versions.forEach((ver) => {
     it(`successfully validates and imports backup version ${ver} maintaining due, XP, completed chapters and review logs`, () => {

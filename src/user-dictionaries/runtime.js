@@ -1,5 +1,5 @@
 import { calculateMastery } from '../mastery.js';
-import { cardsForItem, vocabularySkills } from '../knowledge-model.js';
+import { cardsForItem, knowledgeItemIdForWord, vocabularySkills } from '../knowledge-model.js';
 import { SRS } from '../../srs.js';
 import { createKnowledgeItemFromUserEntry } from './knowledge-item-adapter.js';
 import { UserDictionaryRepository } from './repository.js';
@@ -52,11 +52,12 @@ export async function refreshUserDictionaryLesson(
 export function isUserDictionaryWordLearned(word, state) {
   if (word?.sourceType !== 'user-dictionary') return true;
   if (!word.learningEnabled) return false;
+  const itemId = knowledgeItemIdForWord(word);
   const mastery = calculateMastery({
-    itemId: word.id,
-    cards: cardsForItem(state.srs, word.id),
+    itemId,
+    cards: cardsForItem(state.srs, itemId),
     events: state.reviewEvents || [],
-    archive: state.masteryArchive?.[word.id],
+    archive: state.masteryArchive?.[itemId],
     applicableSkills: vocabularySkills(word),
     getRetrievability: (card, now) => SRS.getRetrievability(card, now),
   });

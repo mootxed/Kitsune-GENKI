@@ -10,6 +10,11 @@
 `dictionaryId`, `writing`, `reading`, массивы `meanings`, вариантов, частей речи и
 тегов, примеры, заметку, источник, `learningEnabled`, даты и версию схемы.
 
+AI-запись дополнительно имеет стабильный глобальный `globalDictionaryId` вида
+`user-word:<form>:<reading>`, token forms, confidence и verified. Она хранится
+отдельно от curated-базы. Если глобальная curated-статья уже существует, она
+побеждает, а пользовательская запись не перезаписывает её.
+
 Минимум записи: непустое `writing` или `reading` и хотя бы один непустой meaning.
 Приложение не придумывает чтение, перевод или пример. `entryKey` и `searchText` —
 производные внутренние поля и пересчитываются из отображаемых данных.
@@ -88,7 +93,8 @@ Mapping поддерживает `writing`, `reading`, `meanings`, `alternativeW
 
 Merge дедуплицирует meanings, tags, варианты и примеры, не стирает чтение пустым,
 сохраняет существующую заметку и стабильный ID. Replace сохраняет существующие
-`id`, `createdAt` и включённое обучение. Замены без выбранного правила нет.
+`id`, `createdAt`, `globalDictionaryId` и включённое обучение. Замены без
+выбранного правила нет.
 
 ## FSRS, capabilities и обучение
 
@@ -97,7 +103,12 @@ Merge дедуплицирует meanings, tags, варианты и приме�
 
 При строгом импорте `.kotokitsu.json` записи нормализуются напрямую без ручного mapping, создаются новые namespaced ID для предотвращения коллизий, а FSRS-состояние экспорта не переносится.
 
-`createKnowledgeItemFromUserEntry` — граница между записью и knowledge item. Создаёт как `russian`, так и `translation` для полной совместимости со всеми типами карточек. ID остаётся в namespace `user-word:`. Сначала создаётся recognition-карточка, затем остальные навыки открываются общим `vocabularySkillsReadyForIntroduction`. Основная FSRS-модель не менялась.
+`createKnowledgeItemFromUserEntry` — граница между записью и knowledge item.
+Создаёт как `russian`, так и `translation` для полной совместимости со всеми
+типами карточек. Для AI-entry knowledge ID равен стабильному
+`globalDictionaryId`; локальный record ID остаётся ключом IndexedDB. Сначала
+создаётся recognition-карточка, затем остальные навыки открываются общим
+`vocabularySkillsReadyForIntroduction`.
 
 Capabilities:
 
@@ -137,10 +148,13 @@ mastery `Уверенно` или `Освоено`. Weak mode используе
 CSV содержит `writing`, `reading`, `meanings`, `tags`, `notes`, `learningEnabled`.
 Отдельный export не содержит FSRS, API-ключ, настройки или несвязанный прогресс.
 
-Полный backup приложения версии `6.0` включает три пользовательских stores. Связанные
-карточки и прогресс уже входят в state/review log. API-ключ обнуляется при export и
-игнорируется при import. Restore заменяет stores и остальную backup-нагрузку в одной
-транзакции; повторный restore идемпотентен по стабильным ID.
+Полный backup приложения версии `7.0` включает три пользовательских stores и
+словарный раздел с curated content version, AI/user entries, aliases и token
+forms. Curated articles не копируются. Backup 2.0–6.0 остаются совместимыми, а
+одна повреждённая AI-entry не блокирует остальные данные. Связанные карточки и
+прогресс уже входят в state/review log. API-ключ обнуляется при export и
+игнорируется при import. Restore заменяет stores и остальную backup-нагрузку в
+одной транзакции; повторный restore идемпотентен по стабильным ID.
 
 ## Ограничения первой версии
 

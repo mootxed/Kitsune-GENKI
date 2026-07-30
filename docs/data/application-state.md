@@ -6,24 +6,26 @@
 
 ## 📌 Версионирование состояния
 
-- **Текущая версия схемы**: `CURRENT_VERSION = 14`.
+- **Текущая версия схемы**: `CURRENT_VERSION = 16`.
 - **Ключ хранения в localStorage (Legacy/Fallback)**: `kitsune_state_v1`.
 - **Ключ хранения в IndexedDB (Основное)**: `app_state` store → запись с ID `'state'`.
 
 ---
 
-## 🧱 Структура объектов State v14 (Упрощённый пример)
+## 🧱 Структура объектов State v16 (Упрощённый пример)
 
 ```javascript
 // Упрощенный пример структуры приложения
 {
-  version: 14,                     // Идентификатор версии схемы (CURRENT_VERSION)
+  version: 16,                     // Идентификатор версии схемы (CURRENT_VERSION)
   onboardingCompleted: true,       // Флаг прохождения начального анкетирования
   xp: 1250,                        // Общий накопленный опыт пользователя
   streak: 5,                       // Стрик активности (дней подряд)
   lastActivityDate: "2026-07-27",  // Дата последней активности YYYY-MM-DD
   srs: {                           // Реестр карточек FSRS (ключ: cardId)
-    "genki1_l1_v1:vocabulary-meaning": {
+    "jp-word:映画:えいが": {
+      id: "jp-word:映画:えいが",
+      itemId: "jp-word:映画:えいが",
       due: "2026-07-28T09:00:00.000Z",
       stability: 4.25,
       difficulty: 5.12,

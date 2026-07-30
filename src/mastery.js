@@ -2,6 +2,7 @@
 
 import { SKILLS, modeSkill, parseCardIdentity } from './knowledge-model.js';
 import { localDateKey } from './local-date.js';
+import { resolveGeneratedDictionaryAlias } from './dictionary/generated-dictionary-aliases.js';
 
 export const MASTERY_LEVELS = Object.freeze({
   NEW: 'Новое',
@@ -32,10 +33,11 @@ const DAY = 86_400_000;
 const EXCLUDED_MODES = new Set(['system-fallback', 'preview', 'debug-skip']);
 
 export function validMasteryEvents(events, itemId) {
+  const canonicalItemId = resolveGeneratedDictionaryAlias(itemId);
   return (events || []).filter(
     (event) =>
       event &&
-      event.itemId === itemId &&
+      resolveGeneratedDictionaryAlias(event.itemId) === canonicalItemId &&
       !event.undoneAt &&
       event.eventType === 'review' &&
       !EXCLUDED_MODES.has(event.mode) &&

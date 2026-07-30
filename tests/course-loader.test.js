@@ -1,8 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CourseLoadError, CourseLoader } from '../src/courses/course-loader.js';
+import { CourseLoadError, CourseLoader as CoreCourseLoader } from '../src/courses/course-loader.js';
 import { genki1Adapter } from '../src/courses/genki-1/adapter.js';
+import { DictionaryStore } from '../src/dictionary/dictionary-store.js';
 
 const root = process.cwd();
 
@@ -14,13 +15,26 @@ function fileFetch(rootDirectory, options = {}) {
     const relativePath = url.pathname.startsWith(marker)
       ? url.pathname.slice(marker.length)
       : url.pathname.replace(/^\/+/u, '');
+    const resolvedPath = relativePath.startsWith('data/dictionary/')
+      ? path.join(root, 'public', relativePath)
+      : path.join(rootDirectory, relativePath);
     try {
-      const raw = await readFile(path.join(rootDirectory, relativePath), 'utf8');
+      const raw = await readFile(resolvedPath, 'utf8');
       return { ok: true, status: 200, json: async () => JSON.parse(raw) };
     } catch {
       return { ok: false, status: 404, json: async () => null };
     }
   };
+}
+
+const testDictionaryStore = new DictionaryStore({
+  fetchImpl: fileFetch(path.join(root, 'public')),
+  baseUrl: 'https://example.test/',
+  userRepository: null,
+});
+
+function CourseLoader(options) {
+  return new CoreCourseLoader({ ...options, dictionaryStore: testDictionaryStore });
 }
 
 describe('CourseLoader', () => {

@@ -16,6 +16,7 @@ const CACHE_STATIC = `${NS}-static-${CACHE_VERSION}`;
 const CACHE_IMAGES = `${NS}-images-${CACHE_VERSION}`;
 const CACHE_AUDIO = `${NS}-audio-${CACHE_VERSION}`;
 const CACHE_LESSON = `${NS}-lesson-${CACHE_VERSION}`;
+const CACHE_DICTIONARY = `${NS}-dictionary-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `${NS}-dynamic-${CACHE_VERSION}`;
 
 // Cache size and byte volume limits
@@ -61,9 +62,16 @@ const OPTIONAL_SHELL_ASSETS = [
 // Только точка входа встроенного курса кешируется при install. Все остальные
 // ресурсы пакета обнаруживаются через manifest и попадают в runtime cache.
 const COURSE_ENTRY_FILES = ['data/courses/genki-1/manifest.json'];
+const DICTIONARY_ENTRY_FILES = [
+  'data/dictionary/manifest.json',
+  'data/dictionary/entries.json',
+  'data/dictionary/token-index.json',
+  'data/dictionary/aliases.json',
+];
 
 // Паттерн для динамических chunk-файлов контента
 const CONTENT_CHUNK_RE = /\/data\/(courses\/[^/]+\/.*|kanji\/.*)\.json$/;
+const DICTIONARY_PATH_RE = /\/data\/dictionary\/(?:manifest|entries|token-index|aliases)\.json$/;
 
 // Паттерны для определения типа ресурса
 const IMAGE_EXT_RE = /\.(webp|png|jpg|jpeg|gif|svg|ico)(\?.*)?$/i;
@@ -152,6 +160,7 @@ function isProtectedMetadataEntry(key) {
     const url = new URL(urlStr, self.location.href);
     const pathname = url.pathname;
     if (COURSE_ENTRY_PATHS.includes(pathname)) return true;
+    if (DICTIONARY_PATH_RE.test(pathname)) return true;
     return (
       /\/(manifest|content-index|grammar-index|kanji-availability|vocabulary-aliases)\.json$/i.test(pathname) ||
       /\/data\/courses\/[^/]+\/(manifest|content-index|grammar\/index|exercises\/.*|relations\/.*|migrations\/.*)\.json$/i.test(pathname)
@@ -304,6 +313,14 @@ self.addEventListener('install', (event) => {
           }
         })
       );
+
+      // 4. The registered built-in dictionary is a separate global offline
+      // dependency. It is never trimmed with course content.
+      const dictionaryCache = await caches.open(CACHE_DICTIONARY);
+      const dictionaryUrls = DICTIONARY_ENTRY_FILES.map(
+        (url) => new URL(url, self.location).href
+      );
+      await dictionaryCache.addAll(dictionaryUrls);
     })()
   );
 });
@@ -317,6 +334,7 @@ self.addEventListener('activate', (event) => {
     CACHE_IMAGES,
     CACHE_AUDIO,
     CACHE_LESSON,
+    CACHE_DICTIONARY,
     CACHE_DYNAMIC,
   ]);
 
@@ -378,6 +396,12 @@ self.addEventListener('fetch', (event) => {
   // ===== LESSON JSON (Stale-While-Revalidate) =====
   if (COURSE_ENTRY_PATHS.includes(url.pathname) || CONTENT_CHUNK_RE.test(url.pathname)) {
     event.respondWith(handleLessonRequest(request));
+    return;
+  }
+
+  // ===== GLOBAL DICTIONARY JSON (Stale-While-Revalidate, protected cache) =====
+  if (DICTIONARY_PATH_RE.test(url.pathname)) {
+    event.respondWith(handleDictionaryRequest(request));
     return;
   }
 
@@ -479,6 +503,25 @@ async function handleLessonRequest(request) {
     });
 
   // Возвращаем кеш немедленно если есть, иначе ждём сеть
+  return cachedResponse || revalidatePromise;
+}
+
+async function handleDictionaryRequest(request) {
+  const cache = await caches.open(CACHE_DICTIONARY);
+  const cachedResponse = await cache.match(request);
+  const revalidatePromise = fetch(request)
+    .then(async (networkResponse) => {
+      await safeCachePut(cache, request, networkResponse.clone());
+      return networkResponse;
+    })
+    .catch((error) => {
+      console.warn(
+        '[SW] Dictionary revalidate failed (serving cached):',
+        request.url,
+        error.message
+      );
+      return cachedResponse;
+    });
   return cachedResponse || revalidatePromise;
 }
 

@@ -31,15 +31,18 @@ test-course:exercise:intro
 test-course:story:lesson-1
 ```
 
-Runtime-сущность также содержит `localId`, `courseId` и `introducedIn` или
-`lessonId`. FSRS card ID строится из namespaced knowledge ID и skill через
-разделитель `::`.
+Vocabulary runtime-сущность также содержит `localId`, `courseId`,
+`introducedIn` и обязательный `dictionaryId`. FSRS card ID строится из
+глобального `dictionaryId` и skill через разделитель `::`; один lexeme в
+нескольких курсах не создаёт отдельный прогресс.
 
 ## Добавление курса
 
 1. Создайте package directory и manifest по схеме
    `src/courses/course-contract.js`.
-2. Добавьте content index и хотя бы один lesson JSON. Grammar, exercises,
+2. Добавьте content index и хотя бы один lesson JSON. Vocabulary должна
+   содержать `CourseVocabularyReference`, ссылающийся на существующую
+   глобальную статью. Grammar, exercises,
    stories, relations и aliases подключайте только через manifest/index.
 3. Если исходный формат требует преобразования, создайте adapter в
    `src/courses/<course-id>/`; не добавляйте проверки этого курса в generic
@@ -51,6 +54,7 @@ Runtime-сущность также содержит `localId`, `courseId` и `i
 
    ```bash
    npm run validate:courses
+   npm run validate:dictionary
    npm test
    npm run build
    ```

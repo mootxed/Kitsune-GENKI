@@ -1,30 +1,33 @@
-# Vocabulary Schema — GENKI I
+# Vocabulary References — GENKI I
 
-Обязательный формат словарной записи:
+Урок содержит не словарную статью, а ссылку на глобальную базу:
 
 ```json
 {
-  "id": "L3_V001",
-  "lesson": 3,
-  "writtenForm": "映画",
-  "reading": "えいが",
-  "meaning": "фильм"
+  "id": "genki-1:vocabulary:L3_V001",
+  "localId": "L3_V001",
+  "courseId": "genki-1",
+  "dictionaryId": "jp-word:映画:えいが",
+  "introducedIn": "genki-1:lesson-3",
+  "courseMeaning": "фильм",
+  "tags": ["culture"]
 }
 ```
 
-- `id` уникален во всём словаре и сохраняется при надёжном сопоставлении со старой записью.
-- `lesson` — урок первого введения слова по канонической таблице.
-- `writtenForm` — первая колонка XLSX. Для технического `-` используется `reading`.
-- `reading` — чтение каной.
-- `meaning` — перевод из XLSX без языковых исправлений по догадке.
+- `id` уникален в package/runtime, а `localId` стабилен внутри курса.
+- `dictionaryId` указывает на `public/data/dictionary/entries.json`.
+- `introducedIn` и `courseMeaning` принадлежат только курсу.
+- `writtenForm`, `reading`, часть речи и token forms принадлежат глобальной
+  статье и запрещены в lesson JSON.
 
-Дополнительные проверенные метаданные (`category`, `romaji`, часть речи, примеры, context-production) могут присутствовать. Legacy-поля `kanji`, `writing`, `translation` запрещены в JSON и создаются только временным runtime-адаптером `normalizeWord`.
+CourseLoader объединяет reference со статьёй только в runtime. Полный контракт,
+ID-модель, генерация и миграции описаны в
+[глобальной словарной базе](global-dictionary.md).
 
 Поздние дубли перенаправляются через
-`public/data/courses/genki-1/migrations/vocabulary-aliases.json`. Активный FSRS
-использует namespaced ID вида `genki-1:vocabulary:L3_V001`; исходное состояние
-объединённых или удалённых карточек хранится в
-`state.vocabularyMigrationArchive`.
+`public/data/courses/genki-1/migrations/vocabulary-aliases.json`, а legacy и
+course ID — через `public/data/dictionary/aliases.json`. Активный FSRS
+использует глобальный `dictionaryId`.
 
 Порядок открытия кандзи задаётся исключительно
 `public/data/courses/genki-1/relations/kanji-availability.json`.
@@ -38,4 +41,6 @@ node scripts/import-genki-i-data.js \
   --write
 ```
 
-Повторный запуск с `--check` завершается ненулевым кодом, если артефакты устарели.
+Importer восстанавливает лингвистический baseline из глобальной базы. После
+`--write` он автоматически запускает генератор словаря и возвращает lesson JSON
+к reference-only форме.

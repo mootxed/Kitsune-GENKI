@@ -2,10 +2,10 @@
 
 import { isPriorKnowledge, isChapterCompleted } from './chapter-progress.js';
 import { isValidWordForSearch } from './word-search-generator.js';
-import { parseCardIdentity } from './knowledge-model.js';
+import { knowledgeItemIdForWord, parseCardIdentity } from './knowledge-model.js';
 import { getWeakMiniGameCandidates } from './minigame-weakness.js';
 import { isUserDictionaryWordLearned } from './user-dictionaries/runtime.js';
-import { canonicalLessonId } from './courses/course-context.js';
+import { canonicalizeKnowledgeItemId, canonicalLessonId } from './courses/course-context.js';
 
 /**
  * Calculates the number of unique chapters available to minigames.
@@ -54,6 +54,7 @@ export function getAvailableChapterCount(state) {
  */
 export function isWordAccessible(word, lessonChapterId, state) {
   if (!word || !word.id || !state) return false;
+  const knowledgeItemId = canonicalizeKnowledgeItemId(knowledgeItemIdForWord(word));
   if (word.sourceType === 'user-dictionary' && !isUserDictionaryWordLearned(word, state)) {
     return false;
   }
@@ -61,11 +62,11 @@ export function isWordAccessible(word, lessonChapterId, state) {
   // Check SRS cards for this word: if SRS cards exist, at least one must be unlocked (!planLocked)
   if (state.srs && typeof state.srs === 'object') {
     const wordCards = Object.entries(state.srs).filter(([key]) => {
-      if (key === word.id) return true;
+      if (canonicalizeKnowledgeItemId(key) === knowledgeItemId) return true;
       const baseId = key.includes('::') ? key.split('::')[0] : key;
-      if (baseId === word.id) return true;
+      if (canonicalizeKnowledgeItemId(baseId) === knowledgeItemId) return true;
       const { itemId } = parseCardIdentity(key);
-      return itemId === word.id;
+      return canonicalizeKnowledgeItemId(itemId) === knowledgeItemId;
     });
 
     if (wordCards.length > 0) {
@@ -124,6 +125,8 @@ export function getAvailableMiniGameCandidates(state, lessons = []) {
 
         const wordObj = {
           id: rawWord.id,
+          dictionaryId: rawWord.dictionaryId || null,
+          knowledgeItemId: knowledgeItemIdForWord(rawWord),
           word: rawWord.id,
           kana,
           writing: rawWord.writing || kana,
@@ -134,7 +137,7 @@ export function getAvailableMiniGameCandidates(state, lessons = []) {
           priorityScore: 0,
         };
 
-        candidateMap.set(rawWord.id, wordObj);
+        candidateMap.set(knowledgeItemIdForWord(rawWord), wordObj);
       }
     }
   }
@@ -147,7 +150,10 @@ export function getAvailableMiniGameCandidates(state, lessons = []) {
       let srsRecord = null;
       for (const key in state.srs) {
         const { itemId } = parseCardIdentity(key);
-        if (itemId === cand.id || key === cand.id) {
+        if (
+          canonicalizeKnowledgeItemId(itemId) ===
+          canonicalizeKnowledgeItemId(knowledgeItemIdForWord(cand))
+        ) {
           srsRecord = state.srs[key];
           break;
         }

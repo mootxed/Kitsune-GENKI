@@ -97,11 +97,21 @@ export const UserDictionaryEntrySchema = z
     notes: cleanString(USER_DICTIONARY_LIMITS.notes).default(''),
     source: z
       .object({
-        type: z.enum(['manual', 'import']),
+        type: z.enum(['manual', 'import', 'ai']),
         label: cleanString(500).default(''),
         externalId: z.union([cleanString(500), z.null()]).default(null),
       })
       .strict(),
+    globalDictionaryId: z
+      .string()
+      .regex(/^(?:jp|user)-word:[^:]+:[^:]+(?::[^:]+)?$/u)
+      .optional(),
+    verbClass: z.enum(['godan', 'ichidan', 'irregular']).nullable().optional(),
+    adjectiveClass: z.enum(['i', 'na']).nullable().optional(),
+    transitivity: z.enum(['transitive', 'intransitive']).nullable().optional(),
+    tokenForms: nonEmptyStrings(500, USER_DICTIONARY_LIMITS.word).optional(),
+    confidence: z.number().min(0).max(1).optional(),
+    verified: z.boolean().optional(),
     productionTask: ProductionTaskSchema.optional(),
     learningEnabled: z.boolean().default(false),
     entryKey: z.string().min(1).max(500),

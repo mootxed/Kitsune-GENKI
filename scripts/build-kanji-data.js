@@ -32,6 +32,17 @@ function isKanji(ch) {
 function collectKanji() {
   const coursesDir = join(ROOT, 'public', 'data', 'courses');
   const kanjiSet = new Set();
+  const dictionaryPath = join(ROOT, 'public', 'data', 'dictionary', 'entries.json');
+  const dictionaryEntries = existsSync(dictionaryPath)
+    ? JSON.parse(readFileSync(dictionaryPath, 'utf8')).entries || []
+    : [];
+  const dictionaryById = new Map(dictionaryEntries.map((entry) => [entry.id, entry]));
+
+  for (const entry of dictionaryEntries) {
+    for (const ch of entry.dictionaryForm || '') {
+      if (isKanji(ch)) kanjiSet.add(ch);
+    }
+  }
 
   const packageDirectories = readdirSync(coursesDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
@@ -49,7 +60,9 @@ function collectKanji() {
       const data = JSON.parse(readFileSync(join(packageDirectory, lessonPath), 'utf8'));
       const vocab = data?.lesson?.vocabulary ?? data?.lesson?.words ?? [];
       for (const word of vocab) {
-        const text = word.writtenForm ?? word.kanji ?? word.writing ?? '';
+        const dictionaryEntry = dictionaryById.get(word.dictionaryId);
+        const text =
+          dictionaryEntry?.dictionaryForm ?? word.writtenForm ?? word.kanji ?? word.writing ?? '';
         for (const ch of text) {
           if (isKanji(ch)) kanjiSet.add(ch);
         }

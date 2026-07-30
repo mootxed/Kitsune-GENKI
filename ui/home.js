@@ -91,7 +91,7 @@ export async function switchCourseRuntime(nextCourseId, options = {}) {
   loadedChapters.clear();
   LESSONS = [];
   CONTENT_INDEX = [];
-  ExamplesDB.clear();
+  ExamplesDB.clearCourseScope();
   clearGrammarQuizCache();
   clearSupplementalPracticeCache();
   course.clearCache();

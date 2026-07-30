@@ -1,4 +1,5 @@
 import { DEFAULT_COURSE_ID, loadCourse } from './course-registry.js';
+import { resolveGeneratedDictionaryAlias } from '../dictionary/generated-dictionary-aliases.js';
 
 let activeCourse = null;
 const activeCoursePromises = new Map();
@@ -82,9 +83,14 @@ export function compareLessonIds(left, right, course = activeCourse) {
 
 export function canonicalizeKnowledgeItemId(value, course = activeCourse) {
   if (value == null || value === '') return '';
-  return typeof course?.canonicalizeKnowledgeId === 'function'
-    ? course.canonicalizeKnowledgeId(value) || String(value)
-    : String(value);
+  const raw = String(value);
+  const generated = resolveGeneratedDictionaryAlias(raw);
+  if (generated !== raw) return generated;
+  const courseCanonical =
+    typeof course?.canonicalizeKnowledgeId === 'function'
+      ? course.canonicalizeKnowledgeId(raw) || raw
+      : raw;
+  return resolveGeneratedDictionaryAlias(courseCanonical);
 }
 
 export function canonicalizeCardId(value, course = activeCourse) {

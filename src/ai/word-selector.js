@@ -1,5 +1,7 @@
 import { WORD_SOURCES } from './intents.js';
 import { isVocabularyItemIntroduced } from '../vocabulary-unlock-plan.js';
+import { knowledgeItemIdForWord } from '../knowledge-model.js';
+import { canonicalizeKnowledgeItemId } from '../courses/course-context.js';
 
 const MAX_WORDS = 20;
 
@@ -44,16 +46,23 @@ export function wasVocabularyItemUnlocked(state, chapterId, itemId) {
   const chapterUnlocks = state.vocabularyUnlocks[chapterId];
   if (!chapterUnlocks || typeof chapterUnlocks !== 'object') return false;
   return Object.values(chapterUnlocks).some(
-    (batch) => Array.isArray(batch?.itemIds) && batch.itemIds.includes(itemId)
+    (batch) =>
+      Array.isArray(batch?.itemIds) &&
+      batch.itemIds.some(
+        (candidateId) =>
+          canonicalizeKnowledgeItemId(candidateId) === canonicalizeKnowledgeItemId(itemId)
+      )
   );
 }
 
 function isUnlocked(word, state) {
-  const id = word.id || word.itemId;
+  const id = canonicalizeKnowledgeItemId(knowledgeItemIdForWord(word));
 
   const srsEntries = Object.entries(state?.srs || {});
   const wordCards = srsEntries.filter(
-    ([cardId, record]) => cardId === id || cardId.startsWith(`${id}::`) || record?.itemId === id
+    ([cardId, record]) =>
+      canonicalizeKnowledgeItemId(cardId.split('::')[0]) === id ||
+      canonicalizeKnowledgeItemId(record?.itemId) === id
   );
 
   const isPlanLocked =
@@ -77,10 +86,12 @@ function isUnlocked(word, state) {
 }
 
 function fsrsBucket(state, catalog, bucket) {
-  const byId = new Map(catalog.map((word) => [word.id || word.itemId, word]));
+  const byId = new Map(
+    catalog.map((word) => [canonicalizeKnowledgeItemId(knowledgeItemIdForWord(word)), word])
+  );
   const items = [];
   for (const [cardId, record] of Object.entries(state?.srs || {})) {
-    const itemId = record?.itemId || cardId.split('::')[0];
+    const itemId = canonicalizeKnowledgeItemId(record?.itemId || cardId.split('::')[0]);
     const word = byId.get(itemId);
     if (!word) continue;
     const difficult =

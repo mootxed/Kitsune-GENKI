@@ -39,6 +39,17 @@ npm run validate:courses
 npm run validate:genki
 ```
 
-### 4. `scripts/build-kanji-data.js`
+### 4. Глобальный словарь
+
+`build-dictionary.js --check` проверяет идемпотентность генерации, а
+`validate-dictionary.js` — схемы, aliases, token index, коллизии и все course
+references.
+
+```bash
+npm run build:dictionary
+npm run validate:dictionary
+```
+
+### 5. `scripts/build-kanji-data.js`
 
 Проверяет доступность векторных данных начертания иероглифов в пакете `@k1low/hanzi-writer-data-jp` и собирает кэш-файлы.

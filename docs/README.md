@@ -1,6 +1,10 @@
 # Kitsune-GENKI — Системная документация разработчика
 
-Добро пожаловать в официальную техническую документацию проекта **Kitsune-GENKI** — офлайн-первого PWA-приложения для изучения японского языка (на базе учебников Genki I/II), построенного на Vanilla JavaScript (ES Modules), Vite, IndexedDB (`KitsuneGenkiDB` v6), системе состояний `state` (v13) и интервальном повторении `ts-fsrs` (v5.4.1).
+Добро пожаловать в официальную техническую документацию проекта
+**Kitsune-GENKI** — офлайн-первого PWA-приложения для изучения японского языка,
+построенного на Vanilla JavaScript (ES Modules), Vite, IndexedDB, глобальной
+словарной базе, системе состояний `state` (v16) и интервальном повторении
+`ts-fsrs`.
 
 > [!IMPORTANT]
 > Настоящая документация отражает **фактическое текущее состояние исходного кода**, модулей, схем данных и проверенных тестов репозитория.
@@ -15,7 +19,7 @@
 | :------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
 | 🚀 [**Overview**](overview/project-overview.md)                | Назначение приложения, структура репозитория, архитектурные слои и жизненный цикл.                                                 |
 | 🛠️ [**Development**](development/getting-started.md)           | Руководство по запуску, рабочий процесс, стандарты кода, тестирование, отладка и CI/CD.                                            |
-| 💾 [**Data & State**](data/application-state.md)               | Модель состояния приложения (State v13), IndexedDB (v4), миграции, journal/outbox и бэкапы.                                        |
+| 💾 [**Data & State**](data/application-state.md)               | Модель состояния приложения (State v16), IndexedDB, миграции, journal/outbox и бэкапы.                                             |
 | 🧠 [**Learning System**](learning/learning-system-overview.md) | Knowledge model, FSRS, подсистема Mastery, учебный план, дневной план, SessionManager, XP и статистика.                            |
 | 🎯 [**Study Modes**](modes/overview.md)                        | Поведение и алгоритмы оценивания 7 учебных режимов (Multiple Choice, Typing, Drawing, Context Sentence, Context Production и др.). |
 | 📚 [**Content System**](content/content-system.md)             | Структура глав Genki, схема JSON-контента, валидаторы и пошаговые руководства по добавлению материалов.                            |

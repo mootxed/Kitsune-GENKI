@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { dictionaryEntryId as stableDictionaryEntryId } from '../dictionary/dictionary-id.js';
 
 export const COURSE_MANIFEST_SCHEMA_VERSION = 1;
 
@@ -235,11 +236,7 @@ export function contentId(courseId, kind, localId) {
 }
 
 export function dictionaryEntryId(word) {
-  const written = String(
-    word?.writtenForm || word?.kanji || word?.writing || word?.reading || ''
-  ).trim();
-  const reading = String(word?.reading || word?.writing || written).trim();
-  return `jp-word:${written}:${reading}`;
+  return stableDictionaryEntryId(word);
 }
 
 export function deepClone(value) {

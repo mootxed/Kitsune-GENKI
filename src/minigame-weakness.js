@@ -3,6 +3,7 @@
 import { parseCardIdentity, SKILLS } from './knowledge-model.js';
 import { validMasteryEvents } from './mastery.js';
 import { normalizeKana } from './word-search-generator.js';
+import { canonicalizeKnowledgeItemId } from './courses/course-context.js';
 
 export const WEAKNESS_THRESHOLD = 50;
 const DAY_MS = 86_400_000;
@@ -25,13 +26,14 @@ export function collectItemSkillCards(state, itemId) {
   if (!state || !state.srs || typeof state.srs !== 'object' || !itemId) {
     return cards;
   }
+  const canonicalItemId = canonicalizeKnowledgeItemId(itemId);
 
   for (const key in state.srs) {
     const card = state.srs[key];
     if (!card) continue;
 
     const identity = parseCardIdentity(card);
-    if (identity.itemId === itemId) {
+    if (canonicalizeKnowledgeItemId(identity.itemId) === canonicalItemId) {
       if (identity.skill === SKILLS.RECOGNITION) cards.recognition = card;
       else if (identity.skill === SKILLS.RECALL) cards.recall = card;
       else if (identity.skill === SKILLS.READING_WRITING) cards.readingWriting = card;
@@ -55,12 +57,13 @@ export function collectItemSkillCards(state, itemId) {
 export function getMiniGameWeaknessProfile(itemId, state, options = {}) {
   const gameId = options.gameId || 'wordSearch';
   const now = typeof options.now === 'number' ? options.now : Date.now();
+  const knowledgeItemId = canonicalizeKnowledgeItemId(itemId);
 
   const skills = collectItemSkillCards(state, itemId);
   const cardList = Object.values(skills).filter(Boolean);
 
   // Filter valid review events for this itemId
-  const events = state?.reviewEvents ? validMasteryEvents(state.reviewEvents, itemId) : [];
+  const events = state?.reviewEvents ? validMasteryEvents(state.reviewEvents, knowledgeItemId) : [];
 
   // Determine if there is actual review evidence
   const reviewedCards = cardList.filter((c) => (c.reps || 0) > 0);
@@ -232,7 +235,6 @@ export function getWeakMiniGameCandidates(candidates, state, options = {}) {
     return [];
   }
 
-  const weakCandidates = [];
   const kanaMap = new Map();
 
   for (const cand of candidates) {

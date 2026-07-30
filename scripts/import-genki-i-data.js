@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { readXlsxRows } from './lib/xlsx.js';
+import { buildDictionary } from './build-dictionary.js';
 import { normalizeWord } from '../src/normalize-word.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -16,6 +17,7 @@ const CONTENT_INDEX_PATH = path.join(COURSE_DIRECTORY, 'content-index.json');
 const CURATED_EXAMPLES_PATH = path.join(ROOT, 'public/data/curated-word-examples.json');
 const QUIZ_DIRECTORY = path.join(COURSE_DIRECTORY, 'grammar');
 const REPORT_PATH = path.join(ROOT, 'reports/genki-1-data-audit.md');
+const DICTIONARY_ENTRIES_PATH = path.join(ROOT, 'public/data/dictionary/entries.json');
 
 const REQUIRED_WORD_HEADERS = ['Урок', 'Кандзи', 'Кана', 'Перевод'];
 const REQUIRED_KANJI_HEADERS = ['Кандзи', 'Урок'];
@@ -360,17 +362,40 @@ function stableJson(value) {
 async function loadBaseline(directory = LESSON_DIRECTORY) {
   const lessonDocs = [];
   const oldWords = [];
+  const dictionaryDocument = await readJson(DICTIONARY_ENTRIES_PATH).catch(() => ({
+    entries: [],
+  }));
+  const dictionaryEntries = new Map(
+    (dictionaryDocument.entries || []).map((entry) => [entry.id, entry])
+  );
   for (let lessonId = 1; lessonId <= 12; lessonId++) {
     const file = `lesson-${String(lessonId).padStart(2, '0')}.json`;
     const document = await readJson(path.join(directory, file));
     const lesson = document.lesson || document;
     lessonDocs.push({ file, document, lesson });
     const vocabulary = lesson.vocabulary || lesson.words || [];
-    vocabulary.forEach((word, index) =>
+    vocabulary.forEach((word, index) => {
+      const dictionaryEntry = dictionaryEntries.get(word.dictionaryId);
+      const baselineWord = dictionaryEntry
+        ? {
+            ...word,
+            id: word.localId || word.id,
+            writtenForm: dictionaryEntry.dictionaryForm,
+            reading: dictionaryEntry.reading,
+            meaning: word.courseMeaning || dictionaryEntry.meanings?.[0],
+            partOfSpeech: dictionaryEntry.partOfSpeech,
+            verbClass: dictionaryEntry.verbClass,
+            adjectiveClass: dictionaryEntry.adjectiveClass,
+            transitivity: dictionaryEntry.transitivity,
+            semanticTags: dictionaryEntry.semanticTags,
+            romaji: dictionaryEntry.romaji,
+            tokenForms: dictionaryEntry.tokenForms,
+          }
+        : word;
       oldWords.push(
-        legacyWord(word, lessonId, index + 1, `public/data/courses/genki-1/lessons/${file}`)
-      )
-    );
+        legacyWord(baselineWord, lessonId, index + 1, `public/data/courses/genki-1/lessons/${file}`)
+      );
+    });
   }
   return { lessonDocs, oldWords };
 }
@@ -545,7 +570,7 @@ function buildReport({ sourceWords, kanji, oldWords, aliases, retiredIds, matche
     '',
     '- Истории остаются собственным токенизированным контентом: их токены проверяются структурно, но не связываются с лексемами по догадке.',
     '- FSRS не пересчитывается: при слиянии выбирается наиболее доказательная активная карточка, а исходные карточки сохраняются в архиве миграции.',
-    '- Глобальный словарь, GENKI II, универсальная система учебников, гибридная токенизация и AI fallback не реализованы.',
+    '- GENKI II и дополнительные course packages пока не импортируются этим скриптом; глобальный словарь синхронизируется отдельным генератором после записи GENKI I.',
     '',
   ];
   return `${lines.join('\n')}\n`;
@@ -755,6 +780,12 @@ async function main() {
     options.refreshReport
   );
   const differences = await applyOutputs(outputs, options.mode);
+  if (options.mode === 'write') {
+    const dictionaryResult = await buildDictionary({ mode: 'write' });
+    console.log(
+      `Global dictionary synchronized (${dictionaryResult.entries} entries, ${dictionaryResult.courseReferences} course references)`
+    );
+  }
   console.log(
     options.mode === 'write'
       ? `GENKI I import complete (${differences} artifact(s) updated)`

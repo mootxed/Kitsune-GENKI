@@ -5,6 +5,8 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { CourseLoader } from '../src/courses/course-loader.js';
 import { genki1Adapter } from '../src/courses/genki-1/adapter.js';
+import { DictionaryLoader } from '../src/dictionary/dictionary-loader.js';
+import { DictionaryStore } from '../src/dictionary/dictionary-store.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const COURSE_ROOTS = [
@@ -43,6 +45,14 @@ export async function validateCourses() {
   const manifests = (await Promise.all(COURSE_ROOTS.map((root) => manifestsUnder(root)))).flat();
   const errors = [];
   const results = [];
+  const dictionaryStore = new DictionaryStore({
+    loader: new DictionaryLoader({
+      manifestUrl: pathToFileURL(path.join(ROOT, 'public/data/dictionary/manifest.json')).href,
+      fetchImpl: fileFetch,
+    }),
+    userRepository: null,
+  });
+  await dictionaryStore.ensureLoaded();
 
   for (const manifestPath of manifests) {
     try {
@@ -51,6 +61,7 @@ export async function validateCourses() {
         manifestUrl: pathToFileURL(manifestPath).href,
         fetchImpl: fileFetch,
         adapter: rawManifest.courseId === 'genki-1' ? genki1Adapter : null,
+        dictionaryStore,
       });
       const course = await loader.load();
       const lessons = await course.loadAllLessons();

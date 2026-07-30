@@ -1,6 +1,7 @@
 /* Task selection logic for context-production cards */
 
 import { productionTasks } from './production-context.js';
+import { knowledgeItemIdForWord } from './knowledge-model.js';
 
 /**
  * Selects a context-production task for a focus word.
@@ -28,8 +29,9 @@ export function selectProductionTask(word, card = null, reviewHistory = [], opti
   // Find last used task ID for this word/card from options or reviewHistory
   let lastTaskId = options.lastTaskId || null;
   if (!lastTaskId && Array.isArray(reviewHistory) && reviewHistory.length > 0) {
+    const itemId = knowledgeItemIdForWord(word);
     const wordEvents = reviewHistory.filter(
-      (e) => (e.itemId === word.id || e.cardId === card?.id) && e.taskId
+      (e) => (e.itemId === itemId || e.cardId === card?.id) && e.taskId
     );
     if (wordEvents.length > 0) {
       lastTaskId = wordEvents[wordEvents.length - 1].taskId;

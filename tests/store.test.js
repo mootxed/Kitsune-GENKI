@@ -276,7 +276,7 @@ describe('Store - Версионирование и миграции', () => {
       expect(migrated.version).toBe(CURRENT_VERSION);
       expect(migrated.pendingReviewLogs).toEqual([]);
       expect(migrated.reviewEvents).toHaveLength(20);
-      expect(migrated.masteryArchive['genki-1:vocabulary:L1_V001']).toMatchObject({
+      expect(migrated.masteryArchive['jp-word:おはよう:おはよう']).toMatchObject({
         evidenceCount: 1,
         successfulSkills: { recall: true },
       });

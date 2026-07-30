@@ -3,10 +3,13 @@ import {
   contentId,
   deepClone,
   deepFreeze,
-  dictionaryEntryId,
   isSafeResourcePath,
   normalizeResourceDescriptor,
 } from './course-contract.js';
+import {
+  DictionaryStore,
+  dictionaryStore as sharedDictionaryStore,
+} from '../dictionary/dictionary-store.js';
 
 export class CourseLoadError extends Error {
   constructor(code, message, details = {}) {
@@ -62,6 +65,15 @@ export class CourseLoader {
     this.manifestUrl = new URL(options.manifestUrl, appBaseUrl(options.baseUrl));
     this.packageUrl = new URL('./', this.manifestUrl);
     this.adapter = options.adapter || null;
+    this.dictionaryStore =
+      options.dictionaryStore ||
+      (options.fetchImpl || options.baseUrl
+        ? new DictionaryStore({
+            fetchImpl: this.fetchImpl,
+            baseUrl: appBaseUrl(options.baseUrl),
+            userRepository: options.userRepository ?? null,
+          })
+        : sharedDictionaryStore);
     this.lessonPromises = new Map();
     this.grammarPromises = new Map();
     this.storyPromises = new Map();
@@ -222,6 +234,15 @@ export class CourseLoader {
 
   async load() {
     const manifest = await this.loadManifest();
+    try {
+      await this.dictionaryStore.ensureLoaded();
+    } catch (cause) {
+      throw new CourseLoadError(
+        'dictionary-unavailable',
+        `Unable to load global dictionary for course ${manifest.courseId}: ${cause.message}`,
+        { cause, courseId: manifest.courseId, resource: 'global-dictionary' }
+      );
+    }
     if (this.adapter?.courseId && this.adapter.courseId !== manifest.courseId) {
       throw new CourseLoadError(
         'course-adapter-mismatch',
@@ -566,18 +587,44 @@ export class CourseLoader {
             .map((word) => {
               const localId = canonicalVocabularyLocalId(word?.localId || word?.id);
               const id = vocabularyId(localId);
-              const transformed = {
+              const reference = {
                 ...deepClone(word),
                 id,
                 localId,
                 courseId: manifest.courseId,
-                dictionaryId: dictionaryEntryId(word),
+                dictionaryId: word.dictionaryId,
                 introducedIn: summary.id,
-                lesson: summary.id,
                 lessonId: summary.id,
                 chapterId: summary.id,
               };
+              if (!reference.dictionaryId) {
+                throw new CourseLoadError(
+                  'broken-dictionary-reference',
+                  `Course vocabulary reference is missing dictionaryId: courseId=${manifest.courseId}, lessonId=${summary.id}, referenceId=${id}, dictionaryId=null`,
+                  {
+                    courseId: manifest.courseId,
+                    resource: `lesson:${summary.id}`,
+                  }
+                );
+              }
+              let transformed;
+              try {
+                transformed = this.dictionaryStore.resolveCourseVocabularyReference(reference);
+              } catch (cause) {
+                throw new CourseLoadError(
+                  'broken-dictionary-reference',
+                  `Broken dictionary reference: courseId=${manifest.courseId}, lessonId=${summary.id}, referenceId=${id}, dictionaryId=${reference.dictionaryId}`,
+                  {
+                    cause,
+                    courseId: manifest.courseId,
+                    resource: `lesson:${summary.id}`,
+                  }
+                );
+              }
               knowledgeLessonIds.set(id, summary.id);
+              if (!knowledgeLessonIds.has(transformed.dictionaryId)) {
+                knowledgeLessonIds.set(transformed.dictionaryId, summary.id);
+              }
               return deepFreeze(transformed);
             });
           const exercises = exercisesForLesson(summary.id).map(deepFreeze);
@@ -613,19 +660,27 @@ export class CourseLoader {
 
     const canonicalizeKnowledgeId = (value) => {
       const raw = String(value || '');
+      const dictionaryResolved = this.dictionaryStore.resolveAlias(raw);
+      if (dictionaryResolved !== raw || this.dictionaryStore.hasDictionaryEntry(raw)) {
+        return dictionaryResolved;
+      }
       const vocabularyPrefix = `${manifest.courseId}:vocabulary:`;
       if (raw.startsWith(vocabularyPrefix)) {
-        return vocabularyId(raw.slice(vocabularyPrefix.length));
+        return this.dictionaryStore.resolveAlias(vocabularyId(raw.slice(vocabularyPrefix.length)));
       }
       if (raw.includes(':')) return raw;
-      return vocabularyId(raw);
+      return this.dictionaryStore.resolveAlias(vocabularyId(raw));
     };
 
     const lessonIdForKnowledge = (value) => {
       const canonicalId = canonicalizeKnowledgeId(value);
       const known = knowledgeLessonIds.get(canonicalId);
       if (known) return known;
-      const localId = canonicalId.slice(`${manifest.courseId}:vocabulary:`.length);
+      const reference = this.dictionaryStore
+        .findCourseReferencesForDictionary(canonicalId)
+        .find((entry) => entry.courseId === manifest.courseId);
+      if (reference) return reference.introducedIn;
+      const localId = String(value || '').replace(`${manifest.courseId}:vocabulary:`, '');
       const candidate = this.adapter?.lessonLocalIdFromVocabularyLocalId?.(localId);
       return candidate == null ? null : canonicalLessonId(candidate);
     };
@@ -663,6 +718,14 @@ export class CourseLoader {
       getExercisesForLesson(value) {
         return deepFreeze(exercisesForLesson(value));
       },
+      getDictionaryEntry: (dictionaryId) => this.dictionaryStore.getDictionaryEntry(dictionaryId),
+      getCourseVocabularyReference: (referenceId) =>
+        this.dictionaryStore.getCourseVocabularyReference(referenceId),
+      findCourseReferencesForDictionary: (dictionaryId) =>
+        this.dictionaryStore
+          .findCourseReferencesForDictionary(dictionaryId)
+          .filter((reference) => reference.courseId === manifest.courseId),
+      resolveVocabularyRuntimeItem: (id) => this.dictionaryStore.resolveVocabularyRuntimeItem(id),
       async loadAllLessons() {
         return Promise.all(manifest.lessonOrder.map(loadLesson));
       },

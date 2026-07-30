@@ -1,5 +1,9 @@
 import { CourseLoader } from './course-loader.js';
 import { genki1Adapter } from './genki-1/adapter.js';
+import {
+  DictionaryStore,
+  dictionaryStore as sharedDictionaryStore,
+} from '../dictionary/dictionary-store.js';
 
 export const DEFAULT_COURSE_ID = 'genki-1';
 
@@ -14,6 +18,27 @@ const descriptors = new Map([
   ],
 ]);
 const coursePromises = new Map();
+const dictionaryStoresByFetch = new WeakMap();
+
+function dictionaryStoreFor(fetchImpl, baseUrl) {
+  if (typeof fetchImpl !== 'function') return sharedDictionaryStore;
+  if (!dictionaryStoresByFetch.has(fetchImpl)) {
+    dictionaryStoresByFetch.set(fetchImpl, new Map());
+  }
+  const stores = dictionaryStoresByFetch.get(fetchImpl);
+  const key = String(baseUrl || '');
+  if (!stores.has(key)) {
+    stores.set(
+      key,
+      new DictionaryStore({
+        fetchImpl,
+        baseUrl,
+        userRepository: null,
+      })
+    );
+  }
+  return stores.get(key);
+}
 
 export function registerCourseDescriptor(descriptor) {
   if (!descriptor?.id || !descriptor?.manifestUrl) {
@@ -44,6 +69,7 @@ export function loadCourse(courseId = DEFAULT_COURSE_ID, options = {}) {
 
   const fetchImpl = options.fetchImpl || descriptor.fetchImpl;
   const baseUrl = options.baseUrl || descriptor.baseUrl;
+  const dictionaryStore = dictionaryStoreFor(fetchImpl, baseUrl);
 
   if (options.fetchImpl || options.baseUrl || options.reload === true) {
     return new CourseLoader({
@@ -51,6 +77,7 @@ export function loadCourse(courseId = DEFAULT_COURSE_ID, options = {}) {
       adapter: descriptor.adapter,
       fetchImpl,
       baseUrl,
+      dictionaryStore,
     }).load();
   }
 
@@ -60,6 +87,7 @@ export function loadCourse(courseId = DEFAULT_COURSE_ID, options = {}) {
       adapter: descriptor.adapter,
       fetchImpl,
       baseUrl,
+      dictionaryStore,
     })
       .load()
       .catch((error) => {

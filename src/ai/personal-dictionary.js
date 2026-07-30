@@ -2,6 +2,8 @@ import {
   getUserDictionaryEntryKey,
   normalizeUserDictionaryEntry,
 } from '../user-dictionaries/normalize.js';
+import { dictionaryStore, ensureDictionaryLoaded } from '../dictionary/dictionary-store.js';
+import { userDictionaryEntryId } from '../dictionary/dictionary-id.js';
 
 export const PERSONAL_DICTIONARY_ID = 'user-dict:personal';
 export const PERSONAL_DICTIONARY_NAME = 'Мой словарь';
@@ -107,9 +109,11 @@ export function prepareTokenDictionaryDraft({
   sentenceTranslation = '',
   catalogMatch = null,
   userMatch = null,
+  globalMatch = null,
   dictionaryId = PERSONAL_DICTIONARY_ID,
 }) {
   const dictionaryForm =
+    globalMatch?.dictionaryForm ||
     catalogMatch?.writing ||
     userMatch?.writing ||
     token.dictionaryForm ||
@@ -117,15 +121,25 @@ export function prepareTokenDictionaryDraft({
     token.writing ||
     '';
   const dictionaryReading =
-    catalogMatch?.reading || userMatch?.reading || token.dictionaryReading || token.writing || '';
+    globalMatch?.reading ||
+    catalogMatch?.reading ||
+    userMatch?.reading ||
+    token.dictionaryReading ||
+    token.writing ||
+    '';
   const meaning =
+    globalMatch?.meanings?.[0] ||
     catalogMatch?.meanings?.[0] ||
     userMatch?.meanings?.[0] ||
     token.dictionaryMeaning ||
     token.translation ||
     '';
   const uncertain =
-    !catalogMatch && !userMatch && !token.dictionaryForm && Boolean(token.kanji || token.writing);
+    !globalMatch &&
+    !catalogMatch &&
+    !userMatch &&
+    !token.dictionaryForm &&
+    Boolean(token.kanji || token.writing);
   return {
     dictionaryId,
     writing: dictionaryForm,
@@ -138,7 +152,17 @@ export function prepareTokenDictionaryDraft({
       sentence || sentenceTranslation
         ? [{ japanese: sentence, translation: sentenceTranslation }]
         : [],
-    source: { type: 'manual', label: 'AI Сенсей', externalId: null },
+    globalDictionaryId:
+      globalMatch?.id ||
+      userDictionaryEntryId({
+        dictionaryForm,
+        reading: dictionaryReading || dictionaryForm,
+      }),
+    source: {
+      type: 'ai',
+      label: 'AI Сенсей',
+      externalId: globalMatch?.id || null,
+    },
     learningEnabled: false,
     sourceContext: {
       surfaceForm: token.kanji || token.writing || '',
@@ -147,6 +171,30 @@ export function prepareTokenDictionaryDraft({
       source: 'AI Сенсей',
     },
     uncertain,
+  };
+}
+
+export async function resolveGlobalTokenMatch(token, options = {}) {
+  await ensureDictionaryLoaded();
+  if (token?.dictionaryId) {
+    const direct = dictionaryStore.getDictionaryEntry(token.dictionaryId);
+    if (direct) {
+      return {
+        status: 'resolved',
+        dictionaryId: direct.id,
+        candidates: [direct.id],
+        source: direct.source === 'ai' ? 'user-ai' : 'builtin',
+        entry: direct,
+      };
+    }
+  }
+  const surface = token?.kanji || token?.writing || token?.surface || '';
+  const resolution = dictionaryStore.resolveToken(surface, options);
+  return {
+    ...resolution,
+    entry: resolution.dictionaryId
+      ? dictionaryStore.getDictionaryEntry(resolution.dictionaryId)
+      : null,
   };
 }
 
@@ -182,6 +230,7 @@ export async function mergeSenseiDictionaryEntry(repository, existing, draft) {
     notes: uniqueStrings([existing.notes], [draft.notes]).join('\n'),
     learningEnabled: existing.learningEnabled,
     source: existing.source,
+    globalDictionaryId: existing.globalDictionaryId || draft.globalDictionaryId,
   });
 }
 
@@ -210,6 +259,17 @@ export async function saveSenseiDictionaryEntry({
     duplicates.length && duplicateAction === 'separate'
       ? `user-word:${globalThis.crypto?.randomUUID?.() || `${Date.now()}-separate`}`
       : draft.id;
+  const globalDictionaryId =
+    draft.globalDictionaryId ||
+    userDictionaryEntryId({
+      dictionaryForm: draft.writing,
+      reading: draft.reading || draft.writing,
+    });
+  const aiSource = {
+    type: 'ai',
+    label: 'AI Сенсей',
+    externalId: globalDictionaryId,
+  };
 
   if (draft.dictionaryId === '__new__') {
     const dictInput = {
@@ -220,8 +280,9 @@ export async function saveSenseiDictionaryEntry({
     const entryInput = {
       ...draft,
       ...(separateId ? { id: separateId } : {}),
+      globalDictionaryId,
       learningEnabled: false,
-      source: { type: 'manual', label: 'AI Сенсей', externalId: null },
+      source: aiSource,
     };
 
     if (typeof repository.createDictionaryWithEntry === 'function') {
@@ -251,9 +312,10 @@ export async function saveSenseiDictionaryEntry({
   const entry = await repository.saveEntry({
     ...draft,
     ...(separateId ? { id: separateId } : {}),
+    globalDictionaryId,
     dictionaryId: dictionary.id,
     learningEnabled: false,
-    source: { type: 'manual', label: 'AI Сенсей', externalId: null },
+    source: aiSource,
   });
   return { status: 'saved', entry, merged: false };
 }

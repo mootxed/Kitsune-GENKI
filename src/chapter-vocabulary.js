@@ -4,6 +4,7 @@ import { SRS } from '../srs.js';
 import {
   KNOWLEDGE_TYPES,
   SKILLS,
+  knowledgeItemIdForWord,
   makeCardId,
   vocabularySkills,
   vocabularySkillsReadyForIntroduction,
@@ -25,19 +26,21 @@ export function ensureVocabularySkillCards(appState, word, options = {}) {
   if (!appState || !appState.srs || !word) return false;
 
   let changed = false;
+  const itemId = knowledgeItemIdForWord(word);
+  if (!itemId) return false;
   const skillOptions = { unlockedKanjiLesson: getUnlockedKanjiLesson(appState) };
   const applicable = new Set(vocabularySkills(word, skillOptions));
   const ready = new Set(
     vocabularySkillsReadyForIntroduction(
       word,
       appState.reviewEvents || [],
-      appState.masteryArchive?.[word.id],
+      appState.masteryArchive?.[itemId],
       options.now,
       skillOptions
     )
   );
 
-  const existingCards = Object.values(appState.srs).filter((c) => c && c.itemId === word.id);
+  const existingCards = Object.values(appState.srs).filter((c) => c && c.itemId === itemId);
   const hasUnlockedCard = existingCards.some(
     (c) =>
       c.planLocked !== true ||
@@ -53,12 +56,12 @@ export function ensureVocabularySkillCards(appState, word, options = {}) {
   const shouldBeLocked = options.planLocked === true && !hasUnlockedCard && !isPrior;
 
   for (const skill of Object.values(SKILLS)) {
-    const cardId = makeCardId(word.id, skill);
+    const cardId = makeCardId(itemId, skill);
     const existing = appState.srs[cardId];
 
     if (existing) {
       const shouldSuspend = !applicable.has(skill) || !ready.has(skill);
-      if (existing.suspended !== shouldSuspend) {
+      if (Boolean(existing.suspended) !== shouldSuspend) {
         existing.suspended = shouldSuspend;
         changed = true;
       }
@@ -67,12 +70,12 @@ export function ensureVocabularySkillCards(appState, word, options = {}) {
 
     if (ready.has(skill)) {
       appState.srs[cardId] = SRS.newCard(cardId, {
-        itemId: word.id,
+        itemId,
         skill,
         knowledgeType: KNOWLEDGE_TYPES.VOCABULARY,
         courseId: word.courseId || null,
         lessonId: lessonId || null,
-        dictionaryId: word.dictionaryId || null,
+        dictionaryId: word.dictionaryId || itemId,
         planLocked: shouldBeLocked,
       });
       changed = true;
@@ -116,7 +119,8 @@ export function ensureChapterVocabularyCards(appState, lesson, options = {}) {
     const applicable = vocabularySkills(word, {
       unlockedKanjiLesson: getUnlockedKanjiLesson(appState),
     });
-    const wordCardIds = applicable.map((skill) => makeCardId(word.id, skill));
+    const itemId = knowledgeItemIdForWord(word);
+    const wordCardIds = applicable.map((skill) => makeCardId(itemId, skill));
 
     const wordChanged = ensureVocabularySkillCards(appState, word, options);
     if (wordChanged) {

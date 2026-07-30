@@ -25,11 +25,12 @@ import {
   GENKI_1_CONTENT_VERSION,
   migrateGenki1StateV15,
 } from '../src/courses/genki-1/migrations/state-v15.js';
+import { migrateDictionaryStateV16 } from '../src/dictionary/state-v16.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-export const CURRENT_VERSION = 15;
+export const CURRENT_VERSION = 16;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -350,6 +351,7 @@ const MIGRATIONS = {
     version: 14,
   }),
   15: (oldState) => migrateGenki1StateV15(oldState),
+  16: (oldState) => migrateDictionaryStateV16(oldState),
 };
 
 // ---------- Default State ----------
@@ -391,6 +393,13 @@ export function defaultState() {
       mergedCards: {},
       retiredCards: {},
       retiredMastery: {},
+    },
+    dictionaryMigrationArchive: {
+      schemaVersion: 1,
+      sourceStateVersion: CURRENT_VERSION,
+      aliases: {},
+      mergedCards: {},
+      mergedMastery: {},
     },
     pendingReviewLogs: [], // transactional outbox для append-only review_log
     miniGameWordHistory: {

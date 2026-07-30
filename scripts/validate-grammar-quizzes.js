@@ -187,9 +187,12 @@ function validateContextProductionContent(lessons) {
           seenTaskIds.add(taskId.trim());
         }
 
-        if (task.focusItemId !== word.id) {
+        const validFocusIds = new Set(
+          [word.id, word.localId, word.dictionaryId].filter(Boolean).map(String)
+        );
+        if (!validFocusIds.has(String(task.focusItemId || ''))) {
           errors.push(
-            `Task ${taskId}: focusItemId '${task.focusItemId}' does not match word id '${word.id}'`
+            `Task ${taskId}: focusItemId '${task.focusItemId}' does not match word reference '${word.id}'`
           );
         }
 

@@ -6,15 +6,13 @@
     "vocabulary": [
       {
         "id": "hello",
-        "writtenForm": "こんにちは",
-        "reading": "こんにちは",
-        "meaning": "здравствуйте"
+        "dictionaryId": "jp-word:猫:ねこ",
+        "courseMeaning": "здравствуйте"
       },
       {
         "id": "bye",
-        "writtenForm": "さようなら",
-        "reading": "さようなら",
-        "meaning": "до свидания"
+        "dictionaryId": "jp-word:行く:いく",
+        "courseMeaning": "до свидания"
       }
     ],
     "grammar": [

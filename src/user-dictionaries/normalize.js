@@ -134,6 +134,11 @@ export function normalizeUserDictionaryEntry(raw, options = {}) {
     const result = String(value ?? '').trim();
     return stripHtml ? stripUserHtml(result).trim() : result;
   };
+  const sourceType = ['manual', 'import', 'ai'].includes(raw.source?.type)
+    ? raw.source.type
+    : ['manual', 'import', 'ai'].includes(options.sourceType)
+      ? options.sourceType
+      : 'import';
   const entry = {
     id: raw.id || createNamespacedId('user-word'),
     dictionaryId: options.dictionaryId || raw.dictionaryId,
@@ -153,13 +158,20 @@ export function normalizeUserDictionaryEntry(raw, options = {}) {
     examples: normalizeExamples(raw.examples, stripHtml),
     notes: text(raw.notes),
     source: {
-      type: raw.source?.type === 'manual' ? 'manual' : options.sourceType || 'import',
+      type: sourceType,
       label: text(raw.source?.label ?? options.sourceLabel ?? ''),
       externalId:
         raw.source?.externalId === null || raw.source?.externalId === undefined
           ? null
           : text(raw.source.externalId),
     },
+    ...(raw.globalDictionaryId ? { globalDictionaryId: raw.globalDictionaryId } : {}),
+    ...(raw.verbClass !== undefined ? { verbClass: raw.verbClass } : {}),
+    ...(raw.adjectiveClass !== undefined ? { adjectiveClass: raw.adjectiveClass } : {}),
+    ...(raw.transitivity !== undefined ? { transitivity: raw.transitivity } : {}),
+    ...(raw.tokenForms ? { tokenForms: normalizeTags(raw.tokenForms, { separator: ';' }) } : {}),
+    ...(Number.isFinite(raw.confidence) ? { confidence: raw.confidence } : {}),
+    ...(raw.verified !== undefined ? { verified: raw.verified === true } : {}),
     ...(raw.productionTask ? { productionTask: raw.productionTask } : {}),
     learningEnabled: raw.learningEnabled === true,
     entryKey: '',

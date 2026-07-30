@@ -6,7 +6,10 @@
 
 ## ⚙️ Пайплайн миграций (`MIGRATIONS`)
 
-При загрузке состояния из IndexedDB или бэкапа проверяется значение `state.version`. Если `version < CURRENT_VERSION` (где `CURRENT_VERSION = 14`), последовательно применяются трансформации из объекта `MIGRATIONS`:
+При загрузке состояния из IndexedDB или бэкапа проверяется значение
+`state.version`. Если `version < CURRENT_VERSION` (где
+`CURRENT_VERSION = 16`), последовательно применяются трансформации из объекта
+`MIGRATIONS`:
 
 ```mermaid
 graph LR
@@ -14,7 +17,9 @@ graph LR
     V2 -->|MIGRATIONS 3 SM-2 to FSRS| V3[State v3]
     V3 -->|...| V12[State v12]
     V12 -->|MIGRATIONS 13| V13[State v13]
-    V13 -->|MIGRATIONS 14 GENKI IDs| V14[State v14 Current]
+    V13 -->|MIGRATIONS 14 GENKI IDs| V14[State v14]
+    V14 -->|MIGRATIONS 15 Course packages| V15[State v15]
+    V15 -->|MIGRATIONS 16 Dictionary IDs| V16[State v16 Current]
 ```
 
 ---
@@ -27,6 +32,11 @@ graph LR
 - **v11 → v12**: Миграция структуры `dailySnapshot` с поддержкой зафиксированных ID задач.
 - **v12 → v13**: Поддержка расширенных review-логов и метаданных context-production.
 - **v13 → v14**: Слияние поздних дублей GENKI I, переназначение ссылок на канонические словарные ID и архивирование исходного прогресса удалённых записей без пересчёта FSRS.
+- **v14 → v15**: Namespaced course/lesson/reference ID и разделение прогресса по
+  course packages.
+- **v15 → v16**: Перенос vocabulary FSRS/mastery/events/session queues на
+  глобальные `dictionaryId`. Коллизии карточек разрешаются детерминированно, а
+  исходные значения архивируются в `dictionaryMigrationArchive`.
 
 ---
 

@@ -87,9 +87,16 @@ describe('Backup Manager Validation & Security', () => {
     });
 
     const exported = await exportFullProgress();
-    expect(exported.schemaVersion).toBe('6.0');
+    expect(exported.schemaVersion).toBe('7.0');
     expect(exported.data.userDictionaries).toHaveLength(1);
     expect(exported.data.userDictionaryEntries[0].learningEnabled).toBe(true);
+    expect(exported.data.dictionary).toMatchObject({
+      schemaVersion: 1,
+      curatedContentVersion: '1',
+      userEntries: [],
+      aliases: {},
+      tokenForms: {},
+    });
 
     await database.clear(STORES.USER_DICTIONARIES);
     await database.clear(STORES.USER_DICTIONARY_ENTRIES);
@@ -97,6 +104,53 @@ describe('Backup Manager Validation & Security', () => {
     expect(restored.success).toBe(true);
     expect((await repository.listDictionaries())[0].id).toBe(dictionary.id);
     expect((await repository.listEntries(dictionary.id))[0].id).toBe(entry.id);
+  });
+
+  it('backs up AI dictionary metadata and ignores one corrupted dictionary entry on import', async () => {
+    const database = await initializeDB();
+    await database.set(STORES.APP_STATE, 'state', validState);
+    const repository = new UserDictionaryRepository(database);
+    const dictionary = await repository.saveDictionary({
+      id: 'user-dict:personal',
+      name: 'Личный словарь',
+      kind: 'personal',
+    });
+    const aiEntry = await repository.saveEntry({
+      dictionaryId: dictionary.id,
+      globalDictionaryId: 'user-word:ねこ:ねこ',
+      writing: 'ねこ',
+      reading: 'ねこ',
+      meanings: ['кошка'],
+      alternativeWritings: ['猫'],
+      tokenForms: ['ねこ', '猫'],
+      learningEnabled: false,
+      source: {
+        type: 'ai',
+        label: 'AI Сенсей',
+        externalId: 'user-word:ねこ:ねこ',
+      },
+    });
+
+    const exported = await exportFullProgress();
+    expect(exported.data.dictionary.userEntries).toHaveLength(1);
+    expect(exported.data.dictionary.aliases[aiEntry.id]).toBe('user-word:ねこ:ねこ');
+    expect(exported.data.dictionary.tokenForms['user-word:ねこ:ねこ']).toEqual(['ねこ', '猫']);
+    expect(JSON.stringify(exported.data.dictionary)).not.toContain('"source":"curated"');
+
+    exported.data.dictionary.userEntries.push({
+      id: '<broken>',
+      globalDictionaryId: 'jp-word:猫:ねこ',
+    });
+    const validated = validateImportData(exported);
+    expect(validated.valid).toBe(true);
+
+    await database.clear(STORES.USER_DICTIONARY_ENTRIES);
+    const restored = await importFullProgress(validated.data, false);
+    expect(restored.success).toBe(true);
+    const entries = await repository.listEntries(dictionary.id);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].id).toBe(aiEntry.id);
+    expect(entries[0].globalDictionaryId).toBe('user-word:ねこ:ねこ');
   });
 
   it('validates a correct current schema version backup', () => {

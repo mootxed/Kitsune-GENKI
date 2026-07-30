@@ -2,8 +2,11 @@ import { getUserEntryCapabilities } from './capabilities.js';
 
 export function createKnowledgeItemFromUserEntry(entry) {
   const capabilities = getUserEntryCapabilities(entry);
+  const knowledgeItemId = entry.globalDictionaryId || entry.id;
   return {
     id: entry.id,
+    dictionaryId: entry.globalDictionaryId || null,
+    knowledgeItemId,
     sourceType: 'user-dictionary',
     sourceDictionaryId: entry.dictionaryId,
     learningEnabled: entry.learningEnabled,
@@ -21,7 +24,7 @@ export function createKnowledgeItemFromUserEntry(entry) {
       ? {
           ...entry.productionTask,
           id: `${entry.id}_cp`,
-          focusItemId: entry.id,
+          focusItemId: knowledgeItemId,
         }
       : undefined,
     capabilities,

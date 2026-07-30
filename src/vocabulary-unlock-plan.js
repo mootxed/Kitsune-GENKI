@@ -3,7 +3,11 @@ import { parseCardIdentity } from './knowledge-model.js';
 import { cardChapter } from './srs-helpers.js';
 import { State } from 'ts-fsrs';
 import { isPriorKnowledge } from './chapter-progress.js';
-import { canonicalLessonId, sameLessonId } from './courses/course-context.js';
+import {
+  canonicalizeKnowledgeItemId,
+  canonicalLessonId,
+  sameLessonId,
+} from './courses/course-context.js';
 import {
   createVocabularySchedule,
   distributeVocabularyAcrossDates,
@@ -133,10 +137,11 @@ export function isCardPlanLocked(card) {
  */
 function cardsForWord(srsRecords, itemId) {
   if (!srsRecords || typeof srsRecords !== 'object') return [];
+  const canonicalItemId = canonicalizeKnowledgeItemId(itemId);
   return Object.values(srsRecords).filter((c) => {
     if (!c) return false;
     const identity = parseCardIdentity(c);
-    return identity.itemId === itemId;
+    return canonicalizeKnowledgeItemId(identity.itemId) === canonicalItemId;
   });
 }
 
@@ -244,11 +249,12 @@ export function isVocabularyItemIntroduced(state, itemId) {
 
   const cards = cardsForWord(srs, itemId);
   const cardIds = new Set(cards.map((c) => c.id));
+  const canonicalItemId = canonicalizeKnowledgeItemId(itemId);
 
   // Check if there is an active (non-undone) review event for this itemId or any of its cardIds
   const hasActiveReview = reviewEvents.some((ev) => {
     if (!ev || ev.eventType !== 'review' || ev.undoneAt) return false;
-    if (ev.itemId === itemId) return true;
+    if (canonicalizeKnowledgeItemId(ev.itemId) === canonicalItemId) return true;
     if (ev.cardId && cardIds.has(ev.cardId)) return true;
     return false;
   });
@@ -260,7 +266,7 @@ export function isVocabularyItemIntroduced(state, itemId) {
 
   const hasUndoneReview = reviewEvents.some((ev) => {
     if (!ev || ev.eventType !== 'review' || !ev.undoneAt) return false;
-    if (ev.itemId === itemId) return true;
+    if (canonicalizeKnowledgeItemId(ev.itemId) === canonicalItemId) return true;
     if (ev.cardId && cardIds.has(ev.cardId)) return true;
     return false;
   });

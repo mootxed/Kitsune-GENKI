@@ -2,8 +2,10 @@ import {
   ensurePersonalDictionary,
   PERSONAL_DICTIONARY_ID,
   prepareTokenDictionaryDraft,
+  resolveGlobalTokenMatch,
   saveSenseiDictionaryEntry,
 } from '../src/ai/personal-dictionary.js';
+import { registerUserDictionaryEntry } from '../src/dictionary/dictionary-store.js';
 
 function node(tag, text = '') {
   const element = document.createElement(tag);
@@ -43,12 +45,23 @@ export async function openSenseiDictionaryDialog({
   const personal = await ensurePersonalDictionary(repository);
   const dictionaries = await repository.listDictionaries();
   const sentenceText = sentence.tokens.map((item) => item.kanji || item.writing || '').join('');
+  let globalMatch = null;
+  try {
+    const resolution = await resolveGlobalTokenMatch(token, {
+      sentence: sentenceText,
+      aiHint: token.dictionaryId ? { dictionaryId: token.dictionaryId } : null,
+    });
+    if (resolution.status === 'resolved') globalMatch = resolution.entry;
+  } catch (error) {
+    console.warn('[SenseiDictionary] Global lookup unavailable:', error);
+  }
   const draft = prepareTokenDictionaryDraft({
     token,
     sentence: sentenceText,
     sentenceTranslation: sentence.translation,
     catalogMatch,
     userMatch,
+    globalMatch,
     dictionaryId: personal.id || PERSONAL_DICTIONARY_ID,
   });
   const dialog = node('dialog');
@@ -148,6 +161,23 @@ export async function openSenseiDictionaryDialog({
       duplicateEntry,
     });
     if (result.status === 'saved') {
+      try {
+        await registerUserDictionaryEntry({
+          id: result.entry.globalDictionaryId,
+          dictionaryForm: result.entry.writing,
+          reading: result.entry.reading,
+          meanings: result.entry.meanings,
+          partOfSpeech: result.entry.partOfSpeech?.[0] || null,
+          verbClass: result.entry.verbClass || null,
+          adjectiveClass: result.entry.adjectiveClass || null,
+          transitivity: result.entry.transitivity || null,
+          tokenForms: result.entry.tokenForms || result.entry.alternativeWritings || [],
+          confidence: result.entry.confidence ?? 0.5,
+          verified: result.entry.verified === true,
+        });
+      } catch (error) {
+        console.warn('[SenseiDictionary] Global AI entry registration failed:', error);
+      }
       closeDialog(dialog, opener);
       onSaved?.(result.entry);
       return;

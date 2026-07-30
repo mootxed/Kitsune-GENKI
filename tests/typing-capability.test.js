@@ -18,9 +18,14 @@ import {
 } from '../src/typing-capability.js';
 import { productionContext } from '../src/production-context.js';
 import { CARD_MODES } from '../ui/flashcards.js';
+import { resolveCourseVocabulary } from '../src/dictionary/dictionary-merge.js';
 
 function catalogueWords() {
   const projectRoot = process.cwd();
+  const dictionaryDocument = JSON.parse(
+    readFileSync(join(projectRoot, 'public/data/dictionary/entries.json'), 'utf8')
+  );
+  const dictionaryEntries = new Map(dictionaryDocument.entries.map((entry) => [entry.id, entry]));
   return Array.from({ length: 12 }, (_, index) => {
     const lesson = String(index + 1).padStart(2, '0');
     const data = JSON.parse(
@@ -29,7 +34,9 @@ function catalogueWords() {
         'utf8'
       )
     );
-    return data.lesson.vocabulary;
+    return data.lesson.vocabulary.map((reference) =>
+      resolveCourseVocabulary(reference, dictionaryEntries.get(reference.dictionaryId))
+    );
   }).flat();
 }
 

@@ -4,6 +4,7 @@
 
 import { conjugateVerb } from './verb-conjugator.js';
 import { canonicalLessonId, compareLessonIds } from './courses/course-context.js';
+import { resolveDictionaryAlias } from './dictionary/dictionary-store.js';
 
 // Список стандартных N5 частиц для быстрого поиска/определения grammarIds
 const KNOWN_PARTICLES = new Set([
@@ -28,7 +29,8 @@ export class ExamplesDBClass {
     this.vocabulary = new Map(); // id -> normalized word
     this.rawSentences = []; // List of all registered raw sentences
     this.examples = []; // Compiled unique Example objects
-    this.lexemeIndex = new Map(); // lexemeId -> Array<Example>
+    this.dictionaryIndex = new Map(); // dictionaryId -> Array<Example>
+    this.lexemeIndex = this.dictionaryIndex; // Temporary compatibility alias
   }
 
   /**
@@ -38,7 +40,13 @@ export class ExamplesDBClass {
     this.vocabulary.clear();
     this.rawSentences = [];
     this.examples = [];
-    this.lexemeIndex.clear();
+    this.dictionaryIndex.clear();
+  }
+
+  clearCourseScope() {
+    this.vocabulary.clear();
+    this.rawSentences = this.rawSentences.filter((sentence) => sentence.scope === 'global');
+    this.rebuildIndex();
   }
 
   /**
@@ -54,6 +62,10 @@ export class ExamplesDBClass {
     }
   }
 
+  registerCourseVocabularyReferences(words) {
+    this.registerVocabulary(words);
+  }
+
   /**
    * Добавить одно сырое предложение для последующего индексирования
    */
@@ -67,10 +79,16 @@ export class ExamplesDBClass {
     requiredForm = null,
     targetLexemeIds = null,
     id = null,
+    scope = null,
   }) {
     if (!japanese || !japanese.trim()) return;
     const trimmedJp = japanese.trim();
-    const existing = this.rawSentences.find((s) => s.japanese === trimmedJp);
+    const resolvedScope =
+      scope ||
+      (['particles', 'curated', 'curated-word', 'global'].includes(source) ? 'global' : 'course');
+    const existing = this.rawSentences.find(
+      (sentence) => sentence.japanese === trimmedJp && sentence.scope === resolvedScope
+    );
     if (existing) {
       if (targetLexemeIds && targetLexemeIds.length > 0) {
         existing.targetLexemeIds = Array.from(
@@ -90,7 +108,15 @@ export class ExamplesDBClass {
       acceptedAnswers,
       requiredForm,
       targetLexemeIds: Array.isArray(targetLexemeIds) ? targetLexemeIds : null,
+      scope: resolvedScope,
     });
+  }
+
+  registerGlobalExamples(examples) {
+    for (const example of examples || []) {
+      this.addRawSentence({ ...example, scope: 'global', source: example.source || 'global' });
+    }
+    this.rebuildIndex();
   }
 
   /**
@@ -104,7 +130,7 @@ export class ExamplesDBClass {
     // 1. Зарегистрировать лексику урока
     const words = lesson.words || lesson.vocabulary;
     if (words) {
-      this.registerVocabulary(words);
+      this.registerCourseVocabularyReferences(words);
 
       // Проверить наличие вручную подготовленных contextProduction
       for (const word of words) {
@@ -248,16 +274,22 @@ export class ExamplesDBClass {
       const targetId = ex.targetWordId || ex.targetLexemeId || ex.lexemeId || ex.wordId;
       if (!targetId) continue;
 
-      let resolvedLexemeId = targetId;
+      let resolvedLexemeId = resolveDictionaryAlias(targetId);
       const vocabWord = this.vocabulary.get(targetId);
       if (vocabWord) {
-        resolvedLexemeId = vocabWord.lexemeId || vocabWord.id;
+        resolvedLexemeId =
+          vocabWord.dictionaryId || vocabWord.knowledgeItemId || vocabWord.lexemeId || vocabWord.id;
       } else {
         const found = Array.from(this.vocabulary.values()).find(
-          (w) => w.lexemeId === targetId || w.id === targetId
+          (w) =>
+            w.dictionaryId === resolvedLexemeId ||
+            w.knowledgeItemId === resolvedLexemeId ||
+            w.lexemeId === targetId ||
+            w.id === targetId
         );
         if (found) {
-          resolvedLexemeId = found.lexemeId || found.id;
+          resolvedLexemeId =
+            found.dictionaryId || found.knowledgeItemId || found.lexemeId || found.id;
         } else if (!/^L\d+_/i.test(targetId)) {
           console.warn(
             `[ExamplesDB] Warning: Unknown targetWordId/targetLexemeId in curated examples: ${targetId}`
@@ -390,7 +422,7 @@ export class ExamplesDBClass {
    */
   rebuildIndex() {
     this.examples = [];
-    this.lexemeIndex.clear();
+    this.dictionaryIndex.clear();
 
     const allVocab = Array.from(this.vocabulary.values());
     const seen = new Set();
@@ -398,9 +430,16 @@ export class ExamplesDBClass {
     let idCounter = 1;
 
     for (const raw of this.rawSentences) {
-      let matchedWords = [];
+      let matchedWords;
       if (raw.targetLexemeIds && raw.targetLexemeIds.length > 0) {
-        matchedWords = allVocab.filter((w) => raw.targetLexemeIds.includes(w.lexemeId || w.id));
+        const targets = raw.targetLexemeIds.map(resolveDictionaryAlias);
+        matchedWords = allVocab.filter((word) =>
+          targets.includes(
+            word.dictionaryId ||
+              word.knowledgeItemId ||
+              resolveDictionaryAlias(word.lexemeId || word.id)
+          )
+        );
       } else {
         matchedWords = allVocab.filter((w) => isWordInSentence(w, raw.japanese));
       }
@@ -432,17 +471,21 @@ export class ExamplesDBClass {
 
       // Для каждого подходящего слова создаем нормализованную модель примера
       for (const word of matchedWords) {
-        const lexemeId = word.lexemeId || word.id;
-        if (!lexemeId) continue;
+        const dictionaryId =
+          word.dictionaryId ||
+          word.knowledgeItemId ||
+          resolveDictionaryAlias(word.lexemeId || word.id);
+        if (!dictionaryId) continue;
 
         // Дедупликация: целевое слово + текст предложения
-        const dupKey = `${lexemeId}_${raw.japanese.replace(/[\s、。？！・]/g, '')}`;
+        const dupKey = `${dictionaryId}_${raw.japanese.replace(/[\s、。？！・]/g, '')}`;
         if (seen.has(dupKey)) continue;
         seen.add(dupKey);
 
         const example = {
           id: raw.id || `ex-${idCounter++}`,
-          targetLexemeId: lexemeId,
+          dictionaryId,
+          targetLexemeId: dictionaryId,
           japanese: raw.japanese,
           reading: raw.reading,
           translation: raw.translation,
@@ -456,10 +499,10 @@ export class ExamplesDBClass {
 
         this.examples.push(example);
 
-        if (!this.lexemeIndex.has(lexemeId)) {
-          this.lexemeIndex.set(lexemeId, []);
+        if (!this.dictionaryIndex.has(dictionaryId)) {
+          this.dictionaryIndex.set(dictionaryId, []);
         }
-        this.lexemeIndex.get(lexemeId).push(example);
+        this.dictionaryIndex.get(dictionaryId).push(example);
       }
     }
   }
@@ -468,7 +511,7 @@ export class ExamplesDBClass {
    * Получить список примеров для лексемы с фильтрацией по открытым урокам
    */
   getExamplesForLexeme(lexemeId, userMaxLesson = 12) {
-    const list = this.lexemeIndex.get(lexemeId);
+    const list = this.dictionaryIndex.get(resolveDictionaryAlias(lexemeId));
     if (!list) return [];
 
     // Фильтруем, чтобы не использовать лексику и грамматику будущих уроков

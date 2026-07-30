@@ -6,14 +6,13 @@
 
 ## ⚙️ Управление кешами в `sw.js`
 
-Service Worker использует 3 специализированных имени кэша:
+Service Worker использует отдельные имена кэша по типу данных:
 
 ```javascript
-const CACHE_NAMES = {
-  PRECACHE: 'kitsune-precache-v16',
-  RUNTIME: 'kitsune-runtime-v16',
-  CONTENT: 'kitsune-content-v16',
-};
+const CACHE_DICTIONARY = `kitsune-dictionary-${CACHE_VERSION}`;
 ```
 
-При активации новой версии Service Worker старые кеши других версий автоматически удаляются.
+Глобальные `manifest.json`, `entries.json`, `token-index.json` и `aliases.json`
+precache-ятся отдельно от курса, обслуживаются stale-while-revalidate и защищены
+от LRU. При активации новой версии Service Worker старые кеши других версий
+автоматически удаляются.

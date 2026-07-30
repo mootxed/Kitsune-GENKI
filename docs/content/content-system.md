@@ -9,6 +9,7 @@
 
 ```text
 public/data/
+├── dictionary/                     # Глобальные статьи, token index и aliases
 ├── courses/
 │   └── genki-1/
 │       ├── manifest.json           # Контракт, порядок и ресурсы курса
@@ -31,14 +32,16 @@ public/data/
 Для снижения объёма первоначально загружаемых данных:
 
 1. Registry выбирает descriptor курса и загружает его `manifest.json`.
-2. CourseLoader валидирует manifest и получает объявленные в `dataPaths`
+2. DictionaryStore один раз загружает независимый глобальный словарь.
+3. CourseLoader валидирует manifest и получает объявленные в `dataPaths`
    индексы.
-3. Урок, грамматика и история загружаются по package-relative путям только при
+4. Урок, грамматика и история загружаются по package-relative путям только при
    обращении к ним.
-4. Runtime получает opaque namespaced IDs; локальные ID пакета сохраняются в
-   `localId`.
-5. Загруженные уроки кешируются в IndexedDB store `content-cache`, а JSON
+5. Vocabulary reference объединяется с `DictionaryEntry`; FSRS получает
+   глобальный `dictionaryId`, а `localId` остаётся контекстом курса.
+6. Загруженные уроки кешируются в IndexedDB store `content-cache`, а JSON
    пакетов — Service Worker.
 
 Полный контракт и инструкция по добавлению курса:
 [course-packages.md](../course-packages.md).
+Словарный контракт: [global-dictionary.md](global-dictionary.md).
