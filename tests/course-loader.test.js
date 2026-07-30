@@ -153,6 +153,132 @@ describe('CourseLoader', () => {
     expect(loaded.story).toBeNull();
   });
 
+  it('allows optional grammar resource to fall back to empty array when missing (404)', async () => {
+    const baseFetch = fileFetch(path.join(root, 'tests/fixtures/courses/test-course'));
+    const fetchImpl = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/grammar/index.json')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            lessons: [
+              {
+                lessonId: 'test-course:lesson-alpha',
+                path: './grammar/missing.json',
+                optional: true,
+              },
+            ],
+          }),
+        };
+      }
+      if (url.pathname.endsWith('/grammar/missing.json')) {
+        return { ok: false, status: 404, json: async () => null };
+      }
+      return baseFetch(input);
+    };
+
+    const course = await new CourseLoader({
+      manifestUrl: 'manifest.json',
+      baseUrl: 'https://example.test/',
+      fetchImpl,
+    }).load();
+    const loaded = await course.loadLesson('test-course:lesson-alpha');
+    expect(loaded.lesson.grammar).toEqual([]);
+  });
+
+  it('throws CourseLoadError when optional resource encounters HTTP 500', async () => {
+    const baseFetch = fileFetch(path.join(root, 'tests/fixtures/courses/test-course'));
+    const fetchImpl = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/content-index.json')) {
+        const res = await baseFetch(input);
+        const data = await res.json();
+        const entries = data.lessons || data.chapters;
+        entries[0].story = { path: './stories/alpha.json', optional: true };
+        return { ok: true, status: 200, json: async () => data };
+      }
+      if (url.pathname.endsWith('/stories/alpha.json')) {
+        return { ok: false, status: 500, json: async () => null };
+      }
+      return baseFetch(input);
+    };
+
+    const course = await new CourseLoader({
+      manifestUrl: 'manifest.json',
+      baseUrl: 'https://example.test/',
+      fetchImpl,
+    }).load();
+    await expect(course.loadLesson('test-course:lesson-alpha')).rejects.toMatchObject({
+      name: 'CourseLoadError',
+      code: 'course-resource-unavailable',
+      status: 500,
+    });
+  });
+
+  it('throws CourseLoadError when optional resource throws fetch network error', async () => {
+    const baseFetch = fileFetch(path.join(root, 'tests/fixtures/courses/test-course'));
+    const fetchImpl = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/content-index.json')) {
+        const res = await baseFetch(input);
+        const data = await res.json();
+        const entries = data.lessons || data.chapters;
+        entries[0].story = { path: './stories/alpha.json', optional: true };
+        return { ok: true, status: 200, json: async () => data };
+      }
+      if (url.pathname.endsWith('/stories/alpha.json')) {
+        throw new Error('Network failed');
+      }
+      return baseFetch(input);
+    };
+
+    const course = await new CourseLoader({
+      manifestUrl: 'manifest.json',
+      baseUrl: 'https://example.test/',
+      fetchImpl,
+    }).load();
+    await expect(course.loadLesson('test-course:lesson-alpha')).rejects.toMatchObject({
+      name: 'CourseLoadError',
+      code: 'course-resource-unavailable',
+      status: null,
+    });
+  });
+
+  it('throws CourseLoadError (invalid-course-json) when optional resource contains corrupt JSON', async () => {
+    const baseFetch = fileFetch(path.join(root, 'tests/fixtures/courses/test-course'));
+    const fetchImpl = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/content-index.json')) {
+        const res = await baseFetch(input);
+        const data = await res.json();
+        const entries = data.lessons || data.chapters;
+        entries[0].story = { path: './stories/alpha.json', optional: true };
+        return { ok: true, status: 200, json: async () => data };
+      }
+      if (url.pathname.endsWith('/stories/alpha.json')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => {
+            throw new SyntaxError('Unexpected token');
+          },
+        };
+      }
+      return baseFetch(input);
+    };
+
+    const course = await new CourseLoader({
+      manifestUrl: 'manifest.json',
+      baseUrl: 'https://example.test/',
+      fetchImpl,
+    }).load();
+    await expect(course.loadLesson('test-course:lesson-alpha')).rejects.toMatchObject({
+      name: 'CourseLoadError',
+      code: 'invalid-course-json',
+    });
+  });
+
   it('surfaces malformed JSON and manifest validation errors as CourseLoadError', async () => {
     const fetchImpl = async () => ({
       ok: true,

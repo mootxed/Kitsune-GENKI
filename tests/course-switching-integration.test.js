@@ -169,4 +169,62 @@ describe('Course Switching Integration & Facades', () => {
     const result = await switchCourseRuntime('test-course', { fetchImpl: customFetch });
     expect(result).toBe(prevCourse);
   });
+
+  it('prevents obsolete loadLessons() from polluting global runtime when a fast switch occurs during lesson pre-cache', async () => {
+    let reachedGenkiLoadLessonsInner = false;
+    let signalReachedGenkiInner;
+    const reachedGenkiInnerPromise = new Promise((resolve) => {
+      signalReachedGenkiInner = resolve;
+    });
+
+    let releaseGenkiInner;
+    const genkiInnerBarrier = new Promise((resolve) => {
+      releaseGenkiInner = resolve;
+    });
+
+    const controlledGenkiFetch = async (input) => {
+      const urlStr = String(input);
+      if (urlStr.includes('lesson-01.json') || urlStr.includes('lessons/1.json')) {
+        reachedGenkiLoadLessonsInner = true;
+        signalReachedGenkiInner();
+        await genkiInnerBarrier;
+      }
+      return customFetch(input);
+    };
+
+    const pGenki = switchCourseRuntime(DEFAULT_COURSE_ID, { fetchImpl: controlledGenkiFetch });
+
+    await reachedGenkiInnerPromise;
+    expect(reachedGenkiLoadLessonsInner).toBe(true);
+
+    const pTestCourse = switchCourseRuntime('test-course', { fetchImpl: customFetch });
+
+    const testCourseRes = await pTestCourse;
+    expect(testCourseRes?.id).toBe('test-course');
+    expect(getActiveCourse().id).toBe('test-course');
+    expect(state.activeCourseId).toBe('test-course');
+
+    releaseGenkiInner();
+    const genkiRes = await pGenki;
+
+    expect(genkiRes).toBeNull();
+    expect(getActiveCourse().id).toBe('test-course');
+    expect(state.activeCourseId).toBe('test-course');
+
+    const { LESSONS, CONTENT_INDEX, CH_NAMES } = await import('../ui/home.js');
+    const { loadedChapters } = await import('../state/store.js');
+    const { ExamplesDB } = await import('../src/examples-db.js');
+
+    expect(LESSONS.every((l) => l.courseId === 'test-course')).toBe(true);
+    expect(LESSONS.some((l) => l.courseId === DEFAULT_COURSE_ID)).toBe(false);
+    expect(CONTENT_INDEX.every((c) => String(c.id).startsWith('test-course:'))).toBe(true);
+    expect(Object.keys(CH_NAMES).every((id) => id.startsWith('test-course:'))).toBe(true);
+    expect([...loadedChapters.keys()].some((id) => id.startsWith('genki-1:'))).toBe(false);
+
+    const vocabularyList = ExamplesDB.getLessonVocabulary?.('genki-1:lesson-1') || [];
+    expect(vocabularyList).toHaveLength(0);
+
+    expect(state.courses['test-course']?.lessonIds?.[0]).toMatch(/^test-course:/);
+    expect(state.activeChapterId).toMatch(/^test-course:/);
+  });
 });

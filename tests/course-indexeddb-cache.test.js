@@ -92,8 +92,7 @@ describe('IndexedDB Course Cache Namespacing & Migration', () => {
     await db.set(STORES.CONTENT_CACHE, 'lessons', legacyLessons);
     await db.set(STORES.CONTENT_CACHE, 'lesson_version', '4');
 
-    await ensureActiveCourse(DEFAULT_COURSE_ID, { fetchImpl: customFetch });
-    await loadLessons();
+    await switchCourseRuntime(DEFAULT_COURSE_ID, { fetchImpl: customFetch });
 
     const namespacedLessons = await db.get(STORES.CONTENT_CACHE, 'course:genki-1:lessons');
     expect(namespacedLessons).toBeDefined();

@@ -98,7 +98,7 @@ export async function switchCourseRuntime(nextCourseId, options = {}) {
 
   switchActiveCourse(state, course.id);
 
-  await loadLessons();
+  await loadLessons({ course, generation });
 
   if (generation !== courseSwitchGeneration) {
     return null;
@@ -110,12 +110,21 @@ export async function switchCourseRuntime(nextCourseId, options = {}) {
 // ---------- Load Lessons ----------
 // На старте грузим только лёгкий content-index; полные уроки подгружаются
 // по требованию через ensureLesson()
-export async function loadLessons() {
-  const currentGen = courseSwitchGeneration;
+export async function loadLessons(options = {}) {
+  const generation = options.generation ?? courseSwitchGeneration;
   const activeCourse =
-    getActiveCourse() || (await ensureActiveCourse(state?.activeCourseId || DEFAULT_COURSE_ID));
-  if (courseSwitchGeneration !== currentGen) return;
+    options.course ??
+    getActiveCourse() ??
+    (await ensureActiveCourse(state?.activeCourseId || DEFAULT_COURSE_ID));
+
   const courseId = activeCourse.id;
+
+  const isCurrentLoad = () =>
+    generation === courseSwitchGeneration &&
+    getActiveCourse()?.id === courseId &&
+    (!state?.activeCourseId || state.activeCourseId === courseId);
+
+  if (!isCurrentLoad()) return;
 
   const keyLessons = `course:${courseId}:lessons`;
   const keyIndex = `course:${courseId}:content-index`;
@@ -123,23 +132,27 @@ export async function loadLessons() {
   const keySchemaVersion = `course:${courseId}:schema-version`;
   const keyWorkbookSchemaVersion = `course:${courseId}:workbook-schema-version`;
 
+  // --- Phase 1: Prepare local data (reads only, no global side-effects) ---
   let fileVersion = 0;
   let indexData = null;
   try {
     indexData = await loadContentIndex(courseId);
-    fileVersion = indexData.version || 0;
+    fileVersion = indexData?.version || 0;
   } catch (e) {
     console.error('Не удалось загрузить content-index.json:', e);
   }
+
+  let nextOrthography = null;
   try {
-    configureCourseOrthography(await loadCourseOrthography(courseId), activeCourse);
+    nextOrthography = await loadCourseOrthography(courseId);
   } catch (e) {
     console.error('Не удалось загрузить таблицу доступности кандзи:', e);
   }
+
   let workbookSchemaVersion = 0;
   try {
     const workbook = await loadSupplementalPracticeData();
-    workbookSchemaVersion = workbook.schemaVersion;
+    workbookSchemaVersion = workbook?.schemaVersion || 0;
   } catch (e) {
     console.warn('Не удалось загрузить Workbook metadata:', e);
   }
@@ -147,26 +160,17 @@ export async function loadLessons() {
   let cachedVersion = await db.get(STORES.CONTENT_CACHE, keyLessonVersion);
   if (!cachedVersion && courseId === DEFAULT_COURSE_ID) {
     cachedVersion = await db.get(STORES.CONTENT_CACHE, 'lesson_version');
-    if (cachedVersion) await db.set(STORES.CONTENT_CACHE, keyLessonVersion, String(cachedVersion));
   }
 
   let cachedSchemaVersion = await db.get(STORES.CONTENT_CACHE, keySchemaVersion);
   if (cachedSchemaVersion == null && courseId === DEFAULT_COURSE_ID) {
     cachedSchemaVersion = await db.get(STORES.CONTENT_CACHE, 'schema_version');
-    if (cachedSchemaVersion != null)
-      await db.set(STORES.CONTENT_CACHE, keySchemaVersion, Number(cachedSchemaVersion));
   }
   cachedSchemaVersion = cachedSchemaVersion || 0;
 
   let cachedWorkbookSchemaVersion = await db.get(STORES.CONTENT_CACHE, keyWorkbookSchemaVersion);
   if (cachedWorkbookSchemaVersion == null && courseId === DEFAULT_COURSE_ID) {
     cachedWorkbookSchemaVersion = await db.get(STORES.CONTENT_CACHE, 'workbook_schema_version');
-    if (cachedWorkbookSchemaVersion != null)
-      await db.set(
-        STORES.CONTENT_CACHE,
-        keyWorkbookSchemaVersion,
-        Number(cachedWorkbookSchemaVersion)
-      );
   }
   cachedWorkbookSchemaVersion = cachedWorkbookSchemaVersion || 0;
 
@@ -181,11 +185,11 @@ export async function loadLessons() {
   if (!raw && courseId === DEFAULT_COURSE_ID) {
     const legacyRaw = await db.get(STORES.CONTENT_CACHE, 'lessons');
     if (legacyRaw) {
+      raw = legacyRaw;
       try {
         const parsedLegacy = Array.isArray(legacyRaw) ? legacyRaw : JSON.parse(legacyRaw);
         if (Array.isArray(parsedLegacy) && parsedLegacy.length > 0) {
-          raw = legacyRaw;
-          await db.set(STORES.CONTENT_CACHE, keyLessons, raw);
+          pendingCacheWrites.push([STORES.CONTENT_CACHE, keyLessons, parsedLegacy]);
         }
       } catch {
         /* ignore legacy parse error */
@@ -202,6 +206,24 @@ export async function loadLessons() {
     }
   }
 
+  let nextContentIndex;
+  if (indexData) {
+    nextContentIndex = indexData.chapters || [];
+  } else {
+    let cachedIndex = await db.get(STORES.CONTENT_CACHE, keyIndex);
+    if (!cachedIndex && courseId === DEFAULT_COURSE_ID) {
+      cachedIndex = await db.get(STORES.CONTENT_CACHE, 'content_index');
+    }
+    nextContentIndex = cachedIndex?.chapters || [];
+  }
+
+  const nextChapterNames = Object.fromEntries(
+    nextContentIndex.map((chapter) => [chapter.id, [chapter.title, chapter.jp || '']])
+  );
+
+  let nextLessons;
+  const pendingCacheWrites = [];
+
   if (
     cachedLessons.length > 0 &&
     (!contentVersionMatches || !schemaVersionMatches || !workbookVersionMatches)
@@ -211,53 +233,103 @@ export async function loadLessons() {
     for (const oldLesson of cachedLessons) {
       try {
         const { lesson } = await loadChapterData(oldLesson.id, courseId);
-        migratedLessons.push(normalizeLesson(lesson));
+        migratedLessons.push(normalizeLesson(lesson, nextChapterNames));
       } catch {
-        // Fallback to old lesson if offline
         migratedLessons.push(oldLesson);
       }
     }
-    LESSONS = migratedLessons;
-    await db.set(STORES.CONTENT_CACHE, keyLessons, LESSONS);
-    await db.set(STORES.CONTENT_CACHE, keyLessonVersion, String(fileVersion));
-    await db.set(STORES.CONTENT_CACHE, keySchemaVersion, NORMALIZED_WORD_SCHEMA_VERSION);
+    nextLessons = migratedLessons;
+    pendingCacheWrites.push([STORES.CONTENT_CACHE, keyLessons, nextLessons]);
+    pendingCacheWrites.push([STORES.CONTENT_CACHE, keyLessonVersion, String(fileVersion)]);
+    pendingCacheWrites.push([
+      STORES.CONTENT_CACHE,
+      keySchemaVersion,
+      NORMALIZED_WORD_SCHEMA_VERSION,
+    ]);
     if (workbookSchemaVersion > 0) {
-      await db.set(STORES.CONTENT_CACHE, keyWorkbookSchemaVersion, workbookSchemaVersion);
+      pendingCacheWrites.push([
+        STORES.CONTENT_CACHE,
+        keyWorkbookSchemaVersion,
+        workbookSchemaVersion,
+      ]);
     }
 
     if (courseId === DEFAULT_COURSE_ID) {
-      await db.set(STORES.CONTENT_CACHE, 'lessons', LESSONS);
-      await db.set(STORES.CONTENT_CACHE, 'lesson_version', String(fileVersion));
-      await db.set(STORES.CONTENT_CACHE, 'schema_version', NORMALIZED_WORD_SCHEMA_VERSION);
+      pendingCacheWrites.push([STORES.CONTENT_CACHE, 'lessons', nextLessons]);
+      pendingCacheWrites.push([STORES.CONTENT_CACHE, 'lesson_version', String(fileVersion)]);
+      pendingCacheWrites.push([
+        STORES.CONTENT_CACHE,
+        'schema_version',
+        NORMALIZED_WORD_SCHEMA_VERSION,
+      ]);
       if (workbookSchemaVersion > 0) {
-        await db.set(STORES.CONTENT_CACHE, 'workbook_schema_version', workbookSchemaVersion);
+        pendingCacheWrites.push([
+          STORES.CONTENT_CACHE,
+          'workbook_schema_version',
+          workbookSchemaVersion,
+        ]);
       }
     }
   } else {
-    LESSONS = cachedLessons;
+    nextLessons = cachedLessons;
     if (cachedLessons.length === 0) {
       try {
         const entryLessonId = indexData?.chapters?.[0]?.id || activeCourse.manifest.entryLessonId;
         const { lesson } = await loadChapterData(entryLessonId, courseId);
         if (lesson) {
-          LESSONS = [normalizeLesson(lesson)];
-          await db.set(STORES.CONTENT_CACHE, keyLessons, LESSONS);
+          nextLessons = [normalizeLesson(lesson, nextChapterNames)];
+          pendingCacheWrites.push([STORES.CONTENT_CACHE, keyLessons, nextLessons]);
         }
       } catch {
         /* ignore lesson pre-cache error */
       }
       if (indexData) {
-        await db.set(STORES.CONTENT_CACHE, keyLessonVersion, String(fileVersion));
-        await db.set(STORES.CONTENT_CACHE, keySchemaVersion, NORMALIZED_WORD_SCHEMA_VERSION);
+        pendingCacheWrites.push([STORES.CONTENT_CACHE, keyLessonVersion, String(fileVersion)]);
+        pendingCacheWrites.push([
+          STORES.CONTENT_CACHE,
+          keySchemaVersion,
+          NORMALIZED_WORD_SCHEMA_VERSION,
+        ]);
         if (workbookSchemaVersion > 0) {
-          await db.set(STORES.CONTENT_CACHE, keyWorkbookSchemaVersion, workbookSchemaVersion);
+          pendingCacheWrites.push([
+            STORES.CONTENT_CACHE,
+            keyWorkbookSchemaVersion,
+            workbookSchemaVersion,
+          ]);
         }
       }
     }
   }
 
-  if (courseSwitchGeneration !== currentGen || getActiveCourse()?.id !== courseId) {
-    return;
+  if (indexData) {
+    pendingCacheWrites.push([STORES.CONTENT_CACHE, keyIndex, indexData]);
+  } else {
+    let cachedIndex = await db.get(STORES.CONTENT_CACHE, keyIndex);
+    if (!cachedIndex && courseId === DEFAULT_COURSE_ID) {
+      cachedIndex = await db.get(STORES.CONTENT_CACHE, 'content_index');
+      if (cachedIndex) {
+        pendingCacheWrites.push([STORES.CONTENT_CACHE, keyIndex, cachedIndex]);
+      }
+    }
+  }
+
+  // --- Phase 2: Atomic Commit ---
+  if (!isCurrentLoad()) return;
+
+  if (nextOrthography) {
+    try {
+      configureCourseOrthography(nextOrthography, activeCourse);
+    } catch (e) {
+      console.error('Не удалось применить конфигурацию кандзи:', e);
+    }
+  }
+
+  LESSONS = nextLessons;
+  CONTENT_INDEX = nextContentIndex;
+  CH_NAMES = nextChapterNames;
+
+  if (state.courses?.[state.activeCourseId]) {
+    state.courses[state.activeCourseId].lessonIds = CONTENT_INDEX.map((chapter) => chapter.id);
   }
 
   if (LESSONS.length > 0) {
@@ -267,57 +339,62 @@ export async function loadLessons() {
       ExamplesDB.registerLesson(l);
     });
     ExamplesDB.rebuildIndex();
+  }
+
+  for (const [store, key, val] of pendingCacheWrites) {
+    if (!isCurrentLoad()) return;
+    try {
+      await db.set(store, key, val);
+    } catch (e) {
+      console.warn('[loadLessons] Cache write error:', e);
+    }
+  }
+
+  if (!isCurrentLoad()) return;
+
+  if (LESSONS.length > 0) {
     let reconciled = false;
     for (const lesson of LESSONS) {
       if (!shouldChapterHaveVocabularyCards(state, lesson.id)) continue;
       const res = ensureChapterVocabularyCardsImpl(state, lesson);
       if (res.changed) reconciled = true;
     }
-    if (reconciled) await save(true);
+    if (reconciled) {
+      if (!isCurrentLoad()) return;
+      await save(true);
+    }
   }
 
-  if (indexData) {
-    CONTENT_INDEX = indexData.chapters || [];
-    if (state.courses?.[state.activeCourseId]) {
-      state.courses[state.activeCourseId].lessonIds = CONTENT_INDEX.map((chapter) => chapter.id);
-    }
-    CH_NAMES = Object.fromEntries(
-      CONTENT_INDEX.map((chapter) => [chapter.id, [chapter.title, chapter.jp || '']])
-    );
-    await db.set(STORES.CONTENT_CACHE, keyIndex, indexData);
-  } else {
-    let cachedIndex = await db.get(STORES.CONTENT_CACHE, keyIndex);
-    if (!cachedIndex && courseId === DEFAULT_COURSE_ID) {
-      cachedIndex = await db.get(STORES.CONTENT_CACHE, 'content_index');
-      if (cachedIndex) await db.set(STORES.CONTENT_CACHE, keyIndex, cachedIndex);
-    }
-    CONTENT_INDEX = cachedIndex?.chapters || [];
-    if (state.courses?.[state.activeCourseId]) {
-      state.courses[state.activeCourseId].lessonIds = CONTENT_INDEX.map((chapter) => chapter.id);
-    }
-    CH_NAMES = Object.fromEntries(
-      CONTENT_INDEX.map((chapter) => [chapter.id, [chapter.title, chapter.jp || '']])
-    );
-  }
+  if (!isCurrentLoad()) return;
 
   // Runtime backfill reconciliation for prior knowledge chapters
   if (Array.isArray(state.priorKnowledgeChapterIds) && state.priorKnowledgeChapterIds.length > 0) {
     try {
       const pkResult = await reconcilePriorKnowledgeVocabulary(state, ensureLesson);
+      if (!isCurrentLoad()) return;
       if (pkResult.addedCards > 0) await save(true);
     } catch (e) {
       console.warn('[loadLessons] Prior knowledge backfill reconciliation error:', e);
     }
   }
 
+  if (!isCurrentLoad()) return;
+
   const previousActiveChapterId = state.activeChapterId;
   ensureActiveChapterId(state, CONTENT_INDEX);
-  if (previousActiveChapterId !== state.activeChapterId) await save(true);
+  if (previousActiveChapterId !== state.activeChapterId) {
+    if (!isCurrentLoad()) return;
+    await save(true);
+  }
+
+  if (!isCurrentLoad()) return;
 
   try {
     const res = await fetch('data/particles-dictionary.json');
+    if (!isCurrentLoad()) return;
     if (res.ok) {
       const data = await res.json();
+      if (!isCurrentLoad()) return;
       ExamplesDB.registerParticlesDictionary(data);
       ExamplesDB.rebuildIndex();
     }
@@ -325,11 +402,15 @@ export async function loadLessons() {
     console.warn('Не удалось загрузить словарь частиц для ExamplesDB:', e);
   }
 
+  if (!isCurrentLoad()) return;
+
   // Загрузка curated примеров слов
   try {
     const res = await fetch('data/curated-word-examples.json');
+    if (!isCurrentLoad()) return;
     if (res.ok) {
       const data = await res.json();
+      if (!isCurrentLoad()) return;
       ExamplesDB.registerCuratedWordExamples(data);
       ExamplesDB.rebuildIndex();
     }
@@ -337,13 +418,18 @@ export async function loadLessons() {
     console.warn('Не удалось загрузить curated примеры для ExamplesDB:', e);
   }
 
+  if (!isCurrentLoad()) return;
+
   // Координатор дневных порций слов после загрузки уроков
   if (state && state.initialized && state.activeChapterId) {
     const batchRes = ensureTodayVocabularyBatch(state, state.activeChapterId, {
       plan: state.studyPlan,
     });
+    if (!isCurrentLoad()) return;
     if (batchRes.created) await save(true);
   }
+
+  if (!isCurrentLoad()) return;
 
   // Принудительно обновляем отображение глав после загрузки данных
   if (state && state.initialized) {
@@ -379,9 +465,9 @@ export function reconcileLessonIds() {
 }
 
 // Нормализация сырого урока, полученного через CourseLoader.
-function normalizeLesson(lesson) {
+function normalizeLesson(lesson, chapterNames = CH_NAMES) {
   return normalizeChapterContent(lesson, lesson.practice || [], {
-    chapterNames: CH_NAMES,
+    chapterNames: chapterNames || CH_NAMES,
     normalizeWord,
   });
 }

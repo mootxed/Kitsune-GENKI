@@ -15,6 +15,7 @@ export class CourseLoadError extends Error {
     this.code = code;
     this.courseId = details.courseId || null;
     this.resource = details.resource || null;
+    this.status = details.status ?? null;
   }
 }
 
@@ -113,14 +114,14 @@ export class CourseLoader {
       throw new CourseLoadError(
         'course-resource-unavailable',
         `Unable to load course resource ${resource}: ${cause?.message || cause}`,
-        { cause, courseId, resource }
+        { cause, courseId, resource, status: null }
       );
     }
     if (!response?.ok) {
       throw new CourseLoadError(
         'course-resource-unavailable',
         `Unable to load course resource ${resource}: HTTP ${response?.status ?? 'unknown'}`,
-        { courseId, resource }
+        { courseId, resource, status: response?.status ?? null }
       );
     }
     try {
@@ -129,7 +130,7 @@ export class CourseLoader {
       throw new CourseLoadError(
         'invalid-course-json',
         `Course resource ${resource} contains invalid JSON`,
-        { cause, courseId, resource }
+        { cause, courseId, resource, status: response?.status ?? null }
       );
     }
   }
@@ -247,7 +248,11 @@ export class CourseLoader {
             const value = await this.fetchJson(url, name, manifest.courseId);
             return [name, value];
           } catch (error) {
-            if (descriptor.optional && error?.code === 'course-resource-unavailable') {
+            if (
+              descriptor.optional &&
+              error?.code === 'course-resource-unavailable' &&
+              error?.status === 404
+            ) {
               return [name, null];
             }
             throw error;
@@ -410,7 +415,7 @@ export class CourseLoader {
         const promise = (async () => {
           const entry = grammarIndexEntry(lesson.id);
           if (!entry || (!entry.path && typeof entry !== 'string')) return null;
-          const descriptor = normalizeResourceDescriptor(entry.path || entry);
+          const descriptor = normalizeResourceDescriptor(entry);
           if (!descriptor?.path) return null;
           try {
             const raw = await this.fetchJson(
@@ -429,7 +434,13 @@ export class CourseLoader {
               topics,
             });
           } catch (cause) {
-            if (descriptor.optional && cause?.code === 'course-resource-unavailable') return null;
+            if (
+              descriptor.optional &&
+              cause?.code === 'course-resource-unavailable' &&
+              cause?.status === 404
+            ) {
+              return null;
+            }
             throw cause;
           }
         })().catch((error) => {
@@ -464,7 +475,13 @@ export class CourseLoader {
               lesson_id: lesson.id,
             });
           } catch (cause) {
-            if (descriptor.optional && cause?.code === 'course-resource-unavailable') return null;
+            if (
+              descriptor.optional &&
+              cause?.code === 'course-resource-unavailable' &&
+              cause?.status === 404
+            ) {
+              return null;
+            }
             throw cause;
           }
         })().catch((error) => {
@@ -495,32 +512,49 @@ export class CourseLoader {
 
           const wrapper = lessonResult.value;
           const rawLesson = wrapper?.lesson || wrapper;
-          const quizTopics =
-            grammarResult.status === 'fulfilled' ? grammarResult.value?.topics || [] : [];
           const rawNotes = ensureArray(rawLesson?.notes || rawLesson?.grammar);
-          const topicsByLocalId = new Map(
-            quizTopics.map((topic) => [String(topic.localId), topic])
-          );
-          const topicsByNoteId = new Map(
-            quizTopics.map((topic) => [String(topic.noteId ?? topic.note_id ?? ''), topic])
-          );
-          const grammar = rawNotes.map((note, index) => {
-            const localId = String(
-              note?.localId || note?.id || `grammar-${note?.noteId || note?.note_id || index + 1}`
+          let grammar;
+
+          if (!resources.grammarIndex) {
+            grammar = rawNotes.map((note, index) =>
+              deepFreeze(transformGrammarTopic(note, summary.id, index))
             );
-            const quizTopic =
-              topicsByLocalId.get(localId) ||
-              topicsByNoteId.get(String(note?.noteId ?? note?.note_id ?? index + 1));
-            if (quizTopic) {
-              return deepFreeze({
-                ...deepClone(note),
-                ...deepClone(quizTopic),
-                id: quizTopic.id,
-                localId,
+          } else if (grammarResult.status === 'fulfilled' && grammarResult.value) {
+            const quizTopics = ensureArray(grammarResult.value.topics);
+            const topicsByLocalId = new Map(
+              quizTopics.map((topic) => [String(topic.localId), topic])
+            );
+            const topicsByNoteId = new Map(
+              quizTopics.map((topic) => [String(topic.noteId ?? topic.note_id ?? ''), topic])
+            );
+            if (rawNotes.length > 0) {
+              grammar = rawNotes.map((note, index) => {
+                const localId = String(
+                  note?.localId ||
+                    note?.id ||
+                    `grammar-${note?.noteId || note?.note_id || index + 1}`
+                );
+                const quizTopic =
+                  topicsByLocalId.get(localId) ||
+                  topicsByNoteId.get(String(note?.noteId ?? note?.note_id ?? index + 1));
+                if (quizTopic) {
+                  return deepFreeze({
+                    ...deepClone(note),
+                    ...deepClone(quizTopic),
+                    id: quizTopic.id,
+                    localId,
+                  });
+                }
+                return deepFreeze(transformGrammarTopic(note, summary.id, index));
               });
+            } else {
+              grammar = quizTopics.map((topic, index) =>
+                deepFreeze(transformGrammarTopic(topic, summary.id, index))
+              );
             }
-            return deepFreeze(transformGrammarTopic(note, summary.id, index));
-          });
+          } else {
+            grammar = [];
+          }
 
           const vocabulary = ensureArray(rawLesson?.vocabulary || rawLesson?.words)
             .filter(
