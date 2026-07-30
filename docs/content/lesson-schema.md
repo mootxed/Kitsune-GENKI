@@ -28,5 +28,7 @@
 
 Метаданные Workbook загружаются отдельно и не содержат ответов.
 
+Resource paths in `manifest.json` and `content-index.json` can be declared as strings (`"./stories/story-01.json"`) or object descriptors (`{ "path": "./stories/story-01.json", "optional": true }`). String declarations are mandatory by default (`optional: false`). Absence of a resource declaration indicates that the lesson/course does not include that resource.
+
 Автоматические инварианты проверяют `npm run validate:courses` и
 `npm run validate:genki`.

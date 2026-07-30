@@ -27,6 +27,10 @@ describe('Service Worker and Vite Build Alignment', () => {
     // Проверяем резолвинг относительных URL через self.location
     expect(swContent).toContain('new URL(url, self.location)');
     expect(swContent).toContain('RESOLVED_STATIC_PATHS.includes(url.pathname)');
+
+    // Проверяем лимит кеша content и защиту метаданных
+    expect(swContent).toContain('content: { maxEntries: 80');
+    expect(swContent).toContain('isProtectedMetadataEntry');
   });
 
   it('dist/sw.js (if built) replaces unbuilt source files with actual hashed production assets', () => {

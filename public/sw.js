@@ -24,7 +24,7 @@ const DEFAULT_CACHE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB default limit per cac
 const RUNTIME_CACHE_LIMITS = {
   images: { maxEntries: 80, maxSizeBytes: 15 * 1024 * 1024 },
   audio: { maxEntries: 60, maxSizeBytes: 15 * 1024 * 1024 },
-  content: { maxEntries: 40, maxSizeBytes: 10 * 1024 * 1024 },
+  content: { maxEntries: 80, maxSizeBytes: 15 * 1024 * 1024 },
   dynamic: { maxEntries: 30, maxSizeBytes: 8 * 1024 * 1024 },
 };
 
@@ -146,6 +146,21 @@ async function safeCachePut(cache, request, response) {
   }
 }
 
+function isProtectedMetadataEntry(key) {
+  try {
+    const urlStr = typeof key === 'string' ? key : key?.url || '';
+    const url = new URL(urlStr, self.location.href);
+    const pathname = url.pathname;
+    if (COURSE_ENTRY_PATHS.includes(pathname)) return true;
+    return (
+      /\/(manifest|content-index|grammar-index|kanji-availability|vocabulary-aliases)\.json$/i.test(pathname) ||
+      /\/data\/courses\/[^/]+\/(manifest|content-index|grammar\/index|exercises\/.*|relations\/.*|migrations\/.*)\.json$/i.test(pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Обрезает кеш до maxEntries записей и maxSizeBytes общего объёма (LRU — удаляет самые старые).
  * Выполняется асинхронно, не блокирует текущий ответ.
@@ -183,8 +198,10 @@ function trimCache(cacheName, maxEntries, maxSizeBytes) {
             }
           }
         }
-        entryStats.push({ key, size });
         totalBytes += size;
+        if (!isProtectedMetadataEntry(key)) {
+          entryStats.push({ key, size });
+        }
       }
 
       const toDelete = [];

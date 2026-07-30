@@ -3,6 +3,8 @@
  * Provides browser API mocks that are not available in jsdom
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { vi } from 'vitest';
 
 // ===== Web Speech API Mock =====
@@ -112,5 +114,45 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
   unobserve: vi.fn(),
   disconnect: vi.fn(),
 }));
+
+// ===== Fetch Mock for Local Assets =====
+const mockFetch = async (input, options) => {
+  const urlStr = String(input);
+  try {
+    const url = new URL(urlStr, 'http://localhost/');
+    if (
+      url.hostname === 'localhost' ||
+      url.hostname === 'example.test' ||
+      !/^https?:\/\//i.test(urlStr)
+    ) {
+      const relPath = url.pathname.replace(/^\/+/u, '');
+      let fullPath = path.join(process.cwd(), 'public', relPath);
+      if (!fs.existsSync(fullPath)) {
+        fullPath = path.join(process.cwd(), relPath);
+      }
+      if (fs.existsSync(fullPath)) {
+        const raw = fs.readFileSync(fullPath, 'utf8');
+        return {
+          ok: true,
+          status: 200,
+          headers: new Map([['content-type', 'application/json']]),
+          json: async () => JSON.parse(raw),
+          text: async () => raw,
+        };
+      }
+    }
+  } catch {
+    /* fallback */
+  }
+  return { ok: false, status: 404, json: async () => null, text: async () => '' };
+};
+
+globalThis.fetch = mockFetch;
+if (typeof window !== 'undefined') {
+  window.fetch = mockFetch;
+}
+if (typeof global !== 'undefined') {
+  global.fetch = mockFetch;
+}
 
 console.log('✅ Global mocks initialized for test environment');

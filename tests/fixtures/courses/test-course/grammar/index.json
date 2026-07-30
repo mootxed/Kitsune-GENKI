@@ -1,7 +1,8 @@
 {
   "schemaVersion": 1,
-  "lessons": [
+  "chapters": [
     {
+      "chapterId": 1,
       "lessonId": "test-course:lesson-alpha",
       "path": "./grammar/alpha.json",
       "topicCount": 1,

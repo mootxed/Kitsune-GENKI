@@ -87,6 +87,72 @@ describe('CourseLoader', () => {
     });
   });
 
+  it('rejects loadLesson when a required grammar file is missing or corrupt', async () => {
+    const fetchImpl = fileFetch(path.join(root, 'tests/fixtures/courses/test-course'), {
+      onRequest(url) {
+        if (url.pathname.endsWith('/grammar/alpha.json')) {
+          throw new Error('simulated missing grammar');
+        }
+      },
+    });
+    const course = await new CourseLoader({
+      manifestUrl: 'manifest.json',
+      baseUrl: 'https://example.test/',
+      fetchImpl,
+    }).load();
+    await expect(course.loadLesson('test-course:lesson-alpha')).rejects.toMatchObject({
+      name: 'CourseLoadError',
+      code: 'course-resource-unavailable',
+      resource: 'grammar:test-course:lesson-alpha',
+    });
+  });
+
+  it('rejects loadLesson when a required story file is missing or corrupt', async () => {
+    const fetchImpl = fileFetch(path.join(root, 'tests/fixtures/courses/test-course'), {
+      onRequest(url) {
+        if (url.pathname.endsWith('/stories/alpha.json')) {
+          throw new Error('simulated missing story');
+        }
+      },
+    });
+    const course = await new CourseLoader({
+      manifestUrl: 'manifest.json',
+      baseUrl: 'https://example.test/',
+      fetchImpl,
+    }).load();
+    await expect(course.loadLesson('test-course:lesson-alpha')).rejects.toMatchObject({
+      name: 'CourseLoadError',
+      code: 'course-resource-unavailable',
+      resource: 'story:test-course:lesson-alpha',
+    });
+  });
+
+  it('allows optional story resource to fall back to null when missing', async () => {
+    const baseFetch = fileFetch(path.join(root, 'tests/fixtures/courses/test-course'));
+    const fetchImpl = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/content-index.json')) {
+        const res = await baseFetch(input);
+        const data = await res.json();
+        const entries = data.lessons || data.chapters;
+        entries[0].story = { path: './stories/alpha.json', optional: true };
+        return { ok: true, status: 200, json: async () => data };
+      }
+      if (url.pathname.endsWith('/stories/alpha.json')) {
+        return { ok: false, status: 404, json: async () => null };
+      }
+      return baseFetch(input);
+    };
+
+    const course = await new CourseLoader({
+      manifestUrl: 'manifest.json',
+      baseUrl: 'https://example.test/',
+      fetchImpl,
+    }).load();
+    const loaded = await course.loadLesson('test-course:lesson-alpha');
+    expect(loaded.story).toBeNull();
+  });
+
   it('surfaces malformed JSON and manifest validation errors as CourseLoadError', async () => {
     const fetchImpl = async () => ({
       ok: true,

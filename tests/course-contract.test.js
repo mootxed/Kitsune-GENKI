@@ -22,6 +22,38 @@ describe('CourseManifest contract', () => {
     expect(validateCourseManifest(validManifest)).toMatchObject({ valid: true, errors: [] });
   });
 
+  it('accepts object resource descriptors in dataPaths', () => {
+    const manifestWithObjectPaths = {
+      ...validManifest,
+      dataPaths: {
+        contentIndex: { path: './content-index.json', optional: false },
+        grammarIndex: { path: './grammar/index.json', optional: true },
+      },
+    };
+    expect(validateCourseManifest(manifestWithObjectPaths)).toMatchObject({
+      valid: true,
+      errors: [],
+    });
+  });
+
+  it('validates ResourcePath safety strictly', () => {
+    const invalidManifests = [
+      '../outside.json',
+      'C:\\path\\file.json',
+      '/absolute/path.json',
+      'https://example.com/file.json',
+      'data:text/plain,hello',
+    ].map((badPath) => ({
+      ...validManifest,
+      dataPaths: { contentIndex: badPath },
+    }));
+
+    for (const badManifest of invalidManifests) {
+      const result = validateCourseManifest(badManifest);
+      expect(result.valid).toBe(false);
+    }
+  });
+
   it('reports clear errors for a damaged manifest', () => {
     const result = validateCourseManifest({ ...validManifest, lessonOrder: [] });
     expect(result.valid).toBe(false);

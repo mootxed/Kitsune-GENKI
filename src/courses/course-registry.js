@@ -42,12 +42,15 @@ export function loadCourse(courseId = DEFAULT_COURSE_ID, options = {}) {
   const descriptor = getCourseDescriptor(id);
   if (!descriptor) throw new Error(`[CourseRegistry] Unknown course ${id}`);
 
+  const fetchImpl = options.fetchImpl || descriptor.fetchImpl;
+  const baseUrl = options.baseUrl || descriptor.baseUrl;
+
   if (options.fetchImpl || options.baseUrl || options.reload === true) {
     return new CourseLoader({
       manifestUrl: descriptor.manifestUrl,
       adapter: descriptor.adapter,
-      fetchImpl: options.fetchImpl,
-      baseUrl: options.baseUrl,
+      fetchImpl,
+      baseUrl,
     }).load();
   }
 
@@ -55,6 +58,8 @@ export function loadCourse(courseId = DEFAULT_COURSE_ID, options = {}) {
     const promise = new CourseLoader({
       manifestUrl: descriptor.manifestUrl,
       adapter: descriptor.adapter,
+      fetchImpl,
+      baseUrl,
     })
       .load()
       .catch((error) => {

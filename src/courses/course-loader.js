@@ -4,6 +4,8 @@ import {
   deepClone,
   deepFreeze,
   dictionaryEntryId,
+  isSafeResourcePath,
+  normalizeResourceDescriptor,
 } from './course-contract.js';
 
 export class CourseLoadError extends Error {
@@ -55,7 +57,7 @@ export class CourseLoader {
       throw new Error('[CourseLoader] fetch implementation is required');
     }
 
-    this.fetchImpl = options.fetchImpl || globalThis.fetch.bind(globalThis);
+    this.fetchImpl = options.fetchImpl || ((...args) => (globalThis.fetch || fetch)(...args));
     this.manifestUrl = new URL(options.manifestUrl, appBaseUrl(options.baseUrl));
     this.packageUrl = new URL('./', this.manifestUrl);
     this.adapter = options.adapter || null;
@@ -65,7 +67,17 @@ export class CourseLoader {
   }
 
   resolveResourceUrl(resourcePath) {
-    return new URL(String(resourcePath), this.packageUrl).href;
+    const rawPath =
+      typeof resourcePath === 'object' && resourcePath?.path
+        ? resourcePath.path
+        : String(resourcePath || '');
+    if (!isSafeResourcePath(rawPath)) {
+      throw new CourseLoadError(
+        'unsafe-course-path',
+        `Unsafe or invalid course resource path: ${rawPath}`
+      );
+    }
+    return new URL(rawPath, this.packageUrl).href;
   }
 
   async fetchJson(url, resource, courseId = null) {
@@ -355,28 +367,29 @@ export class CourseLoader {
       if (!this.grammarPromises.has(lesson.id)) {
         const promise = (async () => {
           const entry = grammarIndexEntry(lesson.id);
-          if (!entry?.path) {
-            throw new CourseLoadError(
-              'course-resource-unavailable',
-              `Course ${manifest.courseId} has no grammar resource for ${lesson.id}`,
-              { courseId: manifest.courseId, resource: 'grammar' }
+          if (!entry || (!entry.path && typeof entry !== 'string')) return null;
+          const descriptor = normalizeResourceDescriptor(entry.path || entry);
+          if (!descriptor?.path) return null;
+          try {
+            const raw = await this.fetchJson(
+              this.resolveResourceUrl(descriptor.path),
+              `grammar:${lesson.id}`,
+              manifest.courseId
             );
+            const topics = ensureArray(raw.topics).map((topic, index) =>
+              transformGrammarTopic(topic, lesson.id, index)
+            );
+            return deepFreeze({
+              ...deepClone(raw),
+              courseId: manifest.courseId,
+              chapterId: lesson.id,
+              lessonId: lesson.id,
+              topics,
+            });
+          } catch (cause) {
+            if (descriptor.optional) return null;
+            throw cause;
           }
-          const raw = await this.fetchJson(
-            this.resolveResourceUrl(entry.path),
-            `grammar:${lesson.id}`,
-            manifest.courseId
-          );
-          const topics = ensureArray(raw.topics).map((topic, index) =>
-            transformGrammarTopic(topic, lesson.id, index)
-          );
-          return deepFreeze({
-            ...deepClone(raw),
-            courseId: manifest.courseId,
-            chapterId: lesson.id,
-            lessonId: lesson.id,
-            topics,
-          });
         })().catch((error) => {
           this.grammarPromises.delete(lesson.id);
           throw error;
@@ -389,13 +402,16 @@ export class CourseLoader {
     const loadStory = async (value) => {
       const lesson = lessonRecord(value);
       if (!lesson.story) return null;
+      const descriptor = normalizeResourceDescriptor(lesson.story);
+      if (!descriptor?.path) return null;
       if (!this.storyPromises.has(lesson.id)) {
-        const promise = this.fetchJson(
-          this.resolveResourceUrl(lesson.story),
-          `story:${lesson.id}`,
-          manifest.courseId
-        )
-          .then((raw) => {
+        const promise = (async () => {
+          try {
+            const raw = await this.fetchJson(
+              this.resolveResourceUrl(descriptor.path),
+              `story:${lesson.id}`,
+              manifest.courseId
+            );
             const localId = String(raw?.localId || raw?.id || lesson.localId);
             return deepFreeze({
               ...deepClone(raw),
@@ -405,11 +421,14 @@ export class CourseLoader {
               lessonId: lesson.id,
               lesson_id: lesson.id,
             });
-          })
-          .catch((error) => {
-            this.storyPromises.delete(lesson.id);
-            throw error;
-          });
+          } catch (cause) {
+            if (descriptor.optional) return null;
+            throw cause;
+          }
+        })().catch((error) => {
+          this.storyPromises.delete(lesson.id);
+          throw error;
+        });
         this.storyPromises.set(lesson.id, promise);
       }
       return this.storyPromises.get(lesson.id);
@@ -429,6 +448,8 @@ export class CourseLoader {
             loadStory(summary.id),
           ]);
           if (lessonResult.status === 'rejected') throw lessonResult.reason;
+          if (grammarResult.status === 'rejected') throw grammarResult.reason;
+          if (storyResult.status === 'rejected') throw storyResult.reason;
 
           const wrapper = lessonResult.value;
           const rawLesson = wrapper?.lesson || wrapper;
@@ -545,12 +566,14 @@ export class CourseLoader {
       manifest: deepFreeze(deepClone(manifest)),
       contentIndex: deepFreeze(deepClone(contentIndex)),
       lessons: deepFreeze(deepClone(lessons)),
-      resources: deepFreeze({
-        grammarIndex: deepClone(resources.grammarIndex || null),
-        exercises: deepClone(resources.exercises || null),
-        orthography: deepClone(resources.orthography || null),
-        vocabularyAliases: deepClone(resources.vocabularyAliases || null),
-      }),
+      resources: deepFreeze(
+        Object.fromEntries(
+          Object.keys(manifest.dataPaths || {}).map((name) => [
+            name,
+            deepClone(resources[name] || null),
+          ])
+        )
+      ),
       canonicalLessonId,
       lessonOrdinal,
       getLessonSummary(value) {

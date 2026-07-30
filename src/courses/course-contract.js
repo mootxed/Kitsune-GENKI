@@ -7,11 +7,47 @@ const CourseId = z
   .string()
   .trim()
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u, 'courseId must be a lowercase slug');
-const ResourcePath = z
+export function isSafeResourcePath(value) {
+  if (typeof value !== 'string') return false;
+  const str = value.trim();
+  if (!str) return false;
+  if (str.startsWith('/') || str.includes('\\')) return false;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(str)) return false;
+  const segments = str.split('/');
+  for (const seg of segments) {
+    if (seg === '..') return false;
+  }
+  return true;
+}
+
+export const ResourcePath = z
   .string()
   .trim()
   .min(1)
-  .refine((value) => !value.startsWith('/'), 'course resource paths must be package-relative');
+  .refine(isSafeResourcePath, 'course resource paths must be safe package-relative paths');
+
+export const ResourceDescriptorObjectSchema = z
+  .object({
+    path: ResourcePath,
+    optional: z.boolean().default(false),
+  })
+  .passthrough();
+
+export const ResourceDescriptorSchema = z.union([ResourcePath, ResourceDescriptorObjectSchema]);
+
+export function normalizeResourceDescriptor(value) {
+  if (typeof value === 'string') {
+    return { path: value, optional: false };
+  }
+  if (value && typeof value === 'object' && typeof value.path === 'string') {
+    return {
+      ...value,
+      path: value.path,
+      optional: Boolean(value.optional),
+    };
+  }
+  return null;
+}
 
 export const CourseFeatureSchema = z
   .object({
@@ -34,14 +70,14 @@ export const CourseManifestSchema = z
     lessonOrder: z.array(StableId).min(1),
     dataPaths: z
       .object({
-        contentIndex: ResourcePath,
-        grammarIndex: ResourcePath.optional(),
-        exercises: ResourcePath.optional(),
-        examples: ResourcePath.optional(),
-        stories: ResourcePath.optional(),
-        relations: ResourcePath.optional(),
-        orthography: ResourcePath.optional(),
-        vocabularyAliases: ResourcePath.optional(),
+        contentIndex: ResourceDescriptorSchema,
+        grammarIndex: ResourceDescriptorSchema.optional(),
+        exercises: ResourceDescriptorSchema.optional(),
+        examples: ResourceDescriptorSchema.optional(),
+        stories: ResourceDescriptorSchema.optional(),
+        relations: ResourceDescriptorSchema.optional(),
+        orthography: ResourceDescriptorSchema.optional(),
+        vocabularyAliases: ResourceDescriptorSchema.optional(),
       })
       .strict(),
     features: z.array(CourseFeatureSchema).default([]),

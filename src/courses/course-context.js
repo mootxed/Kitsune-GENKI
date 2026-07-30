@@ -1,28 +1,47 @@
 import { DEFAULT_COURSE_ID, loadCourse } from './course-registry.js';
 
 let activeCourse = null;
-let activeCoursePromise = null;
+const activeCoursePromises = new Map();
+let latestRequestedCourseId = null;
 
 export function setActiveCourse(course) {
   if (!course?.id || typeof course.canonicalLessonId !== 'function') {
     throw new Error('[CourseContext] A loaded Course runtime is required');
   }
   activeCourse = course;
-  activeCoursePromise = Promise.resolve(course);
+  activeCoursePromises.set(course.id, Promise.resolve(course));
+  latestRequestedCourseId = course.id;
   return course;
 }
 
-export async function ensureActiveCourse(courseId = DEFAULT_COURSE_ID, options = {}) {
-  if (activeCourse?.id === courseId && options.reload !== true) return activeCourse;
-  if (!activeCoursePromise || options.reload === true) {
-    activeCoursePromise = loadCourse(courseId, options)
-      .then(setActiveCourse)
+export async function ensureActiveCourse(targetCourseId = null, options = {}) {
+  const courseId = String(targetCourseId || activeCourse?.id || DEFAULT_COURSE_ID);
+  latestRequestedCourseId = courseId;
+
+  if (activeCourse?.id === courseId && options.reload !== true) {
+    return activeCourse;
+  }
+
+  if (!activeCoursePromises.has(courseId) || options.reload === true) {
+    const promise = loadCourse(courseId, options)
+      .then((course) => {
+        if (latestRequestedCourseId === course.id) {
+          activeCourse = course;
+        }
+        return course;
+      })
       .catch((error) => {
-        activeCoursePromise = null;
+        activeCoursePromises.delete(courseId);
         throw error;
       });
+    activeCoursePromises.set(courseId, promise);
   }
-  return activeCoursePromise;
+
+  const loaded = await activeCoursePromises.get(courseId);
+  if (latestRequestedCourseId === loaded.id) {
+    activeCourse = loaded;
+  }
+  return loaded;
 }
 
 export function getActiveCourse() {
@@ -31,7 +50,8 @@ export function getActiveCourse() {
 
 export function clearActiveCourse() {
   activeCourse = null;
-  activeCoursePromise = null;
+  activeCoursePromises.clear();
+  latestRequestedCourseId = null;
 }
 
 export function canonicalLessonId(value, course = activeCourse) {
