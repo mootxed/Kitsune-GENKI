@@ -221,7 +221,9 @@ describe('Course Switching Integration & Facades', () => {
     expect(Object.keys(CH_NAMES).every((id) => id.startsWith('test-course:'))).toBe(true);
     expect([...loadedChapters.keys()].some((id) => id.startsWith('genki-1:'))).toBe(false);
 
-    const vocabularyList = ExamplesDB.getLessonVocabulary?.('genki-1:lesson-1') || [];
+    const vocabularyList = [...ExamplesDB.vocabulary.values()].filter(
+      (word) => word.courseId === DEFAULT_COURSE_ID || String(word.id).startsWith('genki-1:')
+    );
     expect(vocabularyList).toHaveLength(0);
 
     expect(state.courses['test-course']?.lessonIds?.[0]).toMatch(/^test-course:/);

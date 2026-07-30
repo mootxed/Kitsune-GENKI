@@ -133,6 +133,8 @@ export async function loadLessons(options = {}) {
   const keyWorkbookSchemaVersion = `course:${courseId}:workbook-schema-version`;
 
   // --- Phase 1: Prepare local data (reads only, no global side-effects) ---
+  const pendingCacheWrites = [];
+
   let fileVersion = 0;
   let indexData = null;
   try {
@@ -160,17 +162,34 @@ export async function loadLessons(options = {}) {
   let cachedVersion = await db.get(STORES.CONTENT_CACHE, keyLessonVersion);
   if (!cachedVersion && courseId === DEFAULT_COURSE_ID) {
     cachedVersion = await db.get(STORES.CONTENT_CACHE, 'lesson_version');
+    if (cachedVersion != null) {
+      pendingCacheWrites.push([STORES.CONTENT_CACHE, keyLessonVersion, String(cachedVersion)]);
+    }
   }
 
   let cachedSchemaVersion = await db.get(STORES.CONTENT_CACHE, keySchemaVersion);
   if (cachedSchemaVersion == null && courseId === DEFAULT_COURSE_ID) {
     cachedSchemaVersion = await db.get(STORES.CONTENT_CACHE, 'schema_version');
+    if (cachedSchemaVersion != null) {
+      pendingCacheWrites.push([
+        STORES.CONTENT_CACHE,
+        keySchemaVersion,
+        Number(cachedSchemaVersion),
+      ]);
+    }
   }
   cachedSchemaVersion = cachedSchemaVersion || 0;
 
   let cachedWorkbookSchemaVersion = await db.get(STORES.CONTENT_CACHE, keyWorkbookSchemaVersion);
   if (cachedWorkbookSchemaVersion == null && courseId === DEFAULT_COURSE_ID) {
     cachedWorkbookSchemaVersion = await db.get(STORES.CONTENT_CACHE, 'workbook_schema_version');
+    if (cachedWorkbookSchemaVersion != null) {
+      pendingCacheWrites.push([
+        STORES.CONTENT_CACHE,
+        keyWorkbookSchemaVersion,
+        Number(cachedWorkbookSchemaVersion),
+      ]);
+    }
   }
   cachedWorkbookSchemaVersion = cachedWorkbookSchemaVersion || 0;
 
@@ -213,6 +232,9 @@ export async function loadLessons(options = {}) {
     let cachedIndex = await db.get(STORES.CONTENT_CACHE, keyIndex);
     if (!cachedIndex && courseId === DEFAULT_COURSE_ID) {
       cachedIndex = await db.get(STORES.CONTENT_CACHE, 'content_index');
+      if (cachedIndex) {
+        pendingCacheWrites.push([STORES.CONTENT_CACHE, keyIndex, cachedIndex]);
+      }
     }
     nextContentIndex = cachedIndex?.chapters || [];
   }
@@ -222,7 +244,6 @@ export async function loadLessons(options = {}) {
   );
 
   let nextLessons;
-  const pendingCacheWrites = [];
 
   if (
     cachedLessons.length > 0 &&

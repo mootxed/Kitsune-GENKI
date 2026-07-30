@@ -91,11 +91,35 @@ describe('IndexedDB Course Cache Namespacing & Migration', () => {
     ];
     await db.set(STORES.CONTENT_CACHE, 'lessons', legacyLessons);
     await db.set(STORES.CONTENT_CACHE, 'lesson_version', '4');
+    await db.set(STORES.CONTENT_CACHE, 'schema_version', 5);
+    await db.set(STORES.CONTENT_CACHE, 'workbook_schema_version', 1);
 
     await switchCourseRuntime(DEFAULT_COURSE_ID, { fetchImpl: customFetch });
 
     const namespacedLessons = await db.get(STORES.CONTENT_CACHE, 'course:genki-1:lessons');
+    const namespacedVersion = await db.get(STORES.CONTENT_CACHE, 'course:genki-1:lesson-version');
+    const namespacedSchema = await db.get(STORES.CONTENT_CACHE, 'course:genki-1:schema-version');
+    const namespacedWorkbook = await db.get(
+      STORES.CONTENT_CACHE,
+      'course:genki-1:workbook-schema-version'
+    );
+
     expect(namespacedLessons).toBeDefined();
     expect(namespacedLessons[0].id).toBe('genki-1:lesson-1');
+    expect(namespacedVersion).toBeDefined();
+    expect(namespacedSchema).toBe(5);
+    expect(namespacedWorkbook).toBe(1);
+
+    // Delete legacy keys and verify loadLessons reads purely from namespaced keys
+    await db.set(STORES.CONTENT_CACHE, 'lessons', null);
+    await db.set(STORES.CONTENT_CACHE, 'lesson_version', null);
+    await db.set(STORES.CONTENT_CACHE, 'schema_version', null);
+    await db.set(STORES.CONTENT_CACHE, 'workbook_schema_version', null);
+
+    await loadLessons();
+
+    const reloadLessons = await db.get(STORES.CONTENT_CACHE, 'course:genki-1:lessons');
+    expect(reloadLessons).toBeDefined();
+    expect(reloadLessons[0].id).toBe('genki-1:lesson-1');
   });
 });

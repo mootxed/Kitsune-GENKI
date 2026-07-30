@@ -439,7 +439,7 @@ export class CourseLoader {
               cause?.code === 'course-resource-unavailable' &&
               cause?.status === 404
             ) {
-              return null;
+              return { optionalMissing: true, topics: [] };
             }
             throw cause;
           }
@@ -513,14 +513,17 @@ export class CourseLoader {
           const wrapper = lessonResult.value;
           const rawLesson = wrapper?.lesson || wrapper;
           const rawNotes = ensureArray(rawLesson?.notes || rawLesson?.grammar);
+          const grammarData = grammarResult.status === 'fulfilled' ? grammarResult.value : null;
           let grammar;
 
-          if (!resources.grammarIndex) {
+          if (!grammarData) {
             grammar = rawNotes.map((note, index) =>
               deepFreeze(transformGrammarTopic(note, summary.id, index))
             );
-          } else if (grammarResult.status === 'fulfilled' && grammarResult.value) {
-            const quizTopics = ensureArray(grammarResult.value.topics);
+          } else if (grammarData.optionalMissing) {
+            grammar = [];
+          } else {
+            const quizTopics = ensureArray(grammarData.topics);
             const topicsByLocalId = new Map(
               quizTopics.map((topic) => [String(topic.localId), topic])
             );
@@ -552,8 +555,6 @@ export class CourseLoader {
                 deepFreeze(transformGrammarTopic(topic, summary.id, index))
               );
             }
-          } else {
-            grammar = [];
           }
 
           const vocabulary = ensureArray(rawLesson?.vocabulary || rawLesson?.words)
