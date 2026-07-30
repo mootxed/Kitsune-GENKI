@@ -5,8 +5,8 @@ import { runMigrations } from '../state/store.js';
 import { validateImportData } from '../src/backup-manager.js';
 import { STORES, STORE_SCHEMAS } from '../src/db.js';
 
-describe('Migration Test Matrix: State v1 → v13', () => {
-  it('migrates a minimal v1 state up to v13 without loss of progress fields', () => {
+describe('Migration Test Matrix: State v1 → v14', () => {
+  it('migrates a minimal v1 state up to v14 without loss of progress fields', () => {
     const v1State = {
       version: 1,
       xp: 1500,
@@ -50,7 +50,7 @@ describe('Migration Test Matrix: State v1 → v13', () => {
 
     const migrated = runMigrations(v1State);
 
-    expect(migrated.version).toBe(13);
+    expect(migrated.version).toBe(14);
     // Verify XP preserved
     expect(migrated.xp).toBe(1500);
     expect(migrated.level).toBe(4);
@@ -77,7 +77,7 @@ describe('Migration Test Matrix: State v1 → v13', () => {
       state = runMigrations(state);
       expect(state.version).toBeGreaterThanOrEqual(targetVer);
     }
-    expect(state.version).toBe(13);
+    expect(state.version).toBe(14);
     expect(state.xp).toBe(500);
   });
 });

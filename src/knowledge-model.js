@@ -3,6 +3,7 @@
 import { typingCapability } from './typing-capability.js';
 import { productionContext } from './production-context.js';
 import { localDateKey } from './local-date.js';
+import { isKanjiFormAvailable } from './genki-kanji.js';
 
 export const KNOWLEDGE_TYPES = Object.freeze({
   VOCABULARY: 'vocabulary',
@@ -49,13 +50,15 @@ export function parseCardIdentity(cardOrId) {
   return { cardId, itemId, skill, knowledgeType: KNOWLEDGE_TYPES.VOCABULARY };
 }
 
-export function vocabularySkills(word) {
-  const text = word?.kanji || word?.writing || '';
+export function vocabularySkills(word, options = {}) {
+  const text = word?.writtenForm || word?.kanji || word?.reading || word?.writing || '';
   const hasKanji = /[\u3400-\u4dbf\u4e00-\u9fff]/u.test(text);
+  const kanjiAvailable =
+    options.unlockedKanjiLesson == null || isKanjiFormAvailable(word, options.unlockedKanjiLesson);
   const { canType } = typingCapability(word);
   const skills = [SKILLS.RECOGNITION];
   if (canType) skills.push(SKILLS.RECALL);
-  if (hasKanji) skills.push(SKILLS.READING_WRITING);
+  if (hasKanji && kanjiAvailable) skills.push(SKILLS.READING_WRITING);
   if (canType && productionContext(word)) skills.push(SKILLS.CONTEXT_PRODUCTION);
   return skills;
 }
@@ -82,9 +85,10 @@ export function vocabularySkillsReadyForIntroduction(
   word,
   events = [],
   archive = null,
-  now = Date.now()
+  now = Date.now(),
+  options = {}
 ) {
-  const applicable = vocabularySkills(word);
+  const applicable = vocabularySkills(word, options);
   const day = localDateKey(now);
   const recognitionReady = hasEarlierCleanSuccess(
     events,

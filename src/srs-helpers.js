@@ -2,15 +2,16 @@
 import { SRS } from '../srs.js';
 import { parseCardIdentity } from './knowledge-model.js';
 import { isPriorKnowledge, shouldChapterHaveVocabularyCards } from './chapter-progress.js';
+import { canonicalGenkiVocabularyId } from './genki-vocabulary-migration.js';
 
 export function cardChapter(cardId) {
-  const { itemId } = parseCardIdentity(cardId);
+  const itemId = canonicalGenkiVocabularyId(parseCardIdentity(cardId).itemId);
   const m = /^L(\d+)_/.exec(itemId);
   return m ? parseInt(m[1], 10) : null;
 }
 
 export function wordById(wordId, lessons) {
-  const itemId = parseCardIdentity(wordId).itemId;
+  const itemId = canonicalGenkiVocabularyId(parseCardIdentity(wordId).itemId);
   if (!lessons || lessons.length === 0) {
     console.warn(`[wordById] lessons array is empty or null for wordId: ${wordId}`);
     return null;

@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 2,
   "version": 1,
   "lesson": {
     "lesson_id": 5,
@@ -14,460 +15,657 @@
     "vocabulary": [
       {
         "id": "L5_V001",
+        "lesson": 5,
+        "writtenForm": "食べ物",
+        "reading": "たべもの",
+        "meaning": "еда",
         "category": "nouns",
-        "kanji": "食べ物",
-        "writing": "たべもの",
         "romaji": "tabemono",
-        "translation": "еда"
+        "partOfSpeech": "noun",
+        "lexemeId": "たべもの_食べ物_noun_еда"
       },
       {
         "id": "L5_V002",
+        "lesson": 5,
+        "writtenForm": "飲み物",
+        "reading": "のみもの",
+        "meaning": "напиток",
         "category": "nouns",
-        "kanji": "飲み物",
-        "writing": "のみもの",
         "romaji": "nomimono",
-        "translation": "напитки"
+        "partOfSpeech": "noun",
+        "lexemeId": "のみもの_飲み物_noun_напитки"
       },
       {
         "id": "L5_V003",
+        "lesson": 5,
+        "writtenForm": "果物",
+        "reading": "くだもの",
+        "meaning": "фрукты",
         "category": "nouns",
-        "kanji": "果物",
-        "writing": "くだもの",
         "romaji": "kudamono",
-        "translation": "фрукты"
+        "partOfSpeech": "noun",
+        "lexemeId": "くだもの_果物_noun_фрукты"
       },
       {
         "id": "L5_V004",
+        "lesson": 5,
+        "writtenForm": "休み",
+        "reading": "やすみ",
+        "meaning": "выходной; каникулы; отсутствие",
         "category": "nouns",
-        "kanji": "やすみ",
-        "writing": "やすみ",
         "romaji": "yasumi",
-        "translation": "выходной, отдых, отсутствие"
+        "partOfSpeech": "noun",
+        "lexemeId": "やすみ_やすみ_noun_выходной"
       },
       {
         "id": "L5_V005",
+        "lesson": 5,
+        "writtenForm": "旅行",
+        "reading": "りょこう",
+        "meaning": "путешествие",
         "category": "nouns",
-        "kanji": "りょこう",
-        "writing": "りょこう",
         "romaji": "ryokou",
-        "translation": "путешествие"
+        "partOfSpeech": "noun",
+        "lexemeId": "りょこう_りょこう_noun_путешествие"
       },
       {
         "id": "L5_V006",
+        "lesson": 5,
+        "writtenForm": "海",
+        "reading": "うみ",
+        "meaning": "море",
         "category": "nouns",
-        "kanji": "うみ",
-        "writing": "うみ",
         "romaji": "umi",
-        "translation": "море"
+        "partOfSpeech": "noun",
+        "lexemeId": "うみ_うみ_noun_море"
       },
       {
         "id": "L5_V007",
+        "lesson": 5,
+        "writtenForm": "サーフィン",
+        "reading": "サーフィン",
+        "meaning": "сёрфинг",
         "category": "nouns",
-        "kanji": "サーフィン",
-        "writing": "サーフィン",
         "romaji": "saafin",
-        "translation": "серфинг"
+        "partOfSpeech": "noun",
+        "lexemeId": "サーフィン_サーフィン_noun_серфинг"
       },
       {
         "id": "L5_V008",
+        "lesson": 5,
+        "writtenForm": "お土産",
+        "reading": "おみやげ",
+        "meaning": "сувенир",
         "category": "nouns",
-        "kanji": "おみやげ",
-        "writing": "おみやげ",
         "romaji": "omiyage",
-        "translation": "сувенир, гостинец"
+        "partOfSpeech": "noun",
+        "lexemeId": "おみやげ_おみやげ_noun_гостинец"
       },
       {
         "id": "L5_V009",
+        "lesson": 5,
+        "writtenForm": "バス",
+        "reading": "バス",
+        "meaning": "автобус",
         "category": "nouns",
-        "kanji": "バス",
-        "writing": "バス",
         "romaji": "basu",
-        "translation": "автобус"
+        "partOfSpeech": "noun",
+        "lexemeId": "バス_バス_noun_автобус"
       },
       {
         "id": "L5_V010",
+        "lesson": 5,
+        "writtenForm": "天気",
+        "reading": "てんき",
+        "meaning": "погода",
         "category": "nouns",
-        "kanji": "天気",
-        "writing": "てんき",
         "romaji": "tenki",
-        "translation": "погода"
+        "partOfSpeech": "noun",
+        "lexemeId": "てんき_天気_noun_погода"
       },
       {
         "id": "L5_V011",
+        "lesson": 5,
+        "writtenForm": "宿題",
+        "reading": "しゅくだい",
+        "meaning": "домашнее задание",
         "category": "nouns",
-        "kanji": "しゅくだい",
-        "writing": "しゅくだい",
         "romaji": "shukudai",
-        "translation": "домашнее задание"
+        "partOfSpeech": "noun",
+        "lexemeId": "しゅくだい_しゅくだい_noun_домашнеезадание"
       },
       {
         "id": "L5_V012",
+        "lesson": 5,
+        "writtenForm": "テスト",
+        "reading": "テスト",
+        "meaning": "тест; контрольная работа",
         "category": "nouns",
-        "kanji": "テスト",
-        "writing": "テスト",
         "romaji": "tesuto",
-        "translation": "тест, контрольная работа"
+        "partOfSpeech": "noun",
+        "lexemeId": "テスト_テスト_noun_контрольнаяработа"
       },
       {
         "id": "L5_V013",
+        "lesson": 5,
+        "writtenForm": "誕生日",
+        "reading": "たんじょうび",
+        "meaning": "день рождения",
         "category": "nouns",
-        "kanji": "誕生日",
-        "writing": "たんじょうび",
         "romaji": "tanjoubi",
-        "translation": "день рождения"
+        "partOfSpeech": "noun",
+        "lexemeId": "たんじょうび_誕生日_noun_деньрождения"
       },
       {
         "id": "L5_V014",
+        "lesson": 5,
+        "writtenForm": "部屋",
+        "reading": "へや",
+        "meaning": "комната",
         "category": "nouns",
-        "kanji": "へや",
-        "writing": "へや",
         "romaji": "heya",
-        "translation": "комната"
+        "partOfSpeech": "noun",
+        "lexemeId": "へや_へや_noun_комната"
       },
       {
         "id": "L5_V015",
+        "lesson": 5,
+        "writtenForm": "僕",
+        "reading": "ぼく",
+        "meaning": "я (обычно в мужской речи)",
         "category": "nouns",
-        "kanji": "ぼく",
-        "writing": "ぼく",
         "romaji": "boku",
-        "translation": "я (преимущественно мужское)"
+        "partOfSpeech": "noun",
+        "lexemeId": "ぼく_ぼく_noun_я"
       },
       {
         "id": "L5_V016",
+        "lesson": 5,
+        "writtenForm": "Lサイズ",
+        "reading": "エルサイズ",
+        "meaning": "размер L",
         "category": "nouns",
-        "kanji": "Lサイズ",
-        "writing": "Lサイズ",
         "romaji": "eru saizu",
-        "translation": "размер L"
+        "partOfSpeech": "noun",
+        "lexemeId": "Lサイズ_Lサイズ_noun_размерl"
       },
       {
         "id": "L5_V017",
+        "lesson": 5,
+        "writtenForm": "新しい",
+        "reading": "あたらしい",
+        "meaning": "новый",
         "category": "i-adjectives",
-        "kanji": "新しい",
-        "writing": "あたらしい",
         "romaji": "atarashii",
-        "translation": "новый"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "あたらしい_新しい_adjective_новый"
       },
       {
         "id": "L5_V018",
+        "lesson": 5,
+        "writtenForm": "古い",
+        "reading": "ふるい",
+        "meaning": "старый (о предметах)",
         "category": "i-adjectives",
-        "kanji": "古い",
-        "writing": "ふるい",
         "romaji": "furui",
-        "translation": "старый (только о неодушевленных предметах)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "ふるい_古い_adjective_старый"
       },
       {
         "id": "L5_V019",
+        "lesson": 5,
+        "writtenForm": "暑い",
+        "reading": "あつい",
+        "meaning": "жаркий (о погоде)",
         "category": "i-adjectives",
-        "kanji": "暑い",
-        "writing": "あつい",
         "romaji": "atsui (weather)",
-        "translation": "жаркий (о погоде)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "あつい_暑い_adjective_жаркий"
       },
       {
         "id": "L5_V020",
+        "lesson": 5,
+        "writtenForm": "寒い",
+        "reading": "さむい",
+        "meaning": "холодный (о погоде)",
         "category": "i-adjectives",
-        "kanji": "寒い",
-        "writing": "さむい",
         "romaji": "samui",
-        "translation": "холодный (о погоде)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "さむい_寒い_adjective_холодный"
       },
       {
         "id": "L5_V021",
+        "lesson": 5,
+        "writtenForm": "熱い",
+        "reading": "あつい",
+        "meaning": "горячий (о предмете)",
         "category": "i-adjectives",
-        "kanji": "暑い",
-        "writing": "あつい",
         "romaji": "atsui (thing)",
-        "translation": "горячий (о предметах на ощупь)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "あつい_暑い_adjective_горячий"
       },
       {
         "id": "L5_V022",
+        "lesson": 5,
+        "writtenForm": "忙しい",
+        "reading": "いそがしい",
+        "meaning": "занятый",
         "category": "i-adjectives",
-        "kanji": "忙しい",
-        "writing": "いそがしい",
         "romaji": "isogashii",
-        "translation": "занятой (о человеке или дне)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "いそがしい_忙しい_adjective_занятой"
       },
       {
         "id": "L5_V023",
+        "lesson": 5,
+        "writtenForm": "大きい",
+        "reading": "おおきい",
+        "meaning": "большой",
         "category": "i-adjectives",
-        "kanji": "大きい",
-        "writing": "おおきい",
         "romaji": "ookii",
-        "translation": "большой"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "おおきい_大きい_adjective_большой"
       },
       {
         "id": "L5_V024",
+        "lesson": 5,
+        "writtenForm": "小さい",
+        "reading": "ちいさい",
+        "meaning": "маленький",
         "category": "i-adjectives",
-        "kanji": "小さい",
-        "writing": "ちいさい",
         "romaji": "chiisai",
-        "translation": "маленький"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "ちいさい_小さい_adjective_маленький"
       },
       {
         "id": "L5_V025",
+        "lesson": 5,
+        "writtenForm": "面白い",
+        "reading": "おもしろい",
+        "meaning": "интересный; смешной",
         "category": "i-adjectives",
-        "kanji": "面白い",
-        "writing": "おもしろい",
         "romaji": "omoshiroi",
-        "translation": "интересный, забавный"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "おもしろい_面白い_adjective_забавный"
       },
       {
         "id": "L5_V026",
+        "lesson": 5,
+        "writtenForm": "つまらない",
+        "reading": "つまらない",
+        "meaning": "скучный; неинтересный",
         "category": "i-adjectives",
-        "kanji": "つまらない",
-        "writing": "つまらない",
         "romaji": "tsumaranai",
-        "translation": "скучный"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "つまらない_つまらない_adjective_скучный"
       },
       {
         "id": "L5_V027",
+        "lesson": 5,
+        "writtenForm": "やさしい",
+        "reading": "やさしい",
+        "meaning": "лёгкий (о задаче); добрый (о человеке)",
         "category": "i-adjectives",
-        "kanji": "易しい",
-        "writing": "やさしい",
         "romaji": "yasashii",
-        "translation": "простой (о задаче), добрый (о человеке)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "やさしい_易しい_adjective_добрый"
       },
       {
         "id": "L5_V028",
+        "lesson": 5,
+        "writtenForm": "難しい",
+        "reading": "むずかしい",
+        "meaning": "трудный; сложный",
         "category": "i-adjectives",
-        "kanji": "難しい",
-        "writing": "むずかしい",
         "romaji": "muzukashii",
-        "translation": "сложный, трудный"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "むずかしい_難しい_adjective_сложный"
       },
       {
         "id": "L5_V029",
+        "lesson": 5,
+        "writtenForm": "かっこいい",
+        "reading": "かっこいい",
+        "meaning": "классный; привлекательный",
         "category": "i-adjectives",
-        "kanji": "かっこいい",
-        "writing": "かっこいい",
         "romaji": "kakkoii",
-        "translation": "классный, привлекательный, стильный"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "かっこいい_かっこいい_adjective_классный"
       },
       {
         "id": "L5_V030",
+        "lesson": 5,
+        "writtenForm": "怖い",
+        "reading": "こわい",
+        "meaning": "страшный",
         "category": "i-adjectives",
-        "kanji": "怖い",
-        "writing": "こわい",
         "romaji": "kowai",
-        "translation": "страшный, пугающий"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "こわい_怖い_adjective_пугающий"
       },
       {
         "id": "L5_V031",
+        "lesson": 5,
+        "writtenForm": "楽しい",
+        "reading": "たのしい",
+        "meaning": "весёлый; увлекательный",
         "category": "i-adjectives",
-        "kanji": "楽しい",
-        "writing": "たのしい",
         "romaji": "tanoshii",
-        "translation": "веселый, приятный"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "たのしい_楽しい_adjective_веселый"
       },
       {
         "id": "L5_V032",
+        "lesson": 5,
+        "writtenForm": "安い",
+        "reading": "やすい",
+        "meaning": "дешёвый",
         "category": "i-adjectives",
-        "kanji": "安い",
-        "writing": "やすい",
         "romaji": "yasui",
-        "translation": "дешевый"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "やすい_安い_adjective_дешевый"
       },
       {
         "id": "L5_V033",
+        "lesson": 5,
+        "writtenForm": "好き",
+        "reading": "すき",
+        "meaning": "любимый; нравиться",
         "category": "na-adjectives",
-        "kanji": "すき（な）",
-        "writing": "すき（な）",
         "romaji": "suki (na)",
-        "translation": "нравящийся, любимый (через падеж ～が)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "すき（な）_すき（な）_adjective_любимыйчерезпадеж",
+        "particlePatterns": [
+          "が"
+        ]
       },
       {
         "id": "L5_V034",
+        "lesson": 5,
+        "writtenForm": "嫌い",
+        "reading": "きらい",
+        "meaning": "нелюбимый; не нравиться",
         "category": "na-adjectives",
-        "kanji": "きらい（な）",
-        "writing": "きらい（な）",
         "romaji": "kirai (na)",
-        "translation": "нелюбимый, вызывающий неприязнь (через падеж ～が)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "きらい（な）_きらい（な）_adjective_вызывающийнеприязньчерезпадеж",
+        "particlePatterns": [
+          "が"
+        ]
       },
       {
         "id": "L5_V035",
+        "lesson": 5,
+        "writtenForm": "大好き",
+        "reading": "だいすき",
+        "meaning": "очень нравиться; обожать",
         "category": "na-adjectives",
-        "kanji": "だいすき（な）",
-        "writing": "だいすき（な）",
         "romaji": "daisuki (na)",
-        "translation": "очень любимый, обожаемый (через падеж ～が)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "だいすき（な）_だいすき（な）_adjective_обожаемыйчерезпадеж",
+        "particlePatterns": [
+          "が"
+        ]
       },
       {
         "id": "L5_V036",
+        "lesson": 5,
+        "writtenForm": "大嫌い",
+        "reading": "だいきらい",
+        "meaning": "ненавидеть; очень не любить",
         "category": "na-adjectives",
-        "kanji": "だいきらい（な）",
-        "writing": "だいきらい（な）",
         "romaji": "daikirai (na)",
-        "translation": "ненавистный, крайне неприятный (через падеж ～が)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "だいきらい（な）_だいきらい（な）_adjective_крайненеприятныйчерезпадеж",
+        "particlePatterns": [
+          "が"
+        ]
       },
       {
         "id": "L5_V037",
+        "lesson": 5,
+        "writtenForm": "きれい",
+        "reading": "きれい",
+        "meaning": "красивый; чистый",
         "category": "na-adjectives",
-        "kanji": "きれい（な）",
-        "writing": "きれい（な）",
         "romaji": "kirei (na)",
-        "translation": "красивый, чистый"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "きれい（な）_きれい（な）_adjective_красивый"
       },
       {
         "id": "L5_V038",
+        "lesson": 5,
+        "writtenForm": "元気",
+        "reading": "げんき",
+        "meaning": "здоровый; энергичный",
         "category": "na-adjectives",
-        "kanji": "げんき（な）",
-        "writing": "げんき（な）",
         "romaji": "genki (na)",
-        "translation": "здоровый, бодрый, энергичный"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "げんき（な）_げんき（な）_adjective_бодрый"
       },
       {
         "id": "L5_V039",
+        "lesson": 5,
+        "writtenForm": "静か",
+        "reading": "しずか",
+        "meaning": "тихий; спокойный",
         "category": "na-adjectives",
-        "kanji": "しずか（な）",
-        "writing": "しずか（な）",
         "romaji": "shizuka (na)",
-        "translation": "тихий"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "しずか（な）_しずか（な）_adjective_тихий"
       },
       {
         "id": "L5_V040",
+        "lesson": 5,
+        "writtenForm": "にぎやか",
+        "reading": "にぎやか",
+        "meaning": "оживлённый; многолюдный",
         "category": "na-adjectives",
-        "kanji": "にぎやか（な）",
-        "writing": "にぎやか（な）",
         "romaji": "nigiyaka (na)",
-        "translation": "оживленный, многолюдный, шумный"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "にぎやか（な）_にぎやか（な）_adjective_многолюдный"
       },
       {
         "id": "L5_V041",
+        "lesson": 5,
+        "writtenForm": "暇",
+        "reading": "ひま",
+        "meaning": "свободный; незанятый",
         "category": "na-adjectives",
-        "kanji": "ひま（な）",
-        "writing": "ひま（な）",
         "romaji": "hima (na)",
-        "translation": "свободный (о времени), не занятой"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "ひま（な）_ひま（な）_adjective_незанятой"
       },
       {
         "id": "L5_V042",
+        "lesson": 5,
+        "writtenForm": "泳ぐ",
+        "reading": "およぐ",
+        "meaning": "плавать",
         "category": "verbs_u",
-        "kanji": "泳ぐ",
-        "writing": "およぐ",
         "romaji": "oyogu",
-        "translation": "плавать"
-      },
-      {
-        "id": "L5_V043",
-        "category": "verbs_u",
-        "kanji": "聞く",
-        "writing": "きく",
-        "romaji": "kiku",
-        "translation": "спрашивать (у собеседника に)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "およぐ_泳ぐ_verb_godan_плавать"
       },
       {
         "id": "L5_V044",
+        "lesson": 5,
+        "writtenForm": "乗る",
+        "reading": "のる",
+        "meaning": "садиться в транспорт; ехать",
         "category": "verbs_u",
-        "kanji": "乗る",
-        "writing": "のる",
         "romaji": "noru",
-        "translation": "садиться, ехать (в транспорте に)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "のる_乗る_verb_godan_ехать"
       },
       {
         "id": "L5_V045",
+        "lesson": 5,
+        "writtenForm": "やる",
+        "reading": "やる",
+        "meaning": "делать; выполнять",
         "category": "verbs_u",
-        "kanji": "やる",
-        "writing": "やる",
         "romaji": "yaru",
-        "translation": "делать, совершать (разговорный синоним する) (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "やる_やる_verb_godan_делать",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L5_V046",
+        "lesson": 5,
+        "writtenForm": "出かける",
+        "reading": "でかける",
+        "meaning": "выходить; отправляться куда-либо",
         "category": "verbs_ru",
-        "kanji": "出かける",
-        "writing": "でかける",
         "romaji": "dekakeru",
-        "translation": "выходить из дома, отправляться по делам"
+        "partOfSpeech": "verb",
+        "verbClass": "ichidan",
+        "lexemeId": "でかける_出かける_verb_ichidan_выходитьиздома"
       },
       {
         "id": "L5_V047",
+        "lesson": 5,
+        "writtenForm": "一緒に",
+        "reading": "いっしょに",
+        "meaning": "вместе",
         "category": "adverbs",
-        "kanji": "いっしょに",
-        "writing": "いっしょに",
         "romaji": "isshoni",
-        "translation": "вместе"
+        "partOfSpeech": "adverb",
+        "lexemeId": "いっしょに_いっしょに_adverb_вместе"
       },
       {
         "id": "L5_V048",
+        "lesson": 5,
+        "writtenForm": "すごく",
+        "reading": "すごく",
+        "meaning": "очень; чрезвычайно",
         "category": "adverbs",
-        "kanji": "すごく",
-        "writing": "すごく",
         "romaji": "sugoku",
-        "translation": "очень, чрезвычайно (разговорное)"
+        "partOfSpeech": "adverb",
+        "lexemeId": "すごく_すごく_adverb_очень"
       },
       {
         "id": "L5_V049",
+        "lesson": 5,
+        "writtenForm": "大丈夫",
+        "reading": "だいじょうぶ",
+        "meaning": "всё в порядке",
         "category": "expressions",
-        "kanji": "大丈夫",
-        "writing": "だいじょうぶ",
         "romaji": "daijoobu",
-        "translation": "всё в порядке, не беспокойтесь"
+        "partOfSpeech": "expression",
+        "lexemeId": "だいじょうぶ_大丈夫_expression_всёвпорядке"
       },
       {
         "id": "L5_V050",
+        "lesson": 5,
+        "writtenForm": "とても",
+        "reading": "とても",
+        "meaning": "очень",
         "category": "adverbs",
-        "kanji": "とても",
-        "writing": "とても",
         "romaji": "totemo",
-        "translation": "очень"
+        "partOfSpeech": "adverb",
+        "lexemeId": "とても_とても_adverb_очень"
       },
       {
         "id": "L5_V051",
+        "lesson": 5,
+        "writtenForm": "どんな",
+        "reading": "どんな",
+        "meaning": "какой; что за",
         "category": "expressions",
-        "kanji": "どんな",
-        "writing": "どんな",
         "romaji": "donna",
-        "translation": "какой?, какого рода?"
+        "partOfSpeech": "expression",
+        "lexemeId": "どんな_どんな_expression_какогорода"
       },
       {
         "id": "L5_V052",
+        "lesson": 5,
+        "writtenForm": "〜枚",
+        "reading": "〜まい",
+        "meaning": "счётчик плоских предметов",
         "category": "expressions",
-        "kanji": "～まい",
-        "writing": "～まい",
         "romaji": "... mai",
-        "translation": "счетный суффикс для тонких плоских объектов",
-        "note": "счетный суффикс для тонких плоских объектов (бумага, одежда, CD)"
+        "note": "счетный суффикс для тонких плоских объектов (бумага, одежда, CD)",
+        "partOfSpeech": "expression",
+        "lexemeId": "～まい_～まい_expression_счетныйсуффиксдлятонкихплоскихобъектов"
       }
     ],
     "notes": [
       {
-        "note_id": 1,
+        "id": "L5_g1",
+        "noteId": 1,
         "title": "Грамматика 1: Классификация и настоящее время прилагательных (Adjectives - Present Tense)",
         "content": "В японском языке прилагательные делятся на две группы и изменяются по временам:\n1. い-прилагательные (i-adjectives): оканчиваются на слог 'i' (например: さむい samui). Важно: конечной 'i' должна быть именно буква хираганы 'い' в словарной форме.\n- Утверждение: прилагательное + です (например: さむいです — холодно).\n- Отрицание: заменяем конечную 'い' на 'くないです' или 'くありません' (например: さむくないです / さむくありません — не холодно).\n- Исключение: слово いい (ii — хороший) изменяет корень на よ (yo) во всех формах, кроме начальной (отрицание: よくないです / よくありません — нехороший).\n\n2. な-прилагательные (na-adjectives): грамматически близки к существительным (например: げんき(на) genki). Слог 'な' пишется только перед существительными.\n- Утверждение: корень + です (например: げんきです — здоровый/бодрый).\n- Отрицание: корень + じゃないです или じゃありません / ではありません (например: げんきじゃないです — нездоровый). Использование формы 'くない' с な-прилагательными является грубой ошибкой!"
       },
       {
-        "note_id": 2,
+        "id": "L5_g2",
+        "noteId": 2,
         "title": "Грамматика 2: Прошедшее время прилагательных (Adjectives - Past Tense)",
         "content": "Правила образования прошедшего времени различны для двух классов:\n1. い-прилагательные:\n- Утверждение: заменяем конечную 'い' на 'かったです' (например: さむかったです — было холодно. Исключение: いい → よかったです — было хорошо).\n- Отрицание: заменяем конечную 'い' на 'くなかったです' или 'くありませんでした' (например: さむくなかったです / さむくありませんでした — было не холодно).\n\n2. な-прилагательные:\n- Утверждение: корень + でした (например: げんきでした — был здоровым).\n- Отрицание: корень + じゃなかったです или じゃありませんでした (например: げんきじゃなかったです — был нездоровым)."
       },
       {
-        "note_id": 3,
+        "id": "L5_g3",
+        "noteId": 3,
         "title": "Грамматика 3: Определение существительного прилагательным (Noun Modification)",
         "content": "Чтобы использовать прилагательное как определение перед существительным, действуют следующие правила:\n- い-прилагательные ставятся перед существительным напрямую: おもしろい映画 (omoshiroi eiga — интересный фильм).\n- な-прилагательные требуют обязательной вставки слога 'な' между корнем и существительным: きれいな写真 (kirei na shashin — красивая фотография)."
       },
       {
-        "note_id": 4,
+        "id": "L5_g4",
+        "noteId": 4,
         "title": "Грамматика 4: Выражение предпочтений 好き (suki) и 嫌い (kirai)",
         "content": "Слова 好き (suki — нравиться/любить) и 嫌い (kirai — не нравиться/не любить) грамматически являются な-прилагательными. Объект, на который направлено чувство, выделяется выделительной частицей が, а не を!\n- Конструкция:  $$Субъект X$$   は  $$Объект Y$$   が 好きです / 嫌いです (X любит / не любит Y).\n- Усиление чувств выражается словами 大好き (daisuki — обожать) и 大嫌い (daikirai — ненавидеть) с той же конструкцией: 'たけしさんはコーヒーが大好きです' (Такеши обожает кофе).\n- Нейтральное отношение: корень + でも + корень + でもないです (например: 好きでも嫌いでもないです — и не люблю, и не испытываю неприязни).\n- Романтический контекст: при выражении симпатии к человеку частицу が часто заменяют на ことが (например: 'たけしさんはメアリーさんのことが好きです' — Такеши влюблен в Мери).\n- Контрастирование: при сравнении двух объектов частица が заменяется на は: '私は野菜は好きですが、肉は嫌いです' (Я люблю овощи, а вот мясо не люблю)."
       },
       {
-        "note_id": 5,
+        "id": "L5_g5",
+        "noteId": 5,
         "title": "Грамматика 5: Побудительные конструкции ～ましょう / ～ましょうか (mashoo / mashoo ka)",
         "content": "Для предложения совместного действия вежливый глагол на ます заменяется на новые окончания:\n- '～ましょう' (Давайте сделаем...): выражает призыв или инициативу говорящего. Пример: ' booze 一緒にお茶を飲みましょう' (Давайте выпьем чаю вместе).\n- '～ましょうか' (Не сделать ли нам... / Позвольте, я сделаю...): звучит мягче, оставляет выбор за собеседником, либо предлагает личную помощь. Пример: 'あそこでコーヒーを飲みましょうか' (Может, выпьем кофе вон там?)."
       },
       {
-        "note_id": 6,
+        "id": "L5_g6",
+        "noteId": 6,
         "title": "Грамматика 6: Счёт предметов и суффикс ～枚 (mai)",
         "content": "При счёте вещей в японском языке используются числительные со специальными счётными суффиксами. Для плоских предметов (бумага, тарелки, одежда, билеты) используется суффикс ～枚 (mai).\n- Порядок слов в предложении:  $$Предмет$$   →  $$Падежная частица$$   →  $$Количество со счётным суффиксом$$   → Глагол.\n- Счётное слово употребляется без дополнительных частиц: 'リーさんはTシャツを三枚買いました' (Ли купил три футболки)."
       },
       {
-        "note_id": 7,
+        "id": "L5_g7",
+        "noteId": 7,
         "title": "Особенности выражений: Использование 忙しい (isogashii) против にぎやか (nigiyaka)",
         "content": "В японском языке слово 忙しい (busy) описывает исключительно занятость людей или периодов времени. Сказать, что город, ресторан или улица 'busy', используя 忙しい, грамматически неверно. В таких случаях для описания оживленного, шумного и многолюдного места используется な-прилагательное にぎやか(на) (lively/bustling): '東京はにぎやかです' (Токио оживленный/многолюдный)."
       },
       {
-        "note_id": 8,
+        "id": "L5_g8",
+        "noteId": 8,
         "title": "Особенности выражений: Нюансы согласия и сомнения (そうですね / そうですか)",
         "content": "Речевые маркеры меняют оттенки значения в зависимости от интонации:\n- 'そうですね' — полное согласие с мнением собеседника. С затянутым финальным звуком 'そうですねえ' используется как вежливая пауза для размышления (аналог «Ну, дайте подумать...»).\n- 'そうですか' — с нисходящей интонацией означает принятие к сведению («Вот как/Понятно»). С восходящей интонацией выражает удивление, недоверие или мягкий переспрос («Правда? А разве это не так?»)."
       }

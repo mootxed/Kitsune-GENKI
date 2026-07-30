@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 2,
   "version": 1,
   "lesson": {
     "lesson_id": 10,
@@ -15,504 +16,700 @@
     "vocabulary": [
       {
         "id": "L10_V001",
+        "lesson": 10,
+        "writtenForm": "季節",
+        "reading": "きせつ",
+        "meaning": "время года; сезон",
         "category": "nouns",
-        "kanji": "季節",
-        "writing": "きせつ",
         "romaji": "kisetsu",
-        "translation": "сезон, время года"
+        "partOfSpeech": "noun",
+        "lexemeId": "きせつ_季節_noun_времягода"
       },
       {
         "id": "L10_V002",
+        "lesson": 10,
+        "writtenForm": "春",
+        "reading": "はる",
+        "meaning": "весна",
         "category": "nouns",
-        "kanji": "春",
-        "writing": "はる",
         "romaji": "haru",
-        "translation": "весна"
+        "partOfSpeech": "noun",
+        "lexemeId": "はる_春_noun_весна"
       },
       {
         "id": "L10_V003",
+        "lesson": 10,
+        "writtenForm": "秋",
+        "reading": "あき",
+        "meaning": "осень",
         "category": "nouns",
-        "kanji": "秋",
-        "writing": "あき",
         "romaji": "aki",
-        "translation": "осень"
+        "partOfSpeech": "noun",
+        "lexemeId": "あき_秋_noun_осень"
       },
       {
         "id": "L10_V004",
+        "lesson": 10,
+        "writtenForm": "牛乳",
+        "reading": "ぎゅうにゅう",
+        "meaning": "молоко",
         "category": "nouns",
-        "kanji": "牛乳",
-        "writing": "ぎゅうにゅう",
         "romaji": "gyuunyuu",
-        "translation": "молоко"
+        "partOfSpeech": "noun",
+        "lexemeId": "ぎゅうにゅう_牛乳_noun_молоко"
       },
       {
         "id": "L10_V005",
+        "lesson": 10,
+        "writtenForm": "ケーキ",
+        "reading": "ケーキ",
+        "meaning": "торт; пирожное",
         "category": "nouns",
-        "kanji": "ケーキ",
-        "writing": "ケーキ",
         "romaji": "keeki",
-        "translation": "торт, пирожное"
+        "partOfSpeech": "noun",
+        "lexemeId": "ケーキ_ケーキ_noun_пирожное"
       },
       {
         "id": "L10_V006",
+        "lesson": 10,
+        "writtenForm": "すし",
+        "reading": "すし",
+        "meaning": "суши",
         "category": "nouns",
-        "kanji": "すし",
-        "writing": "すし",
         "romaji": "sushi",
-        "translation": "суши"
+        "partOfSpeech": "noun",
+        "lexemeId": "すし_すし_noun_суши"
       },
       {
         "id": "L10_V007",
+        "lesson": 10,
+        "writtenForm": "天ぷら",
+        "reading": "てんぷら",
+        "meaning": "тэмпура",
         "category": "nouns",
-        "kanji": "てんぷら",
-        "writing": "てんぷら",
         "romaji": "tenpura",
-        "translation": "тэмпура"
+        "partOfSpeech": "noun",
+        "lexemeId": "てんぷら_てんぷら_noun_тэмпура"
       },
       {
         "id": "L10_V008",
+        "lesson": 10,
+        "writtenForm": "りんご",
+        "reading": "りんご",
+        "meaning": "яблоко",
         "category": "nouns",
-        "kanji": "りんご",
-        "writing": "りんご",
         "romaji": "ringo",
-        "translation": "яблоко"
+        "partOfSpeech": "noun",
+        "lexemeId": "りんご_りんご_noun_яблоко"
       },
       {
         "id": "L10_V009",
+        "lesson": 10,
+        "writtenForm": "料理",
+        "reading": "りょうり",
+        "meaning": "кухня; блюдо; приготовление еды",
         "category": "nouns",
-        "kanji": "料理",
-        "writing": "りょうり",
         "romaji": "ryouri",
-        "translation": "кухня, кулинария, блюдо"
+        "partOfSpeech": "noun",
+        "lexemeId": "りょうり_料理_noun_блюдо"
       },
       {
         "id": "L10_V010",
+        "lesson": 10,
+        "writtenForm": "サッカー",
+        "reading": "サッカー",
+        "meaning": "футбол",
         "category": "nouns",
-        "kanji": "サッカー",
-        "writing": "サッカー",
         "romaji": "sakkaa",
-        "translation": "футбол"
+        "partOfSpeech": "noun",
+        "lexemeId": "サッカー_サッカー_noun_футбол"
       },
       {
         "id": "L10_V011",
+        "lesson": 10,
+        "writtenForm": "野球",
+        "reading": "やきゅう",
+        "meaning": "бейсбол",
         "category": "nouns",
-        "kanji": "やくきゅう",
-        "writing": "やくきゅう",
         "romaji": "yakyuu",
-        "translation": "бейсбол"
+        "partOfSpeech": "noun",
+        "lexemeId": "やくきゅう_やくきゅう_noun_бейсбол"
       },
       {
         "id": "L10_V012",
+        "lesson": 10,
+        "writtenForm": "医者",
+        "reading": "いしゃ",
+        "meaning": "врач",
         "category": "nouns",
-        "kanji": "医者",
-        "writing": "いしゃ",
         "romaji": "isha",
-        "translation": "врач, доктор"
+        "partOfSpeech": "noun",
+        "lexemeId": "いしゃ_医者_noun_врач"
       },
       {
         "id": "L10_V013",
+        "lesson": 10,
+        "writtenForm": "お金持ち",
+        "reading": "おかねもち",
+        "meaning": "богатый человек",
         "category": "nouns",
-        "kanji": "おかねもち",
-        "writing": "おかねもち",
         "romaji": "okanemochi",
-        "translation": "богач, богатый человек"
+        "partOfSpeech": "noun",
+        "lexemeId": "おかねもち_おかねもち_noun_богатыйчеловек"
       },
       {
         "id": "L10_V014",
+        "lesson": 10,
+        "writtenForm": "有名人",
+        "reading": "ゆうめいじん",
+        "meaning": "знаменитость",
         "category": "nouns",
-        "kanji": "ゆうめいじん",
-        "writing": "ゆうめいじん",
         "romaji": "yuumeijin",
-        "translation": "знаменитость, известная личность"
+        "partOfSpeech": "noun",
+        "lexemeId": "ゆうめいじん_ゆうめいじん_noun_знаменитость"
       },
       {
         "id": "L10_V015",
+        "lesson": 10,
+        "writtenForm": "顔",
+        "reading": "かお",
+        "meaning": "лицо",
         "category": "nouns",
-        "kanji": "顔",
-        "writing": "かお",
         "romaji": "kao",
-        "translation": "лицо"
+        "partOfSpeech": "noun",
+        "lexemeId": "かお_顔_noun_лицо"
       },
       {
         "id": "L10_V016",
+        "lesson": 10,
+        "writtenForm": "年上",
+        "reading": "としうえ",
+        "meaning": "человек старше по возрасту",
         "category": "nouns",
-        "kanji": "としうえ",
-        "writing": "としうえ",
         "romaji": "toshiue",
-        "translation": "кто-то старше по возрасту"
+        "partOfSpeech": "noun",
+        "lexemeId": "としうえ_としうえ_noun_ктотостаршеповозрасту"
       },
       {
         "id": "L10_V017",
+        "lesson": 10,
+        "writtenForm": "駅",
+        "reading": "えき",
+        "meaning": "станция; вокзал",
         "category": "nouns",
-        "kanji": "駅",
-        "writing": "えき",
         "romaji": "eki",
-        "translation": "станция, вокзал"
+        "partOfSpeech": "noun",
+        "lexemeId": "えき_駅_noun_вокзал"
       },
       {
         "id": "L10_V018",
+        "lesson": 10,
+        "writtenForm": "新幹線",
+        "reading": "しんかんせん",
+        "meaning": "синкансэн; скоростной поезд",
         "category": "nouns",
-        "kanji": "しんかんせん",
-        "writing": "しんかんせん",
         "romaji": "shinkansen",
-        "translation": "синкансэн (скоростной поезд)"
+        "partOfSpeech": "noun",
+        "lexemeId": "しんかんせん_しんかんせん_noun_синкансэн"
       },
       {
         "id": "L10_V019",
+        "lesson": 10,
+        "writtenForm": "地下鉄",
+        "reading": "ちかてつ",
+        "meaning": "метро",
         "category": "nouns",
-        "kanji": "ちかてつ",
-        "writing": "ちかてつ",
         "romaji": "chikatetsu",
-        "translation": "метро, метрополитен"
+        "partOfSpeech": "noun",
+        "lexemeId": "ちかてつ_ちかてつ_noun_метро"
       },
       {
         "id": "L10_V020",
+        "lesson": 10,
+        "writtenForm": "船",
+        "reading": "ふね",
+        "meaning": "корабль; лодка",
         "category": "nouns",
-        "kanji": "ふね",
-        "writing": "ふね",
         "romaji": "fune",
-        "translation": "корабль, лодка, судно"
+        "partOfSpeech": "noun",
+        "lexemeId": "ふね_ふね_noun_корабль"
       },
       {
         "id": "L10_V021",
+        "lesson": 10,
+        "writtenForm": "飛行機",
+        "reading": "ひこうき",
+        "meaning": "самолёт",
         "category": "nouns",
-        "kanji": "飛行機",
-        "writing": "ひこうき",
         "romaji": "hikouki",
-        "translation": "самолёт"
+        "partOfSpeech": "noun",
+        "lexemeId": "ひこうき_飛行機_noun_самолёт"
       },
       {
         "id": "L10_V022",
+        "lesson": 10,
+        "writtenForm": "予約",
+        "reading": "よやく",
+        "meaning": "бронирование",
         "category": "nouns",
-        "kanji": "よやく",
-        "writing": "よやく",
         "romaji": "yoyaku",
-        "translation": "бронь, бронирование, резервирование"
+        "partOfSpeech": "noun",
+        "lexemeId": "よやく_よやく_noun_бронирование"
       },
       {
         "id": "L10_V023",
+        "lesson": 10,
+        "writtenForm": "ツアー",
+        "reading": "ツアー",
+        "meaning": "тур; экскурсия",
         "category": "nouns",
-        "kanji": "ツアー",
-        "writing": "ツアー",
         "romaji": "tsuaa",
-        "translation": "тур, экскурсия"
+        "partOfSpeech": "noun",
+        "lexemeId": "ツアー_ツアー_noun_тур"
       },
       {
         "id": "L10_V024",
+        "lesson": 10,
+        "writtenForm": "動物園",
+        "reading": "どうぶつえん",
+        "meaning": "зоопарк",
         "category": "nouns",
-        "kanji": "どうぶつえん",
-        "writing": "どうぶつえん",
         "romaji": "doubutsuen",
-        "translation": "зоопарк"
+        "partOfSpeech": "noun",
+        "lexemeId": "どうぶつえん_どうぶつえん_noun_зоопарк"
       },
       {
         "id": "L10_V025",
+        "lesson": 10,
+        "writtenForm": "時間",
+        "reading": "じかん",
+        "meaning": "время",
         "category": "nouns",
-        "kanji": "じかん",
-        "writing": "じかん",
         "romaji": "jikan",
-        "translation": "время"
+        "partOfSpeech": "noun",
+        "lexemeId": "じかん_じかん_noun_время"
       },
       {
         "id": "L10_V026",
+        "lesson": 10,
+        "writtenForm": "世界",
+        "reading": "せかい",
+        "meaning": "мир",
         "category": "nouns",
-        "kanji": "せかい",
-        "writing": "せかい",
         "romaji": "sekai",
-        "translation": "мир, планета Земля"
+        "partOfSpeech": "noun",
+        "lexemeId": "せかい_せかい_noun_мир"
       },
       {
         "id": "L10_V027",
+        "lesson": 10,
+        "writtenForm": "美容院",
+        "reading": "びよういん",
+        "meaning": "салон красоты; парикмахерская",
         "category": "nouns",
-        "kanji": "びよういん",
-        "writing": "びよういん",
         "romaji": "biyouin",
-        "translation": "парикмахерская, салон красоты"
+        "partOfSpeech": "noun",
+        "lexemeId": "びよういん_びよういん_noun_парикмахерская"
       },
       {
         "id": "L10_V028",
+        "lesson": 10,
+        "writtenForm": "手袋",
+        "reading": "てぶくろ",
+        "meaning": "перчатки",
         "category": "nouns",
-        "kanji": "てぶくろ",
-        "writing": "てぶくろ",
         "romaji": "tebukuro",
-        "translation": "перчатки"
+        "partOfSpeech": "noun",
+        "lexemeId": "てぶくろ_てぶくろ_noun_перчатки"
       },
       {
         "id": "L10_V029",
+        "lesson": 10,
+        "writtenForm": "生活",
+        "reading": "せいかつ",
+        "meaning": "жизнь; быт",
         "category": "nouns",
-        "kanji": "せいかつ",
-        "writing": "せいかつ",
         "romaji": "seikatsu",
-        "translation": "жизнь, образ жизни, быт"
+        "partOfSpeech": "noun",
+        "lexemeId": "せいかつ_せいかつ_noun_быт"
       },
       {
         "id": "L10_V030",
+        "lesson": 10,
+        "writtenForm": "今年",
+        "reading": "ことし",
+        "meaning": "этот год",
         "category": "nouns",
-        "kanji": "ことし",
-        "writing": "ことし",
         "romaji": "kotoshi",
-        "translation": "этот год, в этом году"
+        "partOfSpeech": "noun",
+        "lexemeId": "ことし_ことし_noun_вэтомгоду"
       },
       {
         "id": "L10_V031",
+        "lesson": 10,
+        "writtenForm": "暖かい",
+        "reading": "あたたかい",
+        "meaning": "тёплый",
         "category": "i-adjectives",
-        "kanji": "温かい",
-        "writing": "あたたかい",
         "romaji": "atatakai",
-        "translation": "тёплый (о погоде или климате)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "あたたかい_温かい_adjective_тёплый"
       },
       {
         "id": "L10_V032",
+        "lesson": 10,
+        "writtenForm": "涼しい",
+        "reading": "すずしい",
+        "meaning": "прохладный (о погоде)",
         "category": "i-adjectives",
-        "kanji": "涼しい",
-        "writing": "すずしい",
         "romaji": "suzushii",
-        "translation": "прохладный (о погоде)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "すずしい_涼しい_adjective_прохладный"
       },
       {
         "id": "L10_V033",
+        "lesson": 10,
+        "writtenForm": "冷たい",
+        "reading": "つめたい",
+        "meaning": "холодный (о предметах и людях)",
         "category": "i-adjectives",
-        "kanji": "冷たい",
-        "writing": "つめたい",
         "romaji": "tsumetai",
-        "translation": "холодный (на ощупь, о предметах или отношении людей)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "つめたい_冷たい_adjective_холодный"
       },
       {
         "id": "L10_V034",
+        "lesson": 10,
+        "writtenForm": "遅い",
+        "reading": "おそい",
+        "meaning": "медленный; поздний",
         "category": "i-adjectives",
-        "kanji": "おそい",
-        "writing": "おそい",
         "romaji": "osoi",
-        "translation": "медленный, поздний"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "おそい_おそい_adjective_медленный"
       },
       {
         "id": "L10_V035",
+        "lesson": 10,
+        "writtenForm": "眠い",
+        "reading": "ねむい",
+        "meaning": "сонный",
         "category": "i-adjectives",
-        "kanji": "眠い",
-        "writing": "ねむい",
         "romaji": "nemui",
-        "translation": "сонный, хочется спать"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "ねむい_眠い_adjective_сонный"
       },
       {
         "id": "L10_V036",
+        "lesson": 10,
+        "writtenForm": "簡単",
+        "reading": "かんたん",
+        "meaning": "простой; лёгкий",
         "category": "na-adjectives",
-        "kanji": "かんたん（な）",
-        "writing": "かんたん（な）",
         "romaji": "kantan (na)",
-        "translation": "простой, лёгкий, элементарный"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "かんたん（な）_かんたん（な）_adjective_лёгкий"
       },
       {
         "id": "L10_V037",
+        "lesson": 10,
+        "writtenForm": "かかる",
+        "reading": "かかる",
+        "meaning": "занимать (время); стоить",
         "category": "verbs_u",
-        "kanji": "かかる",
-        "writing": "かかる",
         "romaji": "kakar",
-        "translation": "занимать, требоваться (о времени или деньгах)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "かかる_かかる_verb_godan_занимать"
       },
       {
         "id": "L10_V038",
+        "lesson": 10,
+        "writtenForm": "泊まる",
+        "reading": "とまる",
+        "meaning": "останавливаться на ночлег",
         "category": "verbs_u",
-        "kanji": "とまる",
-        "writing": "とまる",
         "romaji": "tomaru",
-        "translation": "останавливаться на ночлег, проживать (в гостинице) (～に)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "とまる_とまる_verb_godan_останавливатьсянаночлег",
+        "particlePatterns": [
+          "に"
+        ]
       },
       {
         "id": "L10_V039",
+        "lesson": 10,
+        "writtenForm": "なる",
+        "reading": "なる",
+        "meaning": "становиться",
         "category": "verbs_u",
-        "kanji": "なる",
-        "writing": "なる",
         "romaji": "naru",
-        "translation": "становиться"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "なる_なる_verb_godan_становиться"
       },
       {
         "id": "L10_V040",
+        "lesson": 10,
+        "writtenForm": "決める",
+        "reading": "きめる",
+        "meaning": "решать; определять",
         "category": "verbs_ru",
-        "kanji": "きめる",
-        "writing": "きめる",
         "romaji": "kimeru",
-        "translation": "решать, принимать решение (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "ichidan",
+        "lexemeId": "きめる_きめる_verb_ichidan_приниматьрешение",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L10_V041",
+        "lesson": 10,
+        "writtenForm": "ごろごろする",
+        "reading": "ごろごろする",
+        "meaning": "бездельничать дома",
         "category": "verbs_irr",
-        "kanji": "ごろごろする",
-        "writing": "ごろごろする",
         "romaji": "gorogoro suru",
-        "translation": "бездельничать дома, валяться (лениться)"
+        "partOfSpeech": "verb",
+        "verbClass": "irregular",
+        "lexemeId": "ごろごろする_ごろごろする_verb_irregular_бездельничатьдома"
       },
       {
         "id": "L10_V042",
+        "lesson": 10,
+        "writtenForm": "旅行する",
+        "reading": "りょこうする",
+        "meaning": "путешествовать",
         "category": "verbs_irr",
-        "kanji": "りょこうする",
-        "writing": "りょこうする",
         "romaji": "ryokou suru",
-        "translation": "путешествовать"
+        "partOfSpeech": "verb",
+        "verbClass": "irregular",
+        "lexemeId": "りょこうする_りょこうする_verb_irregular_путешествовать"
       },
       {
         "id": "L10_V043",
+        "lesson": 10,
+        "writtenForm": "練習する",
+        "reading": "れんしゅうする",
+        "meaning": "тренироваться; практиковаться",
         "category": "verbs_irr",
-        "kanji": "れんしゅうする",
-        "writing": "れんしゅうする",
         "romaji": "renshuu suru",
-        "translation": "тренироваться, практиковаться (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "irregular",
+        "lexemeId": "れんしゅうする_れんしゅうする_verb_irregular_практиковаться",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L10_V044",
+        "lesson": 10,
+        "writtenForm": "一番",
+        "reading": "いちばん",
+        "meaning": "лучше всего; самый",
         "category": "adverbs",
-        "kanji": "いちばん",
-        "writing": "いちばん",
         "romaji": "ichiban",
-        "translation": "самый, больше всего"
+        "partOfSpeech": "adverb",
+        "lexemeId": "いちばん_いちばん_adverb_большевсего"
       },
       {
         "id": "L10_V045",
+        "lesson": 10,
+        "writtenForm": "どっち/どちら",
+        "reading": "どっち/どちら",
+        "meaning": "который; какая сторона",
         "category": "adverbs",
-        "kanji": "どっち／どちら",
-        "writing": "どっち／どちら",
         "romaji": "docchi/dochira",
-        "translation": "какой, который (из двух вариантов)"
+        "partOfSpeech": "adverb",
+        "lexemeId": "どっち／どちら_どっち／どちら_adverb_какой"
       },
       {
         "id": "L10_V046",
+        "lesson": 10,
+        "writtenForm": "早く/速く",
+        "reading": "はやく",
+        "meaning": "рано; быстро",
         "category": "adverbs",
-        "kanji": "はやく",
-        "writing": "はやく",
         "romaji": "hayaku",
-        "translation": "рано, быстро"
+        "partOfSpeech": "adverb",
+        "lexemeId": "はやく_はやく_adverb_быстро"
       },
       {
         "id": "L10_V047",
+        "lesson": 10,
+        "writtenForm": "歩いて",
+        "reading": "あるいて",
+        "meaning": "пешком",
         "category": "adverbs",
-        "kanji": "あるいて",
-        "writing": "あるいて",
         "romaji": "aruite",
-        "translation": "пешком"
+        "partOfSpeech": "adverb",
+        "lexemeId": "あるいて_あるいて_adverb_пешком"
       },
       {
-        "id": "L10_V055",
-        "category": "expressions",
-        "kanji": "～後",
-        "writing": "～ご",
-        "romaji": "... go",
-        "translation": "через ... (о времени), спустя ...",
-        "note": "через ... (о времени), спустя ..."
+        "id": "L10_V057",
+        "lesson": 10,
+        "writtenForm": "〜で",
+        "reading": "〜で",
+        "meaning": "на транспорте; при помощи",
+        "lexemeId": "__none"
       },
       {
         "id": "L10_V049",
+        "lesson": 10,
+        "writtenForm": "どうやって",
+        "reading": "どうやって",
+        "meaning": "как; каким способом",
         "category": "adverbs",
-        "kanji": "どうやって",
-        "writing": "どうやって",
         "romaji": "douyatte",
-        "translation": "как, каким образом"
+        "partOfSpeech": "adverb",
+        "lexemeId": "どうやって_どうやって_adverb_как"
       },
       {
         "id": "L10_V050",
+        "lesson": 10,
+        "writtenForm": "どのぐらい",
+        "reading": "どのぐらい",
+        "meaning": "сколько; как долго",
         "category": "adverbs",
-        "kanji": "どのぐらい",
-        "writing": "どのぐらい",
         "romaji": "dono gurai",
-        "translation": "сколько, как долго, сколько стоит"
+        "partOfSpeech": "adverb",
+        "lexemeId": "どのぐらい_どのぐらい_adverb_какдолго"
       },
       {
         "id": "L10_V051",
+        "lesson": 10,
+        "writtenForm": "〜週間",
+        "reading": "〜しゅうかん",
+        "meaning": "в течение ... недель",
         "category": "adverbs",
-        "kanji": "～しゅうかん",
-        "writing": "～しゅうかん",
         "romaji": "... shuukan",
-        "translation": "в течение ... недель"
+        "partOfSpeech": "adverb",
+        "lexemeId": "～しゅうかん_～しゅうかん_adverb_втечениенедель"
       },
       {
         "id": "L10_V052",
+        "lesson": 10,
+        "writtenForm": "〜か月",
+        "reading": "〜かげつ",
+        "meaning": "в течение ... месяцев",
         "category": "adverbs",
-        "kanji": "～かげつ",
-        "writing": "～かげつ",
         "romaji": "... kagetsu",
-        "translation": "в течение ... месяцев"
+        "partOfSpeech": "adverb",
+        "lexemeId": "～かげつ_～かげつ_adverb_втечениемесяцев"
       },
       {
         "id": "L10_V053",
+        "lesson": 10,
+        "writtenForm": "〜年",
+        "reading": "〜ねん",
+        "meaning": "... лет",
         "category": "adverbs",
-        "kanji": "～ねん",
-        "writing": "～ねん",
         "romaji": "... nen",
-        "translation": "... лет, в течение ... лет"
+        "partOfSpeech": "adverb",
+        "lexemeId": "～ねん_～ねん_adverb_втечениелет"
       },
       {
         "id": "L10_V054",
+        "lesson": 10,
+        "writtenForm": "このごろ",
+        "reading": "このごろ",
+        "meaning": "в последнее время",
         "category": "adverbs",
-        "kanji": "このごろ",
-        "writing": "このごろ",
         "romaji": "konogoro",
-        "translation": "в последнее время, в эти дни"
+        "partOfSpeech": "adverb",
+        "lexemeId": "このごろ_このごろ_adverb_впоследнеевремя"
       },
       {
         "id": "L10_V055",
-        "category": "adverbs",
-        "kanji": "～語",
-        "writing": "～ご",
+        "lesson": 10,
+        "writtenForm": "〜後",
+        "reading": "〜ご",
+        "meaning": "через...; после...",
+        "category": "expressions",
         "romaji": "... go",
-        "translation": "спустя ...",
-        "note": "спустя ... (времени), через ... (времени)"
+        "note": "через ... (о времени), спустя ...",
+        "partOfSpeech": "expression",
+        "lexemeId": "～ご_～後_expression_спустя"
       },
       {
         "id": "L10_V056",
+        "lesson": 10,
+        "writtenForm": "〜か〜",
+        "reading": "〜か〜",
+        "meaning": "или",
         "category": "adverbs",
-        "kanji": "～か～",
-        "writing": "～か～",
         "romaji": "... ka ...",
-        "translation": "... или ...",
-        "note": "... или ... (выбор между существительными)"
+        "note": "... или ... (выбор между существительными)",
+        "partOfSpeech": "adverb",
+        "lexemeId": "～か～_～か～_adverb"
       }
     ],
     "notes": [
       {
-        "note_id": 1,
+        "id": "L10_g1",
+        "noteId": 1,
         "title": "Грамматика 1: Сравнение двух предметов (A のほうが B より... です)",
         "content": "Для того чтобы сравнить два объекта по какому-либо качеству, в японском языке используется неизменяемая синтаксическая конструкция:\n\n  $$Объект A$$   のほうが  $$Объект B$$   より  $$Качество / Прилагательное$$   です。\n\n- Переводится как: 'А является более (качество), чем В'.\n- Пример: 中国のほうが日本より大きいです (Китай больше Японии).\n- Обратите внимание: сравнительные показатели 'のほうが' и 'より' могут меняться местами, но смысл сохраняется.\n\nЗадать вопрос о выборе из двух вариантов можно так:\n  $$Объект A$$   と  $$Объект B$$   と どちらのほうが / どっちのほうが  $$Качество$$   ですか。\n- Переводится как: 'Что (качество): А или В?'. Слово どっち является разговорным вариантом どちら.\n- Пример: 日本とカナダとどちらのほうが寒いですか (Где холоднее: в Японии или в Канаде?).\n- Ответ строится по базовой схеме: カナダのほうが寒いです (В Канаде холоднее)."
       },
       {
-        "note_id": 2,
+        "id": "L10_g2",
+        "noteId": 2,
         "title": "Грамматика 2: Сравнение трёх и более предметов (いちばん / 一番)",
         "content": "При сравнении в группе, состоящей из трёх или более объектов, используется степень интенсивности いчиばん (ichiban — 'самый, больше всего').\n\nКонструкции:\n1)  $$Список A, B и C$$   のの中で  $$Объект X$$   が一番  $$Качество$$   です。\n2)  $$Категория / Группа$$   の中で  $$Объект X$$   が一番  $$Качество$$   です。\n\nПримеры:\n- カナダとフランスと日本の中で、どこが一番寒いですか (Среди Канады, Франции и Японии, где холоднее всего?).\n- カナダがいちばん寒いと思います (Я думаю, в Канаде холоднее всего).\n- 季節の中でいつがいちばん好きですか (Какое время года вы любите больше всего?).\n- 秋がいちばん好きです (Больше всего люблю осень).\n\nКритическое правило: Вопросительные слова сравнения 'ほう' и 'どっち/どちら' при выборе из 3 и более предметов НЕ используются. Вместо них употребляются стандартные вопросительные местоимения (например: だれ, どれ, 何, いつ, どこ)."
       },
       {
-        "note_id": 3,
+        "id": "L10_g3",
+        "noteId": 3,
         "title": "Грамматика 3: Использование местоимения の (Adjective / Noun + の)",
         "content": "Когда прилагательное определяет существительное и в контексте разговора абсолютно ясно, о каком именно объекте идёт речь, само существительное можно опустить, заменив его на неопределённое местоимение の (в значении 'тот, штука, один'), чтобы избежать повторения.\n\nКонструкция:\n  $$Прилагательное (い / な)$$   + の\n\nПримеры:\n- 私は黒いセーターを持っています。赤いのも持っています (У меня есть чёрный свитер. Красный  $$свитер$$   у меня тоже есть).\n- ケーキがたくさんあります。好きなのを持って行ってください (Пирогов очень много. Пожалуйста, возьмите тот  $$пирог$$  , который вам нравится).\n\nВажно: Местоимение 'の' заменяет только неодушевлённые предметы. При указании на людей используется слово 人 (например: 頭がいい人 — 'умный человек')."
       },
       {
-        "note_id": 4,
+        "id": "L10_g4",
+        "noteId": 4,
         "title": "Грамматика 3.2: Сокращение с притяжательной частицей (Noun_1 の Noun_2 → Noun_1 の)",
         "content": "Аналогично предыдущему правилу, если контекст понятен, вы можете полностью опустить определяемое существительное после притяжательной частицы の (в значении 'моё, сумка Сэма' и т.д.).\n\nПримеры:\n- 这是ソラさんのかばんですか (Это сумка Соры?)\n- いいえ、それはメアリーさんのです (Нет, это сумка Мэри  $$Мэрина$$  ).\n- アメリカの車のほうが日本のより大きいです (Американские машины больше японских  $$букв. машин Японии$$  )."
       },
       {
-        "note_id": 5,
+        "id": "L10_g5",
+        "noteId": 5,
         "title": "Грамматика 4: Выражение намерений и планов (～つもりだ / ～つもりです)",
         "content": "Для выражения планов, твёрдых намерений или решений совершить действие в будущем («собираюсь сделать Х») используется грамматическая связка つもり (tsumori).\n\nКонструкция:\n  $$Глагол в краткой форме настоящего времени$$   + つもりだ / つもりです\n\nПримеры:\n- 週末にたけしさんとテニスをするつもりです (В выходные я планирую поиграть в теннис с Такеши).\n- 山下先生はあした大学に来ないつもりです (Преподаватель Ямашита завтра не собирается приходить в университет — используется отрицательный краткий глагол).\n\nЕсли планы были в прошлом, но не осуществились, используется прошедшая связка:\n- お寺を見に行くつもりでしたが、天気がよくなかったから、行きませんでした (Я собирался пойти посмотреть храм, но из-за плохой погоды не пошёл)."
       },
       {
-        "note_id": 6,
+        "id": "L10_g6",
+        "noteId": 6,
         "title": "Грамматика 5: Изменение состояния (Adjective / Noun + なる)",
         "content": "Японский глагол なる (naru — 'становиться, превращаться') выражает качественное изменение состояния объекта.\n\nПравила соединения:\n1) い-прилагательные: конечная буква 'い' заменяется на 'く' + なる (Исключение: いい → よくなる).\n   Пример: 暖かくなる (становится тепло), 日本語の勉強が楽しくなりました (Изучение японского языка стало весёлым).\n2) な-прилагательные: корень + に + なる.\n   Пример: 静かになる (становится тихо), 日本語の勉強が好きになりました (Я полюбил японский язык / изучение стало нравиться).\n3) Существительные: существительное + に + なる.\n   Пример: 会社員になる (стать офисным сотрудником).\n\nСравнение изменений относительно прошлого состояния выражается через '前より' (чем раньше):\n- メアリーさんは前より日本語が上手になりました (Мэри стала говорить по-японски лучше, чем раньше)."
       },
       {
-        "note_id": 7,
+        "id": "L10_g7",
+        "noteId": 7,
         "title": "Грамматика 6: Отрицательные и неопределённые местоимения с частицами (кудакаに / どこにも)",
         "content": "В Уроке 8 мы выучили, что при использовании местоимений '何か' (что-то) и '何も' (ничего) падежи は, が, を полностью опускаются. Однако другие падежные частицы (такие как に, へ, で, と) при сочетании с неопределёнными местоимениями обязательно сохраняются и пишутся СТРОГО МЕЖДУ вопросительным словом и суффиксами 'ка/мo'!\n\nСхема образования:\n  $$Вопросительное слово$$   +  $$Падеж$$   + か / も\n\nПримеры:\n- どこかへ行きましたか (Вы куда-нибудь ездили?)\n- いいえ、どこへも行きませんでした (Нет, я никуда не ездил).\n- だれかに会いましたか (Вы с кем-нибудь виделись?)\n- いいえ、だれにも会いんでした (Нет, я ни с кем не виделся).\n- 何かしましたか (Вы что-то делали?)\n- いいえ、何もありませんでした/何もしませんでした (Нет, ничего не делал — обратите внимание, падеж を здесь не ставится)."
       },
       {
-        "note_id": 8,
+        "id": "L10_g8",
+        "noteId": 8,
         "title": "Грамматика 7: Частица で как инструмент или средство передвижения (The Particle で)",
         "content": "Падежная частица 'де' (de) указывает на инструмент, средство передвижения, орудие или языковой инструмент, с помощью которого совершается действие.\n\nПримеры:\n- はしでご飯を食べます (Я ем палочками  $$с помощью палочек$$  ).\n- 日本語で話しましょう (Давайте говорить по-японски  $$с помощью японского языка$$  ).\n- バスで駅まで行きました (Я поехал до вокзала на автобусе).\n- テレビで映画を見ました (Посмотрел фильм по телевизору)."
       },
       {
-        "note_id": 9,
+        "id": "L10_g9",
+        "noteId": 9,
         "title": "Особенности выражений: Конструкция совершения действий 買ってきます (katte kimasu)",
         "content": "Грамматическое сочетание глагола в Te-форме и вспомогательного глагола くる (kuru) выражает действие, которое совершается в другом месте, после чего говорящий возвращается обратно в исходную точку («я пойду, куплю  $$что-то там$$   и вернусь/принесу сюда»).\n- Пример: 北海道でおみやげを買ってきます (Я съезжу на Хоккайдо, куплю там сувенир и привезу его вам)."
       },
       {
-        "note_id": 10,
+        "id": "L10_g10",
+        "noteId": 10,
         "title": "Особенности выражений: Смягчение речи финальными частицами が и けど",
         "content": "В японской вежливой беседе предложения часто обрывают на финальных союзах 'が' (ga) или 'けど' (kedo — 'но, однако'), оставляя концовку открытой.\n- Это делается для того, чтобы не навязывать своё мнение, смягчить реплику и предоставить собеседнику социальное пространство отреагировать или высказать своё предложение.\n- Пример: バスツアーがありますが…… (У нас есть автобусный тур, но...  $$что вы думаете? / не хотите ли взглянуть?$$  )."
       }

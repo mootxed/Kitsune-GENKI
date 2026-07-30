@@ -8,6 +8,7 @@ import {
   vocabularySkills,
   vocabularySkillsReadyForIntroduction,
 } from './knowledge-model.js';
+import { getUnlockedKanjiLesson } from './genki-kanji.js';
 
 /**
  * Ensures vocabulary skill cards exist in appState.srs for a single word.
@@ -23,13 +24,15 @@ export function ensureVocabularySkillCards(appState, word, options = {}) {
   if (!appState || !appState.srs || !word) return false;
 
   let changed = false;
-  const applicable = new Set(vocabularySkills(word));
+  const skillOptions = { unlockedKanjiLesson: getUnlockedKanjiLesson(appState) };
+  const applicable = new Set(vocabularySkills(word, skillOptions));
   const ready = new Set(
     vocabularySkillsReadyForIntroduction(
       word,
       appState.reviewEvents || [],
       appState.masteryArchive?.[word.id],
-      options.now
+      options.now,
+      skillOptions
     )
   );
 
@@ -98,7 +101,9 @@ export function ensureChapterVocabularyCards(appState, lesson, options = {}) {
   let modifiedCount = 0;
 
   for (const word of lesson.words) {
-    const applicable = vocabularySkills(word);
+    const applicable = vocabularySkills(word, {
+      unlockedKanjiLesson: getUnlockedKanjiLesson(appState),
+    });
     const wordCardIds = applicable.map((skill) => makeCardId(word.id, skill));
 
     const wordChanged = ensureVocabularySkillCards(appState, word, options);

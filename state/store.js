@@ -14,11 +14,12 @@ import {
   setOpenRouterKey,
   clearOpenRouterKey,
 } from '../src/openrouter-key.js';
+import { migrateGenkiVocabularyState } from '../src/genki-vocabulary-migration.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-export const CURRENT_VERSION = 13;
+export const CURRENT_VERSION = 14;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -334,6 +335,10 @@ const MIGRATIONS = {
       version: 13,
     };
   },
+  14: (oldState) => ({
+    ...migrateGenkiVocabularyState(oldState),
+    version: 14,
+  }),
 };
 
 // ---------- Default State ----------
@@ -370,6 +375,12 @@ export function defaultState() {
     srs: {}, // cardId -> SRS record
     reviewEvents: [], // ограниченное окно событий; полные snapshot остаются только для Undo
     masteryArchive: {}, // агрегированные доказательства из свёрнутых review events
+    vocabularyMigrationArchive: {
+      schemaVersion: 1,
+      mergedCards: {},
+      retiredCards: {},
+      retiredMastery: {},
+    },
     pendingReviewLogs: [], // transactional outbox для append-only review_log
     miniGameWordHistory: {
       wordSearch: { recentSessions: [] },

@@ -50,7 +50,7 @@ export function typingCapability(word, answerOverride = null) {
     ? answerOverride
     : Array.isArray(word?.acceptedAnswers)
       ? word.acceptedAnswers
-      : [word?.writing];
+      : [word?.reading || word?.writing];
   const sourceAnswers = declaredAnswers.flatMap((answer) => parseTypingAnswers(answer));
   const acceptedAnswers = sourceAnswers.filter(
     (answer, index, answers) => answers.indexOf(answer) === index

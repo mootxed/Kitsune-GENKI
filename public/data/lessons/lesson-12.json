@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 2,
   "version": 1,
   "lesson": {
     "lesson_id": 12,
@@ -9,462 +10,652 @@
     "vocabulary": [
       {
         "id": "L12_V001",
+        "lesson": 12,
+        "writtenForm": "おなか",
+        "reading": "おなか",
+        "meaning": "живот",
         "category": "nouns",
-        "kanji": "お腹",
-        "writing": "おなか",
         "romaji": "onaka",
-        "translation": "живот"
+        "partOfSpeech": "noun",
+        "lexemeId": "おなか_お腹_noun_живот"
       },
       {
         "id": "L12_V002",
+        "lesson": 12,
+        "writtenForm": "足",
+        "reading": "あし",
+        "meaning": "нога; ступня",
         "category": "nouns",
-        "writing": "あし",
-        "kanji": "足",
         "romaji": "ashi",
-        "translation": "нога; ступня"
+        "partOfSpeech": "noun",
+        "lexemeId": "あし_足_noun_нога"
       },
       {
         "id": "L12_V003",
+        "lesson": 12,
+        "writtenForm": "のど",
+        "reading": "のど",
+        "meaning": "горло",
         "category": "nouns",
-        "kanji": "喉",
-        "writing": "のど",
         "romaji": "nodo",
-        "translation": "горло"
+        "partOfSpeech": "noun",
+        "lexemeId": "のど_喉_noun_горло"
       },
       {
         "id": "L12_V004",
+        "lesson": 12,
+        "writtenForm": "歯",
+        "reading": "は",
+        "meaning": "зуб",
         "category": "nouns",
-        "writing": "は",
-        "kanji": "歯",
         "romaji": "ha",
-        "translation": "зуб"
+        "partOfSpeech": "noun",
+        "lexemeId": "は_歯_noun_зуб"
       },
       {
         "id": "L12_V005",
+        "lesson": 12,
+        "writtenForm": "インフルエンザ",
+        "reading": "インフルエンザ",
+        "meaning": "грипп",
         "category": "nouns",
-        "kanji": "インフルエンザ",
-        "writing": "インフルエンザ",
         "romaji": "infuruenza",
-        "translation": "грипп"
+        "partOfSpeech": "noun",
+        "lexemeId": "インフルエンザ_インフルエンザ_noun_грипп"
       },
       {
         "id": "L12_V006",
+        "lesson": 12,
+        "writtenForm": "風邪",
+        "reading": "かぜ",
+        "meaning": "простуда",
         "category": "nouns",
-        "writing": "かぜ",
-        "kanji": "風邪",
         "romaji": "kaze",
-        "translation": "простуда"
+        "partOfSpeech": "noun",
+        "lexemeId": "かぜ_風邪_noun_простуда"
       },
       {
         "id": "L12_V007",
+        "lesson": 12,
+        "writtenForm": "せき",
+        "reading": "せき",
+        "meaning": "кашель",
         "category": "nouns",
-        "kanji": "咳",
-        "writing": "せき",
         "romaji": "seki",
-        "translation": "кашель"
+        "partOfSpeech": "noun",
+        "lexemeId": "せき_咳_noun_кашель"
       },
       {
         "id": "L12_V008",
+        "lesson": 12,
+        "writtenForm": "二日酔い",
+        "reading": "ふつかよい",
+        "meaning": "похмелье",
         "category": "nouns",
-        "writing": "ふつかよい",
-        "kanji": "二日酔い",
         "romaji": "futskayoi",
-        "translation": "похмелье"
+        "partOfSpeech": "noun",
+        "lexemeId": "ふつかよい_二日酔い_noun_похмелье"
       },
       {
         "id": "L12_V009",
+        "lesson": 12,
+        "writtenForm": "ホームシック",
+        "reading": "ホームシック",
+        "meaning": "тоска по дому",
         "category": "nouns",
-        "kanji": "ホームシック",
-        "writing": "ホームシック",
         "romaji": "hoomushikku",
-        "translation": "тоска по дому"
+        "partOfSpeech": "noun",
+        "lexemeId": "ホームシック_ホームシック_noun_тоскаподому"
       },
       {
         "id": "L12_V010",
+        "lesson": 12,
+        "writtenForm": "アレルギー",
+        "reading": "アレルギー",
+        "meaning": "аллергия",
         "category": "nouns",
-        "kanji": "アレルギー",
-        "writing": "アレルギー",
         "romaji": "arergii",
-        "translation": "аллергия"
+        "partOfSpeech": "noun",
+        "lexemeId": "アレルギー_アレルギー_noun_аллергия"
       },
       {
         "id": "L12_V011",
+        "lesson": 12,
+        "writtenForm": "ジュース",
+        "reading": "ジュース",
+        "meaning": "сок",
         "category": "nouns",
-        "kanji": "ジュース",
-        "writing": "ジュース",
         "romaji": "juusu",
-        "translation": "сок"
+        "partOfSpeech": "noun",
+        "lexemeId": "ジュース_ジュース_noun_сок"
       },
       {
         "id": "L12_V012",
+        "lesson": 12,
+        "writtenForm": "卵",
+        "reading": "たまご",
+        "meaning": "яйцо",
         "category": "nouns",
-        "writing": "たまご",
-        "kanji": "卵",
         "romaji": "tamago",
-        "translation": "яйцо"
+        "partOfSpeech": "noun",
+        "lexemeId": "たまご_卵_noun_яйцо"
       },
       {
         "id": "L12_V013",
+        "lesson": 12,
+        "writtenForm": "服",
+        "reading": "ふく",
+        "meaning": "одежда",
         "category": "nouns",
-        "writing": "ふく",
-        "kanji": "服",
         "romaji": "fuku",
-        "translation": "одежда"
+        "partOfSpeech": "noun",
+        "lexemeId": "ふく_服_noun_одежда"
       },
       {
         "id": "L12_V014",
+        "lesson": 12,
+        "writtenForm": "物",
+        "reading": "もの",
+        "meaning": "вещь; предмет",
         "category": "nouns",
-        "writing": "もの",
-        "kanji": "物",
         "romaji": "mono",
-        "translation": "вещь (конкретный предмет)"
+        "partOfSpeech": "noun",
+        "lexemeId": "もの_物_noun_вещь"
       },
       {
         "id": "L12_V015",
+        "lesson": 12,
+        "writtenForm": "プレゼント",
+        "reading": "プレゼント",
+        "meaning": "подарок",
         "category": "nouns",
-        "kanji": "プレゼント",
-        "writing": "プレゼント",
         "romaji": "purezento",
-        "translation": "подарок"
+        "partOfSpeech": "noun",
+        "lexemeId": "プレゼント_プレゼント_noun_подарок"
       },
       {
         "id": "L12_V016",
+        "lesson": 12,
+        "writtenForm": "切符",
+        "reading": "きっぷ",
+        "meaning": "билет на поезд",
         "category": "nouns",
-        "writing": "きっぷ",
-        "kanji": "切符",
         "romaji": "kippu",
-        "translation": "билет (на поезд/транспорт)"
+        "partOfSpeech": "noun",
+        "lexemeId": "きっぷ_切符_noun_билет"
       },
       {
         "id": "L12_V017",
+        "lesson": 12,
+        "writtenForm": "〜代",
+        "reading": "〜だい",
+        "meaning": "плата; стоимость",
         "category": "nouns",
-        "writing": "～だい",
-        "kanji": "～代",
         "romaji": "...dai",
-        "translation": "плата; стоимость; тариф за ..."
+        "partOfSpeech": "noun",
+        "lexemeId": "～だい_～代_noun_плата"
       },
       {
         "id": "L12_V018",
+        "lesson": 12,
+        "writtenForm": "用事",
+        "reading": "ようじ",
+        "meaning": "дело; поручение",
         "category": "nouns",
-        "writing": "ようじ",
-        "kanji": "用事",
         "romaji": "yooji",
-        "translation": "дела; бизнес, о котором нужно позаботиться"
+        "partOfSpeech": "noun",
+        "lexemeId": "ようじ_用事_noun_бизнес"
       },
       {
         "id": "L12_V019",
+        "lesson": 12,
+        "writtenForm": "お手洗い",
+        "reading": "おてあらい",
+        "meaning": "туалет",
         "category": "nouns",
-        "writing": "おてあらい",
-        "kanji": "お手洗い",
         "romaji": "otearai",
-        "translation": "туалет; уборная"
+        "partOfSpeech": "noun",
+        "lexemeId": "おてあらい_お手洗い_noun_туалет"
       },
       {
         "id": "L12_V020",
+        "lesson": 12,
+        "writtenForm": "試合",
+        "reading": "しあい",
+        "meaning": "матч; игра",
         "category": "nouns",
-        "writing": "しあい",
-        "kanji": "試合",
         "romaji": "shiai",
-        "translation": "матч; игра"
+        "partOfSpeech": "noun",
+        "lexemeId": "しあい_試合_noun_игра"
       },
       {
         "id": "L12_V021",
+        "lesson": 12,
+        "writtenForm": "政治",
+        "reading": "せいじ",
+        "meaning": "политика",
         "category": "nouns",
-        "writing": "せいじ",
-        "kanji": "政治",
         "romaji": "seiji",
-        "translation": "политика"
+        "partOfSpeech": "noun",
+        "lexemeId": "せいじ_政治_noun_политика"
       },
       {
         "id": "L12_V022",
+        "lesson": 12,
+        "writtenForm": "成績",
+        "reading": "せいせき",
+        "meaning": "оценка; успеваемость",
         "category": "nouns",
-        "writing": "せいせき",
-        "kanji": "成績",
         "romaji": "seiseki",
-        "translation": "оценка; успеваемость (на тесте и т. д.)"
+        "partOfSpeech": "noun",
+        "lexemeId": "せいせき_成績_noun_оценка"
       },
       {
         "id": "L12_V023",
+        "lesson": 12,
+        "writtenForm": "彼女",
+        "reading": "かのじょ",
+        "meaning": "она; девушка",
         "category": "nouns",
-        "writing": "かのじょ",
-        "kanji": "彼女",
         "romaji": "kanojo",
-        "translation": "она; девушка (возлюбленная)"
+        "partOfSpeech": "noun",
+        "lexemeId": "かのじょ_彼女_noun_девушка"
       },
       {
         "id": "L12_V024",
+        "lesson": 12,
+        "writtenForm": "彼",
+        "reading": "かれ",
+        "meaning": "он; парень",
         "category": "nouns",
-        "writing": "かれ",
-        "kanji": "彼",
         "romaji": "kare",
-        "translation": "он; парень (возлюбленный)"
+        "partOfSpeech": "noun",
+        "lexemeId": "かれ_彼_noun_он"
       },
       {
         "id": "L12_V025",
+        "lesson": 12,
+        "writtenForm": "彼氏",
+        "reading": "かれし",
+        "meaning": "парень; молодой человек",
         "category": "nouns",
-        "writing": "かれし",
-        "kanji": "彼氏",
         "romaji": "kareshi",
-        "translation": "парень (возлюбленный)"
+        "partOfSpeech": "noun",
+        "lexemeId": "かれし_彼氏_noun_парень"
       },
       {
         "id": "L12_V026",
+        "lesson": 12,
+        "writtenForm": "意味",
+        "reading": "いみ",
+        "meaning": "значение; смысл",
         "category": "nouns",
-        "writing": "いみ",
-        "kanji": "意味",
         "romaji": "imi",
-        "translation": "значение; смысл"
+        "partOfSpeech": "noun",
+        "lexemeId": "いみ_意味_noun_значение"
       },
       {
         "id": "L12_V027",
+        "lesson": 12,
+        "writtenForm": "狭い",
+        "reading": "せまい",
+        "meaning": "узкий; тесный",
         "category": "i-adjectives",
-        "writing": "せまい",
-        "kanji": "狭い",
         "romaji": "semai",
-        "translation": "узкий; тесный"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "せまい_狭い_adjective_тесный"
       },
       {
         "id": "L12_V028",
+        "lesson": 12,
+        "writtenForm": "広い",
+        "reading": "ひろい",
+        "meaning": "широкий; просторный",
         "category": "i-adjectives",
-        "writing": "ひろい",
-        "kanji": "広い",
         "romaji": "hiroi",
-        "translation": "широкий; просторный"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "ひろい_広い_adjective_просторный"
       },
       {
         "id": "L12_V029",
+        "lesson": 12,
+        "writtenForm": "悪い",
+        "reading": "わるい",
+        "meaning": "плохой",
         "category": "i-adjectives",
-        "writing": "わるい",
-        "kanji": "悪い",
         "romaji": "warui",
-        "translation": "плохой"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "わるい_悪い_adjective_плохой"
       },
       {
         "id": "L12_V030",
+        "lesson": 12,
+        "writtenForm": "痛い",
+        "reading": "いたい",
+        "meaning": "болезненный; больно",
         "category": "i-adjectives",
-        "writing": "いたい",
-        "kanji": "痛い",
         "romaji": "itai",
-        "translation": "больно; болезненный"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "いたい_痛い_adjective_болезненный"
       },
       {
         "id": "L12_V031",
+        "lesson": 12,
+        "writtenForm": "甘い",
+        "reading": "あまい",
+        "meaning": "сладкий",
         "category": "i-adjectives",
-        "writing": "あまい",
-        "kanji": "甘い",
         "romaji": "amai",
-        "translation": "сладкий"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "あまい_甘い_adjective_сладкий"
       },
       {
         "id": "L12_V032",
+        "lesson": 12,
+        "writtenForm": "多い",
+        "reading": "おおい",
+        "meaning": "многочисленный; много",
         "category": "i-adjectives",
-        "writing": "おおい",
-        "kanji": "多い",
         "romaji": "ooi",
-        "translation": "много (кого-то/чего-то)"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "おおい_多い_adjective_много"
       },
       {
         "id": "L12_V033",
+        "lesson": 12,
+        "writtenForm": "素敵",
+        "reading": "すてき",
+        "meaning": "прекрасный; замечательный",
         "category": "na-adjectives",
-        "writing": "すてき（な）",
-        "kanji": "素敵",
         "romaji": "suteki (na)",
-        "translation": "замечательный, милый, красивый"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "na",
+        "lexemeId": "すてき（な）_素敵_adjective_замечательный"
       },
       {
         "id": "L12_V034",
+        "lesson": 12,
+        "writtenForm": "歩く",
+        "reading": "あるく",
+        "meaning": "ходить пешком",
         "category": "u-verbs",
-        "writing": "あるく",
-        "kanji": "歩く",
         "romaji": "aruku",
-        "translation": "идти пешком"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "あるく_歩く_verb_godan_идтипешком"
       },
       {
         "id": "L12_V035",
+        "lesson": 12,
+        "writtenForm": "風邪をひく",
+        "reading": "かぜをひく",
+        "meaning": "простудиться",
         "category": "u-verbs",
-        "writing": "かぜをひく",
-        "kanji": "風邪をひく",
         "romaji": "kaze o hiku",
-        "translation": "простудиться"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "かぜをひく_風邪をひく_verb_godan_простудиться"
       },
       {
         "id": "L12_V036",
+        "lesson": 12,
+        "writtenForm": "熱がある",
+        "reading": "ねつがある",
+        "meaning": "иметь повышенную температуру",
         "category": "u-verbs",
-        "writing": "ねつがある",
-        "kanji": "熱がある",
         "romaji": "netsu ga aru",
-        "translation": "иметь повышенную температуру (жар)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "ねつがある_熱がある_verb_godan_иметьповышеннуютемпературу"
       },
       {
         "id": "L12_V037",
+        "lesson": 12,
+        "writtenForm": "のどが渇く",
+        "reading": "のどがかわく",
+        "meaning": "испытывать жажду",
         "category": "u-verbs",
-        "writing": "のどがかわく",
-        "kanji": "のどが渇く",
         "romaji": "nodo ga kawaku",
-        "translation": "испытывать жажду"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "のどがかわく_のどが渇く_verb_godan_испытыватьжажду"
       },
       {
         "id": "L12_V038",
+        "lesson": 12,
+        "writtenForm": "払う",
+        "reading": "はらう",
+        "meaning": "платить",
         "category": "u-verbs",
-        "writing": "はらう",
-        "kanji": "払う",
         "romaji": "harau",
-        "translation": "платить (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "はらう_払う_verb_godan_платить",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L12_V039",
+        "lesson": 12,
+        "writtenForm": "なくす",
+        "reading": "なくす",
+        "meaning": "терять",
         "category": "u-verbs",
-        "kanji": "なくす",
-        "writing": "なくす",
         "romaji": "nakusu",
-        "translation": "терять (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "なくす_なくす_verb_godan_терять",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L12_V040",
+        "lesson": 12,
+        "writtenForm": "興味がある",
+        "reading": "きょうみがある",
+        "meaning": "интересоваться",
         "category": "u-verbs",
-        "writing": "きょうみがある",
-        "kanji": "興味がある",
         "romaji": "kyoomi ga aru",
-        "translation": "интересоваться чем-либо (тема に)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "きょうみがある_興味がある_verb_godan_интересоватьсячемлибо"
       },
       {
         "id": "L12_V041",
+        "lesson": 12,
+        "writtenForm": "せきが出る",
+        "reading": "せきがでる",
+        "meaning": "кашлять",
         "category": "ru-verbs",
-        "writing": "せきがでる",
-        "kanji": "せきが出る",
         "romaji": "seki ga deru",
-        "translation": "кашлять"
+        "partOfSpeech": "verb",
+        "verbClass": "ichidan",
+        "lexemeId": "せきがでる_せきが出る_verb_ichidan_кашлять"
       },
       {
         "id": "L12_V042",
+        "lesson": 12,
+        "writtenForm": "別れる",
+        "reading": "わかれる",
+        "meaning": "расставаться; разлучаться",
         "category": "ru-verbs",
-        "writing": "わかれる",
-        "kanji": "別れる",
         "romaji": "wakareru",
-        "translation": "расставаться; разделяться (с кем-то と)"
+        "partOfSpeech": "verb",
+        "verbClass": "ichidan",
+        "lexemeId": "わかれる_別れる_verb_ichidan_разделяться"
       },
       {
         "id": "L12_V043",
+        "lesson": 12,
+        "writtenForm": "緊張する",
+        "reading": "きんちょうする",
+        "meaning": "нервничать",
         "category": "irregular-verbs",
-        "writing": "きんちょうする",
-        "kanji": "緊張する",
         "romaji": "kinchoo suru",
-        "translation": "нервничать; испытывать напряжение"
+        "partOfSpeech": "verb",
+        "verbClass": "irregular",
+        "lexemeId": "きんちょうする_緊張する_verb_irregular_испытыватьнапряжение"
       },
       {
         "id": "L12_V044",
+        "lesson": 12,
+        "writtenForm": "心配する",
+        "reading": "しんぱいする",
+        "meaning": "беспокоиться",
         "category": "irregular-verbs",
-        "writing": "しんぱいする",
-        "kanji": "心配する",
         "romaji": "shinpai suru",
-        "translation": "беспокоиться; волноваться"
+        "partOfSpeech": "verb",
+        "verbClass": "irregular",
+        "lexemeId": "しんぱいする_心配する_verb_irregular_беспокоиться"
       },
       {
         "id": "L12_V045",
+        "lesson": 12,
+        "writtenForm": "お大事に",
+        "reading": "おだいじに",
+        "meaning": "выздоравливайте; берегите себя",
         "category": "adverbs",
-        "writing": "おだいじに",
-        "kanji": "お大事に",
         "romaji": "odaiji ni",
-        "translation": "Берегите себя! / Выздоравливайте скорее!"
+        "partOfSpeech": "adverb",
+        "lexemeId": "おだいじに_お大事に_adverb_берегитесебя"
       },
       {
         "id": "L12_V046",
+        "lesson": 12,
+        "writtenForm": "元気がない",
+        "reading": "げんきがない",
+        "meaning": "плохо выглядеть; быть без сил",
         "category": "adverbs",
-        "writing": "げんきがない",
-        "kanji": "元気がない",
         "romaji": "genki ga nai",
-        "translation": "выглядеть неважно / уставшим / подавленным"
+        "partOfSpeech": "adverb",
+        "lexemeId": "げんきがない_元気がない_adverb_выглядетьневажно"
       },
       {
         "id": "L12_V047",
+        "lesson": 12,
+        "writtenForm": "できるだけ",
+        "reading": "できるだけ",
+        "meaning": "насколько возможно",
         "category": "adverbs",
-        "kanji": "できるだけ",
-        "writing": "できるだけ",
         "romaji": "dekiru dake",
-        "translation": "насколько возможно; по возможности"
+        "partOfSpeech": "adverb",
+        "lexemeId": "できるだけ_できるだけ_adverb_наскольковозможно"
       },
       {
         "id": "L12_V048",
+        "lesson": 12,
+        "writtenForm": "多分",
+        "reading": "たぶん",
+        "meaning": "наверное; возможно",
         "category": "adverbs",
-        "writing": "たぶん",
-        "kanji": "多分",
         "romaji": "tabun",
-        "translation": "вероятно; может быть"
+        "partOfSpeech": "adverb",
+        "lexemeId": "たぶん_多分_adverb_вероятно"
       },
       {
         "id": "L12_V049",
+        "lesson": 12,
+        "writtenForm": "もうすぐ",
+        "reading": "もうすぐ",
+        "meaning": "очень скоро",
         "category": "adverbs",
-        "kanji": "もうすぐ",
-        "writing": "もうすぐ",
         "romaji": "moosugu",
-        "translation": "очень скоро; с минуты на минуту"
+        "partOfSpeech": "adverb",
+        "lexemeId": "もうすぐ_もうすぐ_adverb_оченьскоро"
       },
       {
         "id": "L12_V050",
+        "lesson": 12,
+        "writtenForm": "初めて",
+        "reading": "はじめて",
+        "meaning": "впервые",
         "category": "adverbs",
-        "writing": "はじめて",
-        "kanji": "初めて",
         "romaji": "hajimete",
-        "translation": "в первый раз"
+        "partOfSpeech": "adverb",
+        "lexemeId": "はじめて_初めて_adverb_впервыйраз"
       },
       {
         "id": "L12_V051",
+        "lesson": 12,
+        "writtenForm": "二三日",
+        "reading": "にさんにち",
+        "meaning": "два-три дня",
         "category": "adverbs",
-        "writing": "にさんにち",
-        "kanji": "二三日",
         "romaji": "nisannichi",
-        "translation": "два-три дня"
+        "partOfSpeech": "adverb",
+        "lexemeId": "にさんにち_二三日_adverb_дватридня"
       },
       {
         "id": "L12_V052",
+        "lesson": 12,
+        "writtenForm": "それに",
+        "reading": "それに",
+        "meaning": "к тому же; кроме того",
         "category": "adverbs",
-        "kanji": "それに",
-        "writing": "それに",
         "romaji": "sore ni",
-        "translation": "более того; к тому же"
+        "partOfSpeech": "adverb",
+        "lexemeId": "それに_それに_adverb_болеетого"
       },
       {
         "id": "L12_V053",
+        "lesson": 12,
+        "writtenForm": "同じ",
+        "reading": "おなじ",
+        "meaning": "одинаковый; тот же",
         "category": "adverbs",
-        "writing": "おなじ",
-        "kanji": "同じ",
         "romaji": "onaji",
-        "translation": "тот же самый; одинаковый"
+        "partOfSpeech": "adverb",
+        "lexemeId": "おなじ_同じ_adverb_одинаковый"
       }
     ],
     "notes": [
       {
-        "note_id": 1,
+        "id": "L12_g1",
+        "noteId": 1,
         "title": "Грамматика 1: Объяснительный предикат ～んです (n desu)",
         "content": "Используется вместо обычного сообщения фактов, когда требуется дать объяснение, обоснование или мотивировку. Конструкция: [Краткая форма (глагол/прилагательное/существительное)] + んです. Особенности соединения: если перед んです идет существительное или な-прилагательное в утвердительной форме настоящего времени, вместо だ ставится な (например: 静かなんです, 学生なんです). В вопросах んですか используется для вежливого приглашения собеседника разъяснить ситуацию (например, «Почему ты опоздал?» или «Что случилось?»). В письменной речи заменяется на более формальный вариант のです."
       },
       {
-        "note_id": 2,
+        "id": "L12_g2",
+        "noteId": 2,
         "title": "Грамматика 2: Выражение чрезмерности ～すぎる (sugiru)",
         "content": "Означает «слишком много» или «в избытке», указывая на превышение нормы, что обычно несёт негативный оттенок. Грамматически すぎる спрягается как правильный ru-глагол. Конструкция: 1) Основа глагола (Masu-форма без masu) + すぎる (например: 食べすぎる — объесться); 2) Основа い/な-прилагательных без суффиксов い/な + すぎる (например: 高すぎる — слишком дорогой, 静かすぎる — слишком тихий). Примечание: это выражение выражает нежелательность явления, поэтому использовать его в качестве прямого комплимента (например, 'вы слишком добры') стилистически некорректно."
       },
       {
-        "note_id": 3,
+        "id": "L12_g3",
+        "noteId": 3,
         "title": "Грамматика 3: Совет и рекомендация ～ほうがいいです (hoo ga ii desu)",
         "content": "Используется для выдачи рекомендаций или советов («лучше сделать...» / «лучше не делать...»). Правила выбора времени глагола строгие: 1) Для утвердительного совета используется Краткая форма глагола в ПРОШЕДШЕМ времени (Affirmative Past short form) + ほうがいいです (например: もっと野菜を食べたほうがいいですよ — Тебе лучше есть больше овощей); 2) Для отрицательного совета (чего делать не стоит) используется Краткая форма глагола в НАСТОЯЩЕМ времени (Negative Present short form) + ほうがいいです (например: 授業を休まないほうがいいですよ — Лучше не пропускать занятия)."
       },
       {
-        "note_id": 4,
+        "id": "L12_g4",
+        "noteId": 4,
         "title": "Грамматика 4: Выражение причины ～ので (node)",
         "content": "Используется для указания причины или повода («так как...», «потому что...»). Семантически схож с から (kara), но стилистически звучит мягче, объективнее и более формально, из-за чего активно употребляется в официальной и письменной речи. Конструкция: [Причина в краткой форме] + ので + [Следствие]. Важно: если перед ので стоит な-прилагательное или существительное в утвердительной форме настоящего времени, между ними обязательно добавляется な (например: 日曜日なので — так как сегодня воскресенье; いじわるなので — из-за того, что вредный)."
       },
       {
-        "note_id": 5,
+        "id": "L12_g5",
+        "noteId": 5,
         "title": "Грамматика 5: Долженствование ～なければいけません / ～なきゃいけません",
         "content": "Выражает обязательство или необходимость совершения действия («должен», «необходимо»). Образуется от отрицательной краткой формы глагола (на ない): сбрасывается конечная い и добавляется ければいけません (формальный/письменный стиль) или きゃいけません (разговорный стиль). Таблица сокращений в разговорной речи позволяет усекать ～なきゃいけません до простого ～なきゃ. Для выражения долженствования в прошедшем времени («пришлось сделать») いけません меняется на いけませんでした."
       },
       {
-        "note_id": 6,
+        "id": "L12_g6",
+        "noteId": 6,
         "title": "Грамматика 6: Вежливые предположения ～でしょうか (deshoo ka)",
         "content": "Используется при формулировании вопроса, на который собеседник может не знать точного ответа, помогая избежать неловкости за счёт придания речи оттенка мягкости, нерешительности и вежливости. Само по себе выражение でしょう (deshoo) означает «вероятно / скорее всего». Конструкция でしょうか следует сразу за краткой формой предикатов. Исключение: существительные и な-прилагательные в настоящем утвердительном времени присоединяют でしょうか напрямую без использования связки だ (например: トマトは野菜でしょうか — Является ли томат овощем?)."
       },
       {
-        "note_id": 7,
+        "id": "L12_g7",
+        "noteId": 7,
         "title": "Особенности выражений: Междометие うーん (uun)",
         "content": "Междометие с долгим звуком 'u' служит для выражения задумчивости, колебания или рефлексии. Чаще всего используется в ситуациях, когда говорящий не может быстро принять решение, либо когда он собирается озвучить ответ, который может расстроить или не понравиться собеседнику (например, вежливый отказ на предложение)."
       }

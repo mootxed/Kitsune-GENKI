@@ -1,29 +1,25 @@
-# Lesson Schema — Схема Файла Урока
+# Lesson Schema — GENKI I
 
-В этом документе опиcана формальная схема JSON-файлов уроков (`public/data/lessons/genki-lesson-XX.json`).
-
----
-
-## 📑 Корневая структура урока
+Уроки 1–12 хранятся в `public/data/lessons/lesson-XX.json`. XLSX не читаются приложением во время работы.
 
 ```json
 {
-  "chapter": 1,
-  "title": "New Friends",
-  "titleJa": "新しいともだち",
-  "description": "Greetings, Numbers, Time, Major",
-  "vocabulary": [ ... ],
-  "grammar": [ ... ],
-  "kanji": [ ... ],
-  "cultureNote": { ... }
+  "schemaVersion": 2,
+  "version": 1,
+  "lesson": {
+    "lesson_id": 3,
+    "title": "Урок 3",
+    "vocabulary": [],
+    "notes": [],
+    "cultural_notes": []
+  }
 }
 ```
 
----
+`vocabulary` — канонический словарь урока. Runtime преобразует его в `lesson.words`, но второго контентного источника не существует.
 
-## 🆔 Правила именования Идентификаторов (ID Rules)
+`notes` содержит грамматические темы с ID вида `L3_g1`. Полный интерактивный материал загружается из `public/data/grammar-quizzes/lesson-XX.json` и объединяется по тому же ID.
 
-- Идентификаторы элементов уникальны в рамках всего приложения.
-- **Лексика**: `genki{Book}_l{Chapter}_v{Index}` (например, `genki1_l1_v1`).
-- **Грамматика**: `genki{Book}_l{Chapter}_g{Index}` (например, `genki1_l1_g1`).
-- **Кандзи**: `kanji_{CharacterHex}` или `kanji_{Index}`.
+Метаданные Workbook загружаются отдельно и не содержат ответов.
+
+Автоматические инварианты проверяет `npm run validate:genki`.

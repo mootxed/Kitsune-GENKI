@@ -46,9 +46,9 @@ describe('typing capability across the lesson catalogue', () => {
     ]);
   });
 
-  it('создаёт проходимый recall, но не синтетический production для 674 слов', () => {
+  it('создаёт проходимый recall, но не синтетический production для 676 слов', () => {
     const words = catalogueWords();
-    expect(words).toHaveLength(674);
+    expect(words).toHaveLength(676);
 
     for (const word of words) {
       const capability = typingCapability(word);

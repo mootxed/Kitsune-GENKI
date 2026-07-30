@@ -4,6 +4,7 @@ import { $, $$ } from '../src/utils.js';
 import { wordById, cardChapter } from '../src/srs-helpers.js';
 import { markCardIntroduced } from '../src/srs-limits.js';
 import { SRS } from '../srs.js';
+import { displayWordForm, isKanjiFormAvailable } from '../src/genki-kanji.js';
 
 import {
   flashQueue,
@@ -203,14 +204,17 @@ export function renderFlash(state, dependencies) {
     return;
   }
 
-  const displayKanji = word.kanji || word.writing;
-  const displayWriting = word.writing;
-  const displayTranslation = word.translation;
+  const displayKanji = displayWordForm(word, state);
+  const displayWriting = word.reading || word.writing;
+  const displayTranslation = word.meaning || word.translation;
   const displayCategory = word.category || 'Слово';
   const hideRomaji = state.settings?.hideRomaji || false;
   const displayRomaji = word.romaji || '';
 
-  const cardMode = card.forcedMode || determineCardMode(card, word);
+  let cardMode = card.forcedMode || determineCardMode(card, word);
+  if (cardMode === CARD_MODES.DRAWING && !isKanjiFormAvailable(word, state)) {
+    cardMode = CARD_MODES.MULTIPLE_CHOICE;
+  }
 
   if (cardMode === CARD_MODES.PARTICLE_QUIZ) {
     renderParticleQuizMode(

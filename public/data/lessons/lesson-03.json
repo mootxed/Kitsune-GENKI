@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 2,
   "version": 1,
   "lesson": {
     "lesson_id": 3,
@@ -15,507 +16,749 @@
     "vocabulary": [
       {
         "id": "L3_V001",
+        "lesson": 3,
+        "writtenForm": "映画",
+        "reading": "えいが",
+        "meaning": "фильм",
         "category": "entertainment",
-        "kanji": "映画",
-        "writing": "えいが",
         "romaji": "eiga",
-        "translation": "кино, фильм"
+        "topic": "entertainment",
+        "partOfSpeech": "noun",
+        "lexemeId": "えいが_映画_noun_кино"
       },
       {
         "id": "L3_V002",
+        "lesson": 3,
+        "writtenForm": "音楽",
+        "reading": "おんがく",
+        "meaning": "музыка",
         "category": "entertainment",
-        "kanji": "音楽",
-        "writing": "おんがく",
         "romaji": "ongaku",
-        "translation": "музыка"
+        "topic": "entertainment",
+        "partOfSpeech": "noun",
+        "lexemeId": "おんがく_音楽_noun_музыка"
       },
       {
         "id": "L3_V003",
+        "lesson": 3,
+        "writtenForm": "雑誌",
+        "reading": "ざっし",
+        "meaning": "журнал",
         "category": "entertainment",
-        "kanji": "雑誌",
-        "writing": "ざっし",
         "romaji": "zasshi",
-        "translation": "журнал"
+        "topic": "entertainment",
+        "partOfSpeech": "noun",
+        "lexemeId": "ざっし_雑誌_noun_журнал"
       },
       {
         "id": "L3_V004",
+        "lesson": 3,
+        "writtenForm": "スポーツ",
+        "reading": "スポーツ",
+        "meaning": "спорт",
         "category": "entertainment",
-        "kanji": "スポーツ",
-        "writing": "スポーツ",
         "romaji": "supootsu",
-        "translation": "спорт"
+        "topic": "entertainment",
+        "partOfSpeech": "noun",
+        "lexemeId": "スポーツ_スポーツ_noun_спорт"
       },
       {
         "id": "L3_V005",
+        "lesson": 3,
+        "writtenForm": "デート",
+        "reading": "デート",
+        "meaning": "встречаться",
         "category": "entertainment",
-        "kanji": "デート",
-        "writing": "デート",
         "romaji": "deeto",
-        "translation": "свидание"
+        "topic": "entertainment",
+        "partOfSpeech": "noun",
+        "lexemeId": "デート_デート_noun_свидание"
       },
       {
         "id": "L3_V006",
+        "lesson": 3,
+        "writtenForm": "テニス",
+        "reading": "テニス",
+        "meaning": "теннис",
         "category": "entertainment",
-        "kanji": "テニス",
-        "writing": "テニス",
         "romaji": "tenisu",
-        "translation": "теннис"
+        "topic": "entertainment",
+        "partOfSpeech": "noun",
+        "lexemeId": "テニス_テニス_noun_теннис"
       },
       {
         "id": "L3_V007",
+        "lesson": 3,
+        "writtenForm": "テレビ",
+        "reading": "テレビ",
+        "meaning": "TV",
         "category": "entertainment",
-        "kanji": "テレビ",
-        "writing": "テレビ",
         "romaji": "terebi",
-        "translation": "телевизор, ТВ"
+        "topic": "entertainment",
+        "partOfSpeech": "noun",
+        "lexemeId": "テレビ_テレビ_noun_тв"
       },
       {
         "id": "L3_V008",
+        "lesson": 3,
+        "writtenForm": "アイスクリーム",
+        "reading": "アイスクリーム",
+        "meaning": "мороженное",
         "category": "food",
-        "kanji": "アイスクリーム",
-        "writing": "アイスクリーム",
         "romaji": "aisukuriimu",
-        "translation": "мороженое"
+        "topic": "food",
+        "partOfSpeech": "noun",
+        "lexemeId": "アイスクリーム_アイスクリーム_noun_мороженое"
       },
       {
-        "id": "L3_V009",
-        "category": "food",
-        "kanji": "ハンバーガー",
-        "writing": "ハンバーガー",
-        "romaji": "hanbaagaa",
-        "translation": "гамбургер"
+        "id": "L3_V057",
+        "lesson": 3,
+        "writtenForm": "ハンバーグ",
+        "reading": "ハンバーグ",
+        "meaning": "бургер",
+        "lexemeId": "__none"
       },
       {
         "id": "L3_V010",
+        "lesson": 3,
+        "writtenForm": "お酒",
+        "reading": "おさけ",
+        "meaning": "алкоголь",
         "category": "food",
-        "kanji": "おさけ",
-        "writing": "おさけ",
         "romaji": "osake",
-        "translation": "саке, алкогольные напитки"
+        "topic": "food",
+        "partOfSpeech": "noun",
+        "lexemeId": "おさけ_おさけ_noun_алкогольныенапитки"
       },
       {
         "id": "L3_V011",
+        "lesson": 3,
+        "writtenForm": "お茶",
+        "reading": "おちゃ",
+        "meaning": "зелёный чай",
         "category": "food",
-        "kanji": "お茶",
-        "writing": "おちゃ",
         "romaji": "ocha",
-        "translation": "зелёный чай"
+        "topic": "food",
+        "partOfSpeech": "noun",
+        "lexemeId": "おちゃ_お茶_noun_зелёныйчай"
       },
       {
         "id": "L3_V012",
+        "lesson": 3,
+        "writtenForm": "コーヒー",
+        "reading": "コーヒー",
+        "meaning": "кофе",
         "category": "food",
-        "kanji": "コーヒー",
-        "writing": "コーヒー",
         "romaji": "koohii",
-        "translation": "кофе"
+        "topic": "food",
+        "partOfSpeech": "noun",
+        "lexemeId": "コーヒー_コーヒー_noun_кофе"
       },
       {
         "id": "L3_V013",
+        "lesson": 3,
+        "writtenForm": "水",
+        "reading": "みず",
+        "meaning": "вода",
         "category": "food",
-        "kanji": "水",
-        "writing": "みず",
         "romaji": "mizu",
-        "translation": "вода"
+        "topic": "food",
+        "partOfSpeech": "noun",
+        "lexemeId": "みず_水_noun_вода"
       },
       {
         "id": "L3_V014",
+        "lesson": 3,
+        "writtenForm": "朝ご飯",
+        "reading": "あさごはん",
+        "meaning": "завтрак",
         "category": "food",
-        "kanji": "朝ご飯",
-        "writing": "あさごはん",
         "romaji": "asagohan",
-        "translation": "завтрак"
+        "topic": "food",
+        "partOfSpeech": "noun",
+        "lexemeId": "あさごはん_朝ご飯_noun_завтрак"
       },
       {
         "id": "L3_V015",
+        "lesson": 3,
+        "writtenForm": "昼ご飯",
+        "reading": "ひるごはん",
+        "meaning": "обед",
         "category": "food",
-        "kanji": "昼ご飯",
-        "writing": "ひるごはん",
         "romaji": "hirugohan",
-        "translation": "обед"
+        "topic": "food",
+        "partOfSpeech": "noun",
+        "lexemeId": "ひるごはん_昼ご飯_noun_обед"
       },
       {
         "id": "L3_V016",
+        "lesson": 3,
+        "writtenForm": "晩ご飯",
+        "reading": "ばんごはん",
+        "meaning": "ужин",
         "category": "food",
-        "kanji": "晩ご飯",
-        "writing": "ばんごはん",
         "romaji": "bangohan",
-        "translation": "ужин"
+        "topic": "food",
+        "partOfSpeech": "noun",
+        "lexemeId": "ばんごはん_晩ご飯_noun_ужин"
       },
       {
         "id": "L3_V017",
+        "lesson": 3,
+        "writtenForm": "家",
+        "reading": "いえ",
+        "meaning": "дом",
         "category": "places",
-        "kanji": "家",
-        "writing": "いえ",
         "romaji": "ie",
-        "translation": "дом"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "いえ_家_noun_дом"
       },
       {
         "id": "L3_V018",
+        "lesson": 3,
+        "writtenForm": "うち",
+        "reading": "うち",
+        "meaning": "свой дом",
         "category": "places",
-        "kanji": "家",
-        "writing": "うち",
         "romaji": "uchi",
-        "translation": "дом, моё место"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "うち_家_noun_дом"
       },
       {
         "id": "L3_V019",
+        "lesson": 3,
+        "writtenForm": "学校",
+        "reading": "がっこう",
+        "meaning": "школа",
         "category": "places",
-        "kanji": "学校",
-        "writing": "がっこう",
         "romaji": "gakkoo",
-        "translation": "школа"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "がっこう_学校_noun_школа"
       },
       {
         "id": "L3_V020",
+        "lesson": 3,
+        "writtenForm": "カフェ",
+        "reading": "カフェ",
+        "meaning": "кафе",
         "category": "places",
-        "kanji": "カフェ",
-        "writing": "カフェ",
         "romaji": "kafe",
-        "translation": "кафе"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "カフェ_カフェ_noun_кафе"
       },
       {
         "id": "L3_V021",
+        "lesson": 3,
+        "writtenForm": "明日",
+        "reading": "あした",
+        "meaning": "завтра",
         "category": "time",
-        "kanji": "明日",
-        "writing": "あした",
         "romaji": "ashita",
-        "translation": "завтра"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "あした_明日_noun_завтра"
       },
       {
         "id": "L3_V022",
+        "lesson": 3,
+        "writtenForm": "今日",
+        "reading": "きょう",
+        "meaning": "сегодня",
         "category": "time",
-        "kanji": "今日",
-        "writing": "きょう",
         "romaji": "kyoo",
-        "translation": "сегодня"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "きょう_今日_noun_сегодня"
       },
       {
         "id": "L3_V023",
+        "lesson": 3,
+        "writtenForm": "朝",
+        "reading": "あさ",
+        "meaning": "утро",
         "category": "time",
-        "kanji": "朝",
-        "writing": "あさ",
         "romaji": "asa",
-        "translation": "утро"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "あさ_朝_noun_утро"
       },
       {
         "id": "L3_V024",
+        "lesson": 3,
+        "writtenForm": "今晩",
+        "reading": "こんばん",
+        "meaning": "вечер",
         "category": "time",
-        "kanji": "今晩",
-        "writing": "こんばん",
         "romaji": "konban",
-        "translation": "сегодня вечером"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "こんばん_今晩_noun_сегоднявечером"
       },
       {
         "id": "L3_V025",
+        "lesson": 3,
+        "writtenForm": "毎日",
+        "reading": "まいにち",
+        "meaning": "каждый день",
         "category": "time",
-        "kanji": "毎日",
-        "writing": "まいにち",
         "romaji": "mainichi",
-        "translation": "каждый день"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "まいにち_毎日_noun_каждыйдень"
       },
       {
         "id": "L3_V026",
+        "lesson": 3,
+        "writtenForm": "毎晩",
+        "reading": "まいばん",
+        "meaning": "каждый вечер",
         "category": "time",
-        "kanji": "毎晩",
-        "writing": "まいばん",
         "romaji": "maiban",
-        "translation": "каждый вечер"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "まいばん_毎晩_noun_каждыйвечер"
       },
       {
         "id": "L3_V027",
+        "lesson": 3,
+        "writtenForm": "週末",
+        "reading": "しゅうまつ",
+        "meaning": "выходные",
         "category": "time",
-        "kanji": "しゅうまつ",
-        "writing": "しゅうまつ",
         "romaji": "shuumatsu",
-        "translation": "выходные"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "しゅうまつ_しゅうまつ_noun_выходные"
       },
       {
         "id": "L3_V028",
+        "lesson": 3,
+        "writtenForm": "土曜日",
+        "reading": "どようび",
+        "meaning": "суббота",
         "category": "time",
-        "kanji": "土曜日",
-        "writing": "どようび",
         "romaji": "doyoobi",
-        "translation": "суббота"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "どようび_土曜日_noun_суббота"
       },
       {
         "id": "L3_V029",
+        "lesson": 3,
+        "writtenForm": "日曜日",
+        "reading": "にちようび",
+        "meaning": "воскресенье",
         "category": "time",
-        "kanji": "日曜日",
-        "writing": "にちようび",
         "romaji": "nichiyoobi",
-        "translation": "воскресенье"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "にちようび_日曜日_noun_воскресенье"
       },
       {
         "id": "L3_V030",
+        "lesson": 3,
+        "writtenForm": "いつ",
+        "reading": "いつ",
+        "meaning": "когда",
         "category": "time",
-        "kanji": "いつ",
-        "writing": "いつ",
         "romaji": "itsu",
-        "translation": "когда"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "いつ_いつ_noun_когда"
       },
       {
         "id": "L3_V031",
+        "lesson": 3,
+        "writtenForm": "〜ごろ",
+        "reading": "〜ごろ",
+        "meaning": "примерно",
         "category": "time",
-        "kanji": "～頃",
-        "writing": "～ごろ",
         "romaji": "... goro",
-        "translation": "примерно в..., около...",
-        "note": "примерно в..., около... (о времени)"
+        "note": "примерно в..., около... (о времени)",
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "～ごろ_～頃_noun_около"
       },
       {
         "id": "L3_V032",
+        "lesson": 3,
+        "writtenForm": "行く",
+        "reading": "いく",
+        "meaning": "идти",
         "category": "verbs_u",
-        "kanji": "行く",
-        "writing": "いく",
         "romaji": "iku",
-        "translation": "идти, ехать (направление に/へ)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "いく_行く_verb_godan_ехать"
       },
       {
         "id": "L3_V033",
+        "lesson": 3,
+        "writtenForm": "帰る",
+        "reading": "かえる",
+        "meaning": "возвращаться",
         "category": "verbs_u",
-        "kanji": "帰る",
-        "writing": "かえる",
         "romaji": "kaeru",
-        "translation": "возвращаться (домой) (направление に/へ)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "かえる_帰る_verb_godan_возвращаться"
       },
       {
         "id": "L3_V034",
+        "lesson": 3,
+        "writtenForm": "聞く",
+        "reading": "きく",
+        "meaning": "слушать",
         "category": "verbs_u",
-        "kanji": "聞く",
-        "writing": "きく",
         "romaji": "kiku",
-        "translation": "слушать, слышать (～を); спрашивать (у кого-то に)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "きく_聞く_verb_godan_слушать",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L3_V035",
+        "lesson": 3,
+        "writtenForm": "飲む",
+        "reading": "のむ",
+        "meaning": "пить",
         "category": "verbs_u",
-        "kanji": "飲む",
-        "writing": "のむ",
         "romaji": "nomu",
-        "translation": "пить (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "のむ_飲む_verb_godan_пить",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L3_V036",
+        "lesson": 3,
+        "writtenForm": "話す",
+        "reading": "はなす",
+        "meaning": "разговаривать",
         "category": "verbs_u",
-        "kanji": "話す",
-        "writing": "はなす",
         "romaji": "hanas",
-        "translation": "говорить, разговаривать (на языке を/で; с кем-то と)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "はなす_話す_verb_godan_говорить"
       },
       {
         "id": "L3_V037",
+        "lesson": 3,
+        "writtenForm": "読む",
+        "reading": "よむ",
+        "meaning": "читать",
         "category": "verbs_u",
-        "kanji": "読む",
-        "writing": "よむ",
         "romaji": "yomu",
-        "translation": "читать (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "よむ_読む_verb_godan_читать",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L3_V038",
+        "lesson": 3,
+        "writtenForm": "起きる",
+        "reading": "おきる",
+        "meaning": "просыпаться",
         "category": "verbs_ru",
-        "kanji": "おきる",
-        "writing": "おきる",
         "romaji": "okiru",
-        "translation": "вставать, просыпаться"
+        "partOfSpeech": "verb",
+        "verbClass": "ichidan",
+        "lexemeId": "おきる_おきる_verb_ichidan_вставать"
       },
       {
         "id": "L3_V039",
+        "lesson": 3,
+        "writtenForm": "食べる",
+        "reading": "たべる",
+        "meaning": "кушать",
         "category": "verbs_ru",
-        "kanji": "食べる",
-        "writing": "たべる",
         "romaji": "taberu",
-        "translation": "есть (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "ichidan",
+        "lexemeId": "たべる_食べる_verb_ichidan_есть",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L3_V040",
+        "lesson": 3,
+        "writtenForm": "寝る",
+        "reading": "ねる",
+        "meaning": "спать",
         "category": "verbs_ru",
-        "kanji": "寝る",
-        "writing": "ねる",
         "romaji": "neru",
-        "translation": "спать, ложиться спать"
+        "partOfSpeech": "verb",
+        "verbClass": "ichidan",
+        "lexemeId": "ねる_寝る_verb_ichidan_ложитьсяспать"
       },
       {
         "id": "L3_V041",
+        "lesson": 3,
+        "writtenForm": "見る",
+        "reading": "みる",
+        "meaning": "видеть",
         "category": "verbs_ru",
-        "kanji": "見る",
-        "writing": "みる",
         "romaji": "miru",
-        "translation": "смотреть, видеть (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "ichidan",
+        "lexemeId": "みる_見る_verb_ichidan_видеть",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L3_V042",
+        "lesson": 3,
+        "writtenForm": "来る",
+        "reading": "くる",
+        "meaning": "приходить",
         "category": "verbs_irr",
-        "kanji": "来る",
-        "writing": "くる",
         "romaji": "kuru",
-        "translation": "приходить (направление に/へ)"
+        "partOfSpeech": "verb",
+        "verbClass": "irregular",
+        "lexemeId": "くる_来る_verb_irregular_приходить"
       },
       {
         "id": "L3_V043",
+        "lesson": 3,
+        "writtenForm": "する",
+        "reading": "する",
+        "meaning": "делать",
         "category": "verbs_irr",
-        "kanji": "する",
-        "writing": "する",
         "romaji": "suru",
-        "translation": "делать (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "irregular",
+        "lexemeId": "する_する_verb_irregular_делать",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L3_V044",
+        "lesson": 3,
+        "writtenForm": "勉強する",
+        "reading": "べんきょうする",
+        "meaning": "учиться",
         "category": "verbs_irr",
-        "kanji": "勉強する",
-        "writing": "べんきょうする",
         "romaji": "benkyoosuru",
-        "translation": "учиться (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "irregular",
+        "lexemeId": "べんきょうする_勉強する_verb_irregular_учиться",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L3_V045",
+        "lesson": 3,
+        "writtenForm": "いい",
+        "reading": "いい",
+        "meaning": "хороший",
         "category": "adjectives",
-        "kanji": "いい",
-        "writing": "いい",
         "romaji": "ii",
-        "translation": "хороший"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "いい_いい_adjective_хороший"
       },
       {
         "id": "L3_V046",
+        "lesson": 3,
+        "writtenForm": "早い",
+        "reading": "はやい",
+        "meaning": "ранний",
         "category": "adjectives",
-        "kanji": "はやい",
-        "writing": "はやい",
         "romaji": "hayai",
-        "translation": "ранний"
+        "partOfSpeech": "adjective",
+        "adjectiveClass": "i",
+        "lexemeId": "はやい_はやい_adjective_ранний"
       },
       {
         "id": "L3_V047",
+        "lesson": 3,
+        "writtenForm": "あまり",
+        "reading": "あまり",
+        "meaning": "немного",
         "category": "adverbs",
-        "kanji": "あまり",
-        "writing": "あまり",
         "romaji": "amari",
-        "translation": "не очень (с отрицанием)"
+        "partOfSpeech": "adverb",
+        "lexemeId": "あまり_あまり_adverb_неочень"
       },
       {
         "id": "L3_V048",
+        "lesson": 3,
+        "writtenForm": "全然",
+        "reading": "ぜんぜん",
+        "meaning": "совсем не",
         "category": "adverbs",
-        "kanji": "ぜんぜん",
-        "writing": "ぜんぜん",
         "romaji": "zenzen",
-        "translation": "совсем не (с отрицанием)"
+        "partOfSpeech": "adverb",
+        "lexemeId": "ぜんぜん_ぜんぜん_adverb_совсемне"
       },
       {
         "id": "L3_V049",
+        "lesson": 3,
+        "writtenForm": "たいてい",
+        "reading": "たいてい",
+        "meaning": "обычно",
         "category": "adverbs",
-        "kanji": "たいてい",
-        "writing": "たいてい",
         "romaji": "taitei",
-        "translation": "обычно"
+        "partOfSpeech": "adverb",
+        "lexemeId": "たいてい_たいてい_adverb_обычно"
       },
       {
         "id": "L3_V050",
+        "lesson": 3,
+        "writtenForm": "ちょっと",
+        "reading": "ちょっと",
+        "meaning": "немного",
         "category": "adverbs",
-        "kanji": "ちょっと",
-        "writing": "ちょっと",
         "romaji": "chotto",
-        "translation": "немного, слегка, чуть-чуть"
-      },
-      {
-        "id": "L3_V051",
-        "category": "adverbs",
-        "kanji": "ときどき",
-        "writing": "ときどき",
-        "romaji": "tokidoki",
-        "translation": "иногда, время от времени"
+        "partOfSpeech": "adverb",
+        "lexemeId": "ちょっと_ちょっと_adverb_немного"
       },
       {
         "id": "L3_V052",
+        "lesson": 3,
+        "writtenForm": "よく",
+        "reading": "よく",
+        "meaning": "часто / хорошо",
         "category": "adverbs",
-        "kanji": "よく",
-        "writing": "よく",
         "romaji": "yoku",
-        "translation": "часто; хорошо"
+        "partOfSpeech": "adverb",
+        "lexemeId": "よく_よく_adverb_хорошо"
       },
       {
         "id": "L3_V053",
+        "lesson": 3,
+        "writtenForm": "そうですね",
+        "reading": "そうですね",
+        "meaning": "я согласен",
         "category": "expressions",
-        "kanji": "そうですね",
-        "writing": "そうですね",
         "romaji": "soo desu ne",
-        "translation": "Верно.; Дайте подумать... (поиск согласия или пауза размышления)"
+        "partOfSpeech": "expression",
+        "lexemeId": "そうですね_そうですね_expression_верно"
       },
       {
         "id": "L3_V054",
+        "lesson": 3,
+        "writtenForm": "でも",
+        "reading": "でも",
+        "meaning": "но",
         "category": "expressions",
-        "kanji": "でも",
-        "writing": "でも",
         "romaji": "demo",
-        "translation": "но, однако"
+        "partOfSpeech": "expression",
+        "lexemeId": "でも_でも_expression_но"
       },
       {
         "id": "L3_V055",
+        "lesson": 3,
+        "writtenForm": "どうですか",
+        "reading": "どうですか",
+        "meaning": "как на счёт ...",
         "category": "expressions",
-        "kanji": "どうですか",
-        "writing": "どうですか",
         "romaji": "dou desu ka",
-        "translation": "Как насчёт...?; Что думаете о...?"
+        "partOfSpeech": "expression",
+        "lexemeId": "どうですか_どうですか_expression_какнасчёт"
       },
       {
         "id": "L3_V056",
+        "lesson": 3,
+        "writtenForm": "ええ",
+        "reading": "ええ",
+        "meaning": "да",
         "category": "expressions",
-        "kanji": "ええ",
-        "writing": "ええ",
         "romaji": "ee",
-        "translation": "да (более разговорный вариант, чем はい)"
+        "partOfSpeech": "expression",
+        "lexemeId": "ええ_ええ_expression_да"
+      },
+      {
+        "id": "L3_V051",
+        "lesson": 3,
+        "writtenForm": "時々",
+        "reading": "ときどき",
+        "meaning": "иногда",
+        "category": "adverbs",
+        "romaji": "tokidoki",
+        "partOfSpeech": "adverb",
+        "lexemeId": "ときどき_ときどき_adverb_времяотвремени"
       }
     ],
     "notes": [
       {
-        "note_id": 1,
+        "id": "L3_g1",
+        "noteId": 1,
         "title": "Грамматика 1: Спряжение глаголов в настоящем/будущем времени (Present Tense)",
         "content": "В японском языке глаголы делятся на три группы:\n1. Ru-глаголы (Ichidan): в словарной форме всегда оканчиваются на 'ru', перед которым стоит гласный 'i' или 'e' (например: たべる taberu, おきる okiru).\nСпряжение: отбрасываем 'ru' и добавляем 'masu' (утверждение) или 'masen' (отрицание). Например: たべる → たべます / たべません.\n2. U-глаголы (Godan): словарная форма оканчивается на гласную 'u' (например: のむ nomu, いく iku). Обратите внимание: глагол かえる (kaeru — возвращаться) оканчивается на 'e-ru', но относится к U-глаголам!\nСпряжение: заменяем конечный слог ряда 'u' на слог ряда 'i' той же согласной ветви и добавляем 'masu'/'masen'. Например: のむ (nom-u) → のみます (nom-i-masu) / のみます (nom-i-masen).\n3. Неправильные глаголы (Irregular): する (suru — делать) и くる (kuru — приходить).\nСпряжение:\n- する → します (shimasu) / しません (shimasen)\n- くる → きます (kimasu) / きません (kimasen)\n- Сложные глаголы на базе 'существительное + する' (например, べんきょうする) спрягаются так же: べんきょうします."
       },
       {
-        "note_id": 2,
+        "id": "L3_g2",
+        "noteId": 2,
         "title": "Грамматика 2: Значения «настоящего времени» японского глагола",
         "content": "Форма на 'ます/ません' выражает два типа действий:\n1. Регулярные, привычные действия (Habitual actions). Например: わたしはよくテレビをみます (Я часто смотрю телевизор).\n2. Будущие действия или намерения совершить действие (Future actions). Например: わたしはあした京都に行きます (Завтра я поеду в Киото)."
       },
       {
-        "note_id": 3,
+        "id": "L3_g3",
+        "noteId": 3,
         "title": "Грамматика 3: Падежные частицы (を, で, に, へ)",
         "content": "Частицы ставятся строго после существительных и связывают их с глаголами:\n- 'を' (пишется как 'wo', читается как 'o') — обозначает прямое дополнение (объект действия). Например: コーヒーを nobility ます (Пью кофе).\n- 'で' (de) — обозначает место совершения активного действия. Например: 図書館で本を読みます (Читаю книгу в библиотеке).\n- 'に' (ni) — имеет много значений. Здесь учим два: 1) Цель (пункт назначения) движения с глаголами いく, くる, かえる (например: 学校に行きません — не пойду в школу); 2) Точное время совершения действия (например: 十一時に寝ます — ложусь спать в 11:00).\n- 'へ' (he, читается как 'e') — указывает направление движения. В отличие от 'に', выражает только направление к цели с глаголами движения и может его заменять (например:うちへ帰ります — возвращаюсь домой). В отличие от 'に', 'へ' нельзя использовать с указанием времени."
       },
       {
-        "note_id": 4,
+        "id": "L3_g4",
+        "noteId": 4,
         "title": "Грамматика 4: Указание времени (Частица に с выражениями времени)",
         "content": "Правила употребления частицы 'に' (ni) при указании времени:\n1. Обязательно использовать 'に': с днями недели (日曜日に — в воскресенье), точным числовым временем (十時四十五分に — в 10:45) и месяцами (九月に — в сентябре).\n2. НЕЛЬЗЯ использовать 'に': со словами времени относительно текущего момента (あした — завтра, きょう — сегодня), регулярными интервалами (毎晩 — каждый вечер, 毎日 — каждый день) и вопросительным словом いつ (когда).\n3. Опциональное использование (на усмотрение говорящего): со словами 朝 (утром), 晩 (вечером), 週末 (в выходные).\n4. Примерность: Если вы указываете примерное время ('около...'), частица 'に' заменяется на 'ごろ' (goro) или ставится после него: 'ごろに' (например: 十一時ごろ寝ます / 十一時ごろに寝ます — лягу спать около 11 часов)."
       },
       {
-        "note_id": 5,
+        "id": "L3_g5",
+        "noteId": 5,
         "title": "Грамматика 5: Вежливое предложение/приглашение ～ませんか (masen ka)",
         "content": "Для того чтобы вежливо предложить собеседнику сделать что-то вместе или пригласить его куда-то, используется глагол в отрицательной форме с вопросительной частицей: '～ませんか' (букв. 'Не хотите ли...?').\nПримеры:\n- 昼ご飯を食べませんか (Не хотите ли пообедать вместе?)\n  Варианты ответа:\n  - Положительный: いいですね (Отличная идея / Звучит здорово).\n  - Вежливый отказ: うーん、ちょっと... (Мм, в этот раз не очень удобно... / ちょっと мягко намекает на отказ, избегая прямого и грубого 'нет')."
       },
       {
-        "note_id": 6,
+        "id": "L3_g6",
+        "noteId": 6,
         "title": "Грамматика 6: Наречия частотности (Frequency Adverbs)",
         "content": "Наречия частотности помогают конкретизировать, как часто происходит действие:\n1. Положительные наречия (используются с утвердительными глаголами на '～ます'):\n- 毎日 (mainichi — каждый день)\n- よく (yoku — часто)\n- ときどき (tokidoki — иногда)\n- たいてい (taitei — обычно)\nПример: わたしはときどき図書館に行きます (Иногда я хожу в библиотеку).\n\n2. Отрицательные наречия (всегда требуют после себя отрицательную форму глагола на '～ません'):\n- ぜんぜん (zenzen — совсем не, вообще не)\n- あまり (amari — не часто, не очень)\nПримеры: ぜんぜнテレビを見ません (Вообще не смотрю ТВ), あまり勉強しません (Не особо часто учусь)."
       },
       {
-        "note_id": 7,
+        "id": "L3_g7",
+        "noteId": 7,
         "title": "Грамматика 7: Порядок слов в японском предложении",
         "content": "Японский порядок слов довольно гибкий, однако существует базовое правило: ГЛАГОЛ ВСЕГДА СТАВИТСЯ В САМОМ КОНЦЕ предложения. Остальные элементы предложения (существительные с частицами) могут менять порядок в зависимости от акцента.\nТипичная структура предложения выглядит так:\n  $$Тема (は)$$   →  $$Время$$   →  $$Место (で)$$   →  $$Дополнение (を)$$   →  $$Глагол$$  \nПример: わたしは 今日 図書館で 日本語を 勉強します (Я сегодня в библиотеке буду учить японский язык)."
       },
       {
-        "note_id": 8,
+        "id": "L3_g8",
+        "noteId": 8,
         "title": "Грамматика 8: Тематическая частица は (Topic Particle)",
         "content": "Частица 'は' (wa) задает основную тему всего высказывания («Что касается Х...»). Она может выносить на первое место не только подлежащее, но и время или даже прямое дополнение. В таком случае 'は' заменяет собой частицу прямого дополнения 'を'.\nПример диалога:\nА: 晩ご飯は？ (А как насчет ужина?  $$Тема — ужин$$  )\nВ: 食べません。 (Есть не буду.)"
       },
       {
-        "note_id": 9,
+        "id": "L3_g9",
+        "noteId": 9,
         "title": "Особенности выражений: Тонкости использования глаголов движения いく (iku) и くる (kuru)",
         "content": "В японском языке выбор между いく (идти от говорящего) и くる (приходить к говорящему) отличается от английского. Если собеседник находится в каком-то месте, и вы направляетесь к нему, в английском говорят 'I'm coming' (Я иду/прихожу). Однако в японском языке в этой ситуации вы ВСЕГДА должны сказать '行きます' (ikimasu — «я иду (от себя к тебе)»). '来る' (kuru) используется только тогда, когда кто-то движется по направлению к точке, где физически находится говорящий в данный момент."
       },
       {
-        "note_id": 10,
+        "id": "L3_g10",
+        "noteId": 10,
         "title": "Особенности выражений: Использование слова ちょっと (chotto) для вежливого отказа",
         "content": "Слово 'ちょっと' (chotto) буквально означает «немного, слегка». Но в повседневном общении это важнейший социальный инструмент для вежливого отказа. Японцы избегают говорить резкое 'いいえ' (нет) на предложения или приглашения, так как это звучит излишне прямолинейно и обидно. Вместо этого они просто говорят: '...は、ちょっと' (...wa, chotto — «...это немного (неудобно/занято)»), плавно уходя от ответа. Собеседник сразу всё понимает без лишних расспросов."
       },
       {
-        "note_id": 11,
+        "id": "L3_g11",
+        "noteId": 11,
         "title": "Особенности выражений: Сравнение согласия はい (hai) и ええ (ee)",
         "content": "Оба слова переводятся как «да» при ответе на общие вопросы. Однако:\n- 'はい' — вежливое, стандартное согласие. Также используется как отклик, когда вас зовут по имени или стучат в дверь (в значении «Я здесь / Да, слушаю вас!»).\n- 'ええ' — более расслабленный, разговорный и дружеский вариант «да». Важно: 'ええ' нельзя использовать, чтобы отозваться на свое имя или стук в дверь!"
       }

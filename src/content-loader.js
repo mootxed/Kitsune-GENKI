@@ -8,6 +8,7 @@ import {
 import { clearGrammarQuizCache, getGrammarQuizForChapter } from './grammar-quiz-content.js';
 
 let indexPromise = null;
+let kanjiAvailabilityPromise = null;
 const chapterPromises = new Map(); // chapterId -> Promise<{ lesson, story }>
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -27,6 +28,16 @@ export function loadContentIndex() {
     });
   }
   return indexPromise;
+}
+
+export function loadGenkiKanjiAvailability() {
+  if (!kanjiAvailabilityPromise) {
+    kanjiAvailabilityPromise = fetchJson('data/genki-kanji-availability.json').catch((err) => {
+      kanjiAvailabilityPromise = null;
+      throw err;
+    });
+  }
+  return kanjiAvailabilityPromise;
 }
 
 // Динамическая загрузка контента конкретной главы по требованию
@@ -94,6 +105,7 @@ export function loadChapterData(chapterId) {
 // Сброс кэшей (для тестов и принудительного обновления)
 export function clearContentCache() {
   indexPromise = null;
+  kanjiAvailabilityPromise = null;
   chapterPromises.clear();
   clearSupplementalPracticeCache();
   clearGrammarQuizCache();

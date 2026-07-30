@@ -38,7 +38,7 @@ function collectKanji() {
     const data = JSON.parse(readFileSync(join(lessonsDir, file), 'utf8'));
     const vocab = data?.lesson?.vocabulary ?? [];
     for (const word of vocab) {
-      const text = word.kanji ?? '';
+      const text = word.writtenForm ?? word.kanji ?? word.writing ?? '';
       for (const ch of text) {
         if (isKanji(ch)) kanjiSet.add(ch);
       }
@@ -88,9 +88,22 @@ function build() {
   console.log('[build-kanji-data] Collecting kanji from lessons…');
   const kanji = collectKanji();
   console.log(`[build-kanji-data] Found ${kanji.length} unique kanji`);
+  if (kanji.length === 0) {
+    throw new Error(
+      '[build-kanji-data] No kanji found in lesson vocabulary; check the canonical word schema.'
+    );
+  }
 
   const outDir = join(ROOT, 'public', 'data', 'kanji');
   mkdirSync(outDir, { recursive: true });
+  const expectedFiles = new Set(kanji.map((char) => `${char}.json`));
+  let removedCount = 0;
+  for (const file of readdirSync(outDir).filter((name) => name.endsWith('.json'))) {
+    if (!expectedFiles.has(file)) {
+      rmSync(join(outDir, file));
+      removedCount++;
+    }
+  }
 
   const missing = [];
   let writtenCount = 0;
@@ -118,6 +131,9 @@ function build() {
       `[build-kanji-data] ⚠️  No stroke data for ${missing.length} kanji: ${missing.join(' ')}`
     );
     console.warn('[build-kanji-data]    These will fall back to multiple-choice mode at runtime.');
+  }
+  if (removedCount > 0) {
+    console.log(`[build-kanji-data] 🧹 Removed ${removedCount} stale char files`);
   }
 
   console.log(

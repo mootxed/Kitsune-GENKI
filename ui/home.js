@@ -4,8 +4,13 @@ import { refreshStreakDisplay, syncAvatars, updateSrsBadge } from './shared.js';
 import { $, todayStr } from '../src/utils.js';
 import { allCards, cardChapter } from '../src/srs-helpers.js';
 import { StudyPlan } from '../studyplan.js';
-import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
+import {
+  loadContentIndex,
+  loadChapterData,
+  loadGenkiKanjiAvailability,
+} from '../src/content-loader.js';
 import { normalizeWord } from '../src/normalize-word.js';
+import { configureGenkiKanjiAvailability } from '../src/genki-kanji.js';
 import { normalizeChapterContent } from '../src/chapter-content.js';
 import {
   loadSupplementalPracticeData,
@@ -52,17 +57,17 @@ export const CH_NAMES = {
 export const CHECK_ITEMS = REQUIRED_CHAPTER_SECTIONS.map(({ id, label }) => [id, label]);
 
 const FALLBACK_CHAPTER_METRICS = [
-  [60, 5, 2, 105],
-  [57, 9, 1.5, 125],
+  [80, 5, 2, 105],
+  [48, 9, 1.5, 125],
   [56, 11, 1.5, 135],
   [62, 13, 1, 145],
-  [52, 8, 1.5, 115],
+  [51, 8, 1.5, 115],
   [47, 9, 1.5, 120],
   [52, 8, 1, 110],
-  [56, 10, 1.5, 130],
+  [55, 10, 1.5, 130],
   [55, 7, 1, 115],
   [56, 10, 1, 130],
-  [68, 10, 0.7, 145],
+  [61, 10, 0.7, 145],
   [53, 7, 1, 110],
 ];
 
@@ -91,7 +96,7 @@ export let LESSONS = [];
 // Лёгкий индекс глав (метаданные без полного контента)
 export let CONTENT_INDEX = [];
 
-const NORMALIZED_WORD_SCHEMA_VERSION = 3;
+const NORMALIZED_WORD_SCHEMA_VERSION = 4;
 
 // ---------- Load Lessons ----------
 // На старте грузим только лёгкий content-index; полные уроки подгружаются
@@ -104,6 +109,11 @@ export async function loadLessons() {
     fileVersion = indexData.version || 0;
   } catch (e) {
     console.error('Не удалось загрузить content-index.json:', e);
+  }
+  try {
+    configureGenkiKanjiAvailability(await loadGenkiKanjiAvailability());
+  } catch (e) {
+    console.error('Не удалось загрузить таблицу доступности кандзи:', e);
   }
   let workbookSchemaVersion = 0;
   try {

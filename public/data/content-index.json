@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "particles_dictionary": "data/particles-dictionary.json",
   "chapters": [
     {
@@ -7,9 +7,9 @@
       "title": "Модуль 1 — Знакомство и базовые предложения",
       "lesson": "data/lessons/lesson-01.json",
       "story": "data/stories/story-01.json",
-      "vocabCount": 60,
+      "vocabCount": 80,
       "grammarCount": 5,
-      "estimatedItems": 80,
+      "estimatedItems": 100,
       "importanceWeight": 2,
       "estimatedMinutes": 105,
       "storyMeta": {
@@ -28,9 +28,9 @@
       "title": "Модуль 2 — Указательные слова и покупки",
       "lesson": "data/lessons/lesson-02.json",
       "story": "data/stories/story-02.json",
-      "vocabCount": 57,
+      "vocabCount": 48,
       "grammarCount": 9,
-      "estimatedItems": 93,
+      "estimatedItems": 84,
       "importanceWeight": 1.5,
       "estimatedMinutes": 125,
       "storyMeta": {
@@ -91,9 +91,9 @@
       "title": "Модуль 5 — Описание предмета и места",
       "lesson": "data/lessons/lesson-05.json",
       "story": "data/stories/story-05.json",
-      "vocabCount": 52,
+      "vocabCount": 51,
       "grammarCount": 8,
-      "estimatedItems": 84,
+      "estimatedItems": 83,
       "importanceWeight": 1.5,
       "estimatedMinutes": 115,
       "storyMeta": {
@@ -154,9 +154,9 @@
       "title": "Модуль 8 — Бытовые ситуации",
       "lesson": "data/lessons/lesson-08.json",
       "story": "data/stories/story-08.json",
-      "vocabCount": 56,
+      "vocabCount": 55,
       "grammarCount": 10,
-      "estimatedItems": 96,
+      "estimatedItems": 95,
       "importanceWeight": 1.5,
       "estimatedMinutes": 130,
       "storyMeta": {
@@ -209,9 +209,9 @@
       "title": "Модуль 11 — Желания и просьбы",
       "lesson": "data/lessons/lesson-11.json",
       "story": "data/stories/story-11.json",
-      "vocabCount": 68,
+      "vocabCount": 61,
       "grammarCount": 10,
-      "estimatedItems": 108,
+      "estimatedItems": 101,
       "importanceWeight": 0.7,
       "estimatedMinutes": 145,
       "storyMeta": {

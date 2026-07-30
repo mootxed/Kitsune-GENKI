@@ -1,36 +1,36 @@
-# Vocabulary Schema — Схема Словарных Записей
+# Vocabulary Schema — GENKI I
 
-Документ описывает структуру записей лексики в массиве `vocabulary` файлов уроков.
-
----
-
-## 📝 Пример структуры словарной единицы
+Обязательный формат словарной записи:
 
 ```json
 {
-  "id": "genki1_l1_v5",
-  "kanji": "学生",
-  "kana": "がくせい",
-  "romaji": "gakusei",
-  "english": "student",
-  "russian": "студент",
-  "category": "noun",
-  "chapter": 1,
-  "examples": [
-    {
-      "japanese": "わたしは学生です。",
-      "english": "I am a student.",
-      "russian": "Я студент."
-    }
-  ]
+  "id": "L3_V001",
+  "lesson": 3,
+  "writtenForm": "映画",
+  "reading": "えいが",
+  "meaning": "фильм"
 }
 ```
 
----
+- `id` уникален во всём словаре и сохраняется при надёжном сопоставлении со старой записью.
+- `lesson` — урок первого введения слова по канонической таблице.
+- `writtenForm` — первая колонка XLSX. Для технического `-` используется `reading`.
+- `reading` — чтение каной.
+- `meaning` — перевод из XLSX без языковых исправлений по догадке.
 
-## ⚙️ Обязательные поля
+Дополнительные проверенные метаданные (`category`, `romaji`, часть речи, примеры, context-production) могут присутствовать. Legacy-поля `kanji`, `writing`, `translation` запрещены в JSON и создаются только временным runtime-адаптером `normalizeWord`.
 
-- `id` (string): Уникальный ID.
-- `kana` (string): Чтение на хирагане/катакане.
-- `english` или `russian` (string): Значение на английском или русском языке.
-- `category` (string): Часть речи (`noun`, `verb-u`, `verb-ru`, `verb-irr`, `adj-i`, `adj-na`, `adverb`, `expression`).
+Поздние дубли перенаправляются через `public/data/genki-vocabulary-aliases.json`. Активный FSRS использует только канонические ID; исходное состояние объединённых или удалённых карточек хранится в `state.vocabularyMigrationArchive`.
+
+Порядок открытия кандзи задаётся исключительно `public/data/genki-kanji-availability.json`.
+
+Импорт:
+
+```bash
+node scripts/import-genki-i-data.js \
+  --words "/path/to/words.xlsx" \
+  --kanji "/path/to/kanji.xlsx" \
+  --write
+```
+
+Повторный запуск с `--check` завершается ненулевым кодом, если артефакты устарели.

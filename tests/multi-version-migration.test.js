@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { runMigrations, CURRENT_VERSION, defaultState } from '../state/store.js';
 
 describe('Multi-Version Sequential State Migration Safety', () => {
-  it('migrates from v1 raw state to v13 maintaining progress', () => {
+  it('migrates from v1 raw state to v14 maintaining progress', () => {
     const v1State = {
       xp: 120,
       level: 2,
@@ -20,7 +20,7 @@ describe('Multi-Version Sequential State Migration Safety', () => {
     expect(migrated.srs.item_1).toBeDefined();
   });
 
-  it('migrates from v5 state to v13 with pending review logs', () => {
+  it('migrates from v5 state to v14 with pending review logs', () => {
     const v5State = {
       version: 5,
       xp: 500,
@@ -53,7 +53,7 @@ describe('Multi-Version Sequential State Migration Safety', () => {
     expect(migrated.settings.notifyEnabled).toBe(true);
   });
 
-  it('migrates from v12 state to v13 state preserving active chapter', () => {
+  it('migrates from v12 state to v14 state preserving active chapter', () => {
     const v12State = {
       version: 12,
       activeChapterId: 4,

@@ -11,6 +11,7 @@ import HanziWriter from 'hanzi-writer';
 import { localCharDataLoader } from '../../src/kanji-loader.js';
 import { getAllKanji } from './mode-selector.js';
 import { cleanKanjiChar } from './drawing-mode.js';
+import { displayWordForm, getUnlockedKanjiLesson } from '../../src/genki-kanji.js';
 import {
   getPartOfSpeechLabel,
   getVerbClassLabel,
@@ -25,7 +26,9 @@ export function openDictionaryModal(word, state, dependencies) {
   const body = $('#srs-body');
   if (!body) return;
 
-  const kanjiChars = getAllKanji(word.kanji || word.writing);
+  const safeWrittenForm = displayWordForm(word, state);
+  const reading = word.reading || word.writing;
+  const kanjiChars = getAllKanji(safeWrittenForm);
   const hasKanji = kanjiChars.length > 0;
 
   const returnToDict = () => {
@@ -62,7 +65,9 @@ export function openDictionaryModal(word, state, dependencies) {
         : '';
 
     const itemCards = cardsForItem(state.srs, word.id);
-    const appSkills = vocabularySkills(word);
+    const appSkills = vocabularySkills(word, {
+      unlockedKanjiLesson: getUnlockedKanjiLesson(state),
+    });
     const mastery = calculateMastery({
       itemId: word.id,
       cards: itemCards,
@@ -563,8 +568,8 @@ export function openDictionaryModal(word, state, dependencies) {
         <div class="dict-modal-content">
           <div class="dict-word-header-card">
             <div class="dict-word-main-info">
-              <h2 class="dict-word-kanji">${word.kanji || word.writing}</h2>
-              <p class="dict-word-reading">${word.writing}</p>
+              <h2 class="dict-word-kanji">${safeWrittenForm}</h2>
+              <p class="dict-word-reading">${reading}</p>
               ${word.romaji ? `<p class="dict-word-romaji">${word.romaji}</p>` : ''}
             </div>
             <div class="dict-word-translation-section">

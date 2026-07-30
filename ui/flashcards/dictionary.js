@@ -8,6 +8,7 @@ import { SRS } from '../../srs.js';
 import { ExamplesDB } from '../../src/examples-db.js';
 import { CURATED_PARTICLE_SENTENCES } from '../../src/particle-templates.js';
 import { openDictionaryModal } from './dictionary-modal.js';
+import { displayWordForm, getUnlockedKanjiLesson } from '../../src/genki-kanji.js';
 
 export const dictionaryViewState = {
   search: '',
@@ -45,7 +46,9 @@ export function getWordStatus(word, state) {
     cards: itemCards,
     events: state.reviewEvents || [],
     archive: state.masteryArchive?.[word.id],
-    applicableSkills: vocabularySkills(word),
+    applicableSkills: vocabularySkills(word, {
+      unlockedKanjiLesson: getUnlockedKanjiLesson(state),
+    }),
     getRetrievability: (card, now) => SRS.getRetrievability(card, now),
   });
 
@@ -290,7 +293,9 @@ export function renderDictionaryLessons(
           cards: itemCards,
           events: state.reviewEvents || [],
           archive: state.masteryArchive?.[word.id],
-          applicableSkills: vocabularySkills(word),
+          applicableSkills: vocabularySkills(word, {
+            unlockedKanjiLesson: getUnlockedKanjiLesson(state),
+          }),
           getRetrievability: (card, now) => SRS.getRetrievability(card, now),
         });
         totalMastery += mastery.score;
@@ -317,6 +322,9 @@ export function renderDictionaryLessons(
       const topicCode = word.topic ? word.topic.toLowerCase() : '';
       const matchesSearch =
         !query ||
+        (word.writtenForm && word.writtenForm.toLowerCase().includes(query)) ||
+        (word.reading && word.reading.toLowerCase().includes(query)) ||
+        (word.meaning && word.meaning.toLowerCase().includes(query)) ||
         (word.kanji && word.kanji.toLowerCase().includes(query)) ||
         (word.writing && word.writing.toLowerCase().includes(query)) ||
         (word.romaji && word.romaji.toLowerCase().includes(query)) ||
@@ -372,12 +380,14 @@ export function renderDictionaryLessons(
         const chapterId = cardChapter(word.id);
         const status = getWordStatus(word, state);
 
-        const hasSeparateReading = word.kanji && word.kanji !== word.writing;
+        const safeWrittenForm = displayWordForm(word, state);
+        const reading = word.reading || word.writing;
+        const hasSeparateReading = safeWrittenForm && safeWrittenForm !== reading;
         const readingHtml = hasSeparateReading
-          ? `<div class="dict-word-reading">${word.writing}</div>`
+          ? `<div class="dict-word-reading">${reading}</div>`
           : '';
 
-        const displayKanji = isUnlocked ? word.kanji || word.writing : '???';
+        const displayKanji = isUnlocked ? safeWrittenForm : '???';
         const displayReadingHtml = isUnlocked ? readingHtml : '・・・';
         const displayTranslation = isUnlocked ? word.translation : `Откроется в Главе ${chapterId}`;
 

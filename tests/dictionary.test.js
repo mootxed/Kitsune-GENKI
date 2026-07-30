@@ -6,6 +6,10 @@ import {
   dictionaryViewState,
 } from '../ui/flashcards.js';
 import { calculateMastery } from '../src/mastery.js';
+import {
+  clearGenkiKanjiAvailability,
+  configureGenkiKanjiAvailability,
+} from '../src/genki-kanji.js';
 
 // Mock getRetrievability and calculateMastery
 vi.mock('../src/mastery.js', async () => {
@@ -46,6 +50,9 @@ describe('Dictionary UI System', () => {
   let dependencies;
 
   beforeEach(() => {
+    configureGenkiKanjiAvailability({
+      characters: ['食', '美', '味', '明', '日'].map((kanji) => ({ kanji, unlockLesson: 3 })),
+    });
     dictionaryViewState.search = '';
     dictionaryViewState.partOfSpeech = 'all';
     dictionaryViewState.topic = 'all';
@@ -65,7 +72,7 @@ describe('Dictionary UI System', () => {
         2: { started: true },
         3: { started: false }, // locked lesson
       },
-      activeChapterId: 1,
+      activeChapterId: 12,
       srs: {},
       reviewEvents: [],
       masteryArchive: {},
@@ -165,6 +172,7 @@ describe('Dictionary UI System', () => {
   });
 
   afterEach(() => {
+    clearGenkiKanjiAvailability();
     vi.clearAllMocks();
   });
 

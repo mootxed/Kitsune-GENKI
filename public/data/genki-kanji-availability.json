@@ -1,0 +1,585 @@
+{
+  "schemaVersion": 1,
+  "characters": [
+    {
+      "kanji": "一",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "二",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "三",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "四",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "五",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "六",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "七",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "八",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "九",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "十",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "百",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "千",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "万",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "円",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "時",
+      "unlockLesson": 3
+    },
+    {
+      "kanji": "日",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "本",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "人",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "月",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "火",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "水",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "木",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "金",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "土",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "曜",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "上",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "下",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "中",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "半",
+      "unlockLesson": 4
+    },
+    {
+      "kanji": "山",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "川",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "元",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "気",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "天",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "私",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "今",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "田",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "女",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "男",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "見",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "行",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "食",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "飲",
+      "unlockLesson": 5
+    },
+    {
+      "kanji": "東",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "西",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "南",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "北",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "口",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "出",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "右",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "左",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "分",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "先",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "生",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "大",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "学",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "外",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "国",
+      "unlockLesson": 6
+    },
+    {
+      "kanji": "京",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "子",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "小",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "会",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "社",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "父",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "母",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "高",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "校",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "毎",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "語",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "文",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "帰",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "入",
+      "unlockLesson": 7
+    },
+    {
+      "kanji": "員",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "新",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "聞",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "作",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "仕",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "事",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "電",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "車",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "休",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "言",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "読",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "思",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "次",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "何",
+      "unlockLesson": 8
+    },
+    {
+      "kanji": "午",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "後",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "前",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "名",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "白",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "雨",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "書",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "友",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "間",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "家",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "話",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "少",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "古",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "知",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "来",
+      "unlockLesson": 9
+    },
+    {
+      "kanji": "住",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "正",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "年",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "売",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "買",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "町",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "長",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "道",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "雪",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "立",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "自",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "夜",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "朝",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "持",
+      "unlockLesson": 10
+    },
+    {
+      "kanji": "手",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "紙",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "好",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "近",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "明",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "病",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "院",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "映",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "画",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "歌",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "市",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "所",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "勉",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "強",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "有",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "旅",
+      "unlockLesson": 11
+    },
+    {
+      "kanji": "昔",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "々",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "神",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "早",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "起",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "牛",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "使",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "働",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "連",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "別",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "度",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "赤",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "青",
+      "unlockLesson": 12
+    },
+    {
+      "kanji": "色",
+      "unlockLesson": 12
+    }
+  ]
+}

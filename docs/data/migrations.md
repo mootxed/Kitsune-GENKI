@@ -6,14 +6,15 @@
 
 ## ⚙️ Пайплайн миграций (`MIGRATIONS`)
 
-При загрузке состояния из IndexedDB или бэкапа проверяется значение `state.version`. Если `version < CURRENT_VERSION` (где `CURRENT_VERSION = 13`), последовательно применяются трансформации из объекта `MIGRATIONS`:
+При загрузке состояния из IndexedDB или бэкапа проверяется значение `state.version`. Если `version < CURRENT_VERSION` (где `CURRENT_VERSION = 14`), последовательно применяются трансформации из объекта `MIGRATIONS`:
 
 ```mermaid
 graph LR
     V1[State v1] -->|MIGRATIONS 2| V2[State v2]
     V2 -->|MIGRATIONS 3 SM-2 to FSRS| V3[State v3]
     V3 -->|...| V12[State v12]
-    V12 -->|MIGRATIONS 13| V13[State v13 Current]
+    V12 -->|MIGRATIONS 13| V13[State v13]
+    V13 -->|MIGRATIONS 14 GENKI IDs| V14[State v14 Current]
 ```
 
 ---
@@ -25,6 +26,7 @@ graph LR
 - **v10 → v11**: Добавление полей интегрированного плана и нормализация устаревших слотов лексики.
 - **v11 → v12**: Миграция структуры `dailySnapshot` с поддержкой зафиксированных ID задач.
 - **v12 → v13**: Поддержка расширенных review-логов и метаданных context-production.
+- **v13 → v14**: Слияние поздних дублей GENKI I, переназначение ссылок на канонические словарные ID и архивирование исходного прогресса удалённых записей без пересчёта FSRS.
 
 ---
 

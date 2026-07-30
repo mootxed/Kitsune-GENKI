@@ -107,9 +107,9 @@ describe('Dictionary Integration', () => {
     expect(nomu.particlePatterns).toEqual(['を']);
     expect(nomu.topic).toBe(null); // Because category is 'u-verbs'
 
-    // Check schema version updated to current version (3)
+    // Check schema version updated to current version (4)
     const schemaVersion = await db.get(STORES.CONTENT_CACHE, 'schema_version');
-    expect(schemaVersion).toBe(3);
+    expect(schemaVersion).toBe(4);
   });
 
   it('keeps FSRS state after migration', async () => {
@@ -130,7 +130,7 @@ describe('Dictionary Integration', () => {
   });
 
   it('repeated migration does nothing when schema version matches', async () => {
-    // Set schema_version to 3 (current) with already normalized lesson
+    // Set schema_version to 4 (current) with already normalized lesson
     const normalizedLesson3 = {
       id: 3,
       words: [
@@ -153,17 +153,17 @@ describe('Dictionary Integration', () => {
       json: async () => ({ version: 1, chapters: [] }),
     });
     await db.set(STORES.CONTENT_CACHE, 'lesson_version', '1');
-    await db.set(STORES.CONTENT_CACHE, 'schema_version', 3);
+    await db.set(STORES.CONTENT_CACHE, 'schema_version', 4);
     await db.set(STORES.CONTENT_CACHE, 'workbook_schema_version', 1);
 
     await loadLessons();
 
-    // Since version is 1 and schema is 3, it should NOT migrate, so it should keep the normalized object
+    // Since version is 1 and schema is 4, it should NOT migrate, so it should keep the normalized object
     const word = getLesson(3)?.words.find((w) => w.id === 'L3_V035');
     expect(word._testFlag).toBe('already-normalized');
   });
 
-  it('loads all 12 lessons and registers 674 words', async () => {
+  it('loads all 12 lessons and registers 676 unique words', async () => {
     // We clear cache to force fetching
     await db.clear(STORES.CONTENT_CACHE);
     await loadLessons();
@@ -172,8 +172,7 @@ describe('Dictionary Integration', () => {
       await ensureLesson(i);
     }
 
-    // Checking ExamplesDB contract (674 total words but 4 duplicated IDs)
-    expect(ExamplesDB.vocabulary.size).toBe(670);
+    expect(ExamplesDB.vocabulary.size).toBe(676);
   });
 
   it('registers stories without cache blocking', async () => {

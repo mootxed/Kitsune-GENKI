@@ -9,7 +9,7 @@ export function normalizeWord(raw, lessonId) {
   const semanticTags = Array.isArray(raw.semanticTags) ? [...raw.semanticTags] : [];
 
   // 2. Обработка перевода и служебных пометок $$...$$
-  let translation = (raw.translation || '').trim();
+  let translation = (raw.meaning || raw.translation || '').trim();
   translation = translation
     .replace(/\$\$(.*?)\$\$/g, (match, tag) => {
       const t = tag.trim();
@@ -143,8 +143,9 @@ export function normalizeWord(raw, lessonId) {
   if (particlePatterns.length === 0) particlePatterns = null;
 
   // 4. Формирование базовых полей
-  const writing = raw.writing || '';
-  const kanji = raw.kanji || writing;
+  const writing = raw.reading || raw.writing || '';
+  const kanji = raw.writtenForm || raw.kanji || writing;
+  const lesson = Number(raw.lesson || lessonId) || null;
 
   // 4a. Извлечение типа прилагательного
   let adjectiveClass = raw.adjectiveClass || null;
@@ -153,7 +154,7 @@ export function normalizeWord(raw, lessonId) {
     else if (cat === 'na-adjectives') adjectiveClass = 'na';
     else {
       // Явное сопоставление для слов из общих категорий
-      const w = raw.writing || raw.kanji || '';
+      const w = raw.reading || raw.writing || raw.writtenForm || raw.kanji || '';
       if (w === 'いい' || w === 'はやい' || w === '新しい') {
         adjectiveClass = 'i';
       } else if (w.includes('きれい') || w.includes('げんき') || w.includes('しずか')) {
@@ -176,14 +177,21 @@ export function normalizeWord(raw, lessonId) {
 
   // 6. Сбор всех остальных полей
   const examples = Array.isArray(raw.examples) ? raw.examples : null;
-  const lessonIds = Array.isArray(raw.lessonIds) ? [...raw.lessonIds] : lessonId ? [lessonId] : [];
+  const lessonIds = Array.isArray(raw.lessonIds) ? [...raw.lessonIds] : lesson ? [lesson] : [];
 
   return {
     id: raw.id,
+    lesson,
+    writtenForm: kanji,
+    reading: writing,
+    meaning: translation,
+    // Runtime compatibility adapter for UI code that still consumes the
+    // former lesson schema. Raw GENKI JSON no longer stores these aliases.
     kanji,
     writing,
     romaji: raw.romaji || '',
     translation,
+    category: raw.category || '',
     topic,
     partOfSpeech,
     verbClass,

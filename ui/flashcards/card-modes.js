@@ -35,6 +35,7 @@ import {
   clearActiveReviewAIContext,
 } from './state.js';
 import { abandonActiveSession } from './session.js';
+import { displayWordForm } from '../../src/genki-kanji.js';
 
 import { announce } from '../../src/a11y-helpers.js';
 import {
@@ -362,7 +363,7 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
 
   const body = $('#srs-body');
   const displayWriting = word.writing;
-  const displayTranslation = word.translation;
+  const displayTranslation = word.meaning || word.translation;
   const displayCategory = modeConfig.category || word.category || 'Слово';
   const displayQuestion = modeConfig.question || displayTranslation;
   const displayHint = modeConfig.hint || 'Введите слово на японском';
@@ -902,7 +903,7 @@ export function renderMultipleChoiceMode(
   const displayQuestion = modeConfig.question || displayTranslation;
   const displayHint = modeConfig.hint || 'Выберите правильное слово';
   const questionClass = modeConfig.questionClass || '';
-  const optionLabel = modeConfig.optionLabel || ((option) => option.kanji || option.writing);
+  const optionLabel = modeConfig.optionLabel || ((option) => displayWordForm(option, state));
 
   let mistakeCount = 0;
 

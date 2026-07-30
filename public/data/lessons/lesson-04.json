@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 2,
   "version": 1,
   "lesson": {
     "lesson_id": 4,
@@ -13,567 +14,851 @@
     ],
     "vocabulary": [
       {
-        "id": "L4_V040",
-        "category": "verbs_u",
-        "kanji": "撮る",
-        "writing": "とる",
-        "romaji": "toru",
-        "translation": "фотографировать (写真 を)"
+        "id": "L4_V063",
+        "lesson": 4,
+        "writtenForm": "ゲーム",
+        "reading": "ゲーム",
+        "meaning": "игра",
+        "lexemeId": "__none"
       },
       {
         "id": "L4_V002",
+        "lesson": 4,
+        "writtenForm": "アルバイト",
+        "reading": "アルバイト",
+        "meaning": "подработка",
         "category": "activities",
-        "kanji": "アルバイト",
-        "writing": "アルバイト",
         "romaji": "arubaito",
-        "translation": "подработка (part-time job, сокр. バイト baito)"
+        "topic": "activities",
+        "partOfSpeech": "noun",
+        "lexemeId": "アルバイト_アルバイト_noun_подработка"
       },
       {
         "id": "L4_V003",
+        "lesson": 4,
+        "writtenForm": "買い物",
+        "reading": "かいもの",
+        "meaning": "покупки",
         "category": "activities",
-        "kanji": "かいもの",
-        "writing": "かいもの",
         "romaji": "kaimono",
-        "translation": "покупки, шопинг"
+        "topic": "activities",
+        "partOfSpeech": "noun",
+        "lexemeId": "かいもの_かいもの_noun_покупки"
       },
       {
         "id": "L4_V004",
+        "lesson": 4,
+        "writtenForm": "クラス",
+        "reading": "クラス",
+        "meaning": "занятие; класс",
         "category": "activities",
-        "kanji": "クラス",
-        "writing": "クラス",
         "romaji": "kurasu",
-        "translation": "класс, занятие, урок"
+        "topic": "activities",
+        "partOfSpeech": "noun",
+        "lexemeId": "クラス_クラス_noun_занятие"
       },
       {
         "id": "L4_V005",
+        "lesson": 4,
+        "writtenForm": "犬",
+        "reading": "いぬ",
+        "meaning": "собака",
         "category": "things",
-        "kanji": "犬",
-        "writing": "いぬ",
         "romaji": "inu",
-        "translation": "собака"
+        "topic": "things",
+        "partOfSpeech": "noun",
+        "lexemeId": "いぬ_犬_noun_собака"
       },
       {
         "id": "L4_V006",
+        "lesson": 4,
+        "writtenForm": "猫",
+        "reading": "ねこ",
+        "meaning": "кошка",
         "category": "things",
-        "kanji": "猫",
-        "writing": "ねこ",
         "romaji": "neko",
-        "translation": "кошка, кот"
+        "topic": "things",
+        "partOfSpeech": "noun",
+        "lexemeId": "ねこ_猫_noun_кот"
       },
       {
         "id": "L4_V007",
+        "lesson": 4,
+        "writtenForm": "人",
+        "reading": "ひと",
+        "meaning": "человек",
         "category": "person",
-        "kanji": "ひと",
-        "writing": "ひと",
         "romaji": "hito",
-        "translation": "человек"
+        "topic": "people",
+        "partOfSpeech": "noun",
+        "lexemeId": "ひと_ひと_noun_человек"
       },
       {
         "id": "L4_V008",
+        "lesson": 4,
+        "writtenForm": "子供",
+        "reading": "こども",
+        "meaning": "ребёнок",
         "category": "person",
-        "kanji": "子供",
-        "writing": "こども",
         "romaji": "kodomo",
-        "translation": "ребёнок, дети"
+        "topic": "people",
+        "partOfSpeech": "noun",
+        "lexemeId": "こども_子供_noun_дети"
       },
       {
         "id": "L4_V009",
+        "lesson": 4,
+        "writtenForm": "あなた",
+        "reading": "あなた",
+        "meaning": "вы; ты",
         "category": "person",
-        "kanji": "あなた",
-        "writing": "あなた",
         "romaji": "anata",
-        "translation": "ты, вы"
+        "topic": "people",
+        "partOfSpeech": "noun",
+        "lexemeId": "あなた_あなた_noun_вы"
       },
       {
         "id": "L4_V010",
+        "lesson": 4,
+        "writtenForm": "いす",
+        "reading": "いす",
+        "meaning": "стул",
         "category": "things",
-        "kanji": "いす",
-        "writing": "いす",
         "romaji": "isu",
-        "translation": "стул"
+        "topic": "things",
+        "partOfSpeech": "noun",
+        "lexemeId": "いす_いす_noun_стул"
       },
       {
         "id": "L4_V011",
+        "lesson": 4,
+        "writtenForm": "机",
+        "reading": "つくえ",
+        "meaning": "письменный стол",
         "category": "things",
-        "kanji": "机",
-        "writing": "つくえ",
         "romaji": "tsukue",
-        "translation": "стол, письменный стол"
+        "topic": "things",
+        "partOfSpeech": "noun",
+        "lexemeId": "つくえ_机_noun_письменныйстол"
       },
       {
         "id": "L4_V012",
+        "lesson": 4,
+        "writtenForm": "写真",
+        "reading": "しゃしん",
+        "meaning": "фотография; снимок",
         "category": "things",
-        "kanji": "しゃしん",
-        "writing": "しゃしん",
         "romaji": "shashin",
-        "translation": "фотография, снимок"
+        "topic": "things",
+        "partOfSpeech": "noun",
+        "lexemeId": "しゃしん_しゃしん_noun_снимок"
       },
       {
         "id": "L4_V013",
+        "lesson": 4,
+        "writtenForm": "花",
+        "reading": "はな",
+        "meaning": "цветок",
         "category": "things",
-        "kanji": "鼻",
-        "writing": "はな",
         "romaji": "hana",
-        "translation": "цветок"
+        "topic": "things",
+        "partOfSpeech": "noun",
+        "lexemeId": "はな_鼻_noun_цветок"
       },
       {
         "id": "L4_V014",
+        "lesson": 4,
+        "writtenForm": "レポート",
+        "reading": "レポート",
+        "meaning": "доклад; письменная работа",
         "category": "things",
-        "kanji": "レポート",
-        "writing": "レポート",
         "romaji": "repooto",
-        "translation": "доклад, отчет, письменный реферат"
+        "topic": "things",
+        "partOfSpeech": "noun",
+        "lexemeId": "レポート_レポート_noun_доклад"
       },
       {
         "id": "L4_V015",
+        "lesson": 4,
+        "writtenForm": "ご飯",
+        "reading": "ごはん",
+        "meaning": "рис; еда",
         "category": "food",
-        "kanji": "ごはん",
-        "writing": "ごはん",
         "romaji": "gohan",
-        "translation": "рис; еда"
+        "topic": "food",
+        "partOfSpeech": "noun",
+        "lexemeId": "ごはん_ごはん_noun_еда"
       },
       {
         "id": "L4_V016",
+        "lesson": 4,
+        "writtenForm": "パン",
+        "reading": "パン",
+        "meaning": "хлеб",
         "category": "food",
-        "kanji": "パン",
-        "writing": "パン",
         "romaji": "pan",
-        "translation": "хлеб"
+        "topic": "food",
+        "partOfSpeech": "noun",
+        "lexemeId": "パン_パン_noun_хлеб"
       },
       {
         "id": "L4_V017",
+        "lesson": 4,
+        "writtenForm": "お寺",
+        "reading": "おてら",
+        "meaning": "буддийский храм",
         "category": "places",
-        "kanji": "おてら",
-        "writing": "おてら",
         "romaji": "otera",
-        "translation": "храм (буддийский)"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "おてら_おてら_noun_храм"
       },
       {
         "id": "L4_V018",
+        "lesson": 4,
+        "writtenForm": "公園",
+        "reading": "こうえん",
+        "meaning": "парк",
         "category": "places",
-        "kanji": "公園",
-        "writing": "こうえん",
         "romaji": "kouen",
-        "translation": "парк"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "こうえん_公園_noun_парк"
       },
       {
         "id": "L4_V019",
+        "lesson": 4,
+        "writtenForm": "スーパー",
+        "reading": "スーパー",
+        "meaning": "супермаркет",
         "category": "places",
-        "kanji": "スーパー",
-        "writing": "スーパー",
         "romaji": "suupaa",
-        "translation": "супермаркет"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "スーパー_スーパー_noun_супермаркет"
       },
       {
         "id": "L4_V020",
+        "lesson": 4,
+        "writtenForm": "バス停",
+        "reading": "バスてい",
+        "meaning": "автобусная остановка",
         "category": "places",
-        "kanji": "バスてい",
-        "writing": "バスてい",
         "romaji": "basutei",
-        "translation": "автобусная остановка"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "バスてい_バスてい_noun_автобуснаяостановка"
       },
       {
         "id": "L4_V021",
+        "lesson": 4,
+        "writtenForm": "病院",
+        "reading": "びょういん",
+        "meaning": "больница",
         "category": "places",
-        "kanji": "病院",
-        "writing": "びょういん",
         "romaji": "byouin",
-        "translation": "больница"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "びょういん_病院_noun_больница"
       },
       {
         "id": "L4_V022",
+        "lesson": 4,
+        "writtenForm": "ホテル",
+        "reading": "ホテル",
+        "meaning": "отель",
         "category": "places",
-        "kanji": "ホテル",
-        "writing": "ホテル",
         "romaji": "hoteru",
-        "translation": "отель"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "ホテル_ホテル_noun_отель"
       },
       {
         "id": "L4_V023",
+        "lesson": 4,
+        "writtenForm": "本屋",
+        "reading": "ほんや",
+        "meaning": "книжный магазин",
         "category": "places",
-        "kanji": "本屋",
-        "writing": "ほんや",
         "romaji": "honya",
-        "translation": "книжный магазин"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "ほんや_本屋_noun_книжныймагазин"
       },
       {
         "id": "L4_V024",
+        "lesson": 4,
+        "writtenForm": "町",
+        "reading": "まち",
+        "meaning": "город; городок",
         "category": "places",
-        "kanji": "まち",
-        "writing": "まち",
         "romaji": "machi",
-        "translation": "город"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "まち_まち_noun_город"
       },
       {
         "id": "L4_V025",
+        "lesson": 4,
+        "writtenForm": "レストラン",
+        "reading": "レストラン",
+        "meaning": "ресторан",
         "category": "places",
-        "kanji": "レストラン",
-        "writing": "レストラン",
         "romaji": "resutoran",
-        "translation": "ресторан"
+        "topic": "places",
+        "partOfSpeech": "noun",
+        "lexemeId": "レストラン_レストラン_noun_ресторан"
       },
       {
         "id": "L4_V026",
+        "lesson": 4,
+        "writtenForm": "昨日",
+        "reading": "きのう",
+        "meaning": "вчера",
         "category": "time",
-        "kanji": "昨日",
-        "writing": "きのう",
         "romaji": "kinou",
-        "translation": "вчера"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "きのう_昨日_noun_вчера"
       },
       {
         "id": "L4_V027",
+        "lesson": 4,
+        "writtenForm": "〜時間",
+        "reading": "〜じかん",
+        "meaning": "... часов",
         "category": "time",
-        "kanji": "～じかん",
-        "writing": "～じかん",
         "romaji": "... jikan",
-        "translation": "в течение ... часов"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "～じかん_～じかん_noun_втечениечасов"
       },
       {
         "id": "L4_V028",
+        "lesson": 4,
+        "writtenForm": "一時間",
+        "reading": "いちじかん",
+        "meaning": "один час",
         "category": "time",
-        "kanji": "いちじかん",
-        "writing": "いちじかん",
         "romaji": "ichijikan",
-        "translation": "один час (длительность)"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "いちじかん_いちじかん_noun_одинчас"
       },
       {
         "id": "L4_V029",
+        "lesson": 4,
+        "writtenForm": "先週",
+        "reading": "せんしゅう",
+        "meaning": "прошлая неделя",
         "category": "time",
-        "kanji": "せんしゅう",
-        "writing": "せんしゅう",
         "romaji": "senshuu",
-        "translation": "на прошлой неделе"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "せんしゅう_せんしゅう_noun_напрошлойнеделе"
       },
       {
         "id": "L4_V030",
+        "lesson": 4,
+        "writtenForm": "時",
+        "reading": "とき",
+        "meaning": "время; когда",
         "category": "time",
-        "kanji": "とき",
-        "writing": "とき",
         "romaji": "toki",
-        "translation": "время, когда...; во время... (～の)"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "とき_とき_noun_вовремя",
+        "particlePatterns": [
+          "の"
+        ]
       },
       {
         "id": "L4_V031",
+        "lesson": 4,
+        "writtenForm": "月曜日",
+        "reading": "げつようび",
+        "meaning": "понедельник",
         "category": "time",
-        "kanji": "月曜日",
-        "writing": "げつようび",
         "romaji": "getsuyoobi",
-        "translation": "понедельник"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "げつようび_月曜日_noun_понедельник"
       },
       {
         "id": "L4_V032",
+        "lesson": 4,
+        "writtenForm": "火曜日",
+        "reading": "かようび",
+        "meaning": "вторник",
         "category": "time",
-        "kanji": "火曜日",
-        "writing": "かようび",
         "romaji": "kayoobi",
-        "translation": "вторник"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "かようび_火曜日_noun_вторник"
       },
       {
         "id": "L4_V033",
+        "lesson": 4,
+        "writtenForm": "水曜日",
+        "reading": "すいようび",
+        "meaning": "среда",
         "category": "time",
-        "kanji": "水曜日",
-        "writing": "すいようび",
         "romaji": "suiyoobi",
-        "translation": "среда"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "すいようび_水曜日_noun_среда"
       },
       {
         "id": "L4_V034",
+        "lesson": 4,
+        "writtenForm": "木曜日",
+        "reading": "もくようび",
+        "meaning": "четверг",
         "category": "time",
-        "kanji": "木曜日",
-        "writing": "もくようび",
         "romaji": "mokuyoobi",
-        "translation": "четверг"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "もくようび_木曜日_noun_четверг"
       },
       {
         "id": "L4_V035",
+        "lesson": 4,
+        "writtenForm": "金曜日",
+        "reading": "きんようび",
+        "meaning": "пятница",
         "category": "time",
-        "kanji": "金曜日",
-        "writing": "きんようび",
         "romaji": "kinyoobi",
-        "translation": "пятница"
+        "topic": "time",
+        "partOfSpeech": "noun",
+        "lexemeId": "きんようび_金曜日_noun_пятница"
       },
       {
         "id": "L4_V036",
+        "lesson": 4,
+        "writtenForm": "会う",
+        "reading": "あう",
+        "meaning": "встречаться; видеться с человеком",
         "category": "verbs_u",
-        "kanji": "会う",
-        "writing": "あう",
         "romaji": "au",
-        "translation": "встречаться, видеться (с кем-то に)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "あう_会う_verb_godan_видеться"
       },
       {
         "id": "L4_V037",
+        "lesson": 4,
+        "writtenForm": "ある",
+        "reading": "ある",
+        "meaning": "находиться; иметься (о неодушевлённых предметах)",
         "category": "verbs_u",
-        "kanji": "ある",
-        "writing": "ある",
         "romaji": "aru",
-        "translation": "быть, находиться, иметься (о неодушевленных вещах) (место に предмет が)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "ある_ある_verb_godan_быть"
       },
       {
         "id": "L4_V038",
+        "lesson": 4,
+        "writtenForm": "買う",
+        "reading": "かう",
+        "meaning": "покупать",
         "category": "verbs_u",
-        "kanji": "買う",
-        "writing": "かう",
         "romaji": "kau",
-        "translation": "покупать (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "かう_買う_verb_godan_покупать",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L4_V039",
+        "lesson": 4,
+        "writtenForm": "書く",
+        "reading": "かく",
+        "meaning": "писать",
         "category": "verbs_u",
-        "kanji": "書く",
-        "writing": "かく",
         "romaji": "kaku",
-        "translation": "писать (кому-то に писать что-то を)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "かく_書く_verb_godan_писать"
       },
       {
         "id": "L4_V040",
+        "lesson": 4,
+        "writtenForm": "撮る",
+        "reading": "とる",
+        "meaning": "фотографировать; снимать",
         "category": "verbs_u",
-        "kanji": "取る",
-        "writing": "とる",
         "romaji": "toru",
-        "translation": "фотографировать, делать снимок (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "とる_撮る_verb_godan_фотографировать"
       },
       {
         "id": "L4_V041",
+        "lesson": 4,
+        "writtenForm": "待つ",
+        "reading": "まつ",
+        "meaning": "ждать",
         "category": "verbs_u",
-        "kanji": "待つ",
-        "writing": "まつ",
         "romaji": "matsu",
-        "translation": "ждать (～を)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "まつ_待つ_verb_godan_ждать",
+        "particlePatterns": [
+          "を"
+        ]
       },
       {
         "id": "L4_V042",
+        "lesson": 4,
+        "writtenForm": "わかる",
+        "reading": "わかる",
+        "meaning": "понимать",
         "category": "verbs_u",
-        "kanji": "わかる",
-        "writing": "わかる",
         "romaji": "wakaru",
-        "translation": "понимать (～が)"
+        "partOfSpeech": "verb",
+        "verbClass": "godan",
+        "lexemeId": "わかる_わかる_verb_godan_понимать",
+        "particlePatterns": [
+          "が"
+        ]
       },
       {
         "id": "L4_V043",
+        "lesson": 4,
+        "writtenForm": "いる",
+        "reading": "いる",
+        "meaning": "находиться; быть (о людях и животных)",
         "category": "verbs_ru",
-        "kanji": "いる",
-        "writing": "いる",
         "romaji": "iru",
-        "translation": "быть, находиться (о людях и животных) (место に человек/животное が)"
+        "partOfSpeech": "verb",
+        "verbClass": "ichidan",
+        "lexemeId": "いる_いる_verb_ichidan_быть"
       },
       {
         "id": "L4_V044",
+        "lesson": 4,
+        "writtenForm": "〜ぐらい",
+        "reading": "〜ぐらい",
+        "meaning": "примерно; около",
         "category": "adverbs",
-        "kanji": "～ぐらい",
-        "writing": "～ぐらい",
         "romaji": "... gurai",
-        "translation": "примерно, около",
-        "note": "примерно, около (о количестве/длительности)"
+        "note": "примерно, около (о количестве/длительности)",
+        "partOfSpeech": "adverb",
+        "lexemeId": "～ぐらい_～ぐらい_adverb_около"
       },
       {
         "id": "L4_V045",
+        "lesson": 4,
+        "writtenForm": "ごめんなさい",
+        "reading": "ごめんなさい",
+        "meaning": "извините; простите",
         "category": "expressions",
-        "kanji": "ごめんなさい",
-        "writing": "ごめんなさい",
         "romaji": "gomen nasai",
-        "translation": "извините, прошу прощения"
+        "partOfSpeech": "expression",
+        "lexemeId": "ごめんなさい_ごめんなさい_expression_извините"
       },
       {
         "id": "L4_V046",
+        "lesson": 4,
+        "writtenForm": "それから",
+        "reading": "それから",
+        "meaning": "затем; после этого",
         "category": "expressions",
-        "kanji": "それから",
-        "writing": "それから",
         "romaji": "sorekara",
-        "translation": "затем, после этого, а также"
+        "partOfSpeech": "expression",
+        "lexemeId": "それから_それから_expression_атакже"
       },
       {
         "id": "L4_V047",
+        "lesson": 4,
+        "writtenForm": "だから",
+        "reading": "だから",
+        "meaning": "поэтому",
         "category": "expressions",
-        "kanji": "だから",
-        "writing": "だから",
         "romaji": "dakara",
-        "translation": "поэтому, следовательно"
+        "partOfSpeech": "expression",
+        "lexemeId": "だから_だから_expression_поэтому"
       },
       {
         "id": "L4_V048",
+        "lesson": 4,
+        "writtenForm": "たくさん",
+        "reading": "たくさん",
+        "meaning": "много",
         "category": "adverbs",
-        "kanji": "たくさん",
-        "writing": "たくさん",
         "romaji": "takusan",
-        "translation": "много"
+        "partOfSpeech": "adverb",
+        "lexemeId": "たくさん_たくさん_adverb_много"
       },
       {
         "id": "L4_V049",
+        "lesson": 4,
+        "writtenForm": "〜と",
+        "reading": "〜と",
+        "meaning": "вместе с; и",
         "category": "expressions",
-        "kanji": "～と",
-        "writing": "～と",
         "romaji": "... to",
-        "translation": "вместе с",
-        "note": "вместе с (кем-то); и (для существительных)"
+        "note": "вместе с (кем-то); и (для существительных)",
+        "partOfSpeech": "expression",
+        "lexemeId": "～と_～と_expression_вместес"
       },
       {
         "id": "L4_V050",
+        "lesson": 4,
+        "writtenForm": "どうして",
+        "reading": "どうして",
+        "meaning": "почему",
         "category": "expressions",
-        "kanji": "どうして",
-        "writing": "どうして",
         "romaji": "dooshite",
-        "translation": "почему"
+        "partOfSpeech": "expression",
+        "lexemeId": "どうして_どうして_expression_почему"
       },
       {
         "id": "L4_V051",
+        "lesson": 4,
+        "writtenForm": "一人で",
+        "reading": "ひとりで",
+        "meaning": "в одиночку; один",
         "category": "expressions",
-        "kanji": "一人で",
-        "writing": "ひとりで",
         "romaji": "hitori de",
-        "translation": "один, в одиночку, сам"
+        "partOfSpeech": "expression",
+        "lexemeId": "ひとりで_一人で_expression_водиночку"
       },
       {
         "id": "L4_V052",
+        "lesson": 4,
+        "writtenForm": "もしもし",
+        "reading": "もしもし",
+        "meaning": "алло (по телефону)",
         "category": "expressions",
-        "kanji": "もしもし",
-        "writing": "もしもし",
         "romaji": "moshimoshi",
-        "translation": "алло (по телефону)"
+        "partOfSpeech": "expression",
+        "lexemeId": "もしもし_もしもし_expression_алло"
       },
       {
         "id": "L4_V053",
+        "lesson": 4,
+        "writtenForm": "右",
+        "reading": "みぎ",
+        "meaning": "справа; направо",
         "category": "location_words",
-        "kanji": "右",
-        "writing": "みぎ",
         "romaji": "migi",
-        "translation": "право, справа (～の)"
+        "topic": "location_words",
+        "partOfSpeech": "noun",
+        "lexemeId": "みぎ_右_noun_право",
+        "particlePatterns": [
+          "の"
+        ]
       },
       {
         "id": "L4_V054",
+        "lesson": 4,
+        "writtenForm": "左",
+        "reading": "ひだり",
+        "meaning": "слева; налево",
         "category": "location_words",
-        "kanji": "左",
-        "writing": "ひだり",
         "romaji": "hidari",
-        "translation": "лево, слева (～の)"
+        "topic": "location_words",
+        "partOfSpeech": "noun",
+        "lexemeId": "ひだり_左_noun_лево",
+        "particlePatterns": [
+          "の"
+        ]
       },
       {
         "id": "L4_V055",
+        "lesson": 4,
+        "writtenForm": "前",
+        "reading": "まえ",
+        "meaning": "перед; впереди",
         "category": "location_words",
-        "kanji": "前",
-        "writing": "まえ",
         "romaji": "mae",
-        "translation": "перед, спереди, напротив (～の)"
+        "topic": "location_words",
+        "partOfSpeech": "noun",
+        "lexemeId": "まえ_前_noun_напротив",
+        "particlePatterns": [
+          "の"
+        ]
       },
       {
         "id": "L4_V056",
+        "lesson": 4,
+        "writtenForm": "後ろ",
+        "reading": "うしろ",
+        "meaning": "сзади; позади",
         "category": "location_words",
-        "kanji": "後ろ",
-        "writing": "うしろ",
         "romaji": "ushiro",
-        "translation": "позади, сзади (～но)"
+        "topic": "location_words",
+        "partOfSpeech": "noun",
+        "lexemeId": "うしろ_後ろ_noun_позади"
       },
       {
         "id": "L4_V057",
+        "lesson": 4,
+        "writtenForm": "中",
+        "reading": "なか",
+        "meaning": "внутри",
         "category": "location_words",
-        "kanji": "中",
-        "writing": "なか",
         "romaji": "naka",
-        "translation": "внутри, в (～の)"
+        "topic": "location_words",
+        "partOfSpeech": "noun",
+        "lexemeId": "なか_中_noun_в",
+        "particlePatterns": [
+          "の"
+        ]
       },
       {
         "id": "L4_V058",
+        "lesson": 4,
+        "writtenForm": "上",
+        "reading": "うえ",
+        "meaning": "на; над; сверху",
         "category": "location_words",
-        "kanji": "上",
-        "writing": "うえ",
         "romaji": "ue",
-        "translation": "верх, на, над (～の)"
+        "topic": "location_words",
+        "partOfSpeech": "noun",
+        "lexemeId": "うえ_上_noun_верх",
+        "particlePatterns": [
+          "の"
+        ]
       },
       {
         "id": "L4_V059",
+        "lesson": 4,
+        "writtenForm": "下",
+        "reading": "した",
+        "meaning": "под; снизу",
         "category": "location_words",
-        "kanji": "下",
-        "writing": "した",
         "romaji": "shita",
-        "translation": "низ, под (～の)"
+        "topic": "location_words",
+        "partOfSpeech": "noun",
+        "lexemeId": "した_下_noun_низ",
+        "particlePatterns": [
+          "の"
+        ]
       },
       {
         "id": "L4_V060",
+        "lesson": 4,
+        "writtenForm": "近く",
+        "reading": "ちかく",
+        "meaning": "рядом; поблизости",
         "category": "location_words",
-        "kanji": "近く",
-        "writing": "ちかく",
         "romaji": "chikaku",
-        "translation": "поблизости, близко, около (～の)"
+        "topic": "location_words",
+        "partOfSpeech": "noun",
+        "lexemeId": "ちかく_近く_noun_близко",
+        "particlePatterns": [
+          "の"
+        ]
       },
       {
         "id": "L4_V061",
+        "lesson": 4,
+        "writtenForm": "隣",
+        "reading": "となり",
+        "meaning": "по соседству; рядом",
         "category": "location_words",
-        "kanji": "隣",
-        "writing": "となり",
         "romaji": "tonari",
-        "translation": "соседний, рядом (side-by-side, однотипные объекты) (～の)"
+        "topic": "location_words",
+        "partOfSpeech": "noun",
+        "lexemeId": "となり_隣_noun_рядом",
+        "particlePatterns": [
+          "の"
+        ]
       },
       {
         "id": "L4_V062",
+        "lesson": 4,
+        "writtenForm": "間",
+        "reading": "あいだ",
+        "meaning": "между",
         "category": "location_words",
-        "kanji": "間",
-        "writing": "あいだ",
         "romaji": "aida",
-        "translation": "между (A と B の)"
+        "topic": "location_words",
+        "partOfSpeech": "noun",
+        "lexemeId": "あいだ_間_noun_между"
       }
     ],
     "notes": [
       {
-        "note_id": 1,
+        "id": "L4_g1",
+        "noteId": 1,
         "title": "Грамматика 1: Выражение наличия/существования (X が あります/います)",
         "content": "Для выражения наличия предметов или людей в определенном месте используются два глагола:\n1. あります (aru / u-verb) — для неодушевленных вещей (включая растения, события, абстрактные понятия вроде «время» или «урок»).\n2. います (iru / ru-verb) — для людей, животных и других подвижных живых существ.\n\nБазовая структура предложения:\n  $$Место に$$   →  $$Объект が$$   →  $$あります/います$$  .\nПримеры:\n- あそこにマクドナルドがあります (Вон там есть Макдоналдс).\n- あそこに留学生がいます (Вон там стоит иностранный студент).\n- Японская частица に обозначает место нахождения объекта, а частица が выделяет сам объект существования."
       },
       {
-        "note_id": 2,
+        "id": "L4_g2",
+        "noteId": 2,
         "title": "Грамматика 1.2: Использование 'あります' для владения и проведения событий",
         "content": "Помимо простого существования, глагол あります выражает:\n1. Наличие в собственности (владение вещью): 'テレビがありません' (У меня нет телевизора).\n2. Проведение какого-либо мероприятия в определенном месте: '火曜日にテストがあります' (Во вторник будет тест/экзамен). Обратите внимание: когда мы говорим о проходящем событии, место его проведения обозначается частицей で, а не に! Пример: 'あした京都でお祭りがあります' (Завтра в Киото пройдет фестиваль)."
       },
       {
-        "note_id": 3,
+        "id": "L4_g3",
+        "noteId": 3,
         "title": "Грамматика 2: Описание местоположения (Слова местоположения)",
         "content": "Для точного описания нахождения вещей относительно друг друга используются слова местоположения (みぎ, ひだり, まえ, うしろ, なка, うえ, した, ちかく, となり, あいだ).\nКонструкция выглядит так:\n  $$Объект X$$   は  $$Ориентир Y$$   の  $$Слово местоположения$$   です。\nПримеры:\n- 銀行は図書館の隣です (Банк находится по соседству с библиотекой).\n- 傘はテーブルの下です (Зонт лежит под столом).\n- レストランはスーパーと病院の間です (Ресторан находится между супермаркетом и больницей — используется 'Y と Z の間').\n\nЕсли в указанном месте происходит действие, то после пространственной конструкции ставится частица で: '私はモスバーガーの前でメアリーさんを待ちました' (Я ждал Мери перед рестораном Mos Burger)."
       },
       {
-        "note_id": 4,
+        "id": "L4_g4",
+        "noteId": 4,
         "title": "Грамматика 2.2: Различие слов 'となり' (tonari) и 'よこ' (yoko)",
         "content": "Японское слово 隣 (となり) означает соседство 'бок о бок' объектов ОДНОГО типа (например, два человека, два здания или два стула). Использовать となり для объектов разного типа неверно (например, 'сумка рядом со столом' — это ошибка). В таких случаях используется более универсальное слово 横 (よこ / yoko — 'сбоку, рядом'). Правильно: かばんはつくえのよこです (Сумка сбоку от стола)."
       },
       {
-        "note_id": 5,
+        "id": "L4_g5",
+        "noteId": 5,
         "title": "Грамматика 3: Прошедшее время связки です (でした / じゃなかったです)",
         "content": "Чтобы перевести предложение структуры 'X は Y です' в прошедшее время, глагол-связка です заменяется на прошедшие формы:\n1. Утверждение: 'でした' (deshita). Пример: '山下先生はさくら大学の学生でした' (Г-н Ямашита был студентом университета Сакура).\n2. Отрицание: 'じゃなかったです' (ja nakatta desu — разговорный) или 'じゃありませんでした' (ja arimasen deshita — вежливый/консервативный). Офиц. стиль: 'ではありませんでした'. Пример: 'あれは日本の映画じゃなかったです' (То не было японским фильмом)."
       },
       {
-        "note_id": 6,
+        "id": "L4_g6",
+        "noteId": 6,
         "title": "Грамматика 4: Прошедшее время глаголов (～ました / ～ませんでした)",
         "content": "Для перевода вежливых глаголов на ます/ません в прошедшее время используются следующие окончания:\n1. Утверждение: ます → ました (mashita).\n2. Отрицание: ません → ませんでした (masen deshita).\nПримеры:\n- メアリーさんは九時ごろうちに帰りました (Мери вернулась домой около девяти часов).\n- 私はきのう日本語を勉強しませんでした (Вчера я не учил японский язык).\nВсе правила распределения глаголов по группам (Ru, U, Irregular) из Урока 3 остаются в силе для вежливого прошедшего времени."
       },
       {
-        "note_id": 7,
+        "id": "L4_g7",
+        "noteId": 7,
         "title": "Грамматика 5: Частица も (mo) в сложных падежных конструкциях",
         "content": "Выделительная частица も ('тоже, также') заменяет падежи は, が, を. Однако при использовании с другими частицами (такими как に, で, と, へ) она ставится строго ПОСЛЕ них:\n- に + も → にмо (тоже в... / тоже кому-то)\n- で + も → でも (тоже в  $$место действия$$  )\nПримеры:\n- 私は先週京都に行きました。大阪にも行きました (На прошлой неделе я ездил в Киото. В Осаку я тоже ездил).\n- Сора пришла в школу в субботу. В воскресенье она тоже пришла в школу (Sora-san wa doyoobi ni gakkou ni kimashita. Nichiyoobi ni mo gakkou ni kimashita).\n- けんさんはうちで本を読みました. カフェでも本を読みました (Кен читал книгу дома. В кафе он тоже читал книгу)."
       },
       {
-        "note_id": 8,
+        "id": "L4_g8",
+        "noteId": 8,
         "title": "Грамматика 6: Выражение длительности времени (～時間)",
         "content": "Для указания продолжительности действия в часах используется счетный суффикс ～時間 (jikan). Существительное длительности употребляется обособленно, БЕЗ каких-либо падежных частиц (bare noun):\n- '一時間待ちました' (Я ждал один час).\nДля приблизительного указания времени добавляется слово ぐらい (gurai — 'около, примерно') в самый конец временной фразы:\n- '三時間ぐらい勉強しました' (Я занимался около трех часов).\nДля обозначения полутора часов и т.д., слово 半 (han — 'половина') ставится сразу после счетного суффикса: '一時間半'. Если нужно объединить оба понятия, 'ぐらい' идет в самом конце: '一時間半ぐらい' (около полутора часов)."
       },
       {
-        "note_id": 9,
+        "id": "L4_g9",
+        "noteId": 9,
         "title": "Грамматика 7: Наречие количества たくさん (takusan)",
         "content": "Японское наречие たくさん (таксан — 'много') грамматически отличается от аналогов в русском или английском языках. Его можно ставить в предложении двумя способами:\n1. Перед существительным с частицей の: 'たくさん写真' или непосредственно перед существительным: 'たくさん写真を撮りました'.\n2. После падежной частицы, относящейся к объекту: '写真をたくさん撮りました' (Я сделал много фотографий).\nОба варианта абсолютно равноценны. Это касается и предложений существования: '野菜がたくさんあります' или 'たくさん野菜があります' (Есть много овощей)."
       },
       {
-        "note_id": 10,
+        "id": "L4_g10",
+        "noteId": 10,
         "title": "Грамматика 8: Двойная роль частицы と (to) — «И» и «Вместе с»",
         "content": "Падежная частица と имеет две основные функции:\n1. Соединительный союз 'и' (соединяет строго существительные): '日本語と英語を話します' (Я говорю по-японски и по-английски).\n2. Предлог совместности действия 'вместе с / с кем-то': 'メアリーさんはソラさんと韓国に行きます' (Мери поедет в Корею с Сорой)."
       },
       {
-        "note_id": 11,
+        "id": "L4_g11",
+        "noteId": 11,
         "title": "Особенности выражений: Расположение X の前 (X no mae) и другие ориентиры",
         "content": "Речевые обороты для пространственной ориентации:\n- 'X の前' часто используется в значении 'напротив X' (через улицу), аналогично выражению 'X のむかい'.\n- Если объект находится позади X или скрыт от глаз более крупным зданием X, то помимо 'X の後ろ' (сзади X) его можно описать как 'X のうら' (с обратной стороны X)."
       },
       {
-        "note_id": 12,
+        "id": "L4_g12",
+        "noteId": 12,
         "title": "Особенности выражений: Междометия удивления (えっ / あっ)",
         "content": "- 'えっ' используется при недоверии, удивлении или когда вы услышали нечто труднодоступное для понимания (аналог «Что?!»).\n- 'あっ' используется в момент мгновенного осознания, обнаружения или если вы внезапно что-то вспомнили.\nМаленькая 'っ' на конце указывает на краткость произношения этих слов."
       },
       {
-        "note_id": 13,
+        "id": "L4_g13",
+        "noteId": 13,
         "title": "Особенности выражений: Исключение местоимения あなた (anata)",
         "content": "В японском языке прямое использование 'あなた' («ты / вы») ограничено и часто считается невежливым или чересчур интимным. При разговоре с собеседником принято обращаться к нему по фамилии с суффиксом '～さん'. При разговоре со старшими по статусу (учителями, начальниками) использование 'あなた' категорически запрещено — следует использовать их титул, например, '先生' (учитель) или '社長' (директор компании)."
       }
