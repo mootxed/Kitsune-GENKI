@@ -12,7 +12,7 @@ import {
   DEFAULT_COURSE_ID,
   registerCourseDescriptor,
 } from '../src/courses/course-registry.js';
-import { loadChapterData, loadContentIndex, loadCourseOrthography } from '../src/content-loader.js';
+import { loadChapterData, loadContentIndex } from '../src/content-loader.js';
 import { loadGrammarQuizIndex } from '../src/grammar-quiz-content.js';
 import { getSupplementalPracticeForChapter } from '../src/supplemental-practice.js';
 import { switchCourseRuntime } from '../ui/home.js';
@@ -129,5 +129,44 @@ describe('Course Switching Integration & Facades', () => {
 
     // The active course must match the last requested course ID ('test-course')
     expect(getActiveCourse().id).toBe('test-course');
+  });
+
+  it('prevents race conditions during simultaneous switchCourseRuntime calls', async () => {
+    const slowGenkiFetch = async (input) => {
+      const urlStr = String(input);
+      if (urlStr.includes('genki-1')) {
+        await new Promise((resolve) => setTimeout(resolve, 80));
+      }
+      return customFetch(input);
+    };
+
+    const pSlow = switchCourseRuntime(DEFAULT_COURSE_ID, { fetchImpl: slowGenkiFetch });
+    const pFast = switchCourseRuntime('test-course', { fetchImpl: customFetch });
+
+    const [resSlow, resFast] = await Promise.all([pSlow, pFast]);
+
+    expect(resSlow).toBeNull();
+    expect(resFast?.id).toBe('test-course');
+    expect(getActiveCourse().id).toBe('test-course');
+    expect(state.activeCourseId).toBe('test-course');
+
+    const activeIndex = await loadContentIndex();
+    expect(activeIndex.courseId).toBe('test-course');
+
+    const activeLesson = await loadChapterData('test-course:lesson-alpha');
+    expect(activeLesson.lesson.id).toBe('test-course:lesson-alpha');
+
+    const { LESSONS, CONTENT_INDEX } = await import('../ui/home.js');
+    expect(LESSONS.some((l) => l.courseId === DEFAULT_COURSE_ID)).toBe(false);
+    expect(CONTENT_INDEX.some((c) => String(c.id).startsWith('genki-1'))).toBe(false);
+  });
+
+  it('early exits on re-switching to currently active course without reload: true', async () => {
+    await switchCourseRuntime('test-course', { fetchImpl: customFetch });
+    expect(getActiveCourse().id).toBe('test-course');
+
+    const prevCourse = getActiveCourse();
+    const result = await switchCourseRuntime('test-course', { fetchImpl: customFetch });
+    expect(result).toBe(prevCourse);
   });
 });

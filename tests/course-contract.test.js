@@ -39,6 +39,11 @@ describe('CourseManifest contract', () => {
   it('validates ResourcePath safety strictly', () => {
     const invalidManifests = [
       '../outside.json',
+      '.%2e/outside.json',
+      '%2e%2e/outside.json',
+      '%2E%2E/outside.json',
+      'folder/%2e%2e/outside.json',
+      'folder\\outside.json',
       'C:\\path\\file.json',
       '/absolute/path.json',
       'https://example.com/file.json',
@@ -52,6 +57,18 @@ describe('CourseManifest contract', () => {
       const result = validateCourseManifest(badManifest);
       expect(result.valid).toBe(false);
     }
+  });
+
+  it('rejects optional contentIndex in manifest', () => {
+    const manifestWithOptionalIndex = {
+      ...validManifest,
+      dataPaths: {
+        contentIndex: { path: './content-index.json', optional: true },
+      },
+    };
+    const result = validateCourseManifest(manifestWithOptionalIndex);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('dataPaths.contentIndex cannot be optional');
   });
 
   it('reports clear errors for a damaged manifest', () => {

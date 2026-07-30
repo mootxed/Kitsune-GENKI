@@ -184,4 +184,91 @@ describe('CourseLoader', () => {
     expect(requested.length).toBeGreaterThan(4);
     expect(requested.every((pathname) => pathname.startsWith('/KotoKitsu/'))).toBe(true);
   });
+
+  it('rejects unsafe resource paths and paths escaping package root in resolveResourceUrl', () => {
+    const loader = new CourseLoader({
+      manifestUrl: 'http://localhost/data/courses/test-course/manifest.json',
+      fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({}) }),
+    });
+
+    const unsafePaths = [
+      '../outside.json',
+      '.%2e/outside.json',
+      '%2e%2e/outside.json',
+      '%2E%2E/outside.json',
+      'folder/%2e%2e/outside.json',
+      'folder\\outside.json',
+      'https://example.com/file.json',
+      'data:text/plain,test',
+      '../test-course-evil/file.json',
+    ];
+
+    for (const unsafePath of unsafePaths) {
+      expect(() => loader.resolveResourceUrl(unsafePath)).toThrow(CourseLoadError);
+    }
+  });
+
+  it('handles optional manifest dataPaths correctly', async () => {
+    const baseFetch = fileFetch(path.join(root, 'tests/fixtures/courses/test-course'));
+    const fetchImpl = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/manifest.json')) {
+        const res = await baseFetch(input);
+        const manifest = await res.json();
+        manifest.dataPaths.examples = { path: './examples/missing.json', optional: true };
+        manifest.dataPaths.grammarIndex = { path: './grammar/missing.json', optional: true };
+        return { ok: true, status: 200, json: async () => manifest };
+      }
+      if (
+        url.pathname.endsWith('/examples/missing.json') ||
+        url.pathname.endsWith('/grammar/missing.json')
+      ) {
+        return { ok: false, status: 404, json: async () => null };
+      }
+      return baseFetch(input);
+    };
+
+    const loader = new CourseLoader({
+      manifestUrl: 'manifest.json',
+      baseUrl: 'https://example.test/',
+      fetchImpl,
+    });
+    const course = await loader.load();
+    expect(course.resources.examples).toBeNull();
+    expect(course.resources.grammarIndex).toBeNull();
+  });
+
+  it('rejects optional manifest dataPath when response contains corrupted JSON', async () => {
+    const baseFetch = fileFetch(path.join(root, 'tests/fixtures/courses/test-course'));
+    const fetchImpl = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/manifest.json')) {
+        const res = await baseFetch(input);
+        const manifest = await res.json();
+        manifest.dataPaths.examples = { path: './examples/corrupt.json', optional: true };
+        return { ok: true, status: 200, json: async () => manifest };
+      }
+      if (url.pathname.endsWith('/examples/corrupt.json')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => {
+            throw new SyntaxError('Unexpected token');
+          },
+        };
+      }
+      return baseFetch(input);
+    };
+
+    const loader = new CourseLoader({
+      manifestUrl: 'manifest.json',
+      baseUrl: 'https://example.test/',
+      fetchImpl,
+    });
+
+    await expect(loader.load()).rejects.toMatchObject({
+      name: 'CourseLoadError',
+      code: 'invalid-course-json',
+    });
+  });
 });

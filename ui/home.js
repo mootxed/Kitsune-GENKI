@@ -60,15 +60,33 @@ export let CONTENT_INDEX = [];
 
 const NORMALIZED_WORD_SCHEMA_VERSION = 5;
 
+let courseSwitchGeneration = 0;
+
 // ---------- Switch Course Runtime ----------
-export async function switchCourseRuntime(nextCourseId) {
+export async function switchCourseRuntime(nextCourseId, options = {}) {
   if (!nextCourseId) throw new Error('[CourseRuntime] nextCourseId is required');
+
+  const { reload = false } = typeof options === 'boolean' ? { reload: options } : options;
+
+  if (!reload && state?.activeCourseId === nextCourseId && getActiveCourse()?.id === nextCourseId) {
+    return getActiveCourse();
+  }
+
+  const generation = ++courseSwitchGeneration;
+
+  const course = await ensureActiveCourse(nextCourseId, options);
+
+  if (generation !== courseSwitchGeneration) {
+    return null;
+  }
 
   if (state?.activeCourseId) {
     syncActiveCourseProgress(state);
   }
 
-  const course = await ensureActiveCourse(nextCourseId);
+  if (generation !== courseSwitchGeneration) {
+    return null;
+  }
 
   loadedChapters.clear();
   LESSONS = [];
@@ -81,6 +99,11 @@ export async function switchCourseRuntime(nextCourseId) {
   switchActiveCourse(state, course.id);
 
   await loadLessons();
+
+  if (generation !== courseSwitchGeneration) {
+    return null;
+  }
+
   return course;
 }
 
@@ -88,8 +111,10 @@ export async function switchCourseRuntime(nextCourseId) {
 // На старте грузим только лёгкий content-index; полные уроки подгружаются
 // по требованию через ensureLesson()
 export async function loadLessons() {
+  const currentGen = courseSwitchGeneration;
   const activeCourse =
     getActiveCourse() || (await ensureActiveCourse(state?.activeCourseId || DEFAULT_COURSE_ID));
+  if (courseSwitchGeneration !== currentGen) return;
   const courseId = activeCourse.id;
 
   const keyLessons = `course:${courseId}:lessons`;
@@ -229,6 +254,10 @@ export async function loadLessons() {
         }
       }
     }
+  }
+
+  if (courseSwitchGeneration !== currentGen || getActiveCourse()?.id !== courseId) {
+    return;
   }
 
   if (LESSONS.length > 0) {

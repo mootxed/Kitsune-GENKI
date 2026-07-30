@@ -12,8 +12,10 @@ export function isSafeResourcePath(value) {
   const str = value.trim();
   if (!str) return false;
   if (str.startsWith('/') || str.includes('\\')) return false;
-  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(str)) return false;
-  const segments = str.split('/');
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/u.test(str)) return false;
+  if (/%2f|%5c/i.test(str)) return false;
+  const normalizedDots = str.replace(/%2e/gi, '.');
+  const segments = normalizedDots.split('/');
   for (const seg of segments) {
     if (seg === '..') return false;
   }
@@ -185,6 +187,11 @@ export function validateCourseManifest(value) {
     errors.push(
       `schemaVersion: unsupported version ${manifest.schemaVersion}; expected ${COURSE_MANIFEST_SCHEMA_VERSION}`
     );
+  }
+
+  const contentIndexDesc = normalizeResourceDescriptor(manifest.dataPaths?.contentIndex);
+  if (contentIndexDesc?.optional) {
+    errors.push('dataPaths.contentIndex cannot be optional');
   }
 
   const expectedPrefix = `${manifest.courseId}:lesson-`;

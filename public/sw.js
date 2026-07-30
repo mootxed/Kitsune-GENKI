@@ -162,6 +162,52 @@ function isProtectedMetadataEntry(key) {
 }
 
 /**
+ * Планирует удаление записей из кеша (LRU), защищая ключевые метаданные курса.
+ *
+ * @param {Array<{key: any, size: number}>} entries
+ * @param {number|{maxEntries: number, maxSizeBytes?: number}} limits
+ * @param {function(any): boolean} [isProtected]
+ * @returns {any[]} массив ключей для удаления
+ */
+function planCacheEvictions(entries, limits, isProtected = () => false) {
+  const limitEntries = typeof limits === 'object' ? limits.maxEntries : limits;
+  const limitBytes =
+    typeof limits === 'object'
+      ? limits.maxSizeBytes || DEFAULT_CACHE_MAX_BYTES
+      : DEFAULT_CACHE_MAX_BYTES;
+
+  const entryStats = [];
+  let totalBytes = 0;
+
+  for (const entry of entries) {
+    const key = entry?.key ?? entry;
+    const size = Number(entry?.size) || 0;
+    totalBytes += size;
+    if (!isProtected(key)) {
+      entryStats.push({ key, size });
+    }
+  }
+
+  const toDelete = [];
+
+  // 1. Ограничение по количеству элементов (LRU)
+  while (entryStats.length > limitEntries) {
+    const item = entryStats.shift();
+    totalBytes -= item.size;
+    toDelete.push(item.key);
+  }
+
+  // 2. Ограничение по общему байтовому объёму (LRU)
+  while (totalBytes > limitBytes && entryStats.length > 0) {
+    const item = entryStats.shift();
+    totalBytes -= item.size;
+    toDelete.push(item.key);
+  }
+
+  return toDelete;
+}
+
+/**
  * Обрезает кеш до maxEntries записей и maxSizeBytes общего объёма (LRU — удаляет самые старые).
  * Выполняется асинхронно, не блокирует текущий ответ.
  * @param {string} cacheName
@@ -173,15 +219,12 @@ function trimCache(cacheName, maxEntries, maxSizeBytes) {
     try {
       const cache = await caches.open(cacheName);
       const keys = await cache.keys();
-      const limitEntries = typeof maxEntries === 'object' ? maxEntries.maxEntries : maxEntries;
-      const limitBytes =
+      const limits =
         typeof maxEntries === 'object'
-          ? maxEntries.maxSizeBytes || DEFAULT_CACHE_MAX_BYTES
-          : maxSizeBytes || DEFAULT_CACHE_MAX_BYTES;
+          ? maxEntries
+          : { maxEntries, maxSizeBytes: maxSizeBytes || DEFAULT_CACHE_MAX_BYTES };
 
-      const entryStats = [];
-      let totalBytes = 0;
-
+      const entries = [];
       for (const key of keys) {
         const response = await cache.match(key);
         let size = 0;
@@ -198,27 +241,10 @@ function trimCache(cacheName, maxEntries, maxSizeBytes) {
             }
           }
         }
-        totalBytes += size;
-        if (!isProtectedMetadataEntry(key)) {
-          entryStats.push({ key, size });
-        }
+        entries.push({ key, size });
       }
 
-      const toDelete = [];
-
-      // 1. Ограничение по количеству элементов (LRU)
-      while (entryStats.length > limitEntries) {
-        const item = entryStats.shift();
-        totalBytes -= item.size;
-        toDelete.push(item.key);
-      }
-
-      // 2. Ограничение по общему байтовому объёму (LRU)
-      while (totalBytes > limitBytes && entryStats.length > 0) {
-        const item = entryStats.shift();
-        totalBytes -= item.size;
-        toDelete.push(item.key);
-      }
+      const toDelete = planCacheEvictions(entries, limits, isProtectedMetadataEntry);
 
       if (toDelete.length > 0) {
         await Promise.all(toDelete.map((key) => cache.delete(key)));

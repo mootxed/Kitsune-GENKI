@@ -50,3 +50,77 @@ describe('Service Worker and Vite Build Alignment', () => {
     expect(distSwContent).toMatch(/assets\/index-.*\.css/);
   });
 });
+
+describe('Service Worker Cache Eviction Logic (planCacheEvictions)', () => {
+  const publicSwPath = path.resolve(__dirname, '../public/sw.js');
+  let planCacheEvictions;
+  let isProtectedMetadataEntry;
+
+  beforeAll(() => {
+    const swContent = fs.readFileSync(publicSwPath, 'utf8');
+    const mockSelf = { location: new URL('http://localhost/'), addEventListener: () => {} };
+    const fn = new Function(
+      'self',
+      'URL',
+      `
+      ${swContent}
+      return { planCacheEvictions, isProtectedMetadataEntry };
+    `
+    );
+    const result = fn(mockSelf, URL);
+    planCacheEvictions = result.planCacheEvictions;
+    isProtectedMetadataEntry = result.isProtectedMetadataEntry;
+  });
+
+  it('protects metadata entries and evicts old regular chunks when entries count exceeds limit', () => {
+    const protectedUrls = [
+      'http://localhost/data/courses/test-course/manifest.json',
+      'http://localhost/data/courses/test-course/content-index.json',
+      'http://localhost/data/courses/test-course/grammar/index.json',
+      'http://localhost/data/courses/test-course/exercises/metadata.json',
+      'http://localhost/data/courses/test-course/relations/metadata.json',
+    ];
+
+    const regularUrls = Array.from(
+      { length: 80 },
+      (_, i) => `http://localhost/data/courses/test-course/chunks/chunk-${i + 1}.json`
+    );
+
+    // Total 85 entries: 5 protected, 80 regular
+    const entries = [...protectedUrls, ...regularUrls].map((url) => ({ key: url, size: 1000 }));
+    const limits = { maxEntries: 75, maxSizeBytes: 15 * 1024 * 1024 };
+
+    const toDelete = planCacheEvictions(entries, limits, isProtectedMetadataEntry);
+
+    // None of the protected URLs should be selected for eviction
+    for (const protUrl of protectedUrls) {
+      expect(toDelete).not.toContain(protUrl);
+    }
+
+    // 80 regular entries vs limit of 75 => 5 oldest regular entries must be evicted
+    expect(toDelete).toHaveLength(5);
+    expect(toDelete).toEqual(regularUrls.slice(0, 5));
+  });
+
+  it('does not loop infinitely when protected metadata volume exceeds limitBytes', () => {
+    const protectedUrl = 'http://localhost/data/courses/test-course/manifest.json';
+    const regularUrl1 = 'http://localhost/data/courses/test-course/chunks/c1.json';
+    const regularUrl2 = 'http://localhost/data/courses/test-course/chunks/c2.json';
+
+    const entries = [
+      { key: protectedUrl, size: 5000 },
+      { key: regularUrl1, size: 100 },
+      { key: regularUrl2, size: 100 },
+    ];
+
+    // Byte limit 1000 is much smaller than protected entry size 5000
+    const limits = { maxEntries: 100, maxSizeBytes: 1000 };
+
+    const toDelete = planCacheEvictions(entries, limits, isProtectedMetadataEntry);
+
+    // Protected entry is not deleted
+    expect(toDelete).not.toContain(protectedUrl);
+    // Regular entries are deleted to try to fit within limits
+    expect(toDelete).toEqual([regularUrl1, regularUrl2]);
+  });
+});

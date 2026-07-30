@@ -77,7 +77,32 @@ export class CourseLoader {
         `Unsafe or invalid course resource path: ${rawPath}`
       );
     }
-    return new URL(rawPath, this.packageUrl).href;
+    let resolved;
+    try {
+      resolved = new URL(rawPath, this.packageUrl);
+    } catch (cause) {
+      throw new CourseLoadError(
+        'unsafe-course-path',
+        `Invalid URL for course resource path: ${rawPath}`,
+        { cause }
+      );
+    }
+
+    const packagePathname = this.packageUrl.pathname.endsWith('/')
+      ? this.packageUrl.pathname
+      : `${this.packageUrl.pathname}/`;
+
+    if (
+      resolved.origin !== this.packageUrl.origin ||
+      !resolved.pathname.startsWith(packagePathname)
+    ) {
+      throw new CourseLoadError(
+        'unsafe-course-path',
+        `Course resource escapes package root: ${rawPath}`
+      );
+    }
+
+    return resolved.href;
   }
 
   async fetchJson(url, resource, courseId = null) {
@@ -207,10 +232,27 @@ export class CourseLoader {
     const resourceEntries = Object.entries(manifest.dataPaths);
     const resources = Object.fromEntries(
       await Promise.all(
-        resourceEntries.map(async ([name, path]) => [
-          name,
-          await this.fetchJson(this.resolveResourceUrl(path), name, manifest.courseId),
-        ])
+        resourceEntries.map(async ([name, declaration]) => {
+          const descriptor = normalizeResourceDescriptor(declaration);
+          if (!descriptor) {
+            throw new CourseLoadError(
+              'invalid-course-manifest',
+              `Invalid resource descriptor for ${name}`,
+              { courseId: manifest.courseId, resource: name }
+            );
+          }
+
+          try {
+            const url = this.resolveResourceUrl(descriptor.path);
+            const value = await this.fetchJson(url, name, manifest.courseId);
+            return [name, value];
+          } catch (error) {
+            if (descriptor.optional && error?.code === 'course-resource-unavailable') {
+              return [name, null];
+            }
+            throw error;
+          }
+        })
       )
     );
     const contentIndex = this.normalizeContentIndex(resources.contentIndex, manifest);
@@ -387,7 +429,7 @@ export class CourseLoader {
               topics,
             });
           } catch (cause) {
-            if (descriptor.optional) return null;
+            if (descriptor.optional && cause?.code === 'course-resource-unavailable') return null;
             throw cause;
           }
         })().catch((error) => {
@@ -422,7 +464,7 @@ export class CourseLoader {
               lesson_id: lesson.id,
             });
           } catch (cause) {
-            if (descriptor.optional) return null;
+            if (descriptor.optional && cause?.code === 'course-resource-unavailable') return null;
             throw cause;
           }
         })().catch((error) => {
