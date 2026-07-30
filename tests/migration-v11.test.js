@@ -11,7 +11,7 @@ describe('State Migration v11', () => {
     });
 
     expect(migrated.version).toBe(CURRENT_VERSION);
-    expect(migrated.chapters[1].legacyVocabularyCompleted).toBe(true);
+    expect(migrated.chapters['genki-1:lesson-1'].legacyVocabularyCompleted).toBe(true);
     expect(migrated).toMatchObject({
       grammarUnlocks: {},
       practiceUnlocks: {},

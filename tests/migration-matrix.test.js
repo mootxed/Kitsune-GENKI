@@ -5,8 +5,8 @@ import { runMigrations } from '../state/store.js';
 import { validateImportData } from '../src/backup-manager.js';
 import { STORES, STORE_SCHEMAS } from '../src/db.js';
 
-describe('Migration Test Matrix: State v1 → v14', () => {
-  it('migrates a minimal v1 state up to v14 without loss of progress fields', () => {
+describe('Migration Test Matrix: State v1 → v15', () => {
+  it('migrates a minimal v1 state up to v15 without loss of progress fields', () => {
     const v1State = {
       version: 1,
       xp: 1500,
@@ -50,7 +50,7 @@ describe('Migration Test Matrix: State v1 → v14', () => {
 
     const migrated = runMigrations(v1State);
 
-    expect(migrated.version).toBe(14);
+    expect(migrated.version).toBe(15);
     // Verify XP preserved
     expect(migrated.xp).toBe(1500);
     expect(migrated.level).toBe(4);
@@ -63,8 +63,8 @@ describe('Migration Test Matrix: State v1 → v14', () => {
     expect(migrated.srs.word_2.lapses).toBe(1);
 
     // Verify completed chapters preserved
-    expect(migrated.chapters['1'].completedAt).toBe(1600050000000);
-    expect(migrated.chapters['1'].checklist.vocab).toBe(true);
+    expect(migrated.chapters['genki-1:lesson-1'].completedAt).toBe(1600050000000);
+    expect(migrated.chapters['genki-1:lesson-1'].checklist.vocab).toBe(true);
 
     // Verify history preserved
     expect(migrated.history['2026-07-28']).toBe(15);
@@ -77,7 +77,7 @@ describe('Migration Test Matrix: State v1 → v14', () => {
       state = runMigrations(state);
       expect(state.version).toBeGreaterThanOrEqual(targetVer);
     }
-    expect(state.version).toBe(14);
+    expect(state.version).toBe(15);
     expect(state.xp).toBe(500);
   });
 });

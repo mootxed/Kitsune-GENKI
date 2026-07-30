@@ -9,7 +9,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const originalFetch = global.fetch; // eslint-disable-line no-unused-vars
 global.fetch = vi.fn(async (url) => {
   try {
-    const filePath = path.resolve(__dirname, '..', 'public', url);
+    const pathname = new URL(String(url), 'http://localhost/').pathname.replace(/^\/+/, '');
+    const filePath = path.resolve(__dirname, '..', 'public', pathname);
     const content = fs.readFileSync(filePath, 'utf-8');
     return {
       ok: true,
@@ -32,6 +33,7 @@ import { renderDictionary } from '../ui/flashcards.js';
 import { state, loadState, loadedChapters } from '../state/store.js';
 import { normalizeWord } from '../src/normalize-word.js';
 import { clearContentCache } from '../src/content-loader.js';
+import { compareLessonIds } from '../src/courses/course-context.js';
 
 describe('Dictionary Integration', () => {
   beforeEach(async () => {
@@ -100,16 +102,16 @@ describe('Dictionary Integration', () => {
     await loadLessons();
 
     // Verify migration updated LESSONS
-    const nomu = getLesson(3)?.words.find((w) => w.id === 'L3_V035');
+    const nomu = getLesson(3)?.words.find((w) => w.localId === 'L3_V035');
     expect(nomu).toBeDefined();
     expect(nomu.partOfSpeech).toBe('verb');
     expect(nomu.verbClass).toBe('godan');
     expect(nomu.particlePatterns).toEqual(['を']);
     expect(nomu.topic).toBe(null); // Because category is 'u-verbs'
 
-    // Check schema version updated to current version (4)
+    // Check schema version updated to current version
     const schemaVersion = await db.get(STORES.CONTENT_CACHE, 'schema_version');
-    expect(schemaVersion).toBe(4);
+    expect(schemaVersion).toBe(5);
   });
 
   it('keeps FSRS state after migration', async () => {
@@ -130,7 +132,7 @@ describe('Dictionary Integration', () => {
   });
 
   it('repeated migration does nothing when schema version matches', async () => {
-    // Set schema_version to 4 (current) with already normalized lesson
+    // Set the current schema/content versions with an already normalized lesson
     const normalizedLesson3 = {
       id: 3,
       words: [
@@ -147,18 +149,13 @@ describe('Dictionary Integration', () => {
       ],
     };
     await db.set(STORES.CONTENT_CACHE, 'lessons', [normalizedLesson3]);
-    // Mock loadContentIndex to return version 1
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ version: 1, chapters: [] }),
-    });
-    await db.set(STORES.CONTENT_CACHE, 'lesson_version', '1');
-    await db.set(STORES.CONTENT_CACHE, 'schema_version', 4);
+    await db.set(STORES.CONTENT_CACHE, 'lesson_version', '4');
+    await db.set(STORES.CONTENT_CACHE, 'schema_version', 5);
     await db.set(STORES.CONTENT_CACHE, 'workbook_schema_version', 1);
 
     await loadLessons();
 
-    // Since version is 1 and schema is 4, it should NOT migrate, so it should keep the normalized object
+    // Matching versions must keep the normalized cached object.
     const word = getLesson(3)?.words.find((w) => w.id === 'L3_V035');
     expect(word._testFlag).toBe('already-normalized');
   });
@@ -206,7 +203,7 @@ describe('Dictionary Integration', () => {
     await loadLessons();
     await ensureLesson(3); // To get nomu
 
-    const nomu = getLesson(3)?.words.find((w) => w.id === 'L3_V035');
+    const nomu = getLesson(3)?.words.find((w) => w.localId === 'L3_V035');
     expect(nomu).toBeDefined();
 
     const ex = generateExample(nomu, { userMaxLesson: 12 });
@@ -220,7 +217,7 @@ describe('Dictionary Integration', () => {
     await ensureLesson(3);
     await ensureLesson(12);
 
-    const nomu = getLesson(3)?.words.find((w) => w.id === 'L3_V035');
+    const nomu = getLesson(3)?.words.find((w) => w.localId === 'L3_V035');
 
     // Check with max lesson 3
     const ex1 = generateExample(nomu, { userMaxLesson: 3 });
@@ -228,7 +225,7 @@ describe('Dictionary Integration', () => {
       // Either it's a corpus example with lessonRequired <= 3,
       // or it's a template example built from words <= 3.
       if (ex1.lessonRequired !== undefined) {
-        expect(ex1.lessonRequired).toBeLessThanOrEqual(3);
+        expect(compareLessonIds(ex1.lessonRequired, 3)).toBeLessThanOrEqual(0);
       }
     }
   });

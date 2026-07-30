@@ -25,8 +25,8 @@ const MOCK_LESSON = {
     { id: 'L2_V002', kanji: 'それ' },
   ],
   notes: [
-    { note_id: 1, title: 'Грамматика 1: これ, それ', content: '...' },
-    { note_id: 2, title: 'Грамматика 2: この, その', content: '...' },
+    { id: 'L2_g1', note_id: 1, title: 'Грамматика 1: これ, それ', content: '...' },
+    { id: 'L2_g2', note_id: 2, title: 'Грамматика 2: この, その', content: '...' },
   ],
 };
 
@@ -45,7 +45,7 @@ describe('Task 3: Chapter Progress & 3-Block Redesign', () => {
       title: 'Грамматика 1: これ, それ',
       content: '...',
       order: 1,
-      chapterId: 2,
+      chapterId: '2',
       estimatedMinutes: 10,
     });
     expect(topics[1].id).toBe('L2_g2');

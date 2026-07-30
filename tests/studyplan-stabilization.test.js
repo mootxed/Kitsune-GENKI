@@ -72,7 +72,7 @@ describe('Study Plan Stabilization Unit Tests', () => {
       const merged = mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, { today });
 
       expect(merged.history).toHaveLength(2);
-      expect(merged.completedChapters).toEqual([1]);
+      expect(merged.completedChapters).toEqual(['1']);
       expect(merged.dateStatuses['2026-08-02']).toBe('completed');
       expect(merged.vocabularySchedule['2026-08-02']).toEqual([10, 11]);
       expect(merged.segments[0].chapterId).toBe(1);

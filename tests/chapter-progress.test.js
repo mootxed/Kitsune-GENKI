@@ -127,7 +127,7 @@ describe('chapter completion', () => {
     expect(first).toMatchObject({ changed: true, rewardGranted: true, activeChapterId: 2 });
     expect(second).toMatchObject({ changed: false, alreadyCompleted: true });
     expect(state.chapters[1].completedAt).toBe(completedAt);
-    expect(state.studyPlan.completedChapters).toEqual([1]);
+    expect(state.studyPlan.completedChapters).toEqual(['1']);
     expect(state.studyPlan.segments[0]).toMatchObject({
       status: 'completed',
       completedAt,

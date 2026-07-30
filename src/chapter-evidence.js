@@ -1,11 +1,12 @@
 /* src/chapter-evidence.js — Pure low-level evidence verification helper functions */
 
 import { normalizedChapterId } from './chapter-content-model.js';
+import { sameLessonId } from './courses/course-context.js';
 
 export function isPriorKnowledge(appState, chapterId) {
   const id = normalizedChapterId(chapterId);
   if (!id || !Array.isArray(appState?.priorKnowledgeChapterIds)) return false;
-  return appState.priorKnowledgeChapterIds.includes(id);
+  return appState.priorKnowledgeChapterIds.some((entry) => sameLessonId(entry, id));
 }
 
 export function isGrammarTopicCompleted(chapterState, topicId) {

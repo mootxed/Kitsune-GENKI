@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { db, initializeDB, STORES } from './db.js';
 import { getReviewLogs, syncReviewLogQueue } from './review-log.js';
 import { getOpenRouterKey, setOpenRouterKey, clearOpenRouterKey } from './openrouter-key.js';
-import { createPersistableState } from '../state/store.js';
+import { createPersistableState, runMigrations } from '../state/store.js';
+import { migrateGenki1ReviewLogEntriesV15 } from './courses/genki-1/migrations/state-v15.js';
 import {
   ImportProfileSchema,
   UserDictionaryEntrySchema,
@@ -139,7 +140,10 @@ export const StateSchema = z
       .optional(),
     reviewEvents: z.array(ReviewLogEntrySchema).max(50000).optional(),
     pendingReviewLogs: z.array(ReviewLogEntrySchema).max(50000).optional(),
-    priorKnowledgeChapterIds: z.array(z.number()).max(1000).optional(),
+    priorKnowledgeChapterIds: z
+      .array(z.union([z.number(), z.string().max(300)]))
+      .max(1000)
+      .optional(),
     learningEvents: z.array(LearningEventSchema).max(50000).optional(),
     vocabularyUnlocks: z.record(z.string(), z.unknown()).optional(),
     unlockedAchievements: z
@@ -322,14 +326,16 @@ export async function importFullProgress(data, preserveApiKey = true) {
 
     const currentApiKey = preserveApiKey ? getOpenRouterKey() : '';
 
-    const stateToImport = data.data?.state ? createPersistableState(data.data.state) : null;
+    const stateToImport = data.data?.state
+      ? createPersistableState(runMigrations(data.data.state))
+      : null;
 
     const payload = {
       state: stateToImport,
       lessonVersion: data.data?.lessonVersion ?? null,
       lastActivityDay: data.data?.lastActivityDay ?? null,
       theme: data.data?.theme ?? null,
-      reviewLog: Array.isArray(data.data?.reviewLog) ? data.data.reviewLog : [],
+      reviewLog: migrateGenki1ReviewLogEntriesV15(data.data?.reviewLog),
       userDictionaries: data.data?.userDictionaries || [],
       userDictionaryEntries: data.data?.userDictionaryEntries || [],
       userDictionaryImportProfiles: data.data?.userDictionaryImportProfiles || [],

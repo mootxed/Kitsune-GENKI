@@ -99,15 +99,22 @@ export function checkLegalMetadata() {
   }
 
   // Check 5: Preservation of supplemental grammar quizzes (extra practice)
-  const quizDir = join(ROOT, 'public/data/grammar-quizzes');
+  const quizDir = join(ROOT, 'public/data/courses/genki-1/grammar');
   if (!existsSync(quizDir)) {
-    errors.push('Supplemental grammar quizzes directory public/data/grammar-quizzes/ is missing!');
+    errors.push(
+      'Supplemental grammar quizzes directory public/data/courses/genki-1/grammar/ is missing!'
+    );
   } else {
-    for (let i = 1; i <= 12; i++) {
-      const pad = String(i).padStart(2, '0');
-      const qFile = join(quizDir, `lesson-${pad}.json`);
-      if (!existsSync(qFile)) {
-        errors.push(`Grammar quiz file missing: public/data/grammar-quizzes/lesson-${pad}.json`);
+    const indexPath = join(quizDir, 'index.json');
+    const quizIndex = existsSync(indexPath) ? JSON.parse(readFileSync(indexPath, 'utf8')) : null;
+    if (!quizIndex?.chapters) {
+      errors.push('Course grammar quiz index is missing or invalid');
+    } else {
+      for (const entry of quizIndex.chapters) {
+        const qFile = join(ROOT, 'public/data/courses/genki-1', entry.path);
+        if (!existsSync(qFile)) {
+          errors.push(`Grammar quiz file missing: ${entry.path}`);
+        }
       }
     }
   }

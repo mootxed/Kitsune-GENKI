@@ -1,0 +1,588 @@
+import {
+  assertCourseManifest,
+  contentId,
+  deepClone,
+  deepFreeze,
+  dictionaryEntryId,
+} from './course-contract.js';
+
+export class CourseLoadError extends Error {
+  constructor(code, message, details = {}) {
+    super(message, details.cause ? { cause: details.cause } : undefined);
+    this.name = 'CourseLoadError';
+    this.code = code;
+    this.courseId = details.courseId || null;
+    this.resource = details.resource || null;
+  }
+}
+
+function appBaseUrl(explicitBaseUrl) {
+  if (explicitBaseUrl) return explicitBaseUrl;
+  if (typeof document !== 'undefined' && document.baseURI) return document.baseURI;
+  if (typeof location !== 'undefined' && location.href) return new URL('./', location.href).href;
+  return 'http://localhost/';
+}
+
+function ensureArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function shallowDocument(document, name, options = {}) {
+  if (!document || typeof document !== 'object' || Array.isArray(document)) {
+    throw new CourseLoadError(
+      'invalid-course-resource',
+      `Course resource ${name} must be a JSON object`,
+      options
+    );
+  }
+  return document;
+}
+
+function isNamespacedLessonId(value, courseId) {
+  return String(value || '').startsWith(`${courseId}:lesson-`);
+}
+
+function namespaceRefs(entries, mapper) {
+  return ensureArray(entries).map((entry) => mapper(String(entry)));
+}
+
+export class CourseLoader {
+  constructor(options = {}) {
+    if (!options.manifestUrl) {
+      throw new Error('[CourseLoader] manifestUrl is required');
+    }
+    if (typeof (options.fetchImpl || globalThis.fetch) !== 'function') {
+      throw new Error('[CourseLoader] fetch implementation is required');
+    }
+
+    this.fetchImpl = options.fetchImpl || globalThis.fetch.bind(globalThis);
+    this.manifestUrl = new URL(options.manifestUrl, appBaseUrl(options.baseUrl));
+    this.packageUrl = new URL('./', this.manifestUrl);
+    this.adapter = options.adapter || null;
+    this.lessonPromises = new Map();
+    this.grammarPromises = new Map();
+    this.storyPromises = new Map();
+  }
+
+  resolveResourceUrl(resourcePath) {
+    return new URL(String(resourcePath), this.packageUrl).href;
+  }
+
+  async fetchJson(url, resource, courseId = null) {
+    let response;
+    try {
+      response = await this.fetchImpl(url);
+    } catch (cause) {
+      throw new CourseLoadError(
+        'course-resource-unavailable',
+        `Unable to load course resource ${resource}: ${cause?.message || cause}`,
+        { cause, courseId, resource }
+      );
+    }
+    if (!response?.ok) {
+      throw new CourseLoadError(
+        'course-resource-unavailable',
+        `Unable to load course resource ${resource}: HTTP ${response?.status ?? 'unknown'}`,
+        { courseId, resource }
+      );
+    }
+    try {
+      return await response.json();
+    } catch (cause) {
+      throw new CourseLoadError(
+        'invalid-course-json',
+        `Course resource ${resource} contains invalid JSON`,
+        { cause, courseId, resource }
+      );
+    }
+  }
+
+  async loadManifest() {
+    const raw = await this.fetchJson(this.manifestUrl.href, 'manifest');
+    try {
+      return assertCourseManifest(raw, `course manifest ${this.manifestUrl.href}`);
+    } catch (cause) {
+      throw new CourseLoadError('invalid-course-manifest', cause.message, {
+        cause,
+        courseId: raw?.courseId || null,
+        resource: 'manifest',
+      });
+    }
+  }
+
+  normalizeContentIndex(rawIndex, manifest) {
+    const source = shallowDocument(rawIndex, 'contentIndex', { courseId: manifest.courseId });
+    const sourceLessons = ensureArray(source.lessons || source.chapters);
+    if (sourceLessons.length !== manifest.lessonOrder.length) {
+      throw new CourseLoadError(
+        'invalid-course-index',
+        `Course ${manifest.courseId} declares ${manifest.lessonOrder.length} lessons but its content index contains ${sourceLessons.length}`,
+        { courseId: manifest.courseId, resource: 'contentIndex' }
+      );
+    }
+
+    const seenIds = new Set();
+    const lessons = sourceLessons.map((entry, order) => {
+      if (!entry || typeof entry !== 'object') {
+        throw new CourseLoadError(
+          'invalid-course-index',
+          `Course ${manifest.courseId} has an invalid lesson entry at order ${order}`,
+          { courseId: manifest.courseId, resource: 'contentIndex' }
+        );
+      }
+      const declaredId = manifest.lessonOrder[order];
+      const explicitId = entry.courseLessonId || entry.lessonId;
+      const id =
+        explicitId && isNamespacedLessonId(explicitId, manifest.courseId)
+          ? String(explicitId)
+          : declaredId;
+      if (id !== declaredId) {
+        throw new CourseLoadError(
+          'invalid-course-index',
+          `Lesson ${explicitId} does not match lessonOrder entry ${declaredId}`,
+          { courseId: manifest.courseId, resource: 'contentIndex' }
+        );
+      }
+      if (seenIds.has(id)) {
+        throw new CourseLoadError('invalid-course-index', `Duplicate lesson ID ${id}`, {
+          courseId: manifest.courseId,
+          resource: 'contentIndex',
+        });
+      }
+      seenIds.add(id);
+
+      const lessonPath = entry.lesson || entry.path;
+      if (typeof lessonPath !== 'string' || !lessonPath) {
+        throw new CourseLoadError(
+          'invalid-course-index',
+          `Lesson ${id} does not declare a lesson resource path`,
+          { courseId: manifest.courseId, resource: 'contentIndex' }
+        );
+      }
+
+      const localId = entry.localId ?? entry.id ?? entry.lesson_id ?? order + 1;
+      return {
+        ...deepClone(entry),
+        id,
+        lessonId: id,
+        localId,
+        legacyId: Number.isInteger(Number(localId)) ? Number(localId) : null,
+        courseId: manifest.courseId,
+        order,
+        lesson: lessonPath,
+      };
+    });
+
+    return {
+      ...deepClone(source),
+      courseId: manifest.courseId,
+      contentVersion: manifest.contentVersion,
+      lessons,
+      chapters: lessons,
+    };
+  }
+
+  async load() {
+    const manifest = await this.loadManifest();
+    if (this.adapter?.courseId && this.adapter.courseId !== manifest.courseId) {
+      throw new CourseLoadError(
+        'course-adapter-mismatch',
+        `Adapter for ${this.adapter.courseId} cannot load ${manifest.courseId}`,
+        { courseId: manifest.courseId }
+      );
+    }
+
+    const resourceEntries = Object.entries(manifest.dataPaths);
+    const resources = Object.fromEntries(
+      await Promise.all(
+        resourceEntries.map(async ([name, path]) => [
+          name,
+          await this.fetchJson(this.resolveResourceUrl(path), name, manifest.courseId),
+        ])
+      )
+    );
+    const contentIndex = this.normalizeContentIndex(resources.contentIndex, manifest);
+    if (resources.grammarIndex) {
+      shallowDocument(resources.grammarIndex, 'grammarIndex', {
+        courseId: manifest.courseId,
+        resource: 'grammarIndex',
+      });
+      if (!Array.isArray(resources.grammarIndex.chapters || resources.grammarIndex.lessons)) {
+        throw new CourseLoadError(
+          'invalid-course-resource',
+          `Course ${manifest.courseId} grammarIndex must contain chapters or lessons`,
+          { courseId: manifest.courseId, resource: 'grammarIndex' }
+        );
+      }
+    }
+    if (resources.exercises) {
+      shallowDocument(resources.exercises, 'exercises', {
+        courseId: manifest.courseId,
+        resource: 'exercises',
+      });
+    }
+    if (resources.orthography) {
+      shallowDocument(resources.orthography, 'orthography', {
+        courseId: manifest.courseId,
+        resource: 'orthography',
+      });
+    }
+    if (resources.vocabularyAliases) {
+      shallowDocument(resources.vocabularyAliases, 'vocabularyAliases', {
+        courseId: manifest.courseId,
+        resource: 'vocabularyAliases',
+      });
+    }
+
+    const lessons = contentIndex.lessons;
+    const lessonsById = new Map(lessons.map((lesson) => [lesson.id, lesson]));
+    const lessonAliases = new Map();
+    for (const lesson of lessons) {
+      for (const alias of [
+        lesson.id,
+        lesson.localId,
+        lesson.legacyId,
+        lesson.lesson_id,
+        lesson.order + 1,
+      ]) {
+        if (alias != null && alias !== '') lessonAliases.set(String(alias), lesson.id);
+      }
+    }
+    const knowledgeLessonIds = new Map();
+
+    const canonicalLessonId = (value) => {
+      if (value == null || value === '') return null;
+      return lessonAliases.get(String(value)) || null;
+    };
+
+    const lessonRecord = (value) => {
+      const id = canonicalLessonId(value);
+      if (!id) {
+        throw new CourseLoadError(
+          'unknown-course-lesson',
+          `Course ${manifest.courseId} does not contain lesson ${value}`,
+          { courseId: manifest.courseId }
+        );
+      }
+      return lessonsById.get(id);
+    };
+
+    const canonicalVocabularyLocalId = (localId) => {
+      const aliases = resources.vocabularyAliases?.aliases || {};
+      let current = String(localId || '');
+      const visited = new Set();
+      while (aliases[current] && !visited.has(current)) {
+        visited.add(current);
+        current = aliases[current];
+      }
+      return this.adapter?.canonicalizeVocabularyLocalId
+        ? this.adapter.canonicalizeVocabularyLocalId(current)
+        : current;
+    };
+
+    const vocabularyId = (localId) =>
+      contentId(manifest.courseId, 'vocabulary', canonicalVocabularyLocalId(localId));
+    const grammarId = (localId) => contentId(manifest.courseId, 'grammar', localId);
+    const exerciseId = (localId) => contentId(manifest.courseId, 'exercise', localId);
+
+    const transformQuiz = (quiz) => ({
+      ...deepClone(quiz),
+      id: quiz?.id ? contentId(manifest.courseId, 'quiz', quiz.id) : quiz?.id,
+      localId: quiz?.id || null,
+      grammarRefs: namespaceRefs(quiz?.grammarRefs, grammarId),
+      vocabularyRefs: namespaceRefs(quiz?.vocabularyRefs, vocabularyId),
+    });
+
+    const transformGrammarTopic = (topic, lessonId, index = 0) => {
+      const localId = String(topic?.localId || topic?.id || `grammar-${index + 1}`);
+      const transformed = {
+        ...deepClone(topic),
+        id: grammarId(localId),
+        localId,
+        courseId: manifest.courseId,
+        introducedIn: lessonId,
+        chapterId: lessonId,
+        lessonId,
+        requiredVocabularyIds: namespaceRefs(topic?.requiredVocabularyIds, vocabularyId),
+        prerequisiteGrammarIds: namespaceRefs(topic?.prerequisiteGrammarIds, grammarId),
+        quiz: ensureArray(topic?.quiz).map(transformQuiz),
+      };
+      knowledgeLessonIds.set(transformed.id, lessonId);
+      return transformed;
+    };
+
+    const transformExercise = (task, lessonId, index = 0) => {
+      const localId = String(task?.localId || task?.id || `exercise-${index + 1}`);
+      return {
+        ...deepClone(task),
+        id: exerciseId(localId),
+        localId,
+        courseId: manifest.courseId,
+        chapterId: lessonId,
+        lessonId,
+        relatedGrammarIds: namespaceRefs(task?.relatedGrammarIds, grammarId),
+      };
+    };
+
+    const exercisesForLesson = (value) => {
+      const lesson = lessonRecord(value);
+      const entries = ensureArray(resources.exercises?.lessons || resources.exercises?.chapters);
+      const source = entries.find((entry) => {
+        const candidate = entry?.lessonId ?? entry?.chapterId ?? entry?.id;
+        return canonicalLessonId(candidate) === lesson.id;
+      });
+      return ensureArray(source?.exercises || source?.practice).map((task, index) =>
+        transformExercise(task, lesson.id, index)
+      );
+    };
+
+    const grammarIndexEntry = (value) => {
+      const lesson = lessonRecord(value);
+      const entries = ensureArray(
+        resources.grammarIndex?.lessons || resources.grammarIndex?.chapters
+      );
+      return (
+        entries.find((entry) => {
+          const candidate = entry?.lessonId ?? entry?.chapterId ?? entry?.id;
+          return canonicalLessonId(candidate) === lesson.id;
+        }) || null
+      );
+    };
+
+    const loadGrammar = async (value) => {
+      const lesson = lessonRecord(value);
+      if (!resources.grammarIndex) return null;
+      if (!this.grammarPromises.has(lesson.id)) {
+        const promise = (async () => {
+          const entry = grammarIndexEntry(lesson.id);
+          if (!entry?.path) {
+            throw new CourseLoadError(
+              'course-resource-unavailable',
+              `Course ${manifest.courseId} has no grammar resource for ${lesson.id}`,
+              { courseId: manifest.courseId, resource: 'grammar' }
+            );
+          }
+          const raw = await this.fetchJson(
+            this.resolveResourceUrl(entry.path),
+            `grammar:${lesson.id}`,
+            manifest.courseId
+          );
+          const topics = ensureArray(raw.topics).map((topic, index) =>
+            transformGrammarTopic(topic, lesson.id, index)
+          );
+          return deepFreeze({
+            ...deepClone(raw),
+            courseId: manifest.courseId,
+            chapterId: lesson.id,
+            lessonId: lesson.id,
+            topics,
+          });
+        })().catch((error) => {
+          this.grammarPromises.delete(lesson.id);
+          throw error;
+        });
+        this.grammarPromises.set(lesson.id, promise);
+      }
+      return this.grammarPromises.get(lesson.id);
+    };
+
+    const loadStory = async (value) => {
+      const lesson = lessonRecord(value);
+      if (!lesson.story) return null;
+      if (!this.storyPromises.has(lesson.id)) {
+        const promise = this.fetchJson(
+          this.resolveResourceUrl(lesson.story),
+          `story:${lesson.id}`,
+          manifest.courseId
+        )
+          .then((raw) => {
+            const localId = String(raw?.localId || raw?.id || lesson.localId);
+            return deepFreeze({
+              ...deepClone(raw),
+              id: contentId(manifest.courseId, 'story', `lesson-${lesson.order + 1}`),
+              localId,
+              courseId: manifest.courseId,
+              lessonId: lesson.id,
+              lesson_id: lesson.id,
+            });
+          })
+          .catch((error) => {
+            this.storyPromises.delete(lesson.id);
+            throw error;
+          });
+        this.storyPromises.set(lesson.id, promise);
+      }
+      return this.storyPromises.get(lesson.id);
+    };
+
+    const loadLesson = async (value) => {
+      const summary = lessonRecord(value);
+      if (!this.lessonPromises.has(summary.id)) {
+        const promise = (async () => {
+          const [lessonResult, grammarResult, storyResult] = await Promise.allSettled([
+            this.fetchJson(
+              this.resolveResourceUrl(summary.lesson),
+              `lesson:${summary.id}`,
+              manifest.courseId
+            ),
+            loadGrammar(summary.id),
+            loadStory(summary.id),
+          ]);
+          if (lessonResult.status === 'rejected') throw lessonResult.reason;
+
+          const wrapper = lessonResult.value;
+          const rawLesson = wrapper?.lesson || wrapper;
+          const quizTopics =
+            grammarResult.status === 'fulfilled' ? grammarResult.value?.topics || [] : [];
+          const rawNotes = ensureArray(rawLesson?.notes || rawLesson?.grammar);
+          const topicsByLocalId = new Map(
+            quizTopics.map((topic) => [String(topic.localId), topic])
+          );
+          const topicsByNoteId = new Map(
+            quizTopics.map((topic) => [String(topic.noteId ?? topic.note_id ?? ''), topic])
+          );
+          const grammar = rawNotes.map((note, index) => {
+            const localId = String(
+              note?.localId || note?.id || `grammar-${note?.noteId || note?.note_id || index + 1}`
+            );
+            const quizTopic =
+              topicsByLocalId.get(localId) ||
+              topicsByNoteId.get(String(note?.noteId ?? note?.note_id ?? index + 1));
+            if (quizTopic) {
+              return deepFreeze({
+                ...deepClone(note),
+                ...deepClone(quizTopic),
+                id: quizTopic.id,
+                localId,
+              });
+            }
+            return deepFreeze(transformGrammarTopic(note, summary.id, index));
+          });
+
+          const vocabulary = ensureArray(rawLesson?.vocabulary || rawLesson?.words)
+            .filter(
+              (word) =>
+                !this.adapter?.isRetiredVocabularyLocalId ||
+                !this.adapter.isRetiredVocabularyLocalId(word?.id)
+            )
+            .map((word) => {
+              const localId = canonicalVocabularyLocalId(word?.localId || word?.id);
+              const id = vocabularyId(localId);
+              const transformed = {
+                ...deepClone(word),
+                id,
+                localId,
+                courseId: manifest.courseId,
+                dictionaryId: dictionaryEntryId(word),
+                introducedIn: summary.id,
+                lesson: summary.id,
+                lessonId: summary.id,
+                chapterId: summary.id,
+              };
+              knowledgeLessonIds.set(id, summary.id);
+              return deepFreeze(transformed);
+            });
+          const exercises = exercisesForLesson(summary.id).map(deepFreeze);
+          const story = storyResult.status === 'fulfilled' ? storyResult.value : null;
+
+          return deepFreeze({
+            lesson: {
+              ...deepClone(rawLesson),
+              id: summary.id,
+              lesson_id: summary.id,
+              localId: summary.localId,
+              legacyId: summary.legacyId,
+              courseId: manifest.courseId,
+              order: summary.order,
+              vocabulary,
+              words: vocabulary,
+              notes: grammar,
+              grammar,
+              practice: exercises,
+              exercises,
+            },
+            version: wrapper?.version ?? manifest.contentVersion,
+            story,
+          });
+        })().catch((error) => {
+          this.lessonPromises.delete(summary.id);
+          throw error;
+        });
+        this.lessonPromises.set(summary.id, promise);
+      }
+      return this.lessonPromises.get(summary.id);
+    };
+
+    const canonicalizeKnowledgeId = (value) => {
+      const raw = String(value || '');
+      const vocabularyPrefix = `${manifest.courseId}:vocabulary:`;
+      if (raw.startsWith(vocabularyPrefix)) {
+        return vocabularyId(raw.slice(vocabularyPrefix.length));
+      }
+      if (raw.includes(':')) return raw;
+      return vocabularyId(raw);
+    };
+
+    const lessonIdForKnowledge = (value) => {
+      const canonicalId = canonicalizeKnowledgeId(value);
+      const known = knowledgeLessonIds.get(canonicalId);
+      if (known) return known;
+      const localId = canonicalId.slice(`${manifest.courseId}:vocabulary:`.length);
+      const candidate = this.adapter?.lessonLocalIdFromVocabularyLocalId?.(localId);
+      return candidate == null ? null : canonicalLessonId(candidate);
+    };
+
+    const lessonOrdinal = (value) => {
+      const id = canonicalLessonId(value);
+      return id ? lessonsById.get(id).order : -1;
+    };
+
+    const getFeature = (featureId) =>
+      manifest.features.find((feature) => feature.id === featureId) || null;
+
+    const course = {
+      id: manifest.courseId,
+      manifest: deepFreeze(deepClone(manifest)),
+      contentIndex: deepFreeze(deepClone(contentIndex)),
+      lessons: deepFreeze(deepClone(lessons)),
+      resources: deepFreeze({
+        grammarIndex: deepClone(resources.grammarIndex || null),
+        exercises: deepClone(resources.exercises || null),
+        orthography: deepClone(resources.orthography || null),
+        vocabularyAliases: deepClone(resources.vocabularyAliases || null),
+      }),
+      canonicalLessonId,
+      lessonOrdinal,
+      getLessonSummary(value) {
+        const id = canonicalLessonId(value);
+        return id ? lessonsById.get(id) || null : null;
+      },
+      loadLesson,
+      loadGrammar,
+      loadStory,
+      getExercisesForLesson(value) {
+        return deepFreeze(exercisesForLesson(value));
+      },
+      async loadAllLessons() {
+        return Promise.all(manifest.lessonOrder.map(loadLesson));
+      },
+      canonicalizeKnowledgeId,
+      lessonIdForKnowledge,
+      getFeature,
+      hasFeature(featureId, lessonId = null) {
+        const feature = getFeature(featureId);
+        if (!feature) return false;
+        if (lessonId == null) return true;
+        return lessonOrdinal(lessonId) >= lessonOrdinal(feature.introducedIn);
+      },
+      resolveResourceUrl: (path) => this.resolveResourceUrl(path),
+      clearCache: () => {
+        this.lessonPromises.clear();
+        this.grammarPromises.clear();
+        this.storyPromises.clear();
+      },
+    };
+
+    return Object.freeze(course);
+  }
+}

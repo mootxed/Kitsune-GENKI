@@ -8,7 +8,7 @@ import { SRS } from '../../srs.js';
 import { ExamplesDB } from '../../src/examples-db.js';
 import { CURATED_PARTICLE_SENTENCES } from '../../src/particle-templates.js';
 import { openDictionaryModal } from './dictionary-modal.js';
-import { displayWordForm, getUnlockedKanjiLesson } from '../../src/genki-kanji.js';
+import { displayWordForm, getUnlockedKanjiLesson } from '../../src/course-orthography.js';
 
 export const dictionaryViewState = {
   search: '',
@@ -29,8 +29,8 @@ export function emptyState(icon, title, desc) {
 }
 
 export function getWordStatus(word, state) {
-  const isUnlocked = isWordUnlocked(word.id, state.chapters);
-  const chapterId = cardChapter(word.id);
+  const isUnlocked = isWordUnlocked(word, state.chapters);
+  const chapterId = cardChapter(word);
   if (!isUnlocked) {
     return {
       status: 'locked',
@@ -376,8 +376,8 @@ export function renderDictionaryLessons(
 
     const wordsHtml = filteredWords
       .map((word) => {
-        const isUnlocked = isWordUnlocked(word.id, state.chapters);
-        const chapterId = cardChapter(word.id);
+        const isUnlocked = isWordUnlocked(word, state.chapters);
+        const chapterId = cardChapter(word);
         const status = getWordStatus(word, state);
 
         const safeWrittenForm = displayWordForm(word, state);
@@ -445,7 +445,7 @@ export function renderDictionaryLessons(
   $$('.dict-lesson-header').forEach((header) => {
     header.onclick = () => {
       const lessonEl = header.closest('.dict-lesson');
-      const lessonId = Number(lessonEl.dataset.lessonId);
+      const lessonId = lessonEl.dataset.lessonId;
       if (lessonEl.classList.contains('is-locked')) {
         toast(`🔒 Начните Главу ${lessonId}, чтобы разблокировать этот урок`);
         return;

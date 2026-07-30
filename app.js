@@ -48,6 +48,7 @@ import {
   getUserRankData,
 } from './src/xp-system.js';
 import { cardChapter, wordById, isWordUnlocked, dueCards, allCards } from './src/srs-helpers.js';
+import { sameLessonId } from './src/courses/course-context.js';
 import { limitNewCardsForSession } from './src/srs-limits.js';
 import {
   exportFullProgress,
@@ -252,7 +253,9 @@ function createDependencies() {
       const chapterId = cardChapter(card?.id);
       const chapter = getLesson(chapterId);
       if (!chapter) return;
-      const chapters = CONTENT_INDEX.map((entry) => (entry.id === chapterId ? chapter : entry));
+      const chapters = CONTENT_INDEX.map((entry) =>
+        sameLessonId(entry.id, chapterId) ? chapter : entry
+      );
       const completion = evaluateAndCompleteChapter(state, chapterId, {
         chapters,
         recalculatePlan: StudyPlan.recalculateFuturePlan,

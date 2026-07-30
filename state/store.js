@@ -14,12 +14,22 @@ import {
   setOpenRouterKey,
   clearOpenRouterKey,
 } from '../src/openrouter-key.js';
-import { migrateGenkiVocabularyState } from '../src/genki-vocabulary-migration.js';
+import { migrateGenkiVocabularyState } from '../src/courses/genki-1/migrations/vocabulary-state.js';
+import { DEFAULT_COURSE_ID } from '../src/courses/course-registry.js';
+import {
+  bindActiveCourseProgress,
+  createEmptyCourseProgress,
+  syncActiveCourseProgress,
+} from '../src/courses/course-state.js';
+import {
+  GENKI_1_CONTENT_VERSION,
+  migrateGenki1StateV15,
+} from '../src/courses/genki-1/migrations/state-v15.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-export const CURRENT_VERSION = 14;
+export const CURRENT_VERSION = 15;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -339,11 +349,12 @@ const MIGRATIONS = {
     ...migrateGenkiVocabularyState(oldState),
     version: 14,
   }),
+  15: (oldState) => migrateGenki1StateV15(oldState),
 };
 
 // ---------- Default State ----------
 export function defaultState() {
-  return {
+  const freshState = {
     version: CURRENT_VERSION,
     revision: 1,
     updatedAt: Date.now(),
@@ -417,6 +428,12 @@ export function defaultState() {
     studyPlan: null,
     _dailyGoalClaimed: false,
   };
+  freshState.activeCourseId = DEFAULT_COURSE_ID;
+  freshState.courses = {
+    [DEFAULT_COURSE_ID]: createEmptyCourseProgress(DEFAULT_COURSE_ID, GENKI_1_CONTENT_VERSION),
+  };
+  bindActiveCourseProgress(freshState, DEFAULT_COURSE_ID, GENKI_1_CONTENT_VERSION);
+  return freshState;
 }
 
 // ---------- Migrations Runner ----------
@@ -443,6 +460,7 @@ export function runMigrations(loadedState) {
 
 export function createPersistableState(targetState) {
   if (!targetState) return null;
+  syncActiveCourseProgress(targetState);
   const snapshot =
     typeof globalThis.structuredClone === 'function'
       ? globalThis.structuredClone(targetState)
@@ -457,17 +475,26 @@ function normalizeRuntimeShape(loadedState) {
   migrateLegacyOpenRouterKey(loadedState);
   const base = defaultState();
   const normalized = { ...base, ...loadedState };
+  const activeCourseId = loadedState.activeCourseId || DEFAULT_COURSE_ID;
+  normalized.courses =
+    loadedState.courses && typeof loadedState.courses === 'object' ? loadedState.courses : {};
+  bindActiveCourseProgress(
+    normalized,
+    activeCourseId,
+    normalized.courses[activeCourseId]?.courseVersion ||
+      (activeCourseId === DEFAULT_COURSE_ID ? GENKI_1_CONTENT_VERSION : null)
+  );
   normalized.updatedAt = Number(loadedState.updatedAt) || 0;
   normalized.settings = { ...base.settings, ...(loadedState.settings || {}) };
   delete normalized.settings.openrouterKey;
   normalized.chatHistory = normalizeChatHistory(loadedState.chatHistory);
-  normalized.priorKnowledgeChapterIds = Array.isArray(loadedState.priorKnowledgeChapterIds)
-    ? [...new Set(loadedState.priorKnowledgeChapterIds.map(Number))]
-        .filter((id) => Number.isInteger(id) && id > 0)
-        .sort((a, b) => a - b)
+  normalized.priorKnowledgeChapterIds = Array.isArray(normalized.priorKnowledgeChapterIds)
+    ? [...new Set(normalized.priorKnowledgeChapterIds)].filter(
+        (id) => typeof id === 'string' || (Number.isInteger(id) && id > 0)
+      )
     : [];
   normalized.chapters =
-    loadedState.chapters && typeof loadedState.chapters === 'object' ? loadedState.chapters : {};
+    normalized.chapters && typeof normalized.chapters === 'object' ? normalized.chapters : {};
   for (const chapter of Object.values(normalized.chapters)) {
     chapter.checklist =
       chapter.checklist && typeof chapter.checklist === 'object' ? chapter.checklist : {};
@@ -478,15 +505,16 @@ function normalizeRuntimeShape(loadedState) {
       chapter.completionRewardedAt ||= legacyCompletedAt;
     }
   }
-  normalized.learningEvents = Array.isArray(loadedState.learningEvents)
-    ? loadedState.learningEvents
+  normalized.learningEvents = Array.isArray(normalized.learningEvents)
+    ? normalized.learningEvents
     : [];
-  const activeChapterId = Number(loadedState.activeChapterId);
   normalized.activeChapterId =
-    loadedState.activeChapterId != null && Number.isInteger(activeChapterId) && activeChapterId > 0
-      ? activeChapterId
+    normalized.activeChapterId != null &&
+    (typeof normalized.activeChapterId === 'string' ||
+      (Number.isInteger(normalized.activeChapterId) && normalized.activeChapterId > 0))
+      ? normalized.activeChapterId
       : null;
-  normalized.studyPlan = loadedState.studyPlan || null;
+  normalized.studyPlan = normalized.studyPlan || null;
   if (normalized.studyPlan) {
     normalized.studyPlan.segments = Array.isArray(normalized.studyPlan.segments)
       ? normalized.studyPlan.segments
@@ -512,27 +540,25 @@ function normalizeRuntimeShape(loadedState) {
     },
   };
   normalized.vocabularyUnlocks =
-    loadedState.vocabularyUnlocks && typeof loadedState.vocabularyUnlocks === 'object'
-      ? loadedState.vocabularyUnlocks
+    normalized.vocabularyUnlocks && typeof normalized.vocabularyUnlocks === 'object'
+      ? normalized.vocabularyUnlocks
       : {};
   normalized.grammarUnlocks =
-    loadedState.grammarUnlocks && typeof loadedState.grammarUnlocks === 'object'
-      ? loadedState.grammarUnlocks
+    normalized.grammarUnlocks && typeof normalized.grammarUnlocks === 'object'
+      ? normalized.grammarUnlocks
       : {};
   normalized.grammarProgress =
-    loadedState.grammarProgress && typeof loadedState.grammarProgress === 'object'
-      ? loadedState.grammarProgress
+    normalized.grammarProgress && typeof normalized.grammarProgress === 'object'
+      ? normalized.grammarProgress
       : {};
   normalized.practiceUnlocks =
-    loadedState.practiceUnlocks && typeof loadedState.practiceUnlocks === 'object'
-      ? loadedState.practiceUnlocks
+    normalized.practiceUnlocks && typeof normalized.practiceUnlocks === 'object'
+      ? normalized.practiceUnlocks
       : {};
   normalized.dailyPlan =
-    loadedState.dailyPlan && typeof loadedState.dailyPlan === 'object'
-      ? loadedState.dailyPlan
-      : null;
-  normalized.dailyPlanHistory = Array.isArray(loadedState.dailyPlanHistory)
-    ? loadedState.dailyPlanHistory
+    normalized.dailyPlan && typeof normalized.dailyPlan === 'object' ? normalized.dailyPlan : null;
+  normalized.dailyPlanHistory = Array.isArray(normalized.dailyPlanHistory)
+    ? normalized.dailyPlanHistory
     : [];
   normalized.dailyCapacityMinutes =
     Number(loadedState.dailyCapacityMinutes) > 0
@@ -540,9 +566,10 @@ function normalizeRuntimeShape(loadedState) {
       : base.dailyCapacityMinutes;
   normalized.workbookSettings = {
     ...base.workbookSettings,
-    ...(loadedState.workbookSettings || {}),
+    ...(normalized.workbookSettings || {}),
   };
   normalizeVocabularyLockState(normalized);
+  syncActiveCourseProgress(normalized);
   return normalized;
 }
 

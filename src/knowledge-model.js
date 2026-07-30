@@ -3,7 +3,7 @@
 import { typingCapability } from './typing-capability.js';
 import { productionContext } from './production-context.js';
 import { localDateKey } from './local-date.js';
-import { isKanjiFormAvailable } from './genki-kanji.js';
+import { isKanjiFormAvailable } from './course-orthography.js';
 
 export const KNOWLEDGE_TYPES = Object.freeze({
   VOCABULARY: 'vocabulary',

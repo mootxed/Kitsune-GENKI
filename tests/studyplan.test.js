@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { StudyPlan } from '../studyplan.js';
+import { sameLessonId } from '../src/courses/course-context.js';
 import { getLocalWeekday, getTodayDateKey, parseDateKey } from '../src/local-date.js';
 
 describe('StudyPlan', () => {
@@ -103,14 +104,14 @@ describe('StudyPlan', () => {
     it('должен вернуть ошибку если период слишком короткий', () => {
       const params = {
         startDate: '2026-01-01',
-        deadline: '2026-01-05', // Только 5 дней
+        deadline: '2026-01-02', // Только 2 учебных дня для 3 уроков
         studyDaysOfWeek: [1, 2, 3, 4, 5],
       };
 
       const plan = StudyPlan.generatePlan(params, mockLessons, []);
 
       expect(plan.error).toContain('Слишком сжатый срок');
-      expect(plan.minDays).toBe(12);
+      expect(plan.minDays).toBe(3);
       expect(plan.availableDays).toBeDefined();
     });
 
@@ -408,7 +409,9 @@ describe('StudyPlan', () => {
       plan = StudyPlan.recalcPlan(plan, mockLessons, [1], { today: '2026-02-01' });
       expect(
         plan.segments.filter(
-          (s) => s.type === 'chapter' && !plan.completedChapters.includes(s.chapterId)
+          (s) =>
+            s.type === 'chapter' &&
+            !plan.completedChapters.some((chapterId) => sameLessonId(chapterId, s.chapterId))
         )
       ).toHaveLength(2);
 
@@ -416,10 +419,12 @@ describe('StudyPlan', () => {
       plan = StudyPlan.recalcPlan(plan, mockLessons, [1, 2], { today: '2026-03-01' });
       expect(
         plan.segments.filter(
-          (s) => s.type === 'chapter' && !plan.completedChapters.includes(s.chapterId)
+          (s) =>
+            s.type === 'chapter' &&
+            !plan.completedChapters.some((chapterId) => sameLessonId(chapterId, s.chapterId))
         )
       ).toHaveLength(1);
-      expect(plan.segments.find((s) => s.chapterId === 3)).toBeDefined();
+      expect(plan.segments.find((s) => sameLessonId(s.chapterId, 3))).toBeDefined();
     });
   });
 
@@ -504,6 +509,7 @@ describe('StudyPlan', () => {
         {},
         {
           L1_V001: {
+            lessonId: 1,
             evidenceCount: 4,
             successfulSkills: { recognition: true, recall: true },
             successfulDays: { recall: ['2026-01-01', '2026-01-02'] },

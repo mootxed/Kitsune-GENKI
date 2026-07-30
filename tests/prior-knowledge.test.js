@@ -197,7 +197,7 @@ describe('Prior Knowledge Synchronization & SRS Integration', () => {
 
     expect(getPriorKnowledgeChapterIds(appState)).toEqual([2]);
     expect(appState.srs['L1_V001']).toBeDefined();
-    expect(isWordUnlocked('L1_V001', appState)).toBe(false); // Заблокировано до явного старта главы, но карточка не удалена
+    expect(isWordUnlocked(appState.srs['L1_V001'], appState)).toBe(false); // Заблокировано до явного старта главы, но карточка не удалена
   });
 
   it('8. Экран prior-knowledge главы: показывает баннер "Изучено ранее", SRS-карточки, кнопку повторения и блокирует стартовую кнопку/XP', async () => {
@@ -266,9 +266,17 @@ describe('Prior Knowledge Synchronization & SRS Integration', () => {
 
     const migrated = runMigrations(v6State);
     expect(migrated.version).toBe(CURRENT_VERSION);
-    expect(migrated.priorKnowledgeChapterIds).toEqual([2, 3, 4]);
+    expect(migrated.priorKnowledgeChapterIds).toEqual([
+      'genki-1:lesson-2',
+      'genki-1:lesson-3',
+      'genki-1:lesson-4',
+    ]);
 
     const reMigrated = runMigrations(migrated);
-    expect(reMigrated.priorKnowledgeChapterIds).toEqual([2, 3, 4]);
+    expect(reMigrated.priorKnowledgeChapterIds).toEqual([
+      'genki-1:lesson-2',
+      'genki-1:lesson-3',
+      'genki-1:lesson-4',
+    ]);
   });
 });

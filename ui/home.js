@@ -4,13 +4,17 @@ import { refreshStreakDisplay, syncAvatars, updateSrsBadge } from './shared.js';
 import { $, todayStr } from '../src/utils.js';
 import { allCards, cardChapter } from '../src/srs-helpers.js';
 import { StudyPlan } from '../studyplan.js';
-import {
-  loadContentIndex,
-  loadChapterData,
-  loadGenkiKanjiAvailability,
-} from '../src/content-loader.js';
+import { loadContentIndex, loadChapterData, loadCourseOrthography } from '../src/content-loader.js';
 import { normalizeWord } from '../src/normalize-word.js';
-import { configureGenkiKanjiAvailability } from '../src/genki-kanji.js';
+import { configureCourseOrthography } from '../src/course-orthography.js';
+import {
+  canonicalLessonId,
+  compareLessonIds,
+  formatLessonLabel,
+  getActiveCourse,
+  lessonOrdinal,
+  sameLessonId,
+} from '../src/courses/course-context.js';
 import { normalizeChapterContent } from '../src/chapter-content.js';
 import {
   loadSupplementalPracticeData,
@@ -39,56 +43,9 @@ import {
 import { getNextStudyAction, getOrGenerateDailyPlan } from '../src/daily-plan.js';
 
 // ---------- Constants ----------
-export const CH_NAMES = {
-  1: ['Приветствия', '挨拶 (あいさつ)'],
-  2: ['Числа и время', '数字と時間 (すうじととき)'],
-  3: ['Семья', '家族 (かぞく)'],
-  4: ['Еда и напитки', '食べ物と飲み物 (たべものとのみもの)'],
-  5: ['Транспорт', '交通 (こうつう)'],
-  6: ['Покупки', '買い物 (かいもの)'],
-  7: ['Дом', '家 (いえ)'],
-  8: ['Природа', '自然 (しぜん)'],
-  9: ['Работа и учёба', '仕事と勉強 (しごととべんきょう)'],
-  10: ['Хобби', '趣味 (しゅみ)'],
-  11: ['Здоровье', '健康 (けんこう)'],
-  12: ['Путешествия', '旅行 (りょこう)'],
-};
+export let CH_NAMES = {};
 
 export const CHECK_ITEMS = REQUIRED_CHAPTER_SECTIONS.map(({ id, label }) => [id, label]);
-
-const FALLBACK_CHAPTER_METRICS = [
-  [80, 5, 2, 105],
-  [48, 9, 1.5, 125],
-  [56, 11, 1.5, 135],
-  [62, 13, 1, 145],
-  [51, 8, 1.5, 115],
-  [47, 9, 1.5, 120],
-  [52, 8, 1, 110],
-  [55, 10, 1.5, 130],
-  [55, 7, 1, 115],
-  [56, 10, 1, 130],
-  [61, 10, 0.7, 145],
-  [53, 7, 1, 110],
-];
-
-function fallbackContentIndex() {
-  return FALLBACK_CHAPTER_METRICS.map(
-    ([vocabCount, grammarCount, importanceWeight, estimatedMinutes], index) => {
-      const id = index + 1;
-      return {
-        id,
-        title: `Урок ${id}`,
-        lesson: `data/lessons/lesson-${String(id).padStart(2, '0')}.json`,
-        story: `data/stories/story-${String(id).padStart(2, '0')}.json`,
-        vocabCount,
-        grammarCount,
-        estimatedItems: vocabCount + grammarCount * 4,
-        importanceWeight,
-        estimatedMinutes,
-      };
-    }
-  );
-}
 
 // Полные уроки, загруженные лениво (по мере обращения к главам)
 export let LESSONS = [];
@@ -96,7 +53,7 @@ export let LESSONS = [];
 // Лёгкий индекс глав (метаданные без полного контента)
 export let CONTENT_INDEX = [];
 
-const NORMALIZED_WORD_SCHEMA_VERSION = 4;
+const NORMALIZED_WORD_SCHEMA_VERSION = 5;
 
 // ---------- Load Lessons ----------
 // На старте грузим только лёгкий content-index; полные уроки подгружаются
@@ -111,7 +68,7 @@ export async function loadLessons() {
     console.error('Не удалось загрузить content-index.json:', e);
   }
   try {
-    configureGenkiKanjiAvailability(await loadGenkiKanjiAvailability());
+    configureCourseOrthography(await loadCourseOrthography(), getActiveCourse());
   } catch (e) {
     console.error('Не удалось загрузить таблицу доступности кандзи:', e);
   }
@@ -171,7 +128,8 @@ export async function loadLessons() {
     LESSONS = cachedLessons;
     if (cachedLessons.length === 0) {
       try {
-        const { lesson } = await loadChapterData(1);
+        const entryLessonId = indexData?.chapters?.[0]?.id;
+        const { lesson } = await loadChapterData(entryLessonId);
         if (lesson) {
           LESSONS = [normalizeLesson(lesson)];
           await db.set(STORES.CONTENT_CACHE, 'lessons', LESSONS);
@@ -207,10 +165,22 @@ export async function loadLessons() {
 
   if (indexData) {
     CONTENT_INDEX = indexData.chapters || [];
+    if (state.courses?.[state.activeCourseId]) {
+      state.courses[state.activeCourseId].lessonIds = CONTENT_INDEX.map((chapter) => chapter.id);
+    }
+    CH_NAMES = Object.fromEntries(
+      CONTENT_INDEX.map((chapter) => [chapter.id, [chapter.title, chapter.jp || '']])
+    );
     await db.set(STORES.CONTENT_CACHE, 'content_index', indexData);
   } else {
     const cachedIndex = await db.get(STORES.CONTENT_CACHE, 'content_index');
-    CONTENT_INDEX = cachedIndex?.chapters || fallbackContentIndex();
+    CONTENT_INDEX = cachedIndex?.chapters || [];
+    if (state.courses?.[state.activeCourseId]) {
+      state.courses[state.activeCourseId].lessonIds = CONTENT_INDEX.map((chapter) => chapter.id);
+    }
+    CH_NAMES = Object.fromEntries(
+      CONTENT_INDEX.map((chapter) => [chapter.id, [chapter.title, chapter.jp || '']])
+    );
   }
 
   // Runtime backfill reconciliation for prior knowledge chapters
@@ -274,9 +244,9 @@ export function reconcileLessonIds() {
           lexemeToLessons.set(w.lexemeId, new Set());
         }
         const set = lexemeToLessons.get(w.lexemeId);
-        set.add(Number(l.id));
+        set.add(canonicalLessonId(l.id));
         if (Array.isArray(w.lessonIds)) {
-          w.lessonIds.forEach((id) => set.add(Number(id)));
+          w.lessonIds.forEach((id) => set.add(canonicalLessonId(id)));
         }
       }
     }
@@ -285,13 +255,13 @@ export function reconcileLessonIds() {
   for (const l of LESSONS) {
     for (const w of l.words || []) {
       if (w.lexemeId) {
-        w.lessonIds = Array.from(lexemeToLessons.get(w.lexemeId)).sort((a, b) => a - b);
+        w.lessonIds = Array.from(lexemeToLessons.get(w.lexemeId)).sort(compareLessonIds);
       }
     }
   }
 }
 
-// Нормализация одного сырого урока из data/lessons/lesson-XX.json
+// Нормализация сырого урока, полученного через CourseLoader.
 function normalizeLesson(lesson) {
   return normalizeChapterContent(lesson, lesson.practice || [], {
     chapterNames: CH_NAMES,
@@ -310,7 +280,8 @@ async function persistLessonsCache() {
 // Ленивая загрузка полного контента главы (урок + история)
 export async function ensureLesson(id) {
   window.ensureLesson = ensureLesson;
-  id = Number(id);
+  id = canonicalLessonId(id);
+  if (!id) throw new Error('[Home] lesson ID is required');
   let entry = loadedChapters.get(id);
   if (entry && entry.story !== undefined) return entry;
 
@@ -326,7 +297,7 @@ export async function ensureLesson(id) {
 
   if (!LESSONS.some((l) => l.id === id)) {
     LESSONS.push(normalized);
-    LESSONS.sort((a, b) => a.id - b.id);
+    LESSONS.sort((a, b) => compareLessonIds(a.id, b.id));
     reconcileLessonIds();
     persistLessonsCache();
   } else if (!entry) {
@@ -371,7 +342,8 @@ export function ensureChapterVocabularyCards(lesson) {
 }
 
 export function getLesson(id) {
-  return LESSONS.find((l) => l.id === id);
+  const targetId = canonicalLessonId(id);
+  return LESSONS.find((lesson) => canonicalLessonId(lesson.id) === targetId);
 }
 
 // ---------- Streak + Daily Goal ----------
@@ -472,6 +444,7 @@ export async function resetDailyGoalFlag() {
 
 // ---------- Chapter Management ----------
 export function startChapter(id, toastFn = null) {
+  id = canonicalLessonId(id);
   const cs = chState(id);
   if (cs.started) return;
   if (!isChapterAvailable(state, CONTENT_INDEX, id)) {
@@ -485,7 +458,7 @@ export function startChapter(id, toastFn = null) {
   }
   cs.started = true;
   cs.startedAt ||= Date.now();
-  if (!state.activeChapterId) state.activeChapterId = Number(id);
+  if (!state.activeChapterId) state.activeChapterId = id;
   ensureChapterVocabularyCardsImpl(state, lesson, { planLocked: true });
 
   const batchRes = ensureTodayVocabularyBatch(state, id, {
@@ -523,7 +496,7 @@ export function renderHome(_appState = state, dependencies = null) {
 
   const activeChapterId = ensureActiveChapterId(state, CONTENT_INDEX);
   const chapterCatalogEntry =
-    CONTENT_INDEX.find((chapter) => chapter.id === activeChapterId) || null;
+    CONTENT_INDEX.find((chapter) => sameLessonId(chapter.id, activeChapterId)) || null;
   const loadedActiveChapter = getLesson(activeChapterId);
   const activeChapter = loadedActiveChapter || chapterCatalogEntry;
   if (activeChapterId && !loadedActiveChapter) {
@@ -747,6 +720,7 @@ export function renderCourse() {
   ensureActiveChapterId(state, CONTENT_INDEX);
   list.innerHTML = '';
   CONTENT_INDEX.forEach((chapter) => {
+    const displayNumber = lessonOrdinal(chapter.id) + 1;
     const chapterState = chState(chapter.id);
     const progress = getChapterProgress(state, chapter.id, chapter);
     const available = isChapterAvailable(state, CONTENT_INDEX, chapter.id);
@@ -754,11 +728,11 @@ export function renderCourse() {
     const element = document.createElement('button');
     element.type = 'button';
     element.className = `chapter-card course-chapter ${completed ? 'completed' : ''} ${available ? '' : 'locked'}`;
-    element.dataset.testid = `chapter-card-${chapter.id}`;
+    element.dataset.testid = `chapter-card-${displayNumber}`;
     element.innerHTML = `
-      <span class="ch-badge">${completed ? '✓' : available ? chapter.id : '🔒'}</span>
+      <span class="ch-badge">${completed ? '✓' : available ? displayNumber : '🔒'}</span>
       <span class="ch-main">
-        <span class="ch-name">Глава ${chapter.id}: ${chapter.title}</span>
+        <span class="ch-name">${formatLessonLabel(chapter.id)}</span>
         <span class="ch-sub">${completed ? 'Завершено' : `${progress.completedCount} из ${progress.totalCount} разделов`}</span>
         <span class="ch-prog"><i style="width:${Math.round(progress.ratio * 100)}%"></i></span>
       </span>

@@ -5,6 +5,7 @@ import { isValidWordForSearch } from './word-search-generator.js';
 import { parseCardIdentity } from './knowledge-model.js';
 import { getWeakMiniGameCandidates } from './minigame-weakness.js';
 import { isUserDictionaryWordLearned } from './user-dictionaries/runtime.js';
+import { canonicalLessonId } from './courses/course-context.js';
 
 /**
  * Calculates the number of unique chapters available to minigames.
@@ -21,8 +22,8 @@ export function getAvailableChapterCount(state) {
   // 1. Started or completed chapters in state.chapters
   if (state.chapters && typeof state.chapters === 'object') {
     for (const [idStr, chState] of Object.entries(state.chapters)) {
-      const chId = Number(idStr);
-      if (!Number.isInteger(chId) || chId <= 0) continue;
+      const chId = canonicalLessonId(idStr);
+      if (!chId) continue;
       if (chState?.started === true || isChapterCompleted(chState)) {
         uniqueChapters.add(chId);
       }
@@ -32,8 +33,8 @@ export function getAvailableChapterCount(state) {
   // 2. Prior knowledge chapter IDs
   if (Array.isArray(state.priorKnowledgeChapterIds)) {
     for (const id of state.priorKnowledgeChapterIds) {
-      const chId = Number(id);
-      if (Number.isInteger(chId) && chId > 0) {
+      const chId = canonicalLessonId(id);
+      if (chId) {
         uniqueChapters.add(chId);
       }
     }
@@ -74,7 +75,7 @@ export function isWordAccessible(word, lessonChapterId, state) {
     }
   }
 
-  const chId = Number(lessonChapterId);
+  const chId = canonicalLessonId(lessonChapterId);
 
   // 1. Completed chapter
   if (chId && state.chapters && isChapterCompleted(state.chapters[chId])) {

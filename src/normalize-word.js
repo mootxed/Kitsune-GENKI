@@ -145,7 +145,7 @@ export function normalizeWord(raw, lessonId) {
   // 4. Формирование базовых полей
   const writing = raw.reading || raw.writing || '';
   const kanji = raw.writtenForm || raw.kanji || writing;
-  const lesson = Number(raw.lesson || lessonId) || null;
+  const lesson = raw.lesson || raw.lessonId || lessonId || null;
 
   // 4a. Извлечение типа прилагательного
   let adjectiveClass = raw.adjectiveClass || null;
@@ -181,6 +181,10 @@ export function normalizeWord(raw, lessonId) {
 
   return {
     id: raw.id,
+    localId: raw.localId || raw.id,
+    courseId: raw.courseId || null,
+    dictionaryId: raw.dictionaryId || null,
+    introducedIn: raw.introducedIn || lesson,
     lesson,
     writtenForm: kanji,
     reading: writing,

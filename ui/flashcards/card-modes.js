@@ -35,7 +35,7 @@ import {
   clearActiveReviewAIContext,
 } from './state.js';
 import { abandonActiveSession } from './session.js';
-import { displayWordForm } from '../../src/genki-kanji.js';
+import { displayWordForm } from '../../src/course-orthography.js';
 
 import { announce } from '../../src/a11y-helpers.js';
 import {

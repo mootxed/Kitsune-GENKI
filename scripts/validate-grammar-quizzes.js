@@ -24,10 +24,19 @@ function runValidation() {
   let totalErrors = 0;
   let totalWarnings = 0;
 
-  // 1. Read index.json
+  const manifestPath = 'data/courses/genki-1/manifest.json';
+  const courseBase = path.posix.dirname(manifestPath);
+  const resolveCoursePath = (resourcePath) =>
+    path.posix.normalize(path.posix.join(courseBase, resourcePath));
+
+  // 1. Read the course manifest and declared resources
+  let manifest;
+  let contentIndex;
   let index;
   try {
-    index = loadJson('data/grammar-quizzes/index.json');
+    manifest = loadJson(manifestPath);
+    contentIndex = loadJson(resolveCoursePath(manifest.dataPaths.contentIndex));
+    index = loadJson(resolveCoursePath(manifest.dataPaths.grammarIndex));
   } catch (err) {
     console.error('❌ Failed to load index.json:', err.message);
     process.exit(1);
@@ -43,15 +52,14 @@ function runValidation() {
     console.log('✓ index.json schema and structure valid');
   }
 
-  // 3. Load lesson content files (Lessons 1..12)
+  // 3. Load lesson content files in explicit course order
   const lessons = [];
-  for (let i = 1; i <= 12; i++) {
-    const pad = String(i).padStart(2, '0');
+  for (const lessonEntry of contentIndex.lessons || contentIndex.chapters || []) {
     try {
-      const lessonObj = loadJson(`data/lessons/lesson-${pad}.json`);
+      const lessonObj = loadJson(resolveCoursePath(lessonEntry.lesson || lessonEntry.path));
       lessons.push(lessonObj);
     } catch (err) {
-      console.warn(`⚠️ Warning: could not load lesson-${pad}.json:`, err.message);
+      console.warn(`⚠️ Warning: could not load ${lessonEntry.lesson}:`, err.message);
     }
   }
 
@@ -78,11 +86,11 @@ function runValidation() {
   const globalQuestionIds = new Set();
 
   for (const entry of index.chapters || []) {
-    const chId = Number(entry.chapterId);
+    const chId = entry.lessonId ?? entry.chapterId;
     let chapterData;
 
     try {
-      chapterData = loadJson(entry.path);
+      chapterData = loadJson(resolveCoursePath(entry.path));
     } catch (err) {
       console.error(`❌ Chapter ${chId}: Failed to load file ${entry.path}: ${err.message}`);
       totalErrors++;

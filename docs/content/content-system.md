@@ -1,6 +1,7 @@
 # Content System Overview — Обзор Контентной Системы
 
-Контентная система **Kitsune-GENKI** хранит учебные материалы в формате статичных JSON-файлов в директории `public/data/`.
+Контентная система KotoKitsu хранит общие справочники и независимые пакеты
+курсов в статичных JSON-файлах.
 
 ---
 
@@ -8,14 +9,19 @@
 
 ```text
 public/data/
-├── content-index.json              # Манифест контента и метаданные глав
+├── courses/
+│   └── genki-1/
+│       ├── manifest.json           # Контракт, порядок и ресурсы курса
+│       ├── content-index.json      # Лёгкие метаданные уроков
+│       ├── lessons/                # Канонические уроки
+│       ├── grammar/                # Индекс и интерактивная грамматика
+│       ├── exercises/              # Метаданные внешней практики без ответов
+│       ├── relations/              # Отношения и orthography capabilities
+│       ├── migrations/             # Алиасы локальных ID
+│       └── stories/                # Тексты для чтения
 ├── curated-word-examples.json      # Примерные предложения для слов
-├── supplemental-practice.json      # Внешние сопроводительные упражнения
 ├── particles-dictionary.json       # Справочник частиц
-├── lessons/                        # Файлы уроков по главам (genki-lesson-01.json ...)
-├── grammar-quizzes/                # Грамматические интерактивные тесты
-├── kanji/                          # Данные начертания иероглифов
-└── stories/                        # Тексты для чтения
+└── kanji/                          # Общие данные начертания иероглифов
 ```
 
 ---
@@ -24,6 +30,15 @@ public/data/
 
 Для снижения объёма первоначально загружаемых данных:
 
-1. Загружается только легкий файл `content-index.json`.
-2. Файлы конкретных уроков (`lessons/genki-lesson-XX.json`) загружаются динамически функцией `loadLesson(chapterNum)` из `src/content-loader.js` при переходе пользователя к соответствующей главе или карточкам.
-3. Загруженные уроки кешируются в IndexedDB store `content-cache` и Service Worker.
+1. Registry выбирает descriptor курса и загружает его `manifest.json`.
+2. CourseLoader валидирует manifest и получает объявленные в `dataPaths`
+   индексы.
+3. Урок, грамматика и история загружаются по package-relative путям только при
+   обращении к ним.
+4. Runtime получает opaque namespaced IDs; локальные ID пакета сохраняются в
+   `localId`.
+5. Загруженные уроки кешируются в IndexedDB store `content-cache`, а JSON
+   пакетов — Service Worker.
+
+Полный контракт и инструкция по добавлению курса:
+[course-packages.md](../course-packages.md).

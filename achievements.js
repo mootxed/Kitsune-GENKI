@@ -125,25 +125,34 @@ export const ACHIEVEMENTS = [
   {
     id: 'ch_1',
     emoji: '1️⃣',
-    title: 'Первая глава',
-    desc: 'Заверши главу 1',
-    check: (s) => isChapterComplete(s, 1),
+    title: 'Первый урок',
+    desc: 'Заверши первый урок курса',
+    check: (s) => {
+      const firstLessonId = courseLessonIds(s)[0];
+      return firstLessonId != null && isChapterComplete(s, firstLessonId);
+    },
     rewards: { xp: 100, coins: 50 },
   },
   {
     id: 'ch_5',
     emoji: '5️⃣',
     title: 'Половина пути',
-    desc: 'Заверши 5 глав',
-    check: (s) => completedChapters(s) >= 5,
+    desc: 'Заверши половину курса',
+    check: (s) => {
+      const total = courseLessonIds(s).length;
+      return total > 0 && completedChapters(s) >= Math.ceil(total / 2);
+    },
     rewards: { xp: 300, coins: 150 },
   },
   {
     id: 'ch_12',
     emoji: '🎓',
-    title: 'Genki завершён',
-    desc: 'Заверши все 12 глав',
-    check: (s) => completedChapters(s) >= 12,
+    title: 'Курс завершён',
+    desc: 'Заверши все уроки курса',
+    check: (s) => {
+      const total = courseLessonIds(s).length;
+      return total > 0 && completedChapters(s) >= total;
+    },
     rewards: { xp: 500, coins: 300 },
   },
 
@@ -219,11 +228,14 @@ function isChapterComplete(state, chId) {
 }
 
 function completedChapters(state) {
-  let count = 0;
-  for (let i = 1; i <= 12; i++) {
-    if (isChapterComplete(state, i)) count++;
-  }
-  return count;
+  return courseLessonIds(state).filter((id) => isChapterComplete(state, id)).length;
+}
+
+function courseLessonIds(state) {
+  const declared = state?.courses?.[state?.activeCourseId]?.lessonIds;
+  return Array.isArray(declared) && declared.length > 0
+    ? declared
+    : Object.keys(state?.chapters || {});
 }
 
 function isEarlyBird(state) {

@@ -75,7 +75,7 @@ export async function validateGenkiData() {
 
   for (let lessonId = 1; lessonId <= 12; lessonId++) {
     const suffix = String(lessonId).padStart(2, '0');
-    const relativePath = `public/data/lessons/lesson-${suffix}.json`;
+    const relativePath = `public/data/courses/genki-1/lessons/lesson-${suffix}.json`;
     const document = await readJson(relativePath);
     const lesson = document.lesson;
     addError(errors, document.schemaVersion === 2, `${relativePath}: schemaVersion must be 2`);
@@ -142,14 +142,14 @@ export async function validateGenkiData() {
       collectGrammarRefs(note, location, grammarRefs);
     }
 
-    const quizPath = `public/data/grammar-quizzes/lesson-${suffix}.json`;
+    const quizPath = `public/data/courses/genki-1/grammar/lesson-${suffix}.json`;
     const quiz = await readJson(quizPath);
     addError(errors, Number(quiz.chapterId) === lessonId, `${quizPath}: wrong chapterId`);
     for (const topic of quiz.topics || []) grammarIds.add(String(topic.id));
     collectVocabularyRefs(quiz, quizPath, vocabularyRefs);
     collectGrammarRefs(quiz, quizPath, grammarRefs);
 
-    const storyPath = `public/data/stories/story-${suffix}.json`;
+    const storyPath = `public/data/courses/genki-1/stories/story-${suffix}.json`;
     const story = await readJson(storyPath);
     addError(errors, Number(story.lesson_id) === lessonId, `${storyPath}: wrong lesson_id`);
     for (const [sentenceIndex, sentence] of (story.content || []).entries()) {
@@ -183,7 +183,7 @@ export async function validateGenkiData() {
     );
   }
 
-  const kanji = await readJson('public/data/genki-kanji-availability.json');
+  const kanji = await readJson('public/data/courses/genki-1/relations/kanji-availability.json');
   const seenKanji = new Set();
   const kanjiLessons = new Set();
   addError(errors, kanji.schemaVersion === 1, 'genki-kanji-availability: wrong schemaVersion');
@@ -204,7 +204,7 @@ export async function validateGenkiData() {
     addError(errors, kanjiLessons.has(lessonId), `kanji lesson ${lessonId} is missing`);
   }
 
-  const aliases = await readJson('public/data/genki-vocabulary-aliases.json');
+  const aliases = await readJson('public/data/courses/genki-1/migrations/vocabulary-aliases.json');
   for (const [oldId, canonicalId] of Object.entries(aliases.aliases || {})) {
     addError(errors, !wordIds.has(oldId), `alias source ${oldId} is still canonical`);
     addError(errors, wordIds.has(canonicalId), `alias ${oldId} targets missing ${canonicalId}`);
@@ -218,7 +218,7 @@ export async function validateGenkiData() {
     );
   }
 
-  const contentIndex = await readJson('public/data/content-index.json');
+  const contentIndex = await readJson('public/data/courses/genki-1/content-index.json');
   addError(
     errors,
     (contentIndex.chapters || []).length === 12,

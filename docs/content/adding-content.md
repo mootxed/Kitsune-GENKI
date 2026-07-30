@@ -1,4 +1,4 @@
-# Adding Content Guide — Пошаговое Руководство по Добавлению Материалов
+# Добавление материала в GENKI I
 
 В этом документе приведена пошаговая инструкция для разработчика или контент-мейкера по добавлению новых слов, грамматики и глав.
 
@@ -8,7 +8,8 @@
 
 ### 1. Открытие файла соответствующей главы
 
-Откройте файл `public/data/lessons/genki-lesson-XX.json`.
+Откройте файл
+`public/data/courses/genki-1/lessons/lesson-XX.json`.
 
 ### 2. Добавление объекта в массив `vocabulary`
 
@@ -16,13 +17,13 @@
 
 ```json
 {
-  "id": "genki1_l2_v15",
-  "kanji": "傘",
-  "kana": "かさ",
+  "id": "L2_V015",
+  "lesson": 2,
+  "writtenForm": "傘",
+  "reading": "かさ",
   "romaji": "kasa",
-  "english": "umbrella",
-  "category": "noun",
-  "chapter": 2
+  "meaning": "зонт",
+  "category": "noun"
 }
 ```
 
@@ -32,9 +33,15 @@
 
 ```bash
 npm run validate:grammar-quizzes
+npm run validate:courses
+npm run validate:genki
 npm test
 ```
 
 ### 4. Проверка генерации карточек
 
 Запустите локальный сервер (`npm run dev`) и убедитесь в словаре (`#/dictionary`), что новое слово отображается с начальным уровнем Mastery 0 и сгенерированными карточками.
+
+Для добавления самостоятельного курса используйте
+[руководство по пакетам курсов](../course-packages.md), а не изменяйте registry
+или универсальные модули под структуру конкретного учебника.

@@ -16,6 +16,7 @@ import {
   isPriorKnowledge,
   materializeLegacyChapterEvidence,
 } from '../src/chapter-progress.js';
+import { sameLessonId } from '../src/courses/course-context.js';
 import {
   countRemainingLockedWords,
   getTodayVocabularyUnlockDecision,
@@ -442,7 +443,7 @@ export async function renderChapter(id, state, dependencies, context = {}) {
 
       if (isPrior) return;
       const itemId = el.dataset.check;
-      const chapters = CONTENT_INDEX.map((chapter) => (chapter.id === Number(id) ? l : chapter));
+      const chapters = CONTENT_INDEX.map((chapter) => (sameLessonId(chapter.id, id) ? l : chapter));
 
       if (el.dataset.kind === 'grammar') {
         const topic = grammarTopics.find((entry) => entry.id === itemId);

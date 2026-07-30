@@ -7,13 +7,14 @@ import { readXlsxRows } from './lib/xlsx.js';
 import { normalizeWord } from '../src/normalize-word.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const LESSON_DIRECTORY = path.join(ROOT, 'public/data/lessons');
-const ALIASES_PATH = path.join(ROOT, 'public/data/genki-vocabulary-aliases.json');
-const KANJI_PATH = path.join(ROOT, 'public/data/genki-kanji-availability.json');
-const ID_MAP_MODULE_PATH = path.join(ROOT, 'src/genki-vocabulary-id-map.js');
-const CONTENT_INDEX_PATH = path.join(ROOT, 'public/data/content-index.json');
+const COURSE_DIRECTORY = path.join(ROOT, 'public/data/courses/genki-1');
+const LESSON_DIRECTORY = path.join(COURSE_DIRECTORY, 'lessons');
+const ALIASES_PATH = path.join(COURSE_DIRECTORY, 'migrations/vocabulary-aliases.json');
+const KANJI_PATH = path.join(COURSE_DIRECTORY, 'relations/kanji-availability.json');
+const ID_MAP_MODULE_PATH = path.join(ROOT, 'src/courses/genki-1/migrations/vocabulary-id-map.js');
+const CONTENT_INDEX_PATH = path.join(COURSE_DIRECTORY, 'content-index.json');
 const CURATED_EXAMPLES_PATH = path.join(ROOT, 'public/data/curated-word-examples.json');
-const QUIZ_DIRECTORY = path.join(ROOT, 'public/data/grammar-quizzes');
+const QUIZ_DIRECTORY = path.join(COURSE_DIRECTORY, 'grammar');
 const REPORT_PATH = path.join(ROOT, 'reports/genki-1-data-audit.md');
 
 const REQUIRED_WORD_HEADERS = ['Урок', 'Кандзи', 'Кана', 'Перевод'];
@@ -366,7 +367,9 @@ async function loadBaseline(directory = LESSON_DIRECTORY) {
     lessonDocs.push({ file, document, lesson });
     const vocabulary = lesson.vocabulary || lesson.words || [];
     vocabulary.forEach((word, index) =>
-      oldWords.push(legacyWord(word, lessonId, index + 1, `public/data/lessons/${file}`))
+      oldWords.push(
+        legacyWord(word, lessonId, index + 1, `public/data/courses/genki-1/lessons/${file}`)
+      )
     );
   }
   return { lessonDocs, oldWords };

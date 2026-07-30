@@ -5,7 +5,7 @@ import {
   getGrammarTopicStatus,
 } from '../src/grammar-plan.js';
 import { prioritizeGrammarPrerequisiteVocabulary } from '../src/vocabulary-unlock-plan.js';
-import quizData from '../public/data/genki-lesson-01-grammar-quiz.json';
+import quizData from '../public/data/courses/genki-1/grammar/lesson-01.json';
 
 describe('Grammar Prerequisites & Cancel Behavior', () => {
   const mockTopic = quizData.topics[1]; // L1_g2 (prerequisite: L1_g1, requiredVocab: L1_V017, L1_V023, etc.)
@@ -27,13 +27,13 @@ describe('Grammar Prerequisites & Cancel Behavior', () => {
         card_1: { id: 'card_1', itemId: 'L1_V017', planLocked: false, reps: 1, state: 1 },
         card_2: { id: 'card_2', itemId: 'L1_V023', planLocked: false, reps: 1, state: 1 },
         card_3: { id: 'card_3', itemId: 'L1_V025', planLocked: false, reps: 1, state: 1 },
-        card_4: { id: 'card_4', itemId: 'L1_V053', planLocked: false, reps: 1, state: 1 },
+        card_4: { id: 'card_4', itemId: 'L1_V073', planLocked: false, reps: 1, state: 1 },
       },
       reviewEvents: [
         { eventType: 'review', itemId: 'L1_V017' },
         { eventType: 'review', itemId: 'L1_V023' },
         { eventType: 'review', itemId: 'L1_V025' },
-        { eventType: 'review', itemId: 'L1_V053' },
+        { eventType: 'review', itemId: 'L1_V073' },
       ],
       grammarProgress: {},
       learningEvents: [],
@@ -43,13 +43,13 @@ describe('Grammar Prerequisites & Cancel Behavior', () => {
   it('blocks topic access if required vocabulary has not been introduced', () => {
     const state = createInitialState();
     state.chapters[1].checklist['L1_g1'] = true;
-    // Remove review events for L1_V053 so it is not introduced
-    state.reviewEvents = state.reviewEvents.filter((e) => e.itemId !== 'L1_V053');
+    // Remove review events for L1_V073 so it is not introduced
+    state.reviewEvents = state.reviewEvents.filter((e) => e.itemId !== 'L1_V073');
     delete state.srs.card_4;
 
     const status = getGrammarTopicPrerequisiteStatus(state, 1, mockTopic);
     expect(status.satisfied).toBe(false);
-    expect(status.missingVocabularyIds).toContain('L1_V053');
+    expect(status.missingVocabularyIds).toContain('L1_V073');
     expect(status.reason).toBe('missing-vocabulary-prerequisites');
   });
 

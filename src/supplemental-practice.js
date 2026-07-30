@@ -1,4 +1,5 @@
 /* Supplemental external practice metadata loader and validator. No answer-key content is exposed. */
+import { ensureActiveCourse } from './courses/course-context.js';
 
 export const SUPPLEMENTAL_PRACTICE_SCHEMA_VERSION = 1;
 export const WORKBOOK_PRACTICE_SCHEMA_VERSION = SUPPLEMENTAL_PRACTICE_SCHEMA_VERSION;
@@ -9,11 +10,8 @@ let practicePromise = null;
 let practiceIndex = null;
 
 async function fetchPracticeJson() {
-  const response = await fetch('data/supplemental-practice.json');
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for data/supplemental-practice.json`);
-  }
-  return response.json();
+  const course = await ensureActiveCourse();
+  return course.resources.exercises;
 }
 
 export function validateSupplementalPracticeData(data, chapters = []) {
@@ -23,15 +21,10 @@ export function validateSupplementalPracticeData(data, chapters = []) {
   const taskIds = new Set();
   const grammarIdsByChapter = new Map(
     (chapters || []).map((chapter) => [
-      Number(chapter.id || chapter.lesson_id),
+      String(chapter.id || chapter.lessonId || chapter.lesson_id),
       new Set(
         (chapter.grammarTopics || chapter.grammar || chapter.notes || []).map((topic, index) =>
-          String(
-            topic.id ||
-              (topic.note_id
-                ? `L${Number(chapter.id || chapter.lesson_id)}_g${topic.note_id}`
-                : `L${Number(chapter.id || chapter.lesson_id)}_g${index + 1}`)
-          )
+          String(topic.id || topic.noteId || topic.note_id || `topic-${index + 1}`)
         )
       ),
     ])
@@ -43,8 +36,8 @@ export function validateSupplementalPracticeData(data, chapters = []) {
   if (!Array.isArray(data?.chapters)) errors.push('chapters-must-be-an-array');
 
   for (const chapter of data?.chapters || []) {
-    const chapterId = Number(chapter?.chapterId);
-    if (!Number.isInteger(chapterId) || chapterId <= 0) {
+    const chapterId = String(chapter?.lessonId || chapter?.chapterId || '').trim();
+    if (!chapterId) {
       errors.push(`invalid-chapter-id:${chapter?.chapterId}`);
       continue;
     }
@@ -102,7 +95,10 @@ export async function loadSupplementalPracticeData() {
           );
         }
         practiceIndex = new Map(
-          data.chapters.map((chapter) => [Number(chapter.chapterId), chapter.practice || []])
+          data.chapters.map((chapter) => [
+            String(chapter.lessonId || chapter.chapterId),
+            chapter.practice || [],
+          ])
         );
         return data;
       })
@@ -118,8 +114,8 @@ export async function loadSupplementalPracticeData() {
 export const loadWorkbookPracticeData = loadSupplementalPracticeData;
 
 export async function getSupplementalPracticeForChapter(chapterId) {
-  if (!practiceIndex) await loadSupplementalPracticeData();
-  return practiceIndex?.get(Number(chapterId)) || [];
+  const course = await ensureActiveCourse();
+  return course.getExercisesForLesson(chapterId);
 }
 
 export const getWorkbookPracticeForChapter = getSupplementalPracticeForChapter;

@@ -12,7 +12,7 @@ const auditMap = {
 };
 
 // 1. Process supplemental-practice.json
-const practicePath = join(ROOT, 'public/data/supplemental-practice.json');
+const practicePath = join(ROOT, 'public/data/courses/genki-1/exercises/supplemental-practice.json');
 if (existsSync(practicePath)) {
   const practiceData = JSON.parse(readFileSync(practicePath, 'utf8'));
 
@@ -43,7 +43,7 @@ if (existsSync(practicePath)) {
 }
 
 // 2. Process grammar-quizzes/index.json
-const quizIndexPath = join(ROOT, 'public/data/grammar-quizzes/index.json');
+const quizIndexPath = join(ROOT, 'public/data/courses/genki-1/grammar/index.json');
 if (existsSync(quizIndexPath)) {
   const quizIndex = JSON.parse(readFileSync(quizIndexPath, 'utf8'));
   auditMap.files['grammar-quizzes/index.json'] = {
@@ -92,10 +92,9 @@ function sanitizeObjectCharacters(obj) {
 
 // 3. Process individual quiz files
 const quizFiles = [
-  'public/data/genki-lesson-01-grammar-quiz.json',
   ...Array.from(
     { length: 12 },
-    (_, i) => `public/data/grammar-quizzes/lesson-${String(i + 1).padStart(2, '0')}.json`
+    (_, i) => `public/data/courses/genki-1/grammar/lesson-${String(i + 1).padStart(2, '0')}.json`
   ),
 ];
 

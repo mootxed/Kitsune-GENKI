@@ -11,7 +11,7 @@ import HanziWriter from 'hanzi-writer';
 import { localCharDataLoader } from '../../src/kanji-loader.js';
 import { getAllKanji } from './mode-selector.js';
 import { cleanKanjiChar } from './drawing-mode.js';
-import { displayWordForm, getUnlockedKanjiLesson } from '../../src/genki-kanji.js';
+import { displayWordForm, getUnlockedKanjiLesson } from '../../src/course-orthography.js';
 import {
   getPartOfSpeechLabel,
   getVerbClassLabel,

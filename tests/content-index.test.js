@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { StudyPlan } from '../studyplan.js';
 
 async function contentIndex() {
-  const raw = await readFile('public/data/content-index.json', 'utf8');
+  const raw = await readFile('public/data/courses/genki-1/content-index.json', 'utf8');
   return JSON.parse(raw);
 }
 

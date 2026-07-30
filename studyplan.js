@@ -5,6 +5,12 @@ import { createVocabularySchedule } from './src/vocabulary-schedule.js';
 import { calculateMastery } from './src/mastery.js';
 import { parseCardIdentity } from './src/knowledge-model.js';
 import {
+  canonicalLessonId,
+  compareLessonIds,
+  lessonIdForKnowledgeItem,
+  sameLessonId,
+} from './src/courses/course-context.js';
+import {
   addLocalDays,
   formatDateKey,
   getLocalWeekday,
@@ -15,7 +21,7 @@ import {
 const WEIGHT_VOCAB = 1;
 const WEIGHT_GRAMMAR = 4;
 const MIN_DAYS_PER_CHAPTER = 1;
-const MIN_TOTAL_DAYS = 12;
+const MIN_TOTAL_DAYS = 1;
 const ALL_WEEKDAYS = Object.freeze([0, 1, 2, 3, 4, 5, 6]);
 const VALID_DATE_STATUSES = new Set([
   'planned',
@@ -31,21 +37,6 @@ const LEGACY_STATUS_ALIASES = Object.freeze({
   rescheduled: 'postponed',
 });
 
-const CHAPTER_IMPORTANCE = Object.freeze({
-  1: 1.5,
-  2: 1.5,
-  3: 1.5,
-  4: 1,
-  5: 1.5,
-  6: 1.5,
-  7: 1,
-  8: 1.5,
-  9: 1,
-  10: 1,
-  11: 0.7,
-  12: 1,
-});
-
 function normalizedWeekdays(daysOfWeek) {
   return [...new Set((daysOfWeek || []).map(Number))]
     .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)
@@ -54,9 +45,7 @@ function normalizedWeekdays(daysOfWeek) {
 
 export function calculateChapterWeight(lesson) {
   if (Number(lesson?.requiredTotalMinutes) > 0) {
-    const importance = Number(
-      lesson?.importanceWeight ?? lesson?.importance_weight ?? CHAPTER_IMPORTANCE[lesson?.id] ?? 1
-    );
+    const importance = Number(lesson?.importanceWeight ?? lesson?.importance_weight ?? 1);
     return Math.max(1, Number(lesson.requiredTotalMinutes)) * Math.max(0.1, importance);
   }
 
@@ -74,9 +63,7 @@ export function calculateChapterWeight(lesson) {
   const estimatedItems = Number(lesson?.estimatedItems || lesson?.estimatedMinutes || 0);
   const measuredWeight = vocabCount * WEIGHT_VOCAB + grammarCount * WEIGHT_GRAMMAR;
   const baseWeight = measuredWeight > 0 ? measuredWeight : estimatedItems;
-  const importance = Number(
-    lesson?.importanceWeight ?? lesson?.importance_weight ?? CHAPTER_IMPORTANCE[lesson?.id] ?? 1
-  );
+  const importance = Number(lesson?.importanceWeight ?? lesson?.importance_weight ?? 1);
   return Math.max(1, baseWeight || 1) * Math.max(0.1, importance || 1);
 }
 
@@ -167,7 +154,9 @@ function buildSegments(lessons, studyDays, vocabularyRemainingByChapter = {}) {
 }
 
 function expiredDeadlineResult(currentPlan, lessons, completedChapters, today) {
-  const remainingCount = lessons.filter((lesson) => !completedChapters.includes(lesson.id)).length;
+  const remainingCount = lessons.filter(
+    (lesson) => !completedChapters.some((id) => sameLessonId(id, lesson.id))
+  ).length;
   const studyDaysOfWeek = normalizedWeekdays(currentPlan.studyDaysOfWeek);
   return {
     deadlineExpired: true,
@@ -218,8 +207,9 @@ export function generatePlan(params, lessons, completedChapters = []) {
     return { error: 'Необходимо указать deadline или totalDays' };
   }
 
+  const canonicalCompleted = completedChapters.map((id) => canonicalLessonId(id)).filter(Boolean);
   const remainingLessons = (lessons || []).filter(
-    (lesson) => !completedChapters.includes(lesson.id)
+    (lesson) => !canonicalCompleted.some((id) => sameLessonId(id, lesson.id))
   );
   if (remainingLessons.length === 0) {
     return { error: 'Все главы уже изучены! 🎓', allCompleted: true };
@@ -236,7 +226,7 @@ export function generatePlan(params, lessons, completedChapters = []) {
       return expiredDeadlineResult(
         { deadline, studyDaysOfWeek },
         remainingLessons,
-        completedChapters,
+        canonicalCompleted,
         startDate
       );
     }
@@ -250,10 +240,11 @@ export function generatePlan(params, lessons, completedChapters = []) {
     deadline = studyDays.at(-1);
   }
 
-  if (studyDays.length < MIN_TOTAL_DAYS) {
+  const minimumTotalDays = Math.max(MIN_TOTAL_DAYS, remainingLessons.length);
+  if (studyDays.length < minimumTotalDays) {
     return {
-      error: `Слишком сжатый срок. Доступно ${studyDays.length} учебных дней, минимум ${MIN_TOTAL_DAYS}`,
-      minDays: MIN_TOTAL_DAYS,
+      error: `Слишком сжатый срок. Доступно ${studyDays.length} учебных дней, минимум ${minimumTotalDays}`,
+      minDays: minimumTotalDays,
       availableDays: studyDays.length,
     };
   }
@@ -294,7 +285,7 @@ export function generatePlan(params, lessons, completedChapters = []) {
     deadline,
     totalDays: studyDays.length,
     studyDaysOfWeek,
-    completedChapters: [...new Set(completedChapters)].sort((a, b) => a - b),
+    completedChapters: [...new Set(canonicalCompleted)].sort(compareLessonIds),
     segments,
     activeSegmentId: segments[0]?.id || null,
     history: [],
@@ -340,13 +331,17 @@ export function normalizePlan(plan) {
     studyDaysOfWeek: weekdays,
     segments,
     history: Array.isArray(plan.history) ? plan.history : [],
-    completedChapters: Array.isArray(plan.completedChapters) ? plan.completedChapters : [],
+    completedChapters: Array.isArray(plan.completedChapters)
+      ? [
+          ...new Set(plan.completedChapters.map((id) => canonicalLessonId(id)).filter(Boolean)),
+        ].sort(compareLessonIds)
+      : [],
     activeSegmentId:
       plan.activeSegmentId ||
       segments.find(
         (segment) =>
           segment.type === 'chapter' &&
-          !plan.completedChapters?.includes(segment.chapterId) &&
+          !plan.completedChapters?.some((id) => sameLessonId(id, segment.chapterId)) &&
           segment.status !== 'completed'
       )?.id ||
       null,
@@ -365,8 +360,12 @@ export function recalculateFuturePlan(
   }
 
   const weekdays = normalizedWeekdays(currentPlan.studyDaysOfWeek);
-  const completed = [...new Set(completedChapters)].sort((a, b) => a - b);
-  const remainingLessons = (lessons || []).filter((lesson) => !completed.includes(lesson.id));
+  const completed = [
+    ...new Set(completedChapters.map((id) => canonicalLessonId(id)).filter(Boolean)),
+  ].sort(compareLessonIds);
+  const remainingLessons = (lessons || []).filter(
+    (lesson) => !completed.some((id) => sameLessonId(id, lesson.id))
+  );
   const preserved = [];
   const preserveToday = hasConfirmedPlanActivity(currentPlan, today, {
     vocabularyUnlocks,
@@ -424,8 +423,8 @@ export function recalculateFuturePlan(
     const existing = merged.find(
       (entry) =>
         entry.type === 'chapter' &&
-        entry.chapterId === segment.chapterId &&
-        !completed.includes(entry.chapterId)
+        sameLessonId(entry.chapterId, segment.chapterId) &&
+        !completed.some((id) => sameLessonId(id, entry.chapterId))
     );
     if (existing) {
       existing.assignedDates = [...new Set([...existing.assignedDates, ...segment.assignedDates])];
@@ -461,10 +460,13 @@ export function recalculateFuturePlan(
     merged.find(
       (segment) =>
         segment.type === 'chapter' &&
-        !completed.includes(segment.chapterId) &&
+        !completed.some((id) => sameLessonId(id, segment.chapterId)) &&
         segment.assignedDates.includes(today)
     ) ||
-    merged.find((segment) => segment.type === 'chapter' && !completed.includes(segment.chapterId));
+    merged.find(
+      (segment) =>
+        segment.type === 'chapter' && !completed.some((id) => sameLessonId(id, segment.chapterId))
+    );
 
   return {
     ...currentPlan,
@@ -515,7 +517,7 @@ export function getDateStatus(
     (event) =>
       !event.undoneAt &&
       event.dateKey === dateKey &&
-      event.chapterId === segment.chapterId &&
+      sameLessonId(event.chapterId, segment.chapterId) &&
       ['chapter-completed', 'daily-plan-completed'].includes(event.eventType)
   );
   const hasReviewEvidence = reviewEvents.some(
@@ -531,15 +533,21 @@ export function getDateStatus(
 
 function chapterMastery(planSegment, srsRecords, masteryArchive, reviewEvents, now) {
   if (!planSegment?.chapterId) return null;
-  const prefix = `L${planSegment.chapterId}_`;
+  const belongsToLesson = (itemId, record = null) =>
+    sameLessonId(
+      record?.lessonId || record?.chapterId || lessonIdForKnowledgeItem(itemId),
+      planSegment.chapterId
+    );
   const itemIds = new Set([
-    ...Object.keys(masteryArchive || {}).filter((itemId) => itemId.startsWith(prefix)),
+    ...Object.entries(masteryArchive || {})
+      .filter(([itemId, archive]) => belongsToLesson(itemId, archive))
+      .map(([itemId]) => itemId),
     ...(reviewEvents || [])
-      .map((event) => event?.itemId)
-      .filter((itemId) => itemId?.startsWith(prefix)),
+      .filter((event) => event?.itemId && belongsToLesson(event.itemId, event))
+      .map((event) => event.itemId),
     ...Object.values(srsRecords || {})
-      .map((card) => parseCardIdentity(card).itemId)
-      .filter((itemId) => itemId.startsWith(prefix)),
+      .filter((card) => belongsToLesson(parseCardIdentity(card).itemId, card))
+      .map((card) => parseCardIdentity(card).itemId),
   ]);
   if (itemIds.size === 0) return null;
 
@@ -608,7 +616,7 @@ export function getDailyPlanContext(
     plan?.segments?.find(
       (segment) =>
         segment.type === 'chapter' &&
-        !plan.completedChapters?.includes(segment.chapterId) &&
+        !plan.completedChapters?.some((id) => sameLessonId(id, segment.chapterId)) &&
         segment.status !== 'completed'
     ) ||
     null;
@@ -701,12 +709,16 @@ export function getPlanDateAvailability(plan, chapterId, dateKey = getTodayDateK
     return { isStudyDay: false, isRestDay: false, isPaused: true, reason: 'plan-paused' };
   }
 
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
+  if (!chId) {
+    return { isStudyDay: false, isRestDay: false, isPaused: false, reason: 'invalid-lesson-id' };
+  }
   const segments = Array.isArray(plan.segments) ? plan.segments : [];
   const activeSeg =
     segments.find(
-      (s) => s && s.type === 'chapter' && Number(s.chapterId) === chId && s.status !== 'completed'
-    ) || segments.find((s) => s && s.type === 'chapter' && Number(s.chapterId) === chId);
+      (s) =>
+        s && s.type === 'chapter' && sameLessonId(s.chapterId, chId) && s.status !== 'completed'
+    ) || segments.find((s) => s && s.type === 'chapter' && sameLessonId(s.chapterId, chId));
 
   if (!activeSeg) {
     return { isStudyDay: false, isRestDay: false, isPaused: false, reason: 'no-segment' };
@@ -788,7 +800,10 @@ export function mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, options
       ...(existingPlan.completedChapters || []),
       ...(generatedPlan.completedChapters || []),
     ]),
-  ].sort((a, b) => a - b);
+  ]
+    .map((id) => canonicalLessonId(id))
+    .filter(Boolean)
+    .sort(compareLessonIds);
 
   const mergedDateStatuses = { ...(generatedPlan.dateStatuses || {}) };
   if (existingPlan.dateStatuses) {

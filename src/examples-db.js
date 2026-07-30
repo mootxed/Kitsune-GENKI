@@ -1,8 +1,9 @@
 /**
- * ExamplesDB — Надежный слой данных для примеров употребления слов в Kitsune-GENKI.
+ * ExamplesDB — Надежный слой данных для примеров употребления слов.
  */
 
 import { conjugateVerb } from './verb-conjugator.js';
+import { canonicalLessonId, compareLessonIds } from './courses/course-context.js';
 
 // Список стандартных N5 частиц для быстрого поиска/определения grammarIds
 const KNOWN_PARTICLES = new Set([
@@ -60,7 +61,7 @@ export class ExamplesDBClass {
     japanese,
     reading = '',
     translation = '',
-    sourceLessonId = 1,
+    sourceLessonId = null,
     source = 'unknown',
     acceptedAnswers = null,
     requiredForm = null,
@@ -84,7 +85,7 @@ export class ExamplesDBClass {
       japanese: trimmedJp,
       reading: reading.trim(),
       translation: translation.trim(),
-      sourceLessonId: Number(sourceLessonId) || 1,
+      sourceLessonId: canonicalLessonId(sourceLessonId),
       source,
       acceptedAnswers,
       requiredForm,
@@ -98,7 +99,7 @@ export class ExamplesDBClass {
   registerLesson(lessonData) {
     if (!lessonData) return;
     const lesson = lessonData.lesson || lessonData;
-    const lessonId = Number(lesson.id || lesson.lesson_id) || 1;
+    const lessonId = canonicalLessonId(lesson.id || lesson.lesson_id);
 
     // 1. Зарегистрировать лексику урока
     const words = lesson.words || lesson.vocabulary;
@@ -164,7 +165,7 @@ export class ExamplesDBClass {
    */
   registerStory(storyData) {
     if (!storyData || !storyData.content) return;
-    const lessonId = Number(storyData.lesson_id) || Number(storyData.id) || 1;
+    const lessonId = canonicalLessonId(storyData.lessonId || storyData.lesson_id || storyData.id);
 
     for (const item of storyData.content) {
       if (!item.tokens) continue;
@@ -199,7 +200,7 @@ export class ExamplesDBClass {
 
     for (const p of particles) {
       if (!p.usage_examples) continue;
-      const lessonId = Number(p.introduced_in_lesson) || 1;
+      const lessonId = canonicalLessonId(p.introducedInLesson || p.introduced_in_lesson);
 
       for (const line of p.usage_examples) {
         // Парсим: "私は田中です (Watashi wa Tanaka desu) — Я Танака"
@@ -415,12 +416,19 @@ export class ExamplesDBClass {
       const vocabularyIds = matchedWords.map((w) => w.id);
 
       // Расчет требуемого урока на основе грамматики и всей лексики предложения
-      const maxVocabLesson = matchedWords.reduce((max, w) => {
-        const introL = w.lessonIds && w.lessonIds.length > 0 ? Math.min(...w.lessonIds) : 1;
-        return Math.max(max, introL);
-      }, 1);
+      const maxVocabLesson = matchedWords.reduce((latest, word) => {
+        const introducedIn =
+          word.lessonIds && word.lessonIds.length > 0
+            ? [...word.lessonIds].sort(compareLessonIds)[0]
+            : canonicalLessonId(1);
+        return latest == null || compareLessonIds(introducedIn, latest) > 0 ? introducedIn : latest;
+      }, null);
 
-      const lessonRequired = Math.max(raw.sourceLessonId, maxVocabLesson);
+      const sourceLessonId = canonicalLessonId(raw.sourceLessonId || 1);
+      const lessonRequired =
+        maxVocabLesson != null && compareLessonIds(maxVocabLesson, sourceLessonId) > 0
+          ? maxVocabLesson
+          : sourceLessonId;
 
       // Для каждого подходящего слова создаем нормализованную модель примера
       for (const word of matchedWords) {
@@ -464,7 +472,7 @@ export class ExamplesDBClass {
     if (!list) return [];
 
     // Фильтруем, чтобы не использовать лексику и грамматику будущих уроков
-    return list.filter((ex) => ex.lessonRequired <= userMaxLesson);
+    return list.filter((ex) => compareLessonIds(ex.lessonRequired, userMaxLesson) <= 0);
   }
 
   /**
@@ -481,9 +489,9 @@ export class ExamplesDBClass {
       // Проверить, что слово открыто
       const introLesson =
         Array.isArray(word.lessonIds) && word.lessonIds.length > 0
-          ? Math.min(...word.lessonIds)
-          : 1;
-      if (introLesson > userMaxLesson) continue;
+          ? [...word.lessonIds].sort(compareLessonIds)[0]
+          : canonicalLessonId(1);
+      if (compareLessonIds(introLesson, userMaxLesson) > 0) continue;
 
       // Если теги не указаны — берём все слова
       if (requiredTags && requiredTags.length > 0) {

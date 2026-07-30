@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "lessonId": "test-course:lesson-alpha",
+  "topics": [
+    {
+      "id": "topic-present",
+      "noteId": "present",
+      "title": "Тестовая тема",
+      "summary": "Тест",
+      "formula": "A は B です",
+      "estimatedMinutes": 1,
+      "requiredVocabularyIds": ["hello"],
+      "prerequisiteGrammarIds": [],
+      "examples": [],
+      "explanation": "Тест",
+      "quiz": [
+        {
+          "id": "topic-present-q1",
+          "type": "fill-blank",
+          "prompt": "A ___ B",
+          "acceptedAnswers": ["は"],
+          "explanation": "Тест",
+          "grammarRefs": ["topic-present"],
+          "vocabularyRefs": ["hello"]
+        }
+      ]
+    }
+  ]
+}

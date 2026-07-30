@@ -95,8 +95,10 @@ test.describe('E2E Grammar Lesson & Mobile Responsiveness', () => {
         });
       });
 
-      // Click first grammar check card (L1_g1)
-      const grammarCard = page.locator('[data-kind="grammar"][data-check="L1_g1"]').first();
+      // CourseLoader exposes the local L1_g1 topic as a namespaced runtime ID.
+      const grammarCard = page
+        .locator('[data-kind="grammar"][data-check="genki-1:grammar:L1_g1"]')
+        .first();
       await expect(grammarCard).toBeVisible({ timeout: 10000 });
       await expect(grammarCard).not.toHaveClass(/locked/, { timeout: 10000 });
 

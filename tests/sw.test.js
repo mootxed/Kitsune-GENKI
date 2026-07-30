@@ -15,10 +15,10 @@ describe('Service Worker and Vite Build Alignment', () => {
       "const OFFLINE_URL = new URL('offline.html', self.location).pathname;"
     );
 
-    // Проверяем, что LESSON_FILES использует относительный путь без слэша в начале
-    expect(swContent).toContain("'data/content-index.json'");
-    expect(swContent).toContain("'data/supplemental-practice.json'");
-    expect(swContent).toContain('GRAMMAR_QUIZ_FILES');
+    // Проверяем, что точка входа курса использует package-relative путь
+    expect(swContent).toContain("'data/courses/genki-1/manifest.json'");
+    expect(swContent).toContain('COURSE_ENTRY_FILES');
+    expect(swContent).toContain('courses\\/[^/]+\\/.*');
 
     // Проверяем наличие плейсхолдеров для замещения при сборке
     expect(swContent).toContain('/* __STATIC_ASSETS_BEGIN__ */');

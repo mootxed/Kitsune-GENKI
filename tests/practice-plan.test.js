@@ -14,8 +14,8 @@ const MOCK_LESSON = {
   title: 'Урок 2',
   words: [{ id: 'L2_V001' }],
   notes: [
-    { note_id: 1, title: 'Грамматика 1: これ, それ' },
-    { note_id: 2, title: 'Грамматика 2: この, その' },
+    { id: 'L2_g1', note_id: 1, title: 'Грамматика 1: これ, それ' },
+    { id: 'L2_g2', note_id: 2, title: 'Грамматика 2: この, その' },
   ],
   practice: [
     {
@@ -87,7 +87,10 @@ describe('Task 5: GENKI Workbook & Practice Tasks (src/practice-plan.js)', () =>
     unlockDailyGrammarTopic(appState, 2, { dateKey: '2026-07-26', chapterMeta: MOCK_LESSON });
     completeGrammarTopicWithCheck(appState, 2, 'L2_g1', { passed: true });
 
-    const res = completePracticeTask(appState, 2, 'L02-workbook-1a', { dateKey: '2026-07-26' });
+    const res = completePracticeTask(appState, 2, 'L02-workbook-1a', {
+      dateKey: '2026-07-26',
+      chapterMeta: MOCK_LESSON,
+    });
     expect(res.changed).toBe(true);
     expect(appState.chapters[2].checklist['L02-workbook-1a']).toBe(true);
 
@@ -101,7 +104,7 @@ describe('Task 5: GENKI Workbook & Practice Tasks (src/practice-plan.js)', () =>
   it('4. Поддерживает Undo (отмену) выполнения практического задания', () => {
     unlockDailyGrammarTopic(appState, 2, { dateKey: '2026-07-26', chapterMeta: MOCK_LESSON });
     completeGrammarTopicWithCheck(appState, 2, 'L2_g1', { passed: true });
-    completePracticeTask(appState, 2, 'L02-workbook-1a');
+    completePracticeTask(appState, 2, 'L02-workbook-1a', { chapterMeta: MOCK_LESSON });
 
     expect(appState.chapters[2].checklist['L02-workbook-1a']).toBe(true);
 
@@ -117,9 +120,15 @@ describe('Task 5: GENKI Workbook & Practice Tasks (src/practice-plan.js)', () =>
 
   it('5. Повторное завершение после Undo не позволяет фармить XP', () => {
     appState.chapters[2].checklist.L2_g1 = true;
-    const first = completePracticeTask(appState, 2, 'L02-workbook-1a', { now: 100 });
+    const first = completePracticeTask(appState, 2, 'L02-workbook-1a', {
+      now: 100,
+      chapterMeta: MOCK_LESSON,
+    });
     undoPracticeTask(appState, 2, 'L02-workbook-1a', { now: 150 });
-    const second = completePracticeTask(appState, 2, 'L02-workbook-1a', { now: 200 });
+    const second = completePracticeTask(appState, 2, 'L02-workbook-1a', {
+      now: 200,
+      chapterMeta: MOCK_LESSON,
+    });
     expect(first.rewardGranted).toBe(true);
     expect(second.rewardGranted).toBe(false);
     expect(

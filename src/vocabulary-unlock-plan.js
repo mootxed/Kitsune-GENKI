@@ -3,6 +3,7 @@ import { parseCardIdentity } from './knowledge-model.js';
 import { cardChapter } from './srs-helpers.js';
 import { State } from 'ts-fsrs';
 import { isPriorKnowledge } from './chapter-progress.js';
+import { canonicalLessonId, sameLessonId } from './courses/course-context.js';
 import {
   createVocabularySchedule,
   distributeVocabularyAcrossDates,
@@ -86,12 +87,14 @@ export function calculateDailyVocabularyTarget({
  */
 export function getRemainingChapterStudyDates(plan, chapterId, dateKey = localDateKey()) {
   if (!plan || !Array.isArray(plan.segments)) return [];
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
+  if (!chId) return [];
 
   const segment =
     plan.segments.find(
-      (s) => s && s.type === 'chapter' && Number(s.chapterId) === chId && s.status !== 'completed'
-    ) || plan.segments.find((s) => s && s.type === 'chapter' && Number(s.chapterId) === chId);
+      (s) =>
+        s && s.type === 'chapter' && sameLessonId(s.chapterId, chId) && s.status !== 'completed'
+    ) || plan.segments.find((s) => s && s.type === 'chapter' && sameLessonId(s.chapterId, chId));
 
   if (!segment || !Array.isArray(segment.assignedDates)) return [];
 
@@ -144,12 +147,12 @@ function getChapterWords(state, chapterId, passedWords = null) {
   if (Array.isArray(passedWords) && passedWords.length > 0) {
     return passedWords;
   }
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const seenItemIds = new Set();
   const words = [];
   if (state?.srs) {
     for (const card of Object.values(state.srs)) {
-      if (card && cardChapter(card.id) === chId) {
+      if (card && sameLessonId(cardChapter(card), chId)) {
         const itemId = parseCardIdentity(card).itemId;
         if (!seenItemIds.has(itemId)) {
           seenItemIds.add(itemId);
@@ -172,7 +175,9 @@ export function normalizeVocabularyLockState(state) {
   }
 
   const priorKnowledge = new Set(
-    Array.isArray(state.priorKnowledgeChapterIds) ? state.priorKnowledgeChapterIds.map(Number) : []
+    Array.isArray(state.priorKnowledgeChapterIds)
+      ? state.priorKnowledgeChapterIds.map((id) => canonicalLessonId(id)).filter(Boolean)
+      : []
   );
 
   const reviewEvents = Array.isArray(state.reviewEvents) ? state.reviewEvents : [];
@@ -193,7 +198,8 @@ export function normalizeVocabularyLockState(state) {
         card.legacyMasteryEstimated === true ||
         cardsWithReviews.has(cardId);
 
-      const isPrior = chapterId !== null && priorKnowledge.has(chapterId);
+      const isPrior =
+        chapterId !== null && [...priorKnowledge].some((id) => sameLessonId(id, chapterId));
 
       if (isStudied || isPrior) {
         if (card.planLocked === true) {
@@ -210,7 +216,7 @@ export function normalizeVocabularyLockState(state) {
  * Helper to count remaining locked words in a chapter.
  */
 export function countRemainingLockedWords(state, chapterId, words = null) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const chapterState = state?.chapters?.[chId];
   if (chapterState?.legacyVocabularyCompleted === true || isPriorKnowledge(state, chId)) {
     return 0;
@@ -275,7 +281,7 @@ export function isVocabularyItemIntroduced(state, itemId) {
  * non-undone first learning interaction.
  */
 export function getChapterVocabularyProgress(state, chapterId, chapterMeta = null) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const words = getChapterWords(
     state,
     chId,
@@ -343,7 +349,7 @@ export function getChapterVocabularyProgress(state, chapterId, chapterMeta = nul
  * Returns progress of the daily vocabulary batch for today (or specified dateKey).
  */
 export function getVocabularyBatchProgress(state, chapterId, dateKey = localDateKey()) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const entry = state?.vocabularyUnlocks?.[chId]?.[dateKey];
   const itemIds = Array.isArray(entry?.itemIds) ? entry.itemIds : [];
 
@@ -384,7 +390,7 @@ export function getVocabularyBatchProgress(state, chapterId, dateKey = localDate
  * Gets decision for unlocking today's vocabulary batch.
  */
 export function getTodayVocabularyUnlockDecision(state, chapterId, options = {}) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const dateKey = options.dateKey || localDateKey(options.now ?? Date.now());
   const plan = options.plan ?? state?.studyPlan;
   const words = getChapterWords(state, chId, options.words);
@@ -469,7 +475,9 @@ export function getTodayVocabularyUnlockDecision(state, chapterId, options = {})
 
   const segment = plan.segments?.find(
     (entry) =>
-      entry?.type === 'chapter' && Number(entry.chapterId) === chId && entry.status !== 'completed'
+      entry?.type === 'chapter' &&
+      sameLessonId(entry.chapterId, chId) &&
+      entry.status !== 'completed'
   );
   if (!segment || !remainingStudyDates.includes(dateKey)) {
     return {
@@ -563,7 +571,7 @@ export function prioritizeGrammarPrerequisiteVocabulary({
  * Idempotent per chapter per dateKey.
  */
 export function unlockDailyVocabularyBatch(state, chapterId, options = {}) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const dateKey = options.dateKey || localDateKey(options.now ?? Date.now());
 
   const decision = getTodayVocabularyUnlockDecision(state, chId, {
@@ -694,7 +702,8 @@ export function unlockDailyVocabularyBatch(state, chapterId, options = {}) {
   const plan = options.plan ?? state?.studyPlan;
   if (plan && Array.isArray(plan.segments)) {
     const segment = plan.segments.find(
-      (s) => s && s.type === 'chapter' && Number(s.chapterId) === chId && s.status !== 'completed'
+      (s) =>
+        s && s.type === 'chapter' && sameLessonId(s.chapterId, chId) && s.status !== 'completed'
     );
     if (segment && segment.vocabularySchedule) {
       const scheduledForToday = Number(segment.vocabularySchedule[dateKey]) || decision.target;
@@ -730,7 +739,7 @@ export function unlockDailyVocabularyBatch(state, chapterId, options = {}) {
  */
 export function getOldestIncompleteVocabularyBatch(state, chapterId, beforeDateKey = null) {
   if (!state) return null;
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   if (!chId) return null;
 
   const unlocks = state?.vocabularyUnlocks?.[chId];
@@ -768,7 +777,7 @@ export function getOldestIncompleteVocabularyBatch(state, chapterId, beforeDateK
  */
 export function ensureTodayVocabularyBatch(state, chapterId, options = {}) {
   if (!state) return { created: false, reason: 'no-state' };
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   if (!chId) return { created: false, reason: 'invalid-chapter-id' };
 
   normalizeVocabularyLockState(state);
@@ -780,8 +789,8 @@ export function ensureTodayVocabularyBatch(state, chapterId, options = {}) {
   const cs = state.chapters?.[chId];
   const isStarted =
     cs?.started === true ||
-    state.completedChapters?.includes(chId) ||
-    state.priorKnowledgeChapterIds?.includes(chId);
+    state.completedChapters?.some((id) => sameLessonId(id, chId)) ||
+    state.priorKnowledgeChapterIds?.some((id) => sameLessonId(id, chId));
 
   if (!isStarted) {
     return { created: false, reason: 'chapter-not-started' };
@@ -802,8 +811,9 @@ export function ensureTodayVocabularyBatch(state, chapterId, options = {}) {
   if (plan && Array.isArray(plan.segments)) {
     const segment =
       plan.segments.find(
-        (s) => s && s.type === 'chapter' && Number(s.chapterId) === chId && s.status !== 'completed'
-      ) || plan.segments.find((s) => s && s.type === 'chapter' && Number(s.chapterId) === chId);
+        (s) =>
+          s && s.type === 'chapter' && sameLessonId(s.chapterId, chId) && s.status !== 'completed'
+      ) || plan.segments.find((s) => s && s.type === 'chapter' && sameLessonId(s.chapterId, chId));
 
     if (segment) {
       const assigned = Array.isArray(segment.assignedDates) ? segment.assignedDates : [];
@@ -892,7 +902,7 @@ export function ensureTodayVocabularyBatch(state, chapterId, options = {}) {
  */
 export function buildVocabularyBatchSessionQueue(state, chapterId, dateKey) {
   if (!state || !chapterId || !dateKey) return [];
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const entry = state?.vocabularyUnlocks?.[chId]?.[dateKey];
   const itemIds = Array.isArray(entry?.itemIds) ? entry.itemIds : [];
 
@@ -904,7 +914,7 @@ export function buildVocabularyBatchSessionQueue(state, chapterId, dateKey) {
 
   for (const card of Object.values(srs)) {
     if (!card || card.planLocked === true || card.suspended === true) continue;
-    if (cardChapter(card.id) !== chId) continue;
+    if (!sameLessonId(cardChapter(card), chId)) continue;
 
     const identity = parseCardIdentity(card);
     if (itemOrder.has(identity.itemId)) {
@@ -931,7 +941,7 @@ export function startVocabularyBatchSession({
   startSession,
   toast,
 } = {}) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const cards = buildVocabularyBatchSessionQueue(state, chapterId, dateKey);
   if (cards.length === 0) {
     if (typeof toast === 'function') toast('Порция слов не найдена');

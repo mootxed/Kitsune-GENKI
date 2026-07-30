@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "alpha-story",
+  "title": "Короткая история",
+  "content": [
+    {
+      "sentence_id": "one",
+      "tokens": [],
+      "translation": "Здравствуйте."
+    }
+  ],
+  "questions": []
+}

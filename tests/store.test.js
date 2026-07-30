@@ -110,11 +110,19 @@ describe('Store - Версионирование и миграции', () => {
       expect(migrated.version).toBe(CURRENT_VERSION);
       // Глава 1 завершена в приложении, поэтому НЕ должна попадать в priorKnowledgeChapterIds
       // Главы 2, 3, 4 не завершены реально, поэтому должны попасть в priorKnowledgeChapterIds
-      expect(migrated.priorKnowledgeChapterIds).toEqual([2, 3, 4]);
+      expect(migrated.priorKnowledgeChapterIds).toEqual([
+        'genki-1:lesson-2',
+        'genki-1:lesson-3',
+        'genki-1:lesson-4',
+      ]);
 
       // Повторный запуск идемпотентен
       const reMigrated = runMigrations(migrated);
-      expect(reMigrated.priorKnowledgeChapterIds).toEqual([2, 3, 4]);
+      expect(reMigrated.priorKnowledgeChapterIds).toEqual([
+        'genki-1:lesson-2',
+        'genki-1:lesson-3',
+        'genki-1:lesson-4',
+      ]);
     });
 
     it('должен сохранять существующие достижения при миграции', async () => {
@@ -268,7 +276,7 @@ describe('Store - Версионирование и миграции', () => {
       expect(migrated.version).toBe(CURRENT_VERSION);
       expect(migrated.pendingReviewLogs).toEqual([]);
       expect(migrated.reviewEvents).toHaveLength(20);
-      expect(migrated.masteryArchive.L1_V001).toMatchObject({
+      expect(migrated.masteryArchive['genki-1:vocabulary:L1_V001']).toMatchObject({
         evidenceCount: 1,
         successfulSkills: { recall: true },
       });

@@ -13,7 +13,7 @@ const chapter1 = {
   id: 1,
   title: 'Chapter 1',
   words: [{ id: 'L1_word_1' }, { id: 'L1_word_2' }, { id: 'L1_word_3' }],
-  notes: [{ note_id: 1, title: 'です' }],
+  notes: [{ id: 'L1_g1', note_id: 1, title: 'です' }],
   practice: [
     {
       id: 'L01-wb-cg-01',
@@ -155,7 +155,7 @@ describe('full integrated learning-plan chapter flow', () => {
     });
     expect(state.chapters[1].completedAt).toBe(300);
     expect(state.activeChapterId).toBe(2);
-    expect(state.studyPlan.completedChapters).toEqual([1]);
+    expect(state.studyPlan.completedChapters).toEqual(['1']);
     expect(state.dailyPlanHistory[0]).toMatchObject({
       ...firstDaySnapshot,
       finalizedAt: expect.any(Number),

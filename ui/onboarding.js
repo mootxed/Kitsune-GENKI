@@ -10,6 +10,12 @@ import {
 import { CONTENT_INDEX } from './home.js';
 import { loadSupplementalPracticeData } from '../src/supplemental-practice.js';
 import { addLocalDays, getTodayDateKey } from '../src/local-date.js';
+import {
+  canonicalLessonId,
+  compareLessonIds,
+  formatLessonLabel,
+  sameLessonId,
+} from '../src/courses/course-context.js';
 
 export function setAppChromeVisibility({ tabbar = true, header = true } = {}) {
   const tabbarEl = document.querySelector('.tabbar');
@@ -42,8 +48,10 @@ export async function renderOnboarding(state, dependencies = {}) {
   let currentStep = state?.onboarding?.currentStep || 1;
   if (currentStep < 1 || currentStep > TOTAL_STEPS) currentStep = 1;
 
+  const courseLessons = CONTENT_INDEX.filter((lesson) => lesson?.id);
+  const entryLessonId = courseLessons[0]?.id || null;
   const defaultDraft = {
-    startChapterId: 1,
+    startChapterId: entryLessonId,
     priorKnowledgeChapterIds: [],
     startDate: getTodayDateKey(),
     studyDays: [1, 2, 3, 4, 5, 6, 0],
@@ -92,25 +100,25 @@ export async function renderOnboarding(state, dependencies = {}) {
         </div>
       `;
     } else if (currentStep === 2) {
-      const maxChapter = Math.min(12, CONTENT_INDEX.length || 12);
       const isCustom = draft.priorKnowledgeMode === 'custom';
-      const lastPriorId =
-        draft.priorKnowledgeChapterIds?.length > 0
-          ? Math.max(...draft.priorKnowledgeChapterIds)
-          : 0;
+      const sortedPriorIds = [...(draft.priorKnowledgeChapterIds || [])].sort(compareLessonIds);
+      const lastPriorId = sortedPriorIds.at(-1) || '';
 
-      let selectOptionsHtml = `<option value="0" ${lastPriorId === 0 ? 'selected' : ''}>Начинаю с 1 главы</option>`;
-      for (let i = 1; i <= maxChapter; i++) {
-        selectOptionsHtml += `<option value="${i}" ${lastPriorId === i ? 'selected' : ''}>До ${i} главы включительно</option>`;
-      }
+      let selectOptionsHtml = `<option value="" ${!lastPriorId ? 'selected' : ''}>Начинаю с первого урока</option>`;
+      courseLessons.forEach((lesson) => {
+        const selected = sameLessonId(lastPriorId, lesson.id) ? 'selected' : '';
+        selectOptionsHtml += `<option value="${lesson.id}" ${selected}>До «${lesson.title || formatLessonLabel(lesson.id)}» включительно</option>`;
+      });
 
       let manualCheckboxesHtml = '';
-      for (let i = 1; i <= maxChapter; i++) {
-        const checked = draft.priorKnowledgeChapterIds.includes(i) ? 'checked' : '';
+      for (const lesson of courseLessons) {
+        const checked = draft.priorKnowledgeChapterIds.some((id) => sameLessonId(id, lesson.id))
+          ? 'checked'
+          : '';
         manualCheckboxesHtml += `
           <label class="checkbox-option-inline">
-            <input type="checkbox" class="manual-ch-cb" value="${i}" ${checked} />
-            <span>Глава ${i}</span>
+            <input type="checkbox" class="manual-ch-cb" value="${lesson.id}" ${checked} />
+            <span>${lesson.title || formatLessonLabel(lesson.id)}</span>
           </label>
         `;
       }
@@ -366,7 +374,7 @@ export async function renderOnboarding(state, dependencies = {}) {
             <div class="row-between"><span>Начало обучения:</span><b>${draft.startDate}</b></div>
             <div class="row-between"><span>Учебные дни:</span><b>${studyDaysText || 'Не выбраны'}</b></div>
             <div class="row-between"><span>Дневная нагрузка:</span><b>${draft.dailyCapacityMinutes} минут</b></div>
-            <div class="row-between"><span>Стартовая глава:</span><b>Глава ${draft.startChapterId || 1}</b></div>
+            <div class="row-between"><span>Стартовый урок:</span><b>${formatLessonLabel(draft.startChapterId || entryLessonId)}</b></div>
             <div class="row-between"><span>Дополнительная практика:</span><b>${wbStatusText}</b></div>
             <div class="row-between"><span>Количество учебных дней:</span><b>${preview.requiredStudyDays} дней</b></div>
             <div class="row-between" style="border-top:1px dashed #ccc;padding-top:6px;margin-top:2px;">
@@ -461,13 +469,14 @@ export async function renderOnboarding(state, dependencies = {}) {
       const presetSel = $('#ob-prior-preset');
       if (presetSel) {
         presetSel.onchange = (e) => {
-          const upTo = Number(e.target.value);
-          const priors = [];
-          for (let i = 1; i <= upTo; i++) priors.push(i);
+          const upTo = canonicalLessonId(e.target.value);
+          const boundary = courseLessons.findIndex((lesson) => sameLessonId(lesson.id, upTo));
+          const priors =
+            boundary >= 0 ? courseLessons.slice(0, boundary + 1).map((item) => item.id) : [];
           draft.priorKnowledgeChapterIds = priors;
-          draft.startChapterId = upTo + 1;
+          draft.startChapterId = courseLessons[boundary + 1]?.id || entryLessonId;
           $$('.manual-ch-cb').forEach((cb) => {
-            cb.checked = priors.includes(Number(cb.value));
+            cb.checked = priors.some((id) => sameLessonId(id, cb.value));
           });
           updateOnboardingDraft(state, draft, currentStep);
         };
@@ -476,8 +485,11 @@ export async function renderOnboarding(state, dependencies = {}) {
       $$('.manual-ch-cb').forEach((cb) => {
         cb.onchange = () => {
           const priors = [];
-          $$('.manual-ch-cb:checked').forEach((c) => priors.push(Number(c.value)));
-          draft.priorKnowledgeChapterIds = priors;
+          $$('.manual-ch-cb:checked').forEach((c) => priors.push(c.value));
+          draft.priorKnowledgeChapterIds = priors.sort(compareLessonIds);
+          const last = draft.priorKnowledgeChapterIds.at(-1);
+          const boundary = courseLessons.findIndex((lesson) => sameLessonId(lesson.id, last));
+          draft.startChapterId = courseLessons[boundary + 1]?.id || entryLessonId;
           draft.priorKnowledgeMode = 'custom';
           updateOnboardingDraft(state, draft, currentStep);
         };

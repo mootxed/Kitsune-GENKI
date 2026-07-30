@@ -23,6 +23,7 @@ import {
   isPracticeItemCompleted,
   isBasicVocabularyEvidencePresent,
 } from './chapter-evidence.js';
+import { compareLessonIds, sameLessonId } from './courses/course-context.js';
 
 export {
   normalizedChapterId,
@@ -221,7 +222,7 @@ export function isEffectivelyCompleted(appState, chapterOrId) {
   if (!id) return false;
   if (isChapterCompleted(appState?.chapters?.[id], meta, appState)) return true;
   if (isPriorKnowledge(appState, id)) return true;
-  if (appState?.studyPlan?.completedChapters?.includes(id)) return true;
+  if (appState?.studyPlan?.completedChapters?.some((entry) => sameLessonId(entry, id))) return true;
   return false;
 }
 
@@ -427,19 +428,19 @@ export function getCompletedChapterIds(appState, chapters = []) {
     return chapters
       .filter((chapter) => isEffectivelyCompleted(appState, chapter))
       .map((chapter) => chapter.id)
-      .sort((a, b) => a - b);
+      .sort(compareLessonIds);
   }
   const actual = Object.entries(appState?.chapters || {})
     .filter(([, chState]) => isChapterCompleted(chState))
-    .map(([id]) => Number(id))
-    .filter((id) => Number.isInteger(id) && id > 0);
+    .map(([id]) => normalizedChapterId(id))
+    .filter(Boolean);
   const prior = Array.isArray(appState?.priorKnowledgeChapterIds)
     ? appState.priorKnowledgeChapterIds
     : [];
   const planCompleted = Array.isArray(appState?.studyPlan?.completedChapters)
     ? appState.studyPlan.completedChapters
     : [];
-  return [...new Set([...actual, ...prior, ...planCompleted])].sort((a, b) => a - b);
+  return [...new Set([...actual, ...prior, ...planCompleted])].sort(compareLessonIds);
 }
 
 export function getActualCompletedChapterIds(appState, chapters = []) {
@@ -447,23 +448,24 @@ export function getActualCompletedChapterIds(appState, chapters = []) {
     return chapters
       .filter((chapter) => isChapterCompleted(appState?.chapters?.[chapter.id], chapter))
       .map((chapter) => chapter.id)
-      .sort((a, b) => a - b);
+      .sort(compareLessonIds);
   }
   return Object.entries(appState?.chapters || {})
     .filter(([, chState]) => isChapterCompleted(chState))
-    .map(([id]) => Number(id))
-    .filter((id) => Number.isInteger(id) && id > 0)
-    .sort((a, b) => a - b);
+    .map(([id]) => normalizedChapterId(id))
+    .filter(Boolean)
+    .sort(compareLessonIds);
 }
 
 export function getPriorKnowledgeChapterIds(appState) {
   return Array.isArray(appState?.priorKnowledgeChapterIds)
-    ? [...appState.priorKnowledgeChapterIds].sort((a, b) => a - b)
+    ? [...appState.priorKnowledgeChapterIds].sort(compareLessonIds)
     : [];
 }
 
 export function isChapterAvailable(appState, chapters, chapterId) {
-  const index = chapters.findIndex((chapter) => chapter.id === normalizedChapterId(chapterId));
+  const normalizedId = normalizedChapterId(chapterId);
+  const index = chapters.findIndex((chapter) => sameLessonId(chapter.id, normalizedId));
   if (index < 0) return false;
   if (index === 0) return true;
   const previous = chapters[index - 1];
@@ -473,7 +475,7 @@ export function isChapterAvailable(appState, chapters, chapterId) {
 function segmentIsCompleted(segment, appState, chapters) {
   if (!segment || segment.type !== 'chapter') return true;
   if (segment.status === 'completed' || segment.completedAt) return true;
-  const meta = chapters.find((chapter) => chapter.id === segment.chapterId);
+  const meta = chapters.find((chapter) => sameLessonId(chapter.id, segment.chapterId));
   return isEffectivelyCompleted(appState, meta);
 }
 
@@ -571,7 +573,7 @@ export function setChapterSection(
     dateKey,
   });
 
-  const meta = chapters.find((entry) => entry.id === id);
+  const meta = chapters.find((entry) => sameLessonId(entry.id, id));
   const completedNow = !chapter.completedAt && isChapterCompleted(chapter, meta);
   return { changed: true, completedNow, chapter };
 }
@@ -585,7 +587,7 @@ export function completeChapter(
   if (!id) return { changed: false, reason: 'invalid-chapter' };
   appState.chapters ||= {};
   const chapter = (appState.chapters[id] ||= { started: false, checklist: {} });
-  const meta = chapters.find((entry) => entry.id === id);
+  const meta = chapters.find((entry) => sameLessonId(entry.id, id));
 
   if (chapter.completedAt) {
     const activeChapterId = ensureActiveChapterId(appState, chapters);
@@ -613,10 +615,10 @@ export function completeChapter(
   if (appState.studyPlan) {
     const plan = appState.studyPlan;
     plan.completedChapters = [...new Set([...(plan.completedChapters || []), id])].sort(
-      (a, b) => a - b
+      compareLessonIds
     );
     const segment = plan.segments?.find(
-      (entry) => entry.type === 'chapter' && entry.chapterId === id && !entry.completedAt
+      (entry) => entry.type === 'chapter' && sameLessonId(entry.chapterId, id) && !entry.completedAt
     );
     if (segment) {
       segment.status = 'completed';
@@ -667,7 +669,7 @@ export function evaluateChapterCompletion(appState, chapterId, context = {}) {
 
   appState.chapters ||= {};
   const chapter = (appState.chapters[id] ||= { started: false, checklist: {} });
-  const meta = (context.chapters || []).find((entry) => entry.id === id);
+  const meta = (context.chapters || []).find((entry) => sameLessonId(entry.id, id));
   const now = context.now || Date.now();
   const dateKey = formatDateKey(now);
 
@@ -689,10 +691,10 @@ export function evaluateChapterCompletion(appState, chapterId, context = {}) {
     if (appState.studyPlan) {
       const plan = appState.studyPlan;
       if (Array.isArray(plan.completedChapters)) {
-        plan.completedChapters = plan.completedChapters.filter((ch) => ch !== id);
+        plan.completedChapters = plan.completedChapters.filter((ch) => !sameLessonId(ch, id));
       }
       const segment = plan.segments?.find(
-        (entry) => entry.type === 'chapter' && entry.chapterId === id
+        (entry) => entry.type === 'chapter' && sameLessonId(entry.chapterId, id)
       );
       if (segment && segment.status === 'completed') {
         segment.status = 'planned';
@@ -729,7 +731,7 @@ export const evaluateAndCompleteChapter = evaluateChapterCompletion;
  * @returns {number} Номер максимального открытого урока (минимум 1)
  */
 export function getCanonicalMaxUnlockedLesson(appState, contentIndex = null) {
-  if (!appState) return 1;
+  if (!appState) return null;
 
   const chaptersList = Array.isArray(contentIndex)
     ? contentIndex
@@ -737,13 +739,15 @@ export function getCanonicalMaxUnlockedLesson(appState, contentIndex = null) {
       ? contentIndex.chapters
       : null;
 
-  let maxUnlocked = 1;
+  let maxUnlocked = null;
 
   if (chaptersList && chaptersList.length > 0) {
     for (const ch of chaptersList) {
-      const chId = Number(ch.id || ch.lesson_id);
+      const chId = normalizedChapterId(ch.id || ch.lesson_id);
       if (chId && isChapterAvailable(appState, chaptersList, chId)) {
-        if (chId > maxUnlocked) maxUnlocked = chId;
+        if (maxUnlocked == null || compareLessonIds(chId, maxUnlocked) > 0) {
+          maxUnlocked = chId;
+        }
       }
     }
   } else {
@@ -752,17 +756,19 @@ export function getCanonicalMaxUnlockedLesson(appState, contentIndex = null) {
       ...(appState.priorKnowledgeChapterIds || []),
     ];
     for (const key of ids) {
-      const chId = Number(key);
-      if (Number.isInteger(chId) && chId > 0) {
+      const chId = normalizedChapterId(key);
+      if (chId) {
         if (isEffectivelyCompleted(appState, chId) || appState.chapters?.[chId]?.started) {
-          if (chId > maxUnlocked) maxUnlocked = chId;
+          if (maxUnlocked == null || compareLessonIds(chId, maxUnlocked) > 0) {
+            maxUnlocked = chId;
+          }
         }
       }
     }
   }
 
-  if (Number.isInteger(appState.activeChapterId) && appState.activeChapterId > maxUnlocked) {
-    const actId = appState.activeChapterId;
+  const actId = normalizedChapterId(appState.activeChapterId);
+  if (actId && (maxUnlocked == null || compareLessonIds(actId, maxUnlocked) > 0)) {
     if (
       chaptersList
         ? isChapterAvailable(appState, chaptersList, actId)
@@ -772,7 +778,7 @@ export function getCanonicalMaxUnlockedLesson(appState, contentIndex = null) {
     }
   }
 
-  return Math.max(1, maxUnlocked);
+  return maxUnlocked;
 }
 
 export function completePracticeTask(appState, chapterId, taskId, options = {}) {

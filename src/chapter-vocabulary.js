@@ -8,7 +8,8 @@ import {
   vocabularySkills,
   vocabularySkillsReadyForIntroduction,
 } from './knowledge-model.js';
-import { getUnlockedKanjiLesson } from './genki-kanji.js';
+import { getUnlockedKanjiLesson } from './course-orthography.js';
+import { isPriorKnowledge } from './chapter-evidence.js';
 
 /**
  * Ensures vocabulary skill cards exist in appState.srs for a single word.
@@ -46,11 +47,8 @@ export function ensureVocabularySkillCards(appState, word, options = {}) {
       c.legacyMasteryEstimated === true
   );
 
-  const isPrior = Array.isArray(appState.priorKnowledgeChapterIds)
-    ? appState.priorKnowledgeChapterIds.some(
-        (chId) => Number(chId) === Number(word.chapterId || word.id?.match(/^L(\d+)_/)?.[1])
-      )
-    : false;
+  const lessonId = word.introducedIn || word.lessonId || word.chapterId || word.lesson;
+  const isPrior = isPriorKnowledge(appState, lessonId);
 
   const shouldBeLocked = options.planLocked === true && !hasUnlockedCard && !isPrior;
 
@@ -72,6 +70,9 @@ export function ensureVocabularySkillCards(appState, word, options = {}) {
         itemId: word.id,
         skill,
         knowledgeType: KNOWLEDGE_TYPES.VOCABULARY,
+        courseId: word.courseId || null,
+        lessonId: lessonId || null,
+        dictionaryId: word.dictionaryId || null,
         planLocked: shouldBeLocked,
       });
       changed = true;
@@ -100,7 +101,18 @@ export function ensureChapterVocabularyCards(appState, lesson, options = {}) {
   let createdCount = 0;
   let modifiedCount = 0;
 
-  for (const word of lesson.words) {
+  const lessonId = lesson.id || lesson.lessonId || lesson.lesson_id || lesson.chapterId || null;
+  for (const sourceWord of lesson.words) {
+    const word =
+      sourceWord.lessonId || sourceWord.introducedIn || !lessonId
+        ? sourceWord
+        : {
+            ...sourceWord,
+            courseId: sourceWord.courseId || lesson.courseId || null,
+            lessonId,
+            introducedIn: lessonId,
+            chapterId: lessonId,
+          };
     const applicable = vocabularySkills(word, {
       unlockedKanjiLesson: getUnlockedKanjiLesson(appState),
     });

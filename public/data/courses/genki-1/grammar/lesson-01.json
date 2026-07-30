@@ -127,7 +127,7 @@
         "L1_V017",
         "L1_V023",
         "L1_V025",
-        "L1_V053"
+        "L1_V073"
       ],
       "prerequisiteGrammarIds": [
         "L1_g1"
@@ -194,16 +194,16 @@
         {
           "id": "L1_g2_q3",
           "type": "sentence-order",
-          "prompt": "Соберите вопрос «Вы студент по обмену?»",
+          "prompt": "Соберите вопрос «Елена — студент по обмену?»",
           "tokens": [
-            "あなた",
+            "エレナさん",
             "は",
             "りゅうがくせい",
             "です",
             "か"
           ],
           "correctOrder": [
-            "あなた",
+            "エレナさん",
             "は",
             "りゅうがくせい",
             "です",
@@ -215,7 +215,6 @@
             "L1_g2"
           ],
           "vocabularyRefs": [
-            "L1_V018",
             "L1_V025"
           ]
         }
@@ -231,11 +230,10 @@
       "estimatedMinutes": 8,
       "requiredVocabularyIds": [
         "L1_V019",
-        "L1_V022",
-        "L1_V023",
         "L1_V026",
+        "L1_V023",
         "L1_V054",
-        "L1_V055"
+        "L1_V071"
       ],
       "prerequisiteGrammarIds": [
         "L1_g1",
@@ -290,7 +288,7 @@
             "L1_g3"
           ],
           "vocabularyRefs": [
-            "L1_V055"
+            "L1_V071"
           ]
         },
         {
@@ -342,18 +340,7 @@
       "formula": "число + さい",
       "estimatedMinutes": 8,
       "requiredVocabularyIds": [
-        "L1_V027",
-        "L1_V028",
-        "L1_V029",
-        "L1_V030",
-        "L1_V031",
-        "L1_V032",
-        "L1_V033",
-        "L1_V034",
-        "L1_V035",
-        "L1_V036",
-        "L1_V037",
-        "L1_V038"
+        "L1_V027"
       ],
       "prerequisiteGrammarIds": [
         "L1_g1",
@@ -409,9 +396,7 @@
             "L1_g2",
             "L1_g4"
           ],
-          "vocabularyRefs": [
-            "L1_V028"
-          ]
+          "vocabularyRefs": []
         },
         {
           "id": "L1_g4_q2",
@@ -424,10 +409,7 @@
           "grammarRefs": [
             "L1_g4"
           ],
-          "vocabularyRefs": [
-            "L1_V038",
-            "L1_V036"
-          ]
+          "vocabularyRefs": []
         },
         {
           "id": "L1_g4_q3",
@@ -460,18 +442,8 @@
       "formula": "число + 時 / число + 分",
       "estimatedMinutes": 10,
       "requiredVocabularyIds": [
-        "L1_V029",
-        "L1_V030",
-        "L1_V031",
-        "L1_V032",
-        "L1_V033",
-        "L1_V034",
-        "L1_V035",
-        "L1_V036",
-        "L1_V037",
-        "L1_V038",
         "L1_V054",
-        "L1_V055"
+        "L1_V071"
       ],
       "prerequisiteGrammarIds": [
         "L1_g2",

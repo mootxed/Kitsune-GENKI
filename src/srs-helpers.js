@@ -2,16 +2,30 @@
 import { SRS } from '../srs.js';
 import { parseCardIdentity } from './knowledge-model.js';
 import { isPriorKnowledge, shouldChapterHaveVocabularyCards } from './chapter-progress.js';
-import { canonicalGenkiVocabularyId } from './genki-vocabulary-migration.js';
+import {
+  canonicalizeKnowledgeItemId,
+  canonicalLessonId,
+  lessonIdForKnowledgeItem,
+  sameLessonId,
+} from './courses/course-context.js';
 
-export function cardChapter(cardId) {
-  const itemId = canonicalGenkiVocabularyId(parseCardIdentity(cardId).itemId);
-  const m = /^L(\d+)_/.exec(itemId);
-  return m ? parseInt(m[1], 10) : null;
+export function cardChapter(cardOrId) {
+  const record = cardOrId && typeof cardOrId === 'object' ? cardOrId : null;
+  const explicitLessonId =
+    record?.introducedIn ||
+    record?.lessonId ||
+    record?.chapterId ||
+    record?.lesson ||
+    record?.lessonIds?.[0];
+  if (explicitLessonId) {
+    return canonicalLessonId(explicitLessonId);
+  }
+  const itemId = canonicalizeKnowledgeItemId(parseCardIdentity(cardOrId).itemId);
+  return lessonIdForKnowledgeItem(itemId);
 }
 
 export function wordById(wordId, lessons) {
-  const itemId = canonicalGenkiVocabularyId(parseCardIdentity(wordId).itemId);
+  const itemId = canonicalizeKnowledgeItemId(parseCardIdentity(wordId).itemId);
   if (!lessons || lessons.length === 0) {
     console.warn(`[wordById] lessons array is empty or null for wordId: ${wordId}`);
     return null;
@@ -55,7 +69,7 @@ export function dueCards(srsRecords, chapterId, now = Date.now()) {
     if (!c) return false;
     if (c.suspended === true) return false;
     if (c.planLocked === true) return false;
-    if (chapterId && cardChapter(c.id) !== chapterId) return false;
+    if (chapterId && !sameLessonId(cardChapter(c), chapterId)) return false;
     if (seen.has(c.id)) return false;
     return SRS.isDue(c, now);
   });
@@ -65,7 +79,7 @@ export function allCards(srsRecords, chapterId, includeLocked = false) {
   return Object.values(srsRecords || {}).filter((c) => {
     if (!c) return false;
     if (!includeLocked && c.planLocked === true) return false;
-    return !chapterId || cardChapter(c.id) === chapterId;
+    return !chapterId || sameLessonId(cardChapter(c), chapterId);
   });
 }
 

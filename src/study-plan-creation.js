@@ -8,6 +8,7 @@ import { getBuiltInPracticeTasks } from './practice-tasks.js';
 import { dueCards } from './srs-helpers.js';
 import { countAvailableCardsForSession } from './srs-limits.js';
 import { calculateReviewMinutes, TIME_ESTIMATES } from './time-estimates.js';
+import { canonicalLessonId, compareLessonIds } from './courses/course-context.js';
 
 function dedupeById(tasks) {
   const map = new Map();
@@ -34,7 +35,12 @@ export function buildStudyPlanContentCatalog(
     workbookData instanceof Map
       ? workbookData
       : Array.isArray(workbookData?.chapters)
-        ? new Map(workbookData.chapters.map((ch) => [Number(ch.chapterId), ch.practice || []]))
+        ? new Map(
+            workbookData.chapters.map((chapter) => [
+              canonicalLessonId(chapter.lessonId ?? chapter.chapterId),
+              chapter.exercises || chapter.practice || [],
+            ])
+          )
         : new Map();
 
   const enabled = settings.enabled !== false;
@@ -42,7 +48,7 @@ export function buildStudyPlanContentCatalog(
   const includeRW = settings.includeReadingWriting !== false;
 
   const catalogChapters = chaptersList.map((chapter) => {
-    const id = Number(chapter.id || chapter.lesson_id);
+    const id = canonicalLessonId(chapter.id || chapter.lesson_id);
     const words = chapter.words || chapter.vocabulary || [];
     const notes = chapter.notes || chapter.grammar || [];
 
@@ -62,7 +68,7 @@ export function buildStudyPlanContentCatalog(
     const wbTasksFromMap = workbookMap.get(id) || [];
     const chPractice = chapter.practiceTasks || chapter.practice || [];
     const allWbCandidates = dedupeById([...wbTasksFromMap, ...chPractice]).filter(
-      (t) => t && t.id !== 'dialog' && t.id !== 'listening' && t.id !== 'reading'
+      (task) => task && !['dialog', 'listening', 'reading'].includes(task.localId || task.id)
     );
 
     let workbookPracticeCount = 0;
@@ -194,7 +200,7 @@ export function previewStudyPlanFromPreferences(preferences, catalog, options = 
   }
 
   const priorKnowledgeIds = new Set(
-    (preferences?.priorKnowledgeChapterIds || []).map(Number).filter((id) => id > 0)
+    (preferences?.priorKnowledgeChapterIds || []).map(canonicalLessonId).filter(Boolean)
   );
 
   const catalogChapters = Array.isArray(catalog?.chapters) ? catalog.chapters : [];
@@ -376,11 +382,9 @@ export function commitStudyPlanFromPreferences(state, preferences, previewResult
 
   const priorKnowledgeChapterIds = [
     ...new Set(
-      (preferences?.priorKnowledgeChapterIds || [])
-        .map(Number)
-        .filter((id) => Number.isInteger(id) && id > 0)
+      (preferences?.priorKnowledgeChapterIds || []).map(canonicalLessonId).filter(Boolean)
     ),
-  ].sort((a, b) => a - b);
+  ].sort(compareLessonIds);
 
   state.priorKnowledgeChapterIds = priorKnowledgeChapterIds;
   state.dailyCapacityMinutes = Number(preferences?.dailyCapacityMinutes || 30);

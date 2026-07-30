@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { openGrammarLesson } from '../ui/grammar-lesson.js';
-import quizData from '../public/data/genki-lesson-01-grammar-quiz.json';
+import quizData from '../public/data/courses/genki-1/grammar/lesson-01.json';
 
 describe('UI Grammar Lesson Modal (ui/grammar-lesson.js)', () => {
   const topic = quizData.topics[0]; // L1_g1

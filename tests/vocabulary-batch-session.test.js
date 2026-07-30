@@ -8,6 +8,7 @@ function card(id, overrides = {}) {
   return {
     id,
     itemId: id.split('::')[0],
+    lessonId: 1,
     skill: 'recognition',
     planLocked: false,
     suspended: false,
@@ -35,20 +36,20 @@ describe('Vocabulary batch session integration', () => {
 
     const result = startVocabularyBatchSession({
       state,
-      chapterId: 1,
+      chapterId: '1',
       dateKey: '2026-07-26',
       startSession,
     });
 
     expect(result).toEqual({
       started: true,
-      chapterId: 1,
+      chapterId: '1',
       batchDateKey: '2026-07-26',
       itemCount: 2,
       cardCount: 2,
     });
     expect(startSession).toHaveBeenCalledOnce();
-    expect(startSession.mock.calls[0][0]).toBe(1);
+    expect(startSession.mock.calls[0][0]).toBe('1');
     expect(startSession.mock.calls[0][1].map((entry) => entry.itemId)).toEqual([
       'L1_word_1',
       'L1_word_2',
@@ -80,7 +81,7 @@ describe('Vocabulary batch session integration', () => {
     const startSession = vi.fn();
     const result = startVocabularyBatchSession({
       state: { vocabularyUnlocks: {}, srs: {} },
-      chapterId: 1,
+      chapterId: '1',
       dateKey: '2026-07-26',
       startSession,
     });
@@ -88,7 +89,7 @@ describe('Vocabulary batch session integration', () => {
     expect(result).toEqual({
       started: false,
       reason: 'empty-batch',
-      chapterId: 1,
+      chapterId: '1',
       batchDateKey: '2026-07-26',
       itemCount: 0,
       cardCount: 0,

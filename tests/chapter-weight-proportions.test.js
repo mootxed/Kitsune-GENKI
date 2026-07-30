@@ -4,6 +4,7 @@ import {
   previewStudyPlanFromPreferences,
 } from '../src/study-plan-creation.js';
 import { StudyPlan, calculateChapterWeight } from '../studyplan.js';
+import { sameLessonId } from '../src/courses/course-context.js';
 
 describe('Chapter Weight Proportions & Primary Generation vs Recalculation', () => {
   test('calculateChapterWeight uses requiredTotalMinutes when present', () => {
@@ -54,15 +55,15 @@ describe('Chapter Weight Proportions & Primary Generation vs Recalculation', () 
     expect(preview.valid).toBe(true);
 
     const plan = preview.previewPlan;
-    const seg1 = plan.segments.find((s) => s.chapterId === 1);
-    const seg2 = plan.segments.find((s) => s.chapterId === 2);
+    const seg1 = plan.segments.find((s) => sameLessonId(s.chapterId, 1));
+    const seg2 = plan.segments.find((s) => sameLessonId(s.chapterId, 2));
 
     expect(seg2.assignedDates.length).toBeGreaterThan(seg1.assignedDates.length);
 
     // Recalculate plan with no completed chapters
     const recalc = StudyPlan.recalcPlan(plan, catalog.chapters, [], {});
-    const rSeg1 = recalc.segments.find((s) => s.chapterId === 1);
-    const rSeg2 = recalc.segments.find((s) => s.chapterId === 2);
+    const rSeg1 = recalc.segments.find((s) => sameLessonId(s.chapterId, 1));
+    const rSeg2 = recalc.segments.find((s) => sameLessonId(s.chapterId, 2));
 
     expect(rSeg2.assignedDates.length).toBeGreaterThan(rSeg1.assignedDates.length);
     expect(rSeg2.assignedDates.length / rSeg1.assignedDates.length).toBeCloseTo(

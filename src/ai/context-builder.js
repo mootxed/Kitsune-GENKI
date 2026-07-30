@@ -1,6 +1,7 @@
 import { AI_INTENTS } from './intents.js';
 import { selectRelevantMessages } from './chat-history.js';
 import { selectWords, tokenizeWordsForPrompt } from './word-selector.js';
+import { canonicalLessonId, getActiveCourse } from '../courses/course-context.js';
 
 function explicitJlpt(settings = {}) {
   const value = settings.jlptTarget;
@@ -28,6 +29,16 @@ export async function buildAIContext({
   const context = {
     recentMessages: selectRelevantMessages(history, 12),
   };
+  const activeCourse = getActiveCourse();
+  const currentLessonId = canonicalLessonId(
+    intentResult.currentLessonId || state.activeChapterId,
+    activeCourse
+  );
+  context.course = {
+    id: state.activeCourseId || activeCourse?.id || null,
+    title: activeCourse?.manifest?.title || null,
+    currentLessonId,
+  };
   const jlptTarget = explicitJlpt(state.settings);
   if (jlptTarget) context.jlptTarget = jlptTarget;
 
@@ -49,7 +60,7 @@ export async function buildAIContext({
       lessons,
       userEntries,
       explicitWords: intentResult.explicitWords || [],
-      currentLessonId: intentResult.currentLessonId || state.activeChapterId,
+      currentLessonId,
       limit: wordLimit,
     });
     const { promptWords, idMap } = tokenizeWordsForPrompt(selected);
@@ -79,6 +90,7 @@ export function serializeAIContext(context = {}) {
     };
   }
   const safe = {
+    ...(context.course?.id ? { course: context.course } : {}),
     ...(context.jlptTarget ? { jlptTarget: context.jlptTarget } : {}),
     ...(wordsPayload ? { words: wordsPayload } : {}),
     ...(context.topic ? { topic: context.topic } : {}),

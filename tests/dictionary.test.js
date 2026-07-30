@@ -178,7 +178,7 @@ describe('Dictionary UI System', () => {
 
   describe('getWordStatus mapping logic', () => {
     it('должен возвращать статус locked для заблокированных слов', () => {
-      const status = getWordStatus({ id: 'L3_V001' }, state);
+      const status = getWordStatus({ id: 'L3_V001', lessonIds: [3] }, state);
       expect(status.status).toBe('locked');
       expect(status.symbol).toBe('🔒');
     });
@@ -382,6 +382,7 @@ describe('Dictionary UI System', () => {
 
       // Let L2_V001 belong to Chapter 3 (locked)
       dependencies.LESSONS[1].words[0].id = 'L3_V999';
+      dependencies.LESSONS[1].words[0].lessonIds = [3];
 
       await renderDictionary(state, dependencies);
 

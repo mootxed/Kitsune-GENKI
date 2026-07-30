@@ -3,6 +3,7 @@
 import { $, $$ } from '../src/utils.js';
 import { CONTENT_INDEX } from './home.js';
 import { loadChapterData } from '../src/content-loader.js';
+import { formatLessonLabel, sameLessonId } from '../src/courses/course-context.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -14,7 +15,7 @@ let attemptsCount = 0;
 // Функция рендеринга списка историй
 export function renderStories(state, dependencies) {
   if (dependencies) deps = dependencies;
-  const { CH_NAMES, chState } = deps;
+  const { chState } = deps;
   const $$ = deps?.$$ || window.$$ || ((s) => Array.from(document.querySelectorAll(s)));
   const toast = deps?.toast || window.toast || (() => {});
   const nav = deps?.nav || window.nav || (() => {});
@@ -69,7 +70,7 @@ export function renderStories(state, dependencies) {
         </div>
         <div class="story-info">
           <h3 class="story-title">${story.title}</h3>
-          <p class="story-lesson">Урок ${story.lesson_id}: ${(CH_NAMES[story.lesson_id] || [''])[0]}</p>
+          <p class="story-lesson">${formatLessonLabel(story.lesson_id)}</p>
         </div>
       </div>
     `;
@@ -78,14 +79,14 @@ export function renderStories(state, dependencies) {
 
   $$('.story-card').forEach((card) => {
     card.onclick = async () => {
-      const storyId = parseInt(card.dataset.storyId);
-      const storyMeta = stories.find((s) => s.id === storyId);
+      const storyId = card.dataset.storyId;
+      const storyMeta = stories.find((s) => String(s.id) === storyId);
       if (!storyMeta) return;
 
       const isUnlocked = chState(storyMeta.lesson_id).started;
 
       if (!isUnlocked) {
-        toast(`🔒 Пройдите Урок ${storyMeta.lesson_id}, чтобы открыть эту историю`);
+        toast(`🔒 Пройдите «${formatLessonLabel(storyMeta.lesson_id)}», чтобы открыть эту историю`);
         return;
       }
 
@@ -192,7 +193,7 @@ export function renderLibraryNotes(state, dependencies) {
 
 // Вкладка «Грамматика» — горизонтальные кнопки глав + карточки грамматики
 async function renderLibraryGrammar(state, dependencies) {
-  const { CH_NAMES, chState } = deps || dependencies;
+  const { chState } = deps || dependencies;
   const body = $('#library-body');
   if (!body) return;
 
@@ -202,29 +203,28 @@ async function renderLibraryGrammar(state, dependencies) {
   }
 
   // Определяем активную главу (первая разблокированная или первая)
-  let activeChapterId = state.activeGrammarChapter || 1;
-  const activeChapter = CONTENT_INDEX.find((ch) => ch.id === activeChapterId);
+  let activeChapterId = state.activeGrammarChapter || CONTENT_INDEX[0]?.id || null;
+  const activeChapter = CONTENT_INDEX.find((ch) => sameLessonId(ch.id, activeChapterId));
+  activeChapterId = activeChapter?.id || CONTENT_INDEX[0]?.id || null;
   const isUnlocked = activeChapter ? chState(activeChapter.id).started : false;
 
   // Генерируем кнопки глав
   const chaptersButtons = CONTENT_INDEX.map((ch) => {
     const unlocked = chState(ch.id).started;
-    const isActive = ch.id === activeChapterId;
+    const isActive = sameLessonId(ch.id, activeChapterId);
+    const lessonNumber = (ch.order ?? CONTENT_INDEX.indexOf(ch)) + 1;
     return `
       <button 
         class="grammar-chapter-btn ${isActive ? 'active' : ''} ${unlocked ? '' : 'locked'}" 
         data-chapter-id="${ch.id}"
         ${unlocked ? '' : 'disabled'}
       >
-        ${unlocked ? `Гл.${ch.id}` : `Гл.${ch.id} 🔒`}
+        ${unlocked ? `Ур.${lessonNumber}` : `Ур.${lessonNumber} 🔒`}
       </button>`;
   }).join('');
 
   // Генерируем заголовок главы
-  const chapterName = activeChapter
-    ? (CH_NAMES[activeChapter.id] || [`Глава ${activeChapter.id}`, ''])[0]
-    : '';
-  const chapterTitle = `ГЛАВА ${activeChapterId}: ${chapterName.toUpperCase()}`;
+  const chapterTitle = (activeChapter?.title || formatLessonLabel(activeChapterId)).toUpperCase();
 
   // Показываем лоадер перед загрузкой
   body.innerHTML = `
@@ -243,7 +243,7 @@ async function renderLibraryGrammar(state, dependencies) {
     grammarCards = `
       <div class="grammar-empty">
         <div class="grammar-empty-icon">🔒</div>
-        <p class="grammar-empty-text">Завершите урок ${activeChapterId}, чтобы открыть грамматику</p>
+        <p class="grammar-empty-text">Завершите «${formatLessonLabel(activeChapterId)}», чтобы открыть грамматику</p>
       </div>`;
   } else {
     try {
@@ -289,8 +289,7 @@ async function renderLibraryGrammar(state, dependencies) {
   // Навешиваем обработчики на кнопки глав
   body.querySelectorAll('.grammar-chapter-btn:not(.locked)').forEach((btn) => {
     btn.onclick = () => {
-      const chapterId = parseInt(btn.dataset.chapterId, 10);
-      state.activeGrammarChapter = chapterId;
+      state.activeGrammarChapter = btn.dataset.chapterId;
       renderLibraryGrammar(state, dependencies);
     };
   });
@@ -390,7 +389,7 @@ function openStory(story, state, dependencies) {
   $('#story-body').innerHTML = `
   <div class="story-content">
     <div class="story-meta">
-      <span class="story-lesson-badge">Урок ${story.lesson_id}</span>
+      <span class="story-lesson-badge">${formatLessonLabel(story.lessonId || story.lesson_id)}</span>
     </div>
     <div class="story-text">${renderInteractiveStory(story.content)}</div>
     ${

@@ -17,10 +17,11 @@ function loadJson(relPath) {
 }
 
 describe('Grammar Quiz All Chapters Integrity (Lessons 01–12)', () => {
-  const index = loadJson('data/grammar-quizzes/index.json');
+  const courseRoot = 'data/courses/genki-1';
+  const index = loadJson(`${courseRoot}/grammar/index.json`);
   const lessons = Array.from({ length: 12 }, (_, i) => {
     const pad = String(i + 1).padStart(2, '0');
-    return loadJson(`data/lessons/lesson-${pad}.json`);
+    return loadJson(`${courseRoot}/lessons/lesson-${pad}.json`);
   });
   const vocabIndex = buildVocabularyReferenceIndex(lessons);
 
@@ -31,8 +32,8 @@ describe('Grammar Quiz All Chapters Integrity (Lessons 01–12)', () => {
 
     index.chapters.forEach((ch, idx) => {
       expect(ch.chapterId).toBe(idx + 1);
-      expect(ch.path).toBe(`data/grammar-quizzes/lesson-${String(idx + 1).padStart(2, '0')}.json`);
-      expect(fs.existsSync(path.resolve(rootDir, 'public', ch.path))).toBe(true);
+      expect(ch.path).toBe(`./grammar/lesson-${String(idx + 1).padStart(2, '0')}.json`);
+      expect(fs.existsSync(path.resolve(rootDir, 'public', courseRoot, ch.path))).toBe(true);
     });
   });
 
@@ -41,7 +42,7 @@ describe('Grammar Quiz All Chapters Integrity (Lessons 01–12)', () => {
     let totalQuestions = 0;
 
     index.chapters.forEach((entry) => {
-      const chapterData = loadJson(entry.path);
+      const chapterData = loadJson(`${courseRoot}/${entry.path}`);
       const validation = validateGrammarQuizData(chapterData, lessons, entry);
 
       expect(validation.valid).toBe(true);
@@ -70,7 +71,7 @@ describe('Grammar Quiz All Chapters Integrity (Lessons 01–12)', () => {
     const allQuestionIds = new Set();
 
     index.chapters.forEach((entry) => {
-      const chapterData = loadJson(entry.path);
+      const chapterData = loadJson(`${courseRoot}/${entry.path}`);
       chapterData.topics.forEach((topic) => {
         expect(allTopicIds.has(topic.id)).toBe(false);
         allTopicIds.add(topic.id);
@@ -89,7 +90,7 @@ describe('Grammar Quiz All Chapters Integrity (Lessons 01–12)', () => {
 
   it('verifies all topics exist in their corresponding lesson JSON notes and noteIds match', () => {
     index.chapters.forEach((entry) => {
-      const chapterData = loadJson(entry.path);
+      const chapterData = loadJson(`${courseRoot}/${entry.path}`);
       const lessonObj = lessons.find(
         (l) => Number(l.lesson?.lesson_id || l.lesson?.id) === entry.chapterId
       )?.lesson;
@@ -115,7 +116,7 @@ describe('Grammar Quiz All Chapters Integrity (Lessons 01–12)', () => {
     const topicOrderMap = new Map();
 
     index.chapters.forEach((entry) => {
-      const chapterData = loadJson(entry.path);
+      const chapterData = loadJson(`${courseRoot}/${entry.path}`);
       chapterData.topics.forEach((t, idx) => {
         globalTopicIds.add(t.id);
         topicOrderMap.set(t.id, {
@@ -126,7 +127,7 @@ describe('Grammar Quiz All Chapters Integrity (Lessons 01–12)', () => {
     });
 
     index.chapters.forEach((entry) => {
-      const chapterData = loadJson(entry.path);
+      const chapterData = loadJson(`${courseRoot}/${entry.path}`);
       chapterData.topics.forEach((topic) => {
         topic.quiz.forEach((q) => {
           (q.grammarRefs || []).forEach((ref) => {
@@ -144,7 +145,7 @@ describe('Grammar Quiz All Chapters Integrity (Lessons 01–12)', () => {
 
   it('verifies vocabularyRefs and requiredVocabularyIds refer to existing past or present chapter vocabulary', () => {
     index.chapters.forEach((entry) => {
-      const chapterData = loadJson(entry.path);
+      const chapterData = loadJson(`${courseRoot}/${entry.path}`);
       chapterData.topics.forEach((topic) => {
         (topic.requiredVocabularyIds || []).forEach((vId) => {
           const vEntry = vocabIndex.get(String(vId));
@@ -166,7 +167,7 @@ describe('Grammar Quiz All Chapters Integrity (Lessons 01–12)', () => {
   it('checks pedagogical prerequisites and detects cycles', () => {
     const allTopics = [];
     index.chapters.forEach((entry) => {
-      const chapterData = loadJson(entry.path);
+      const chapterData = loadJson(`${courseRoot}/${entry.path}`);
       chapterData.topics.forEach((t) => {
         allTopics.push({ ...t, chapterId: chapterData.chapterId });
       });
@@ -193,7 +194,7 @@ describe('Grammar Quiz All Chapters Integrity (Lessons 01–12)', () => {
   it('checks UI question type support and verifies no question types outside standard set', () => {
     const allowed = new Set(['single-choice', 'fill-blank', 'sentence-order']);
     index.chapters.forEach((entry) => {
-      const chapterData = loadJson(entry.path);
+      const chapterData = loadJson(`${courseRoot}/${entry.path}`);
       chapterData.topics.forEach((t) => {
         t.quiz.forEach((q) => {
           expect(allowed.has(q.type)).toBe(true);
@@ -204,31 +205,31 @@ describe('Grammar Quiz All Chapters Integrity (Lessons 01–12)', () => {
 
   it('ensures no future grammar concepts leak into representative question texts of earlier chapters', () => {
     // Chapter 2: no te-form
-    const ch2 = loadJson('data/grammar-quizzes/lesson-02.json');
+    const ch2 = loadJson(`${courseRoot}/grammar/lesson-02.json`);
     const ch2Text = JSON.stringify(ch2);
     expect(ch2Text).not.toContain('て形');
     expect(ch2Text).not.toContain('て-form');
 
     // Chapter 3: no short forms
-    const ch3 = loadJson('data/grammar-quizzes/lesson-03.json');
+    const ch3 = loadJson(`${courseRoot}/grammar/lesson-03.json`);
     const ch3Text = JSON.stringify(ch3);
     expect(ch3Text).not.toContain('short form');
     expect(ch3Text).not.toContain('ショートフォーム');
 
     // Chapter 6: no passive or tara
-    const ch6 = loadJson('data/grammar-quizzes/lesson-06.json');
+    const ch6 = loadJson(`${courseRoot}/grammar/lesson-06.json`);
     const ch6Text = JSON.stringify(ch6);
     expect(ch6Text).not.toContain('受身');
     expect(ch6Text).not.toContain('～たら');
 
     // Chapter 8: no comparisons (Chapter 10)
-    const ch8 = loadJson('data/grammar-quizzes/lesson-08.json');
+    const ch8 = loadJson(`${courseRoot}/grammar/lesson-08.json`);
     const ch8Text = JSON.stringify(ch8);
     expect(ch8Text).not.toContain('のほうが');
     expect(ch8Text).not.toContain('より');
 
     // Chapter 11: no ~node (Chapter 12)
-    const ch11 = loadJson('data/grammar-quizzes/lesson-11.json');
+    const ch11 = loadJson(`${courseRoot}/grammar/lesson-11.json`);
     const ch11Text = JSON.stringify(ch11);
     expect(ch11Text).not.toContain('～ので');
   });

@@ -7,7 +7,7 @@ import { evaluateAndCompleteChapter, isVocabularyBlockCompleted } from '../src/c
 const chapter = {
   id: 1,
   words: [{ id: 'L1_word_1' }, { id: 'L1_word_2' }],
-  notes: [{ note_id: 1, title: 'Grammar' }],
+  notes: [{ id: 'L1_g1', note_id: 1, title: 'Grammar' }],
   practice: [{ id: 'L01-wb-cg-01', title: 'Practice', required: true }],
 };
 

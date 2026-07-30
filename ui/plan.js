@@ -29,6 +29,12 @@ import {
   deleteStudyPlanCommand,
   updateStudyPlanCommand,
 } from '../src/domain-commands.js';
+import {
+  canonicalLessonId,
+  compareLessonIds,
+  formatLessonLabel,
+  sameLessonId,
+} from '../src/courses/course-context.js';
 
 let planCalendarMonth = new Date();
 let planRuntimeDependencies = {};
@@ -434,8 +440,8 @@ function renderCompletedChaptersList(state) {
   const effectiveCompleted = new Set(getCompletedChapterIds(state, CONTENT_INDEX));
 
   container.innerHTML = CONTENT_INDEX.map((chapter) => {
-    const isActual = actualCompleted.has(chapter.id);
-    const isEffective = effectiveCompleted.has(chapter.id);
+    const isActual = [...actualCompleted].some((id) => sameLessonId(id, chapter.id));
+    const isEffective = [...effectiveCompleted].some((id) => sameLessonId(id, chapter.id));
     const checkedAttr = isEffective ? 'checked' : '';
     const disabledAttr = isActual ? 'disabled' : '';
     const tag = isActual ? ' (пройдена в приложении)' : isEffective ? ' (изучена ранее)' : '';
@@ -443,7 +449,7 @@ function renderCompletedChaptersList(state) {
     return `
       <label class="chapter-checkbox-item ${isActual ? 'disabled-item' : ''}">
         <input type="checkbox" class="chapter-checkbox" data-chapter-id="${chapter.id}" ${checkedAttr} ${disabledAttr}>
-        <span class="chapter-checkbox-label">Глава ${chapter.id}: ${chapter.title}${tag}</span>
+        <span class="chapter-checkbox-label">${chapter.title || formatLessonLabel(chapter.id)}${tag}</span>
       </label>`;
   }).join('');
   updateManualProgress();
@@ -459,10 +465,12 @@ function renderCompletedChaptersList(state) {
 function getPriorKnowledgeFromForm(state) {
   const actualCompleted = new Set(getActualCompletedChapterIds(state, CONTENT_INDEX));
   const checked = [...document.querySelectorAll('.chapter-checkbox:checked')]
-    .map((checkbox) => Number(checkbox.dataset.chapterId))
-    .filter((id) => Number.isInteger(id) && id > 0);
+    .map((checkbox) => canonicalLessonId(checkbox.dataset.chapterId))
+    .filter(Boolean);
 
-  return checked.filter((id) => !actualCompleted.has(id)).sort((a, b) => a - b);
+  return checked
+    .filter((id) => ![...actualCompleted].some((actualId) => sameLessonId(actualId, id)))
+    .sort(compareLessonIds);
 }
 
 export function syncPriorKnowledgeFromForm() {
@@ -659,7 +667,7 @@ function renderPlanSummary(plan, state) {
   if (timeline) {
     timeline.innerHTML = renderTimeline(plan, state, activeChapterId);
     timeline.querySelectorAll('[data-chapter-id]').forEach((card) => {
-      card.addEventListener('click', () => nav('chapter', Number(card.dataset.chapterId)));
+      card.addEventListener('click', () => nav('chapter', card.dataset.chapterId));
     });
     timeline.querySelector('#status-recalc-btn')?.addEventListener('click', () => {
       $('#plan-recalc-btn')?.click();
@@ -819,11 +827,16 @@ function renderPlanStatusCard(plan, state) {
 }
 
 function renderTimeline(plan, state, activeChapterId) {
-  const completed = new Set(plan.completedChapters || []);
+  const completed = plan.completedChapters || [];
   const chapterSegments = (plan.segments || []).filter((segment) => segment.type === 'chapter');
-  const active = chapterSegments.find((segment) => segment.chapterId === activeChapterId);
+  const active = chapterSegments.find((segment) =>
+    sameLessonId(segment.chapterId, activeChapterId)
+  );
   const next = chapterSegments
-    .filter((segment) => !completed.has(segment.chapterId) && segment !== active)
+    .filter(
+      (segment) =>
+        !completed.some((id) => sameLessonId(id, segment.chapterId)) && segment !== active
+    )
     .slice(0, 4);
   const plannedDates = chapterSegments.flatMap((segment) => segment.assignedDates || []);
   const futureDates = plannedDates.filter((dateKey) => dateKey >= getTodayDateKey());
@@ -851,7 +864,7 @@ function renderTimeline(plan, state, activeChapterId) {
 }
 
 function segmentCard(segment, state, active = false) {
-  const catalogEntry = CONTENT_INDEX.find((entry) => entry.id === segment.chapterId);
+  const catalogEntry = CONTENT_INDEX.find((entry) => sameLessonId(entry.id, segment.chapterId));
   const loadedChapter = getLesson(segment.chapterId);
   const chapterMeta = loadedChapter || catalogEntry;
 
@@ -882,7 +895,7 @@ function segmentCard(segment, state, active = false) {
   return `
     <button class="segment-card ${active ? 'in-progress' : ''}" data-chapter-id="${segment.chapterId}">
       <span class="segment-header">
-        <strong>Глава ${segment.chapterId}: ${chapterMeta?.title || ''}</strong>
+        <strong>${chapterMeta?.title || formatLessonLabel(segment.chapterId)}</strong>
         <span class="segment-badge">${remainingDays} дн.</span>
       </span>
       <span class="segment-dates">${formatPlanDate(segment.startDate)} — ${formatPlanDate(segment.endDate)}</span>

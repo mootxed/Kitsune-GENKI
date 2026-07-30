@@ -9,6 +9,7 @@ import {
   isVocabularyItemIntroduced,
 } from './vocabulary-unlock-plan.js';
 import { dueCards } from './srs-helpers.js';
+import { canonicalLessonId, sameLessonId } from './courses/course-context.js';
 
 export const HEAVY_VOCABULARY_DUE_THRESHOLD = 25;
 
@@ -28,7 +29,7 @@ export function normalizeGrammarState(state) {
 }
 
 export function isFirstVocabularyBatchCompleted(state, chapterId, _dateKey = localDateKey()) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const cs = state?.chapters?.[chId];
   if (cs?.legacyVocabularyCompleted || cs?.checklist?.vocab) return true;
   if (isPriorKnowledge(state, chId)) return true;
@@ -47,7 +48,7 @@ export function isFirstVocabularyBatchCompleted(state, chapterId, _dateKey = loc
 }
 
 export function getUnlockedGrammarTopicIds(state, chapterId) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const unlocks = state?.grammarUnlocks?.[chId] || state?.grammarUnlocks?.[String(chId)] || {};
   const topicIds = new Set();
 
@@ -61,7 +62,7 @@ export function getUnlockedGrammarTopicIds(state, chapterId) {
 }
 
 export function getGrammarTopicStatus(state, chapterId, topicId, _chapterMeta = null) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const cs = state?.chapters?.[chId] || state?.chapters?.[String(chId)];
 
   if (isPriorKnowledge(state, chId) || isGrammarTopicCompleted(cs, topicId)) {
@@ -78,7 +79,7 @@ export function getGrammarTopicStatus(state, chapterId, topicId, _chapterMeta = 
 }
 
 export function canUnlockNextGrammarTopic(state, chapterId, options = {}) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const dateKey = options.dateKey || localDateKey(options.now ?? Date.now());
   const plan = options.plan ?? state?.studyPlan;
   const chapterMeta = options.chapterMeta;
@@ -95,7 +96,7 @@ export function canUnlockNextGrammarTopic(state, chapterId, options = {}) {
   // Check rest day
   if (plan && Array.isArray(plan.segments)) {
     const segment = plan.segments.find(
-      (s) => s && s.type === 'chapter' && Number(s.chapterId) === chId
+      (s) => s && s.type === 'chapter' && sameLessonId(s.chapterId, chId)
     );
     if (segment) {
       const status = segment.dateStatuses?.[dateKey];
@@ -172,7 +173,7 @@ export function canUnlockNextGrammarTopic(state, chapterId, options = {}) {
 }
 
 export function unlockDailyGrammarTopic(state, chapterId, options = {}) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const dateKey = options.dateKey || localDateKey(options.now ?? Date.now());
 
   state.grammarUnlocks ||= {};
@@ -220,7 +221,7 @@ export function unlockDailyGrammarTopic(state, chapterId, options = {}) {
 }
 
 export function getGrammarTopicPrerequisiteStatus(state, chapterId, topic, chapterMeta = null) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const cs = state?.chapters?.[chId];
   if (!cs || !cs.started) {
     return {
@@ -312,8 +313,8 @@ export function completeGrammarTopicWithCheck(
     return { changed: false, completed: false, canceled: true, reason: 'canceled' };
   }
 
-  const chId = Number(chapterId);
-  if (!Number.isInteger(chId) || chId <= 0) {
+  const chId = canonicalLessonId(chapterId);
+  if (!chId) {
     return { changed: false, completed: false, reason: 'invalid-chapter-id' };
   }
 
@@ -325,16 +326,13 @@ export function completeGrammarTopicWithCheck(
   const chapterMeta =
     options.chapterMeta ||
     (Array.isArray(options.chapters)
-      ? options.chapters.find((c) => Number(c.id || c.lesson_id) === chId)
+      ? options.chapters.find((c) => sameLessonId(c.id || c.lesson_id, chId))
       : null);
   const topicFound = chapterMeta
     ? getChapterGrammarTopics(chapterMeta).some((t) => t.id === topicId)
     : Object.values(state?.grammarUnlocks?.[chId] || {}).some(
         (arr) => Array.isArray(arr) && arr.includes(topicId)
-      ) ||
-      (typeof topicId === 'string' &&
-        (topicId.startsWith(`L${chId}_g`) || topicId.startsWith(`g${chId}_`))) ||
-      Boolean(state?.chapters?.[chId]?.checklist?.[topicId]);
+      ) || Boolean(state?.chapters?.[chId]?.checklist?.[topicId]);
 
   if (!topicFound) {
     return { changed: false, completed: false, reason: 'topic-not-found' };

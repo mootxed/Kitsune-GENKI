@@ -1,12 +1,18 @@
 /* src/practice-tasks.js — Pure rules and builders for practice tasks */
+import { contentId } from './courses/course-contract.js';
+import { getActiveCourse } from './courses/course-context.js';
 
 export function normalizePracticeTask(task, chapterId, idx = 0) {
-  const chId = Number(chapterId);
+  const chId = chapterId;
   return {
-    id: String(task.id || `L${chId}_p${idx + 1}`),
+    id: String(task.id || `${chId}:exercise-${idx + 1}`),
+    localId: task.localId || task.id || `exercise-${idx + 1}`,
+    courseId: task.courseId || getActiveCourse()?.id || null,
+    chapterId: chId,
+    lessonId: chId,
     type: task.type || 'workbook',
     section: task.section || null,
-    source: task.source || (task.type === 'workbook' ? 'GENKI Workbook' : 'GENKI Textbook'),
+    source: task.source || (task.type === 'workbook' ? 'Рабочая тетрадь курса' : 'Материалы курса'),
     page: typeof task.page === 'number' ? task.page : null,
     exercise: task.exercise || null,
     title: task.title || task.exercise || `Задание ${idx + 1}`,
@@ -24,12 +30,18 @@ export function normalizePracticeTask(task, chapterId, idx = 0) {
 }
 
 export function getBuiltInPracticeTasks(chapterId) {
-  const chId = Number(chapterId);
+  const chId = chapterId;
+  const course = getActiveCourse();
+  const summary = course?.getLessonSummary(chId);
+  const lessonLocalId = summary?.localId ?? (summary ? summary.order + 1 : String(chId));
+  const makeId = (kind) =>
+    course ? contentId(course.id, 'exercise', `${lessonLocalId}:${kind}`) : kind;
   return [
     {
-      id: 'dialog',
+      id: makeId('dialog'),
+      localId: 'dialog',
       type: 'dialog',
-      source: 'GENKI Textbook',
+      source: 'Материалы курса',
       title: 'Диалог',
       page: null,
       exercise: null,
@@ -41,9 +53,10 @@ export function getBuiltInPracticeTasks(chapterId) {
       chapterId: chId,
     },
     {
-      id: 'listening',
+      id: makeId('listening'),
+      localId: 'listening',
       type: 'listening',
-      source: 'GENKI Audio',
+      source: 'Аудио курса',
       title: 'Аудирование',
       page: null,
       exercise: null,
@@ -55,9 +68,10 @@ export function getBuiltInPracticeTasks(chapterId) {
       chapterId: chId,
     },
     {
-      id: 'reading',
+      id: makeId('reading'),
+      localId: 'reading',
       type: 'reading',
-      source: 'GENKI Textbook',
+      source: 'Материалы курса',
       title: 'Чтение',
       page: null,
       exercise: null,
@@ -72,7 +86,7 @@ export function getBuiltInPracticeTasks(chapterId) {
 }
 
 export function getNormalizedChapterPracticeTasks(chapterMeta) {
-  const chapterId = Number(chapterMeta?.lesson_id || chapterMeta?.id || 0);
+  const chapterId = chapterMeta?.lesson_id || chapterMeta?.id || null;
   const workbookTasks = Array.isArray(chapterMeta?.practice)
     ? chapterMeta.practice.map((item, idx) => normalizePracticeTask(item, chapterId, idx))
     : [];

@@ -30,17 +30,29 @@ function isKanji(ch) {
 
 // ── Шаг 1: собираем уникальные кандзи из уроков ───────────────────────────
 function collectKanji() {
-  const lessonsDir = join(ROOT, 'public', 'data', 'lessons');
+  const coursesDir = join(ROOT, 'public', 'data', 'courses');
   const kanjiSet = new Set();
 
-  const files = readdirSync(lessonsDir).filter((f) => f.endsWith('.json'));
-  for (const file of files) {
-    const data = JSON.parse(readFileSync(join(lessonsDir, file), 'utf8'));
-    const vocab = data?.lesson?.vocabulary ?? [];
-    for (const word of vocab) {
-      const text = word.writtenForm ?? word.kanji ?? word.writing ?? '';
-      for (const ch of text) {
-        if (isKanji(ch)) kanjiSet.add(ch);
+  const packageDirectories = readdirSync(coursesDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => join(coursesDir, entry.name));
+
+  for (const packageDirectory of packageDirectories) {
+    const manifestPath = join(packageDirectory, 'manifest.json');
+    if (!existsSync(manifestPath)) continue;
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    const contentIndexPath = join(packageDirectory, manifest.dataPaths.contentIndex);
+    const contentIndex = JSON.parse(readFileSync(contentIndexPath, 'utf8'));
+    for (const entry of contentIndex.lessons || contentIndex.chapters || []) {
+      const lessonPath = entry.lesson || entry.path;
+      if (!lessonPath) continue;
+      const data = JSON.parse(readFileSync(join(packageDirectory, lessonPath), 'utf8'));
+      const vocab = data?.lesson?.vocabulary ?? data?.lesson?.words ?? [];
+      for (const word of vocab) {
+        const text = word.writtenForm ?? word.kanji ?? word.writing ?? '';
+        for (const ch of text) {
+          if (isKanji(ch)) kanjiSet.add(ch);
+        }
       }
     }
   }

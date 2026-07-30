@@ -102,7 +102,10 @@ test.describe('Representative E2E Grammar Quizzes (Chapters 2, 6, 8, 12)', () =>
       });
 
       // 4. Find grammar topic item and ensure it is not locked before clicking
-      const topicCard = page.locator(`[data-kind="grammar"][data-check="${item.topicId}"]`).first();
+      const runtimeTopicId = `genki-1:grammar:${item.topicId}`;
+      const topicCard = page
+        .locator(`[data-kind="grammar"][data-check="${runtimeTopicId}"]`)
+        .first();
       await expect(topicCard).toBeVisible({ timeout: 10000 });
       await expect(topicCard).not.toHaveClass(/locked/, { timeout: 10000 });
 

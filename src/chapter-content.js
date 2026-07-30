@@ -4,14 +4,18 @@ const asArray = (value) =>
   Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
 
 export function normalizeChapterContent(rawLesson, workbookMetadata = [], options = {}) {
-  const id = Number(rawLesson?.id || rawLesson?.lesson_id);
-  const configuredName = options.chapterNames?.[id];
-  const title = configuredName?.[0] || rawLesson?.title || `Глава ${id}`;
+  const id = rawLesson?.id || rawLesson?.lesson_id;
+  const localId = rawLesson?.localId ?? rawLesson?.legacyId ?? id;
+  const configuredName = options.chapterNames?.[id] || options.chapterNames?.[localId];
+  const title = configuredName?.[0] || rawLesson?.title || `Глава ${localId}`;
   const normalizeWord = options.normalizeWord || ((word) => word);
   const grammarTopics = asArray(rawLesson?.notes || rawLesson?.grammar).map((note, index) => {
     const noteId = note.noteId ?? note.note_id ?? index + 1;
     return {
-      id: String(note.id || `L${id}_g${noteId}`),
+      id: String(note.id || `${id}:grammar-${noteId}`),
+      localId: note.localId || note.id || `grammar-${noteId}`,
+      courseId: rawLesson?.courseId || note.courseId || null,
+      introducedIn: note.introducedIn || id,
       noteId: Number(noteId) || noteId,
       note_id: noteId,
       title: note.title || `Тема ${index + 1}`,
@@ -41,6 +45,10 @@ export function normalizeChapterContent(rawLesson, workbookMetadata = [], option
   return {
     id,
     lesson_id: id,
+    localId,
+    legacyId: rawLesson?.legacyId ?? null,
+    courseId: rawLesson?.courseId || null,
+    order: Number.isInteger(rawLesson?.order) ? rawLesson.order : null,
     title,
     jp: configuredName?.[1] || rawLesson?.jp || '',
     particles: asArray(rawLesson?.particles),

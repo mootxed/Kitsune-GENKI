@@ -20,9 +20,14 @@
 
 Дополнительные проверенные метаданные (`category`, `romaji`, часть речи, примеры, context-production) могут присутствовать. Legacy-поля `kanji`, `writing`, `translation` запрещены в JSON и создаются только временным runtime-адаптером `normalizeWord`.
 
-Поздние дубли перенаправляются через `public/data/genki-vocabulary-aliases.json`. Активный FSRS использует только канонические ID; исходное состояние объединённых или удалённых карточек хранится в `state.vocabularyMigrationArchive`.
+Поздние дубли перенаправляются через
+`public/data/courses/genki-1/migrations/vocabulary-aliases.json`. Активный FSRS
+использует namespaced ID вида `genki-1:vocabulary:L3_V001`; исходное состояние
+объединённых или удалённых карточек хранится в
+`state.vocabularyMigrationArchive`.
 
-Порядок открытия кандзи задаётся исключительно `public/data/genki-kanji-availability.json`.
+Порядок открытия кандзи задаётся исключительно
+`public/data/courses/genki-1/relations/kanji-availability.json`.
 
 Импорт:
 

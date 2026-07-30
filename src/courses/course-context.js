@@ -1,0 +1,99 @@
+import { DEFAULT_COURSE_ID, loadCourse } from './course-registry.js';
+
+let activeCourse = null;
+let activeCoursePromise = null;
+
+export function setActiveCourse(course) {
+  if (!course?.id || typeof course.canonicalLessonId !== 'function') {
+    throw new Error('[CourseContext] A loaded Course runtime is required');
+  }
+  activeCourse = course;
+  activeCoursePromise = Promise.resolve(course);
+  return course;
+}
+
+export async function ensureActiveCourse(courseId = DEFAULT_COURSE_ID, options = {}) {
+  if (activeCourse?.id === courseId && options.reload !== true) return activeCourse;
+  if (!activeCoursePromise || options.reload === true) {
+    activeCoursePromise = loadCourse(courseId, options)
+      .then(setActiveCourse)
+      .catch((error) => {
+        activeCoursePromise = null;
+        throw error;
+      });
+  }
+  return activeCoursePromise;
+}
+
+export function getActiveCourse() {
+  return activeCourse;
+}
+
+export function clearActiveCourse() {
+  activeCourse = null;
+  activeCoursePromise = null;
+}
+
+export function canonicalLessonId(value, course = activeCourse) {
+  if (value == null || value === '') return null;
+  const raw = String(value);
+  return typeof course?.canonicalLessonId === 'function'
+    ? course.canonicalLessonId(raw) || raw
+    : raw;
+}
+
+export function sameLessonId(left, right, course = activeCourse) {
+  return canonicalLessonId(left, course) === canonicalLessonId(right, course);
+}
+
+export function lessonOrdinal(value, course = activeCourse) {
+  const ordinal = typeof course?.lessonOrdinal === 'function' ? course.lessonOrdinal(value) : null;
+  if (Number.isInteger(ordinal) && ordinal >= 0) return ordinal;
+  const legacy = Number(value);
+  return Number.isFinite(legacy) ? legacy - 1 : -1;
+}
+
+export function compareLessonIds(left, right, course = activeCourse) {
+  const leftOrder = lessonOrdinal(left, course);
+  const rightOrder = lessonOrdinal(right, course);
+  if (leftOrder >= 0 && rightOrder >= 0) return leftOrder - rightOrder;
+  return String(left).localeCompare(String(right));
+}
+
+export function canonicalizeKnowledgeItemId(value, course = activeCourse) {
+  if (value == null || value === '') return '';
+  return typeof course?.canonicalizeKnowledgeId === 'function'
+    ? course.canonicalizeKnowledgeId(value) || String(value)
+    : String(value);
+}
+
+export function canonicalizeCardId(value, course = activeCourse) {
+  const raw = String(value || '');
+  const separatorIndex = raw.lastIndexOf('::');
+  const suffix = separatorIndex >= 0 ? raw.slice(separatorIndex) : '';
+  const itemId = separatorIndex >= 0 ? raw.slice(0, separatorIndex) : raw;
+  const canonicalItemId = canonicalizeKnowledgeItemId(itemId, course);
+  return `${canonicalItemId}${suffix}`;
+}
+
+export function lessonIdForKnowledgeItem(value, course = activeCourse) {
+  return typeof course?.lessonIdForKnowledge === 'function'
+    ? course.lessonIdForKnowledge(value) || null
+    : null;
+}
+
+export function courseIdFromContentId(value) {
+  const match =
+    /^([a-z0-9]+(?:-[a-z0-9]+)*):(lesson|vocabulary|grammar|exercise|story|quiz):/u.exec(
+      String(value || '')
+    );
+  return match?.[1] || null;
+}
+
+export function formatLessonLabel(value, course = activeCourse) {
+  const summary =
+    typeof course?.getLessonSummary === 'function' ? course.getLessonSummary(value) : null;
+  if (summary?.title) return summary.title;
+  const order = lessonOrdinal(value, course);
+  return order >= 0 ? `Урок ${order + 1}` : `Урок ${value}`;
+}

@@ -1,4 +1,4 @@
-/* src/practice-plan.js — Unified Practice Tasks & GENKI Workbook Integration */
+/* src/practice-plan.js — unified course practice tasks */
 
 import { localDateKey } from './local-date.js';
 import { getChapterPracticeTasks } from './chapter-content-model.js';
@@ -12,11 +12,12 @@ import {
 } from './practice-tasks.js';
 
 import { getPlanDateAvailability } from '../studyplan.js';
+import { canonicalLessonId, sameLessonId } from './courses/course-context.js';
 
 export { normalizePracticeTask, getChapterPracticeTasks };
 
 export function canUnlockPracticeTask(state, chapterId, task, chapterMeta = null, options = {}) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const cs = state?.chapters?.[chId];
 
   if (!cs || !cs.started) {
@@ -75,8 +76,8 @@ export function getAvailablePracticeTasks(state, chapterId, chapterMeta = null, 
 }
 
 export function completePracticeTask(state, chapterId, taskId, options = {}) {
-  const chId = Number(chapterId);
-  if (!Number.isInteger(chId) || chId <= 0) {
+  const chId = canonicalLessonId(chapterId);
+  if (!chId) {
     return { changed: false, completed: false, reason: 'invalid-chapter-id' };
   }
 
@@ -88,7 +89,7 @@ export function completePracticeTask(state, chapterId, taskId, options = {}) {
   const chapterMeta =
     options.chapterMeta ||
     (Array.isArray(options.chapters)
-      ? options.chapters.find((c) => Number(c.id || c.lesson_id) === chId)
+      ? options.chapters.find((c) => sameLessonId(c.id || c.lesson_id, chId))
       : null);
   let task = null;
 
@@ -100,13 +101,7 @@ export function completePracticeTask(state, chapterId, taskId, options = {}) {
     if (builtIn) {
       task = builtIn;
     } else {
-      const isPatternMatch =
-        typeof taskId === 'string' &&
-        (taskId.startsWith(`L${chId}_p`) ||
-          taskId.startsWith(`L0${chId}-workbook`) ||
-          taskId.startsWith(`L${chId}-workbook`) ||
-          taskId.startsWith(`L0${chId}_p`));
-      if (isPatternMatch || state?.chapters?.[chId]?.checklist?.[taskId] !== undefined) {
+      if (state?.chapters?.[chId]?.checklist?.[taskId] !== undefined) {
         task = {
           id: taskId,
           type: 'workbook',
@@ -183,7 +178,7 @@ export function completePracticeTask(state, chapterId, taskId, options = {}) {
 }
 
 export function undoPracticeTask(state, chapterId, taskId, options = {}) {
-  const chId = Number(chapterId);
+  const chId = canonicalLessonId(chapterId);
   const occurredAt = options.now ?? Date.now();
   const dateKey = options.dateKey || localDateKey(occurredAt);
 

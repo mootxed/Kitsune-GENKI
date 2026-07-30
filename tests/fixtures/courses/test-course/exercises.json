@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "lessons": [
+    {
+      "lessonId": "test-course:lesson-alpha",
+      "exercises": [
+        {
+          "id": "practice-one",
+          "type": "interactive",
+          "title": "Одно упражнение",
+          "estimatedMinutes": 1
+        }
+      ]
+    }
+  ]
+}

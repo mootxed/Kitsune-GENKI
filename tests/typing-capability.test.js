@@ -24,7 +24,10 @@ function catalogueWords() {
   return Array.from({ length: 12 }, (_, index) => {
     const lesson = String(index + 1).padStart(2, '0');
     const data = JSON.parse(
-      readFileSync(join(projectRoot, `public/data/lessons/lesson-${lesson}.json`), 'utf8')
+      readFileSync(
+        join(projectRoot, `public/data/courses/genki-1/lessons/lesson-${lesson}.json`),
+        'utf8'
+      )
     );
     return data.lesson.vocabulary;
   }).flat();

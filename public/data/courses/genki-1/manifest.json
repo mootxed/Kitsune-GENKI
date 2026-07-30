@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "courseId": "genki-1",
+  "title": "GENKI I",
+  "language": "ja",
+  "baseLanguage": "ru",
+  "contentVersion": "1.0.0",
+  "entryLessonId": "genki-1:lesson-1",
+  "lessonOrder": [
+    "genki-1:lesson-1",
+    "genki-1:lesson-2",
+    "genki-1:lesson-3",
+    "genki-1:lesson-4",
+    "genki-1:lesson-5",
+    "genki-1:lesson-6",
+    "genki-1:lesson-7",
+    "genki-1:lesson-8",
+    "genki-1:lesson-9",
+    "genki-1:lesson-10",
+    "genki-1:lesson-11",
+    "genki-1:lesson-12"
+  ],
+  "dataPaths": {
+    "contentIndex": "./content-index.json",
+    "grammarIndex": "./grammar/index.json",
+    "exercises": "./exercises/supplemental-practice.json",
+    "orthography": "./relations/kanji-availability.json",
+    "vocabularyAliases": "./migrations/vocabulary-aliases.json"
+  },
+  "features": [
+    {
+      "id": "grammar-quizzes",
+      "introducedIn": "genki-1:lesson-1",
+      "resource": "grammarIndex"
+    },
+    {
+      "id": "supplemental-practice",
+      "introducedIn": "genki-1:lesson-1",
+      "resource": "exercises"
+    },
+    {
+      "id": "progressive-kanji-display",
+      "introducedIn": "genki-1:lesson-3",
+      "resource": "orthography"
+    }
+  ]
+}

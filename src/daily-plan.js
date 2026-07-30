@@ -25,6 +25,7 @@ import {
 import { getAvailablePracticeTasks } from './practice-plan.js';
 import { getPlanDateAvailability } from '../studyplan.js';
 import { isPriorKnowledge } from './chapter-progress.js';
+import { formatLessonLabel, sameLessonId } from './courses/course-context.js';
 
 export { getPlanDateAvailability };
 
@@ -112,7 +113,7 @@ export function generateDailyPlan(state, options = {}) {
   const cs = state?.chapters?.[activeChapterId];
   const isChapterStarted =
     cs?.started === true ||
-    state?.completedChapters?.includes(activeChapterId) ||
+    state?.completedChapters?.some((id) => sameLessonId(id, activeChapterId)) ||
     isPriorKnowledge(state, activeChapterId);
 
   if (!isChapterStarted) {
@@ -121,7 +122,7 @@ export function generateDailyPlan(state, options = {}) {
       id: `start-chapter-${activeChapterId}`,
       type: 'start-chapter',
       sourceId: `chapter-${activeChapterId}`,
-      title: `Начать главу ${activeChapterId}`,
+      title: `Начать: ${formatLessonLabel(activeChapterId)}`,
       description: `Открыть уроки и карточки новой главы`,
       estimatedMinutes: est,
       priority: 2,

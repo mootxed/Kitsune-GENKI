@@ -4,14 +4,14 @@ import { normalizeChapterContent } from '../src/chapter-content.js';
 import { validateSupplementalPracticeData } from '../src/supplemental-practice.js';
 
 const supplementalData = JSON.parse(
-  fs.readFileSync('public/data/supplemental-practice.json', 'utf8')
+  fs.readFileSync('public/data/courses/genki-1/exercises/supplemental-practice.json', 'utf8')
 );
 
 function loadNormalizedChapters() {
   return supplementalData.chapters.map(({ chapterId, practice }) => {
     const raw = JSON.parse(
       fs.readFileSync(
-        `public/data/lessons/lesson-${String(chapterId).padStart(2, '0')}.json`,
+        `public/data/courses/genki-1/lessons/lesson-${String(chapterId).padStart(2, '0')}.json`,
         'utf8'
       )
     ).lesson;

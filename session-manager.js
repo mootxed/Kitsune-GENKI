@@ -2,6 +2,7 @@
 
 import { db, STORES } from './src/db.js';
 import { broadcastSessionEnded } from './src/tab-sync.js';
+import { canonicalizeCardId, canonicalLessonId } from './src/courses/course-context.js';
 
 let sessionPersistenceGeneration = 0;
 let sessionSaveQueue = Promise.resolve();
@@ -37,11 +38,58 @@ export async function loadSessionFromDB() {
   if (!db || typeof db.get !== 'function') return null;
   try {
     const record = await db.get(STORES.ACTIVE_SESSION, 'current');
-    return record ? record.data : null;
+    return record ? normalizeSessionCourseReferences(record.data) : null;
   } catch (err) {
     console.warn('[SessionManager] Failed to load active session from DB:', err);
     return null;
   }
+}
+
+export function normalizeSessionCourseReferences(record) {
+  if (!record || typeof record !== 'object') return record;
+  const result =
+    typeof globalThis.structuredClone === 'function'
+      ? globalThis.structuredClone(record)
+      : JSON.parse(JSON.stringify(record));
+  if (result.chapterId != null) result.chapterId = canonicalLessonId(result.chapterId);
+  if (result.sessionOrigin?.chapterId != null) {
+    result.sessionOrigin.chapterId = canonicalLessonId(result.sessionOrigin.chapterId);
+  }
+  if (Array.isArray(result.sessionOrigin?.initialCardIds)) {
+    result.sessionOrigin.initialCardIds =
+      result.sessionOrigin.initialCardIds.map(canonicalizeCardId);
+  }
+  for (const item of result.managerState?.queue || []) {
+    if (item.cardId) item.cardId = canonicalizeCardId(item.cardId);
+    if (item.card?.id) {
+      item.card.id = canonicalizeCardId(item.card.id);
+      if (item.card.itemId) {
+        item.card.itemId = canonicalizeCardId(item.card.itemId);
+      }
+    }
+  }
+  const normalizeSessionCard = (card) => {
+    if (typeof card === 'string') return canonicalizeCardId(card);
+    if (card && typeof card === 'object') {
+      if (card?.id) card.id = canonicalizeCardId(card.id);
+      if (card?.itemId) card.itemId = canonicalizeCardId(card.itemId);
+    }
+    return card;
+  };
+  for (const batch of result.batcherState?.batches || []) {
+    const cards = batch?.cards || batch || [];
+    if (!Array.isArray(cards)) continue;
+    const normalizedCards = cards.map(normalizeSessionCard);
+    if (Array.isArray(batch)) {
+      batch.splice(0, batch.length, ...normalizedCards);
+    } else {
+      batch.cards = normalizedCards;
+    }
+  }
+  if (Array.isArray(result.batcherState?.totalCards)) {
+    result.batcherState.totalCards = result.batcherState.totalCards.map(normalizeSessionCard);
+  }
+  return result;
 }
 
 export function clearSessionFromDB() {
@@ -462,9 +510,16 @@ class SessionManager {
     const restoredQueue = [];
 
     for (const savedItem of serialized.queue) {
-      const cardId = savedItem.cardId || savedItem.card?.id;
+      const cardId = canonicalizeCardId(savedItem.cardId || savedItem.card?.id);
       let card =
         typeof savedItem.card === 'object' && savedItem.card !== null ? savedItem.card : null;
+      if (card?.id) {
+        card = {
+          ...card,
+          id: canonicalizeCardId(card.id),
+          itemId: card.itemId ? canonicalizeCardId(card.itemId) : card.itemId,
+        };
+      }
 
       if (cardsMap && cardId) {
         const actualCard =

@@ -52,7 +52,7 @@ describe('Chapter Progress & Snapshot', () => {
 
     const snapshot = getChapterProgressSnapshot(state, 1, chapterMeta);
 
-    expect(snapshot.chapterId).toBe(1);
+    expect(snapshot.chapterId).toBe('1');
     expect(snapshot.vocabulary.total).toBe(20);
     expect(snapshot.grammar.total).toBe(2);
     expect(snapshot.requiredTotalMinutes).toBeGreaterThan(0);

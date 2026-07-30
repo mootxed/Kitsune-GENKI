@@ -14,8 +14,8 @@ const MOCK_LESSON = {
   title: 'Урок 2',
   words: [{ id: 'L2_V001' }, { id: 'L2_V002' }],
   notes: [
-    { note_id: 1, title: 'Грамматика 1: これ, それ', content: '...' },
-    { note_id: 2, title: 'Грамматика 2: この, その', content: '...' },
+    { id: 'L2_g1', note_id: 1, title: 'Грамматика 1: これ, それ', content: '...' },
+    { id: 'L2_g2', note_id: 2, title: 'Грамматика 2: この, その', content: '...' },
   ],
 };
 

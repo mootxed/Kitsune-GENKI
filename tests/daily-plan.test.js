@@ -12,7 +12,7 @@ const MOCK_LESSON = {
   lesson_id: 2,
   title: 'Урок 2',
   words: [{ id: 'L2_V001' }, { id: 'L2_V002' }, { id: 'L2_V003' }],
-  notes: [{ note_id: 1, title: 'Грамматика 1' }],
+  notes: [{ id: 'L2_g1', note_id: 1, title: 'Грамматика 1' }],
   practice: [{ id: 'p1', title: 'Практика 1', estimatedMinutes: 10, required: true }],
 };
 

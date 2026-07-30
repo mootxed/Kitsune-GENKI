@@ -1,4 +1,4 @@
-/* sw.js — Kitsune Genki Service Worker
+/* sw.js — KotoKitsu Service Worker
  *
  * Cache versioning: __CACHE_VERSION__ is replaced at build time by the Vite
  * plugin in vite.config.js with a content-hash derived from the production
@@ -28,7 +28,7 @@ const RUNTIME_CACHE_LIMITS = {
   dynamic: { maxEntries: 30, maxSizeBytes: 8 * 1024 * 1024 },
 };
 
-// Базовый путь скоупа SW (например '/Kitsune-GENKI/' или '/')
+// Базовый путь скоупа SW
 const SW_SCOPE = new URL('./', self.location).pathname;
 const OFFLINE_URL = new URL('offline.html', self.location).pathname;
 
@@ -57,21 +57,13 @@ const OPTIONAL_SHELL_ASSETS = [
   /* __STATIC_ASSETS_END__ */
 ];
 
-// ===== КОНТЕНТ ГЛАВ И КАНДЗИ (Stale-While-Revalidate) =====
-const GRAMMAR_QUIZ_FILES = [
-  'data/grammar-quizzes/index.json',
-  ...Array.from({ length: 12 }, (_, i) => `data/grammar-quizzes/lesson-${String(i + 1).padStart(2, '0')}.json`),
-];
-
-const LESSON_FILES = [
-  'data/content-index.json',
-  'data/supplemental-practice.json',
-  ...GRAMMAR_QUIZ_FILES,
-];
+// ===== ПАКЕТЫ КУРСОВ (Stale-While-Revalidate) =====
+// Только точка входа встроенного курса кешируется при install. Все остальные
+// ресурсы пакета обнаруживаются через manifest и попадают в runtime cache.
+const COURSE_ENTRY_FILES = ['data/courses/genki-1/manifest.json'];
 
 // Паттерн для динамических chunk-файлов контента
-const CONTENT_CHUNK_RE =
-  /\/data\/((lessons|stories)\/(lesson|story)-\d+|kanji\/.*|grammar-quizzes\/.*|supplemental-practice)\.json$/;
+const CONTENT_CHUNK_RE = /\/data\/(courses\/[^/]+\/.*|kanji\/.*)\.json$/;
 
 // Паттерны для определения типа ресурса
 const IMAGE_EXT_RE = /\.(webp|png|jpg|jpeg|gif|svg|ico)(\?.*)?$/i;
@@ -80,7 +72,9 @@ const JS_EXT_RE = /\.(js|mjs)(\?.*)?$/i;
 const JSON_EXT_RE = /\.json(\?.*)?$/i;
 
 // Скомпилированные пути
-const LESSON_FILE_PATHS = LESSON_FILES.map((file) => new URL(file, self.location).pathname);
+const COURSE_ENTRY_PATHS = COURSE_ENTRY_FILES.map(
+  (file) => new URL(file, self.location).pathname
+);
 const RESOLVED_STATIC_PATHS = [...CORE_SHELL_ASSETS, ...OPTIONAL_SHELL_ASSETS].map((url) => new URL(url, self.location).pathname);
 
 // ===== HELPER FUNCTIONS =====
@@ -257,7 +251,7 @@ self.addEventListener('install', (event) => {
       // 3. Lesson JSON — best-effort (stale-while-revalidate использует это в fetch)
       const lessonCache = await caches.open(CACHE_LESSON);
       await Promise.allSettled(
-        LESSON_FILES.map(async (url) => {
+        COURSE_ENTRY_FILES.map(async (url) => {
           const resolved = new URL(url, self.location).href;
           try {
             const response = await fetch(resolved);
@@ -339,7 +333,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ===== LESSON JSON (Stale-While-Revalidate) =====
-  if (LESSON_FILE_PATHS.includes(url.pathname) || CONTENT_CHUNK_RE.test(url.pathname)) {
+  if (COURSE_ENTRY_PATHS.includes(url.pathname) || CONTENT_CHUNK_RE.test(url.pathname)) {
     event.respondWith(handleLessonRequest(request));
     return;
   }

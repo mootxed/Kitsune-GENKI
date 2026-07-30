@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "lessons": [
+    {
+      "courseLessonId": "test-course:lesson-alpha",
+      "localId": "alpha",
+      "title": "Строковый урок",
+      "lesson": "./lessons/alpha.json",
+      "story": "./stories/alpha.json",
+      "vocabCount": 2,
+      "grammarCount": 1
+    }
+  ]
+}

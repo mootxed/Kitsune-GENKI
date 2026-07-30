@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "lesson": {
+    "id": "alpha",
+    "title": "Строковый урок",
+    "vocabulary": [
+      {
+        "id": "hello",
+        "writtenForm": "こんにちは",
+        "reading": "こんにちは",
+        "meaning": "здравствуйте"
+      },
+      {
+        "id": "bye",
+        "writtenForm": "さようなら",
+        "reading": "さようなら",
+        "meaning": "до свидания"
+      }
+    ],
+    "grammar": [
+      {
+        "id": "topic-present",
+        "noteId": "present",
+        "title": "Тестовая тема",
+        "content": "Короткое объяснение"
+      }
+    ]
+  }
+}

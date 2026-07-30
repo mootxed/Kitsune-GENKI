@@ -1,4 +1,5 @@
 /* src/grammar-quiz-content.js — Grammar Quiz content loader & validator */
+import { ensureActiveCourse } from './courses/course-context.js';
 
 export const GRAMMAR_QUIZ_SCHEMA_VERSION = 1;
 const ALLOWED_QUESTION_TYPES = new Set(['single-choice', 'fill-blank', 'sentence-order']);
@@ -28,13 +29,13 @@ export function normalizeGrammarQuizAnswer(value, options = {}) {
 /**
  * Builds a global vocabulary reference index across provided lessons.
  * @param {Array} lessons
- * @returns {Map<string, { chapterId: number, word: object }>}
+ * @returns {Map<string, { chapterId: string|number, word: object }>}
  */
 export function buildVocabularyReferenceIndex(lessons = []) {
   const vocabIndex = new Map();
   for (const lesson of lessons || []) {
     const target = lesson?.lesson || lesson;
-    const chapterId = Number(target.id || target.lesson_id);
+    const chapterId = target.id || target.lesson_id;
     const words = target.words || target.vocabulary || [];
     for (const w of words) {
       const vId = String(w.id || w);
@@ -66,21 +67,15 @@ export function validateGrammarQuizIndex(index) {
     return { valid: false, errors };
   }
 
-  if (index.chapters.length !== 12) {
-    errors.push(`index-must-contain-12-chapters:found-${index.chapters.length}`);
-  }
+  if (index.chapters.length === 0) errors.push('index-must-contain-at-least-one-chapter');
 
   const chapterIds = new Set();
   const paths = new Set();
 
   for (let i = 0; i < index.chapters.length; i++) {
     const entry = index.chapters[i];
-    const expectedId = i + 1;
-    const chId = Number(entry?.chapterId);
-
-    if (!Number.isInteger(chId) || chId !== expectedId) {
-      errors.push(`invalid-chapter-id-order:expected-${expectedId}-got-${entry?.chapterId}`);
-    }
+    const chId = String(entry?.lessonId ?? entry?.chapterId ?? '');
+    if (!chId) errors.push(`invalid-chapter-id-at-index:${i}`);
     if (chapterIds.has(chId)) {
       errors.push(`duplicate-index-chapter-id:${chId}`);
     }
@@ -123,11 +118,8 @@ export function validateGrammarQuizIndex(index) {
  */
 export async function loadGrammarQuizIndex() {
   if (!indexPromise) {
-    indexPromise = fetch('data/grammar-quizzes/index.json')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status} for data/grammar-quizzes/index.json`);
-        return res.json();
-      })
+    indexPromise = ensureActiveCourse()
+      .then((course) => course.resources.grammarIndex)
       .then((data) => {
         const validation = validateGrammarQuizIndex(data);
         if (!validation.valid) {
@@ -224,13 +216,18 @@ export function validateGrammarQuizData(data, lessons = [], indexEntry = null) {
     errors.push(`unsupported-schema-version:${data.schemaVersion}`);
   }
 
-  const chapterId = Number(data.chapterId);
-  if (!Number.isInteger(chapterId) || chapterId <= 0 || chapterId > 12) {
+  const chapterId = data.lessonId ?? data.chapterId;
+  if (
+    chapterId == null ||
+    (typeof chapterId !== 'string' && typeof chapterId !== 'number') ||
+    String(chapterId).trim() === ''
+  ) {
     errors.push(`invalid-chapter-id:${data.chapterId}`);
   }
 
   if (indexEntry) {
-    if (Number(indexEntry.chapterId) !== chapterId) {
+    const indexLessonId = indexEntry.lessonId ?? indexEntry.chapterId;
+    if (String(indexLessonId) !== String(chapterId)) {
       errors.push(`chapter-id-mismatch-index:${chapterId}-vs-${indexEntry.chapterId}`);
     }
   }
@@ -260,11 +257,18 @@ export function validateGrammarQuizData(data, lessons = [], indexEntry = null) {
   }
 
   const vocabIndex = buildVocabularyReferenceIndex(lessons);
+  const lessonOrder = new Map(
+    (lessons || []).map((lesson, index) => {
+      const item = lesson?.lesson || lesson;
+      return [String(item?.id || item?.lessonId || item?.lesson_id), index];
+    })
+  );
+  const targetLessonOrder = lessonOrder.get(String(chapterId));
 
   const targetLessonRaw = Array.isArray(lessons)
     ? lessons.find((l) => {
         const item = l?.lesson || l;
-        return Number(item.id || item.lesson_id) === chapterId;
+        return String(item.id || item.lesson_id) === String(chapterId);
       })
     : null;
   const targetLesson = targetLessonRaw?.lesson || targetLessonRaw;
@@ -284,11 +288,6 @@ export function validateGrammarQuizData(data, lessons = [], indexEntry = null) {
     if (!topicId) {
       errors.push(`missing-topic-id-in-chapter:${chapterId}`);
       continue;
-    }
-
-    const expectedPrefix = `L${chapterId}_g`;
-    if (!topicId.startsWith(expectedPrefix)) {
-      errors.push(`invalid-topic-id-prefix:${topicId}:expected-${expectedPrefix}`);
     }
 
     const addTopicError = (msg) => {
@@ -337,7 +336,9 @@ export function validateGrammarQuizData(data, lessons = [], indexEntry = null) {
       const lessonTopics =
         targetLesson.notes || targetLesson.grammar || targetLesson.grammarTopics || [];
       const matchingNote = lessonTopics.find(
-        (t) => String(t.id || `L${chapterId}_g${t.note_id || t.noteId}`) === topicId
+        (t) =>
+          String(t.id || t.localId || '') === topicId ||
+          (topic.noteId != null && String(t.noteId ?? t.note_id ?? '') === String(topic.noteId))
       );
       if (!matchingNote) {
         addTopicError(`topic-not-found-in-lesson:${topicId}`);
@@ -355,15 +356,14 @@ export function validateGrammarQuizData(data, lessons = [], indexEntry = null) {
         if (pId === topicId) {
           addTopicError(`self-prerequisite:${pId}`);
         }
-        const match = String(pId).match(/^L(\d+)_g(\d+)/i);
-        if (match) {
-          const pCh = Number(match[1]);
-          const pNote = Number(match[2]);
-          if (pCh > chapterId) {
-            addTopicError(`future-prerequisite-grammar:${pId}`);
-          } else if (pCh === chapterId && topic.noteId != null && pNote >= Number(topic.noteId)) {
-            addTopicError(`future-or-same-topic-prerequisite:${pId}`);
-          }
+        const prerequisiteOrder = topicOrderMap.get(String(pId));
+        const currentOrder = topicOrderMap.get(topicId);
+        if (
+          prerequisiteOrder != null &&
+          currentOrder != null &&
+          prerequisiteOrder >= currentOrder
+        ) {
+          addTopicError(`future-or-same-topic-prerequisite:${pId}`);
         }
       }
     }
@@ -373,7 +373,10 @@ export function validateGrammarQuizData(data, lessons = [], indexEntry = null) {
         const entry = vocabIndex.get(String(vId));
         if (!entry) {
           addTopicError(`unknown-required-vocabulary:${vId}`);
-        } else if (entry.chapterId > chapterId) {
+        } else if (
+          targetLessonOrder != null &&
+          lessonOrder.get(String(entry.chapterId)) > targetLessonOrder
+        ) {
           addTopicError(`future-required-vocabulary:${vId}:from-chapter-${entry.chapterId}`);
         }
       }
@@ -463,7 +466,10 @@ export function validateGrammarQuizData(data, lessons = [], indexEntry = null) {
           const entry = vocabIndex.get(String(vRef));
           if (!entry) {
             addTopicError(`unknown-vocabulary-ref:${qId}:${vRef}`);
-          } else if (entry.chapterId > chapterId) {
+          } else if (
+            targetLessonOrder != null &&
+            lessonOrder.get(String(entry.chapterId)) > targetLessonOrder
+          ) {
             addTopicError(`future-vocabulary-ref:${qId}:${vRef}:from-chapter-${entry.chapterId}`);
           }
         }
@@ -471,20 +477,10 @@ export function validateGrammarQuizData(data, lessons = [], indexEntry = null) {
 
       if (Array.isArray(q.grammarRefs)) {
         for (const gRef of q.grammarRefs) {
-          const match = String(gRef).match(/^L(\d+)_g(\d+)/i);
-          if (match) {
-            const refChapter = Number(match[1]);
-            const refNote = Number(match[2]);
-            if (refChapter > chapterId) {
-              addTopicError(`future-chapter-grammar-ref:${qId}:${gRef}`);
-            } else if (refChapter === chapterId) {
-              const currentNoteId = Number(topic.noteId);
-              if (currentNoteId && refNote > currentNoteId) {
-                addTopicError(`future-same-chapter-grammar-ref:${qId}:${gRef}`);
-              }
-            }
-          } else {
-            addTopicError(`invalid-grammar-ref-format:${qId}:${gRef}`);
+          const referenceOrder = topicOrderMap.get(String(gRef));
+          const currentOrder = topicOrderMap.get(topicId);
+          if (referenceOrder != null && currentOrder != null && referenceOrder > currentOrder) {
+            addTopicError(`future-same-chapter-grammar-ref:${qId}:${gRef}`);
           }
         }
       }
@@ -510,10 +506,10 @@ export function validateGrammarQuizData(data, lessons = [], indexEntry = null) {
  * @returns {Promise<object>}
  */
 export async function loadGrammarQuizChapter(chapterId, options = {}) {
-  const id = Number(chapterId);
-  if (!Number.isInteger(id) || id <= 0 || id > 12) {
-    throw new Error(`Grammar quiz chapter ${chapterId} is invalid`);
-  }
+  void options;
+  const course = await ensureActiveCourse();
+  const id = course.canonicalLessonId(chapterId);
+  if (!id) throw new Error(`Grammar quiz lesson ${chapterId} is invalid`);
 
   if (chapterCache.has(id)) {
     return chapterCache.get(id);
@@ -524,38 +520,9 @@ export async function loadGrammarQuizChapter(chapterId, options = {}) {
   }
 
   const promise = (async () => {
-    const index = await loadGrammarQuizIndex();
-    const entry = index.chapters.find((chapter) => Number(chapter.chapterId) === id);
-
-    if (!entry) {
-      throw new Error(`Grammar quiz chapter ${id} is not registered`);
-    }
-
-    const runtimePath = entry.path;
-    const response = await fetch(runtimePath);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} for ${runtimePath}`);
-    }
-
-    const data = await response.json();
-    const lessons = options.lessons || [];
-    const validation = validateGrammarQuizData(data, lessons, entry);
-
-    // Sanitize corrupted topics
-    const sanitizedTopics = (data.topics || []).map((t) => {
-      if (validation.invalidTopicIds.has(t.id)) {
-        return { ...t, quiz: null };
-      }
-      return t;
-    });
-
-    const sanitizedData = {
-      ...data,
-      topics: sanitizedTopics,
-    };
-
-    chapterCache.set(id, sanitizedData);
-    return sanitizedData;
+    const data = await course.loadGrammar(id);
+    chapterCache.set(id, data);
+    return data;
   })()
     .catch((err) => {
       console.warn(`[GrammarQuiz] Error loading chapter ${id}:`, err);
@@ -575,9 +542,8 @@ export async function loadGrammarQuizChapter(chapterId, options = {}) {
  * @returns {Promise<object|null>}
  */
 export async function getGrammarQuizForChapter(chapterId) {
-  const id = Number(chapterId);
   try {
-    return await loadGrammarQuizChapter(id);
+    return await loadGrammarQuizChapter(chapterId);
   } catch {
     return null;
   }
@@ -600,10 +566,14 @@ export async function getGrammarQuizTopic(chapterId, topicId) {
  * @param {number|string} chapterId
  */
 export function prefetchGrammarQuizChapter(chapterId) {
-  const id = Number(chapterId);
-  if (id > 0 && id <= 12 && !chapterCache.has(id) && !chapterPromises.has(id)) {
-    loadGrammarQuizChapter(id).catch(() => {});
-  }
+  ensureActiveCourse()
+    .then((course) => course.canonicalLessonId(chapterId))
+    .then((id) => {
+      if (id && !chapterCache.has(id) && !chapterPromises.has(id)) {
+        loadGrammarQuizChapter(id).catch(() => {});
+      }
+    })
+    .catch(() => {});
 }
 
 /**
@@ -612,7 +582,7 @@ export function prefetchGrammarQuizChapter(chapterId) {
  */
 export function clearGrammarQuizCache(chapterId) {
   if (chapterId != null) {
-    const id = Number(chapterId);
+    const id = String(chapterId);
     chapterCache.delete(id);
     chapterPromises.delete(id);
   } else {

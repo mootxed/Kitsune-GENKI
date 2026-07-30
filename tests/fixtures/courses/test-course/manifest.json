@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "courseId": "test-course",
+  "title": "Test Course",
+  "language": "ja",
+  "baseLanguage": "ru",
+  "contentVersion": "0.0.1",
+  "entryLessonId": "test-course:lesson-alpha",
+  "lessonOrder": ["test-course:lesson-alpha"],
+  "dataPaths": {
+    "contentIndex": "./content-index.json",
+    "grammarIndex": "./grammar/index.json",
+    "exercises": "./exercises.json"
+  },
+  "features": [
+    {
+      "id": "grammar-quizzes",
+      "introducedIn": "test-course:lesson-alpha",
+      "resource": "grammarIndex"
+    }
+  ]
+}

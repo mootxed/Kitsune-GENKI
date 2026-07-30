@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   validateGrammarQuizData,
   validateGrammarQuizIndex,
@@ -10,9 +12,9 @@ import {
   getGrammarQuizForChapter,
   getGrammarQuizTopic,
 } from '../src/grammar-quiz-content.js';
-import quizData from '../public/data/grammar-quizzes/lesson-01.json';
-import indexData from '../public/data/grammar-quizzes/index.json';
-import lesson01Data from '../public/data/lessons/lesson-01.json';
+import quizData from '../public/data/courses/genki-1/grammar/lesson-01.json';
+import indexData from '../public/data/courses/genki-1/grammar/index.json';
+import lesson01Data from '../public/data/courses/genki-1/lessons/lesson-01.json';
 
 describe('Grammar Quiz Content & Schema (lesson-01.json & loader API)', () => {
   beforeEach(() => {
@@ -72,25 +74,25 @@ describe('Grammar Quiz Content & Schema (lesson-01.json & loader API)', () => {
 
   it('supports lazy chapter loading and cache clearing by chapterId', async () => {
     global.fetch = vi.fn((url) => {
-      if (url.includes('index.json')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(indexData) });
+      try {
+        const pathname = new URL(String(url), 'http://localhost/').pathname.replace(/^\/+/, '');
+        const data = JSON.parse(fs.readFileSync(path.resolve('public', pathname), 'utf8'));
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(data) });
+      } catch {
+        return Promise.reject(new Error(`404 ${url}`));
       }
-      if (url.includes('lesson-01.json')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(quizData) });
-      }
-      return Promise.reject(new Error(`404 ${url}`));
     });
 
     const chapter1 = await loadGrammarQuizChapter(1);
     expect(chapter1).toBeDefined();
-    expect(chapter1.chapterId).toBe(1);
+    expect(chapter1.chapterId).toBe('genki-1:lesson-1');
 
     const safeFetch = await getGrammarQuizForChapter(1);
     expect(safeFetch).toEqual(chapter1);
 
-    const topic = await getGrammarQuizTopic(1, 'L1_g1');
+    const topic = await getGrammarQuizTopic(1, 'genki-1:grammar:L1_g1');
     expect(topic).toBeDefined();
-    expect(topic.id).toBe('L1_g1');
+    expect(topic.id).toBe('genki-1:grammar:L1_g1');
 
     // Test clearing cache by chapterId
     clearGrammarQuizCache(1);

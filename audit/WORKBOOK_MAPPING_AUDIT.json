@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "extractedAt": "2026-07-27T19:00:48.038Z",
+  "extractedAt": "2026-07-30T16:26:57.628Z",
   "files": {
     "supplemental-practice.json": {
       "source": null,
@@ -10,7 +10,7 @@
       "workbookTocPdfPages": null,
       "lessons": {}
     },
-    "public/data/genki-lesson-01-grammar-quiz.json": {
+    "public/data/courses/genki-1/grammar/lesson-01.json": {
       "source": null,
       "pdfPages": null,
       "workbookPrintedPages": null,
@@ -18,7 +18,7 @@
       "topics": {},
       "questions": {}
     },
-    "public/data/grammar-quizzes/lesson-01.json": {
+    "public/data/courses/genki-1/grammar/lesson-02.json": {
       "source": null,
       "pdfPages": null,
       "workbookPrintedPages": null,
@@ -26,7 +26,7 @@
       "topics": {},
       "questions": {}
     },
-    "public/data/grammar-quizzes/lesson-02.json": {
+    "public/data/courses/genki-1/grammar/lesson-03.json": {
       "source": null,
       "pdfPages": null,
       "workbookPrintedPages": null,
@@ -34,7 +34,7 @@
       "topics": {},
       "questions": {}
     },
-    "public/data/grammar-quizzes/lesson-03.json": {
+    "public/data/courses/genki-1/grammar/lesson-04.json": {
       "source": null,
       "pdfPages": null,
       "workbookPrintedPages": null,
@@ -42,7 +42,7 @@
       "topics": {},
       "questions": {}
     },
-    "public/data/grammar-quizzes/lesson-04.json": {
+    "public/data/courses/genki-1/grammar/lesson-05.json": {
       "source": null,
       "pdfPages": null,
       "workbookPrintedPages": null,
@@ -50,7 +50,7 @@
       "topics": {},
       "questions": {}
     },
-    "public/data/grammar-quizzes/lesson-05.json": {
+    "public/data/courses/genki-1/grammar/lesson-06.json": {
       "source": null,
       "pdfPages": null,
       "workbookPrintedPages": null,
@@ -58,7 +58,7 @@
       "topics": {},
       "questions": {}
     },
-    "public/data/grammar-quizzes/lesson-06.json": {
+    "public/data/courses/genki-1/grammar/lesson-07.json": {
       "source": null,
       "pdfPages": null,
       "workbookPrintedPages": null,
@@ -66,7 +66,7 @@
       "topics": {},
       "questions": {}
     },
-    "public/data/grammar-quizzes/lesson-07.json": {
+    "public/data/courses/genki-1/grammar/lesson-08.json": {
       "source": null,
       "pdfPages": null,
       "workbookPrintedPages": null,
@@ -74,7 +74,7 @@
       "topics": {},
       "questions": {}
     },
-    "public/data/grammar-quizzes/lesson-08.json": {
+    "public/data/courses/genki-1/grammar/lesson-09.json": {
       "source": null,
       "pdfPages": null,
       "workbookPrintedPages": null,
@@ -82,7 +82,7 @@
       "topics": {},
       "questions": {}
     },
-    "public/data/grammar-quizzes/lesson-09.json": {
+    "public/data/courses/genki-1/grammar/lesson-10.json": {
       "source": null,
       "pdfPages": null,
       "workbookPrintedPages": null,
@@ -90,7 +90,7 @@
       "topics": {},
       "questions": {}
     },
-    "public/data/grammar-quizzes/lesson-10.json": {
+    "public/data/courses/genki-1/grammar/lesson-11.json": {
       "source": null,
       "pdfPages": null,
       "workbookPrintedPages": null,
@@ -98,15 +98,7 @@
       "topics": {},
       "questions": {}
     },
-    "public/data/grammar-quizzes/lesson-11.json": {
-      "source": null,
-      "pdfPages": null,
-      "workbookPrintedPages": null,
-      "workbookTocPdfPages": null,
-      "topics": {},
-      "questions": {}
-    },
-    "public/data/grammar-quizzes/lesson-12.json": {
+    "public/data/courses/genki-1/grammar/lesson-12.json": {
       "source": null,
       "pdfPages": null,
       "workbookPrintedPages": null,

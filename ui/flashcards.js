@@ -4,7 +4,7 @@ import { $, $$ } from '../src/utils.js';
 import { wordById, cardChapter } from '../src/srs-helpers.js';
 import { markCardIntroduced } from '../src/srs-limits.js';
 import { SRS } from '../srs.js';
-import { displayWordForm, isKanjiFormAvailable } from '../src/genki-kanji.js';
+import { displayWordForm, isKanjiFormAvailable } from '../src/course-orthography.js';
 
 import {
   flashQueue,

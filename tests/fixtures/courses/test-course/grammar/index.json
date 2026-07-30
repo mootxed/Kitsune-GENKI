@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "lessons": [
+    {
+      "lessonId": "test-course:lesson-alpha",
+      "path": "./grammar/alpha.json",
+      "topicCount": 1,
+      "questionCount": 1
+    }
+  ]
+}

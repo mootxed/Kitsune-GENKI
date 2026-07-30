@@ -341,7 +341,7 @@ describe('Kitsune-GENKI Example Switching and Corpus Integration Tests', () => {
     ExamplesDB.rebuildIndex();
 
     const unlockedMax = getCanonicalMaxUnlockedLesson({ chapters: { 1: { started: true } } });
-    expect(unlockedMax).toBe(1);
+    expect(unlockedMax).toBe('1');
 
     const candidates = getExampleCandidates(word, { userMaxLesson: unlockedMax });
     expect(candidates.length).toBe(1);
