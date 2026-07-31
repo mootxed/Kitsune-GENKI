@@ -1079,8 +1079,17 @@ class InMemoryFallback {
 
   async get(storeName, key) {
     const storeKey = `${storeName}:${key}`;
-    if (this.storage.has(storeKey)) return this.storage.get(storeKey);
-    return (this.storage.get(`${storeName}:__records__`) || []).find((record) => record.id === key);
+    let result = undefined;
+    if (this.storage.has(storeKey)) {
+      result = this.storage.get(storeKey);
+    } else {
+      result = (this.storage.get(`${storeName}:__records__`) || []).find(
+        (record) => record.id === key
+      );
+    }
+    return result && typeof result === 'object' && Object.hasOwn(result, 'value')
+      ? result.value
+      : result;
   }
 
   async set(storeName, key, value) {

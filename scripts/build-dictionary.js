@@ -199,6 +199,18 @@ async function collectLessonDocuments() {
 
 export async function buildDictionary(options = {}) {
   const mode = options.mode || 'write';
+  const DICTIONARY_ROOT = options.dictionaryRoot
+    ? path.resolve(options.dictionaryRoot)
+    : path.join(ROOT, 'public/data/dictionary');
+  const GENERATED_ALIASES_PATH = options.generatedAliasesPath
+    ? path.resolve(options.generatedAliasesPath)
+    : path.join(ROOT, 'src/dictionary/generated-dictionary-aliases.js');
+  const ENTRIES_PATH = path.join(DICTIONARY_ROOT, 'entries.json');
+  const TOKEN_INDEX_PATH = path.join(DICTIONARY_ROOT, 'token-index.json');
+  const ALIASES_PATH = path.join(DICTIONARY_ROOT, 'aliases.json');
+  const MANIFEST_PATH = path.join(DICTIONARY_ROOT, 'manifest.json');
+  const REPORT_PATH = path.join(DICTIONARY_ROOT, 'report.json');
+
   const SOURCE_PATH = path.join(ROOT, 'data-source/dictionary/genki-1-vocabulary.json');
   const sourceDataset = await readJson(SOURCE_PATH, { schemaVersion: 1, entries: [] });
   const courseAliases = await readJson(COURSE_ALIASES_PATH, {

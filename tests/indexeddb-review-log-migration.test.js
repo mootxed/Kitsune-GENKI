@@ -1,5 +1,6 @@
+import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { initializeDB, STORES } from '../src/db.js';
+import { initializeDB, IndexedDBWrapper, STORES } from '../src/db.js';
 import { clearReviewLogs, getReviewLogsForCard } from '../src/review-log.js';
 
 describe('IndexedDB review_log migration v16', () => {
@@ -7,8 +8,9 @@ describe('IndexedDB review_log migration v16', () => {
     await clearReviewLogs();
   });
 
-  it('migrates legacy card and item references in review_log idempotently', async () => {
+  it('migrates legacy card and item references in review_log idempotently on real IndexedDBWrapper', async () => {
     const database = await initializeDB();
+    expect(database).toBeInstanceOf(IndexedDBWrapper);
 
     const legacyEvents = [
       {
@@ -100,13 +102,11 @@ describe('IndexedDB review_log migration v16', () => {
       },
     ];
 
-    if (typeof database.putRecord === 'function') {
-      for (const legacy of legacyEvents) {
-        await database.putRecord(STORES.REVIEW_LOG, legacy);
-      }
-      await database.delete(STORES.APP_STATE, 'review_log_migration_v16');
-      await database.runReviewLogMigration();
+    for (const legacy of legacyEvents) {
+      await database.putRecord(STORES.REVIEW_LOG, legacy);
     }
+    await database.delete(STORES.APP_STATE, 'review_log_migration_v16');
+    await database.runReviewLogMigration();
 
     const globalId = 'jp-word:学生:がくせい';
     const logs = await getReviewLogsForCard(globalId);
@@ -120,15 +120,14 @@ describe('IndexedDB review_log migration v16', () => {
     expect(recallLogs.length).toBe(1);
     expect(recallLogs[0].cardId).toBe(`${globalId}::recall`);
 
-    if (typeof database.runReviewLogMigration === 'function') {
-      await database.runReviewLogMigration();
-    }
+    await database.runReviewLogMigration();
     const secondRunLogs = await getReviewLogsForCard(globalId);
     expect(secondRunLogs.length).toBe(1);
   });
 
-  it('migrates active_session even when review_log is completely empty and writes migration marker', async () => {
+  it('migrates active_session on real IndexedDBWrapper even when review_log is completely empty and writes migration marker', async () => {
     const database = await initializeDB();
+    expect(database).toBeInstanceOf(IndexedDBWrapper);
 
     const activeSessionRecord = {
       id: 'current',
@@ -136,29 +135,24 @@ describe('IndexedDB review_log migration v16', () => {
       currentCardId: 'L1_V023',
     };
 
-    if (typeof database.putRecord === 'function') {
-      await database.clear(STORES.REVIEW_LOG);
-      await database.putRecord(STORES.ACTIVE_SESSION, activeSessionRecord);
-      await database.delete(STORES.APP_STATE, 'review_log_migration_v16');
+    await database.clear(STORES.REVIEW_LOG);
+    await database.putRecord(STORES.ACTIVE_SESSION, activeSessionRecord);
+    await database.delete(STORES.APP_STATE, 'review_log_migration_v16');
 
-      await database.runReviewLogMigration();
+    await database.runReviewLogMigration();
 
-      const migratedSession = await database.get(STORES.ACTIVE_SESSION, 'current');
-      const expectedGlobalId = 'jp-word:学生:がくせい';
-      expect(migratedSession.queue).toEqual([expectedGlobalId, `${expectedGlobalId}::recall`]);
-      expect(migratedSession.currentCardId).toBe(expectedGlobalId);
+    const migratedSession = await database.get(STORES.ACTIVE_SESSION, 'current');
+    const expectedGlobalId = 'jp-word:学生:がくせい';
+    expect(migratedSession.queue).toEqual([expectedGlobalId, `${expectedGlobalId}::recall`]);
+    expect(migratedSession.currentCardId).toBe(expectedGlobalId);
 
-      const marker = await database.get(STORES.APP_STATE, 'review_log_migration_v16');
-      expect(marker).toBeTruthy();
-      expect(marker.value).toBe(true);
+    const marker = await database.get(STORES.APP_STATE, 'review_log_migration_v16');
+    // Real IndexedDBWrapper.get() unwraps object's .value property, returning boolean true
+    expect(marker).toBe(true);
 
-      // Subsequent migration call should do nothing
-      await database.runReviewLogMigration();
-      const sessionAfterSecondRun = await database.get(STORES.ACTIVE_SESSION, 'current');
-      expect(sessionAfterSecondRun.queue).toEqual([
-        expectedGlobalId,
-        `${expectedGlobalId}::recall`,
-      ]);
-    }
+    // Subsequent migration call should do nothing
+    await database.runReviewLogMigration();
+    const sessionAfterSecondRun = await database.get(STORES.ACTIVE_SESSION, 'current');
+    expect(sessionAfterSecondRun.queue).toEqual([expectedGlobalId, `${expectedGlobalId}::recall`]);
   });
 });

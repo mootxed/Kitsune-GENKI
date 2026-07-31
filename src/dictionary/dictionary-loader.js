@@ -183,6 +183,19 @@ export class DictionaryLoader {
       }
     }
 
+    for (const entry of entries) {
+      for (const tokenForm of entry.tokenForms || []) {
+        const normalized = normalizeDictionaryText(tokenForm);
+        if (!normalized) continue;
+        const candidateIds = tokenIndex[normalized];
+        if (!Array.isArray(candidateIds) || !candidateIds.includes(entry.id)) {
+          throw new Error(
+            `[Dictionary] Token index missing entry ${entry.id} for token form "${tokenForm}" ("${normalized}")`
+          );
+        }
+      }
+    }
+
     return {
       manifest,
       entries,
