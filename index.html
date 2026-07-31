@@ -413,6 +413,25 @@
         <div class="screen-scroll" id="statistics-body"></div>
       </section>
 
+      <!-- ===== WORD DETAILS ===== -->
+      <section class="screen hidden" id="screen-word-details" data-testid="screen-word-details">
+        <header class="app-header">
+          <button
+            class="icon-btn back-btn"
+            id="word-details-back-btn"
+            data-testid="word-details-back-btn"
+            aria-label="Назад"
+            onclick="history.back()"
+          >
+            ‹
+          </button>
+          <div>
+            <h1 class="app-title">Слово</h1>
+          </div>
+        </header>
+        <div class="screen-scroll" id="word-details-body"></div>
+      </section>
+
       <!-- ===== STUDY PLAN ===== -->
       <section class="screen hidden" id="screen-plan" data-testid="screen-plan">
         <div class="screen-scroll">
@@ -722,6 +741,15 @@
             </div>
             <p id="modal-reading" class="word-reading" lang="ja"></p>
             <p id="modal-translation" class="word-translation"></p>
+            <p id="modal-source" class="word-source-badge" aria-live="polite"></p>
+            <button
+              id="btn-open-word-page"
+              class="btn-ghost word-open-page-btn"
+              aria-label="Открыть полную страницу слова"
+              hidden
+            >
+              📖 Открыть страницу слова →
+            </button>
           </div>
         </div>
       </div>

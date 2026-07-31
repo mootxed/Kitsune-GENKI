@@ -69,7 +69,7 @@ describe('Story Token UI Integration & Bottom Sheet', () => {
     expect(modalKanji.textContent).toBe('猫');
     expect(modalReading.textContent).toBe('ねこ');
     expect(modalTranslation.textContent).toBe('кошка');
-    expect(modalType.textContent).toContain('noun');
+    expect(modalType.textContent).toContain('Существительное');
   });
 
   it('handles missing dictionaryId gracefully without crashing', async () => {
@@ -99,7 +99,9 @@ describe('Story Token UI Integration & Bottom Sheet', () => {
     const modalKanji = document.getElementById('modal-kanji');
     const modalTranslation = document.getElementById('modal-translation');
 
+    // When resolution status is 'missing' but contextMeaning is provided,
+    // the contextMeaning is shown with a fallback suffix
     expect(modalKanji.textContent).toBe('未知');
-    expect(modalTranslation.textContent).toBe('неизвестно');
+    expect(modalTranslation.textContent).toBe('Слово не найдено в словаре');
   });
 });

@@ -120,6 +120,7 @@ import { renderWordSearch } from './ui/word-search.js';
 import { renderOnboarding } from './ui/onboarding.js';
 import { renderStatistics } from './ui/statistics.js';
 import { renderUserDictionaries } from './ui/user-dictionaries.js';
+import { renderWordDetails } from './ui/word-details.js';
 import { refreshUserDictionaryLesson } from './src/user-dictionaries/runtime.js';
 import { shouldShowOnboarding } from './src/onboarding-state.js';
 
@@ -802,6 +803,7 @@ function setupRouter() {
         options,
         context
       ),
+    'word-details': (options, context) => renderWordDetails(state, dependencies, options, context),
   });
 
   // Глобальные алиасы для обратной совместимости

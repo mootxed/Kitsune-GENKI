@@ -376,11 +376,14 @@ export function openWordBottomSheet(tokenElement, customStore = null) {
   const reading = dataset.reading || dataset.writing || surface;
   const contextMeaning = dataset.contextMeaning || dataset.translation || '';
   const dictionaryId = dataset.dictionaryId || null;
+  const resolutionStatus = dataset.resolutionStatus || 'resolved';
 
   const modalKanji = $('#modal-kanji');
   const modalReading = $('#modal-reading');
   const modalTranslation = $('#modal-translation');
   const modalType = $('#modal-type');
+  const modalSource = $('#modal-source');
+  const openPageBtn = $('#btn-open-word-page');
 
   let entry = null;
   const activeStore = customStore || dictionaryStore || window.dictionaryStore || null;
@@ -397,7 +400,13 @@ export function openWordBottomSheet(tokenElement, customStore = null) {
 
   if (modalTranslation) {
     const globalMeanings = entry?.meanings ? entry.meanings.join(', ') : '';
-    if (contextMeaning && globalMeanings && contextMeaning !== globalMeanings) {
+    if (resolutionStatus === 'non-lexical') {
+      modalTranslation.textContent = 'Служебный элемент';
+    } else if (resolutionStatus === 'missing') {
+      modalTranslation.textContent = 'Слово не найдено в словаре';
+    } else if (resolutionStatus === 'ambiguous') {
+      modalTranslation.textContent = contextMeaning || globalMeanings || 'Неоднозначное слово';
+    } else if (contextMeaning && globalMeanings && contextMeaning !== globalMeanings) {
       modalTranslation.textContent = `${contextMeaning} (Значения: ${globalMeanings})`;
     } else {
       modalTranslation.textContent =
@@ -408,7 +417,44 @@ export function openWordBottomSheet(tokenElement, customStore = null) {
   if (modalType) {
     const srcTag =
       entry?.source === 'ai' ? ' [AI]' : entry?.source === 'curated' ? ' [Словарь]' : '';
-    modalType.textContent = (entry?.partOfSpeech || dataset.type || 'Слово') + srcTag;
+    modalType.textContent =
+      (entry?.partOfSpeech ? _posLabel(entry.partOfSpeech) : dataset.type || 'Слово') + srcTag;
+  }
+
+  if (modalSource) {
+    if (entry?.source === 'curated') {
+      modalSource.textContent = '✓ Проверенная запись KotoKitsu';
+      modalSource.className = 'word-source-badge word-source-badge--curated';
+    } else if (entry?.source === 'ai') {
+      modalSource.textContent = '🤖 Создано AI';
+      modalSource.className = 'word-source-badge word-source-badge--ai';
+    } else {
+      modalSource.textContent = '';
+      modalSource.className = 'word-source-badge';
+    }
+  }
+
+  // Show "open word page" button only when dictionaryId is known and status is resolved/ambiguous
+  if (openPageBtn) {
+    const canOpen =
+      dictionaryId &&
+      (resolutionStatus === 'resolved' || resolutionStatus === 'ambiguous' || !resolutionStatus);
+    openPageBtn.hidden = !canOpen;
+    if (canOpen) {
+      openPageBtn.onclick = () => {
+        closeWordBottomSheet();
+        const navFn = window.nav || (() => {});
+        navFn('word-details', {
+          dictionaryId,
+          surface,
+          reading: reading !== surface ? reading : null,
+          contextMeaning,
+          tokenId: dataset.tokenId || null,
+          storyId: null,
+          sentenceId: null,
+        });
+      };
+    }
   }
 
   sheet.classList.add('active');
@@ -417,12 +463,43 @@ export function openWordBottomSheet(tokenElement, customStore = null) {
   if (backdrop) {
     backdrop.onclick = () => closeWordBottomSheet();
   }
+
+  // Focus management: move focus inside sheet for accessibility
+  const firstFocusable = sheet.querySelector('button:not([hidden]), [tabindex="0"]');
+  if (firstFocusable) {
+    requestAnimationFrame(() => firstFocusable.focus());
+  }
+}
+
+// Локализация части речи
+function _posLabel(pos) {
+  const labels = {
+    noun: 'Существительное',
+    verb: 'Глагол',
+    adjective: 'Прилагательное',
+    adverb: 'Наречие',
+    particle: 'Частица',
+    expression: 'Выражение',
+  };
+  return labels[pos] || pos || 'Слово';
 }
 
 // Функция закрытия Bottom Sheet
 export function closeWordBottomSheet() {
   const sheet = $('#word-bottom-sheet');
   if (sheet) sheet.classList.remove('active');
+}
+
+// Закрытие по нажатию Escape
+if (typeof document !== 'undefined') {
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const sheet = document.getElementById('word-bottom-sheet');
+      if (sheet && sheet.classList.contains('active')) {
+        closeWordBottomSheet();
+      }
+    }
+  });
 }
 
 // Функция установки обработчиков клика по токенам и переключения переводов

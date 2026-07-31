@@ -13870,3 +13870,589 @@ mark.grammar-highlight {
 .note-delete:hover {
   background: rgba(239, 68, 68, 0.1);
 }
+
+/* ===== WORD BOTTOM SHEET — ENHANCEMENTS ===== */
+.word-source-badge {
+  font-size: 12px;
+  font-weight: 500;
+  margin: 4px 0 12px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.word-source-badge--curated {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+.word-source-badge--ai {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+}
+
+[data-theme='dark'] .word-source-badge--curated {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+[data-theme='dark'] .word-source-badge--ai {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+
+.word-open-page-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1.5px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.word-open-page-btn:hover {
+  background: var(--orange-soft);
+  transform: translateY(-1px);
+}
+
+.word-open-page-btn:active {
+  transform: scale(0.98);
+}
+
+/* ===== WORD DETAILS FULL PAGE ===== */
+.word-details-page {
+  padding: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.word-details-header {
+  margin-bottom: 20px;
+}
+
+.word-details-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.word-details-form {
+  font-size: 40px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.1;
+}
+
+.word-details-reading {
+  font-size: 20px;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+.word-details-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  padding-top: 4px;
+}
+
+.word-details-section {
+  margin-bottom: 20px;
+}
+
+.word-details-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 10px;
+}
+
+.word-details-card {
+  background: var(--bg-card, var(--card));
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid var(--border, #e2e8f0);
+}
+
+.word-details-main-meaning {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.word-details-meanings-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.word-details-meanings-list li {
+  font-size: 16px;
+  color: var(--text-muted);
+  background: var(--bg-input, #f1f5f9);
+  padding: 3px 10px;
+  border-radius: 8px;
+}
+
+.word-details-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.word-meta-tag {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: var(--orange-soft, rgba(255, 138, 43, 0.1));
+  color: var(--primary);
+}
+
+.word-meta-tag--semantic {
+  background: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+}
+
+.word-details-empty {
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+  padding: 8px 0;
+  margin: 0;
+}
+
+/* Context form */
+.word-context-surface {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.word-context-reading {
+  font-size: 16px;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+.word-context-meaning {
+  font-size: 18px;
+  color: var(--primary);
+  font-weight: 600;
+  margin: 10px 0 0;
+}
+
+.word-context-form-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  background: var(--bg-input, #f1f5f9);
+  border-radius: 8px;
+  display: inline-block;
+}
+
+/* FSRS summary */
+.word-fsrs-level {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.word-fsrs-level-icon {
+  font-size: 24px;
+}
+
+.word-fsrs-level-label {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+}
+
+.word-fsrs-retrievability {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--orange-soft, rgba(255, 138, 43, 0.1));
+  padding: 3px 10px;
+  border-radius: 8px;
+}
+
+.word-fsrs-skills {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.word-fsrs-skill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-input, #f1f5f9);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.word-fsrs-skill-name {
+  color: var(--text-muted);
+}
+
+.word-fsrs-skill-status {
+  font-size: 15px;
+}
+
+.word-fsrs-next-review {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+}
+
+.word-fsrs-stats {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Conjugations */
+.word-conj-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.word-conj-form {
+  background: var(--bg-input, #f1f5f9);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: background 0.15s ease;
+}
+
+.word-conj-form--future {
+  opacity: 0.55;
+  border: 1px dashed var(--border, #e2e8f0);
+  background: transparent;
+}
+
+.word-conj-form-kanji {
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.word-conj-form-kana {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.word-conj-form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+.word-conj-future-badge {
+  display: block;
+  font-size: 10px;
+  color: var(--primary);
+  margin-top: 4px;
+}
+
+.word-conj-future-details {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.word-conj-future-details summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+/* Grammar */
+.word-grammar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.word-grammar-topic {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.word-grammar-topic-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.word-grammar-topic-reason {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Examples */
+.word-example {
+  padding: 4px 0;
+  position: relative;
+}
+
+.word-example-jp {
+  font-size: 17px;
+  color: var(--text);
+  margin: 0 0 4px;
+  line-height: 1.8;
+}
+
+.word-example-trans {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0;
+}
+
+.word-example-source {
+  position: absolute;
+  top: 4px;
+  right: 0;
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.word-example-divider {
+  border: none;
+  border-top: 1px solid var(--border, #e2e8f0);
+  margin: 12px 0;
+}
+
+/* Lessons */
+.word-lessons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.word-lesson-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  background: var(--bg-input, #f1f5f9);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.word-lesson-item--active {
+  border: 1.5px solid var(--primary);
+  background: var(--orange-soft, rgba(255, 138, 43, 0.08));
+}
+
+.word-lesson-course {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.word-lesson-id {
+  color: var(--text-muted);
+}
+
+.word-lesson-meaning {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+/* Story occurrences */
+.word-story-group {
+  padding: 4px 0;
+}
+
+.word-story-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.word-story-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+}
+
+.word-story-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-input, #f1f5f9);
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.word-story-occurrence {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--bg-input, #f1f5f9);
+  border-radius: 10px;
+}
+
+.word-story-sentence {
+  font-size: 16px;
+  color: var(--text);
+  margin: 0 0 4px;
+  line-height: 1.8;
+}
+
+.word-story-trans {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0 0 8px;
+}
+
+.word-story-open-btn {
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 8px;
+}
+
+.word-story-divider {
+  border: none;
+  border-top: 1px solid var(--border, #e2e8f0);
+  margin: 16px 0;
+}
+
+/* Skeleton loading */
+.word-details-skeleton {
+  padding: 20px;
+}
+
+.skeleton-block {
+  background: linear-gradient(90deg, var(--bg-input, #f1f5f9) 25%, var(--border, #e2e8f0) 50%, var(--bg-input, #f1f5f9) 75%);
+  background-size: 400% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.skeleton-title {
+  height: 48px;
+  width: 60%;
+}
+
+.skeleton-text {
+  height: 16px;
+  width: 90%;
+}
+
+@keyframes skeleton-pulse {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* Not-found / error states */
+.word-details-not-found,
+.word-details-error {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-muted);
+}
+
+.word-details-not-found-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.word-details-not-found h2,
+.word-details-error h2 {
+  font-size: 20px;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+/* Token highlight from story navigation */
+.token-highlight {
+  background: rgba(255, 220, 0, 0.35) !important;
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.5);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.badge-curated {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+.badge-ai {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+}
+
+[data-theme='dark'] .badge-curated {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+[data-theme='dark'] .badge-ai {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+
+@media (max-width: 480px) {
+  .word-details-form {
+    font-size: 32px;
+  }
+
+  .word-conj-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+
+  .word-fsrs-skills {
+    grid-template-columns: 1fr;
+  }
+}
