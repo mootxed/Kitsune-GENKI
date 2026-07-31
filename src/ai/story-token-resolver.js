@@ -6,6 +6,7 @@ import {
 import { canonicalHiragana } from '../dictionary/dictionary-id.js';
 import { LexicalEnrichmentItemSchema, AmbiguityResolutionResponseSchema } from './schemas.js';
 
+export const AI_LEXICAL_ENTRY_MIN_CONFIDENCE = 0.6;
 export const AI_DISAMBIGUATION_MIN_CONFIDENCE = 0.75;
 
 export function isTokenCompatibleWithEntry(occ, entry) {
@@ -81,7 +82,16 @@ export async function resolveStoryTokens(options = {}) {
     ambiguousTokens: 0,
     generatedEntries: 0,
     unresolvedTokens: 0,
-    lexicalAiCalls: 0,
+    lexicalEnrichmentCalls: 0,
+    ambiguityAiCalls: 0,
+    lowConfidenceEntries: 0,
+    invalidLexicalEntries: 0,
+    duplicateTokenKeys: 0,
+    unknownTokenKeys: 0,
+    missingLexicalResponses: 0,
+    get lexicalAiCalls() {
+      return this.lexicalEnrichmentCalls + this.ambiguityAiCalls;
+    },
   };
 
   const resolvedSentences = [];
@@ -262,7 +272,7 @@ export async function resolveStoryTokens(options = {}) {
           // If context AI call is supported on provider
           if (aiLexicalProvider && typeof aiLexicalProvider.resolveAmbiguousToken === 'function') {
             try {
-              statistics.lexicalAiCalls++;
+              statistics.ambiguityAiCalls++;
               const aiRes = await aiLexicalProvider.resolveAmbiguousToken(
                 {
                   surface: occ.surface,
@@ -364,6 +374,38 @@ export async function resolveStoryTokens(options = {}) {
     });
   }
 
+  // Helper functions for occurrence resolution in batch fallback
+  const markOccurrencesAmbiguous = (matchingLexeme) => {
+    for (const ref of matchingLexeme.occReferences) {
+      const currentToken = resolvedSentences[ref.sIdx].tokens[ref.tIdx];
+      resolvedSentences[ref.sIdx].tokens[ref.tIdx] = TokenOccurrenceSchema.parse({
+        ...currentToken,
+        dictionaryId: null,
+        resolution: {
+          status: 'ambiguous',
+          source: 'none',
+          confidence: 0,
+        },
+      });
+      statistics.ambiguousTokens++;
+    }
+  };
+
+  const markOccurrencesMissing = (matchingLexeme) => {
+    for (const ref of matchingLexeme.occReferences) {
+      const currentToken = resolvedSentences[ref.sIdx].tokens[ref.tIdx];
+      resolvedSentences[ref.sIdx].tokens[ref.tIdx] = TokenOccurrenceSchema.parse({
+        ...currentToken,
+        dictionaryId: null,
+        resolution: {
+          status: 'missing',
+          source: 'none',
+          confidence: 0,
+        },
+      });
+    }
+  };
+
   // Step 6 (batch fallback): Enrich unknown lexemes via AI call
   if (
     missingLexemeMap.size > 0 &&
@@ -378,22 +420,66 @@ export async function resolveStoryTokens(options = {}) {
       sentenceTranslation: item.sentenceTranslation,
     }));
 
+    const sentTokenKeys = new Set(unknownBatch.map((b) => b.tokenKey));
+
     try {
-      statistics.lexicalAiCalls++;
+      statistics.lexicalEnrichmentCalls++;
       const rawAiResponse = await aiLexicalProvider.enrichUnknownLexemes(unknownBatch, { signal });
       const rawEntries = Array.isArray(rawAiResponse?.entries) ? rawAiResponse.entries : [];
 
+      const entriesByTokenKey = new Map();
       for (const rawEntry of rawEntries) {
+        const tKey = rawEntry?.tokenKey;
+        if (!tKey) continue;
+        if (!entriesByTokenKey.has(tKey)) {
+          entriesByTokenKey.set(tKey, []);
+        }
+        entriesByTokenKey.get(tKey).push(rawEntry);
+      }
+
+      // Check missing responses
+      for (const sentKey of sentTokenKeys) {
+        if (!entriesByTokenKey.has(sentKey)) {
+          statistics.missingLexicalResponses++;
+        } else if (entriesByTokenKey.get(sentKey).length > 1) {
+          statistics.duplicateTokenKeys++;
+        }
+      }
+
+      // Check unknown token keys
+      for (const recKey of entriesByTokenKey.keys()) {
+        if (!sentTokenKeys.has(recKey)) {
+          statistics.unknownTokenKeys++;
+        }
+      }
+
+      for (const [tKey, group] of entriesByTokenKey.entries()) {
+        if (!sentTokenKeys.has(tKey)) {
+          // Unknown tokenKey -> ignore
+          continue;
+        }
+
+        const matchingLexeme = Array.from(missingLexemeMap.values()).find(
+          (m) => m.tokenKey === tKey
+        );
+
+        if (!matchingLexeme) continue;
+
+        if (group.length > 1) {
+          // Duplicate tokenKey -> reject entire group!
+          markOccurrencesMissing(matchingLexeme);
+          continue;
+        }
+
+        const rawEntry = group[0];
         try {
           const parsedItem = LexicalEnrichmentItemSchema.safeParse(rawEntry);
-          if (!parsedItem.success) continue;
+          if (!parsedItem.success) {
+            statistics.invalidLexicalEntries++;
+            markOccurrencesMissing(matchingLexeme);
+            continue;
+          }
           const item = parsedItem.data;
-
-          const matchingLexeme = Array.from(missingLexemeMap.values()).find(
-            (m) => m.tokenKey === item.tokenKey
-          );
-
-          if (!matchingLexeme) continue;
 
           // Separate candidates by builtin vs user-ai
           const curatedCheck = dictionaryStore.findDictionaryCandidatesByToken(item.dictionaryForm);
@@ -426,22 +512,27 @@ export async function resolveStoryTokens(options = {}) {
           const matchingBuiltins = filterMatching(builtinCandidates);
           const matchingUserAi = filterMatching(userAiCandidates);
 
+          const hasExistingCandidates = matchingBuiltins.length > 0 || matchingUserAi.length > 0;
+
           let assignedId = null;
           let source = 'user-ai';
+          let isAmbiguousFailure = false;
 
-          if (matchingBuiltins.length === 1) {
+          if (matchingBuiltins.length === 1 && matchingUserAi.length === 0) {
             assignedId = matchingBuiltins[0];
             source = 'builtin';
           } else if (matchingBuiltins.length === 0 && matchingUserAi.length === 1) {
             assignedId = matchingUserAi[0];
             source = 'user-ai';
-          } else if (matchingBuiltins.length > 1 || matchingUserAi.length > 1) {
-            const candidateSet = matchingBuiltins.length > 1 ? matchingBuiltins : matchingUserAi;
+          } else if (hasExistingCandidates) {
+            // Existing candidates exist, but 1 candidate wasn't picked directly -> run context resolution
+            const candidateSet = [...matchingBuiltins, ...matchingUserAi];
             if (
               aiLexicalProvider &&
               typeof aiLexicalProvider.resolveAmbiguousToken === 'function'
             ) {
               try {
+                statistics.ambiguityAiCalls++;
                 const ambRes = await aiLexicalProvider.resolveAmbiguousToken(
                   {
                     surface: matchingLexeme.surface,
@@ -461,69 +552,112 @@ export async function resolveStoryTokens(options = {}) {
                   candidateSet.includes(parsedAmb.data.selectedDictionaryId) &&
                   parsedAmb.data.confidence >= AI_DISAMBIGUATION_MIN_CONFIDENCE
                 ) {
-                  assignedId = parsedAmb.data.selectedDictionaryId;
-                  source = 'ai-context';
+                  const candidateEntry = dictionaryStore.getDictionaryEntry(
+                    parsedAmb.data.selectedDictionaryId
+                  );
+                  if (
+                    candidateEntry &&
+                    isTokenCompatibleWithEntry(matchingLexeme.occReferences[0]?.occ, candidateEntry)
+                  ) {
+                    assignedId = parsedAmb.data.selectedDictionaryId;
+                    source = 'ai-context';
+                  }
                 }
               } catch (ambErr) {
                 console.warn('[StoryTokenResolver] Batch ambiguity call failed:', ambErr);
               }
             }
+            if (!assignedId) {
+              // Existing candidates exist, but ambiguity could NOT be resolved confidently -> DO NOT CREATE NEW ENTRY!
+              isAmbiguousFailure = true;
+            }
+          } else {
+            // NO existing candidates -> check confidence threshold & create new entry
+            const itemConfidence = typeof item.confidence === 'number' ? item.confidence : 0.8;
+
+            if (itemConfidence < AI_LEXICAL_ENTRY_MIN_CONFIDENCE) {
+              statistics.lowConfidenceEntries++;
+              assignedId = null;
+            } else {
+              const allForms = [
+                ...new Set([
+                  matchingLexeme.surface,
+                  ...(matchingLexeme.tokenForms || []),
+                  ...(item.tokenForms || []),
+                ]),
+              ];
+
+              try {
+                const regResult = await dictionaryStore.registerUserDictionaryEntry({
+                  dictionaryForm: item.dictionaryForm,
+                  reading: item.reading,
+                  meanings: item.meanings,
+                  partOfSpeech: item.partOfSpeech,
+                  verbClass: item.verbClass,
+                  adjectiveClass: item.adjectiveClass,
+                  tokenForms: allForms,
+                  confidence: itemConfidence,
+                  verified: false,
+                  targetDictionaryId: 'user-dict:ai-cache',
+                  provenance: {
+                    sourceType: 'ai-story-token',
+                    sourceId: String(storyId),
+                  },
+                });
+
+                if (regResult && regResult.entry) {
+                  assignedId = regResult.entry.id;
+                  if (regResult.created) statistics.generatedEntries++;
+                }
+              } catch (regErr) {
+                console.warn('[StoryTokenResolver] User dictionary registration failed:', regErr);
+                assignedId = null;
+              }
+            }
           }
 
-          if (!assignedId) {
-            // Register new user dictionary entry
-            const allForms = [
-              ...new Set([
-                matchingLexeme.surface,
-                ...(matchingLexeme.tokenForms || []),
-                ...(item.tokenForms || []),
-              ]),
-            ];
-
-            const regResult = await dictionaryStore.registerUserDictionaryEntry({
-              dictionaryForm: item.dictionaryForm,
-              reading: item.reading,
-              meanings: item.meanings,
-              partOfSpeech: item.partOfSpeech,
-              verbClass: item.verbClass,
-              adjectiveClass: item.adjectiveClass,
-              tokenForms: allForms,
-              confidence: typeof item.confidence === 'number' ? item.confidence : 0.8,
-              verified: false,
-              targetDictionaryId: 'user-dict:ai-cache',
-              provenance: {
-                sourceType: 'ai-story-token',
-                sourceId: String(storyId),
-              },
-            });
-
-            assignedId = regResult.entry.id;
-            if (regResult.created) statistics.generatedEntries++;
-          }
-
-          // Update occurrence tokens
-          const conf = typeof item.confidence === 'number' ? item.confidence : 0.8;
-          for (const ref of matchingLexeme.occReferences) {
-            const currentToken = resolvedSentences[ref.sIdx].tokens[ref.tIdx];
+          if (assignedId) {
+            const conf = typeof item.confidence === 'number' ? item.confidence : 0.8;
             const assignedEntry = dictionaryStore.getDictionaryEntry(assignedId);
 
-            if (assignedEntry && isTokenCompatibleWithEntry(currentToken, assignedEntry)) {
-              resolvedSentences[ref.sIdx].tokens[ref.tIdx] = TokenOccurrenceSchema.parse({
-                ...currentToken,
-                dictionaryId: assignedId,
-                resolution: {
-                  status: 'resolved',
-                  source,
-                  confidence: conf,
-                },
-              });
-              if (source === 'builtin') statistics.builtinHits++;
-              else if (source === 'user-ai') statistics.userAiHits++;
-              else if (source === 'ai-context') statistics.aiContextHits++;
+            for (const ref of matchingLexeme.occReferences) {
+              const currentToken = resolvedSentences[ref.sIdx].tokens[ref.tIdx];
+
+              if (assignedEntry && isTokenCompatibleWithEntry(currentToken, assignedEntry)) {
+                resolvedSentences[ref.sIdx].tokens[ref.tIdx] = TokenOccurrenceSchema.parse({
+                  ...currentToken,
+                  dictionaryId: assignedId,
+                  resolution: {
+                    status: 'resolved',
+                    source,
+                    confidence: conf,
+                  },
+                });
+                if (source === 'builtin') statistics.builtinHits++;
+                else if (source === 'user-ai') statistics.userAiHits++;
+                else if (source === 'ai-context') statistics.aiContextHits++;
+              } else {
+                resolvedSentences[ref.sIdx].tokens[ref.tIdx] = TokenOccurrenceSchema.parse({
+                  ...currentToken,
+                  dictionaryId: null,
+                  resolution: {
+                    status: 'missing',
+                    source: 'none',
+                    confidence: 0,
+                  },
+                });
+              }
+            }
+          } else {
+            if (isAmbiguousFailure) {
+              markOccurrencesAmbiguous(matchingLexeme);
+            } else {
+              markOccurrencesMissing(matchingLexeme);
             }
           }
         } catch (itemErr) {
           console.warn('[StoryTokenResolver] Item registration warning:', itemErr);
+          markOccurrencesMissing(matchingLexeme);
         }
       }
     } catch (err) {

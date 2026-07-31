@@ -32,34 +32,66 @@ function escapeHtml(str) {
 /**
   Extract weak words from SRS records using unified weakness service
  */
-export function getWeakWords(state, limit = 10, lessons = []) {
+let activeGenerationController = null;
+
+/**
+  Extract weak words from SRS records using unified weakness service
+ */
+export async function getWeakWords(state, limit = 10, lessons = [], options = {}) {
   if (!state) return [];
+  const store = options.dictionaryStore || dictionaryStore;
+  if (store && typeof store.ensureLoaded === 'function') {
+    await store.ensureLoaded();
+  }
+
   const profiles = getWeakVocabularyItems(state, { purpose: 'ai-story', lessons, maxCount: limit });
   const words = [];
-  const seen = new Set();
+  const seenIds = new Set();
 
   for (const p of profiles) {
-    const w = wordById(p.itemId, lessons);
     let entry = null;
-    if (dictionaryStore && typeof dictionaryStore.getDictionaryEntry === 'function') {
-      const resolvedId = dictionaryStore.resolveAlias(p.itemId);
-      entry = dictionaryStore.getDictionaryEntry(resolvedId || p.itemId);
-      if (!entry && (w?.kanji || w?.word)) {
-        const cands = dictionaryStore.findDictionaryCandidatesByToken(w.kanji || w.word);
-        if (cands && cands.candidates && cands.candidates.length > 0) {
-          entry = dictionaryStore.getDictionaryEntry(cands.candidates[0]);
+    const rawId = p.dictionaryId || p.itemId;
+
+    if (store && typeof store.getDictionaryEntry === 'function') {
+      const resolvedId = store.resolveAlias(rawId);
+      entry = store.getDictionaryEntry(resolvedId || rawId);
+
+      if (!entry) {
+        const w = wordById(p.itemId, lessons);
+        const writing = w?.kanji || w?.word;
+        const reading = w?.kana;
+
+        if (writing) {
+          const cands = store.findDictionaryCandidatesByToken(writing);
+          const candidatesList = cands?.candidates || [];
+          if (candidatesList.length === 1) {
+            entry = store.getDictionaryEntry(candidatesList[0]);
+          }
+        } else if (reading) {
+          const cands = store.findDictionaryCandidatesByReading(reading);
+          const candidatesList = cands?.candidates || [];
+          if (candidatesList.length === 1) {
+            entry = store.getDictionaryEntry(candidatesList[0]);
+          }
         }
       }
     }
 
-    const text = entry?.dictionaryForm || w?.kanji || w?.word || p.itemId;
-    if (text && !seen.has(text)) {
-      seen.add(text);
+    if (!entry) {
+      // Omit missing or ambiguous words completely without guessing candidates[0] or creating fake IDs
+      continue;
+    }
+
+    if (!seenIds.has(entry.id)) {
+      seenIds.add(entry.id);
+      const w = wordById(p.itemId, lessons);
+      const courseMeaning = w?.english || w?.meaning;
+
       words.push({
-        dictionaryId: entry?.id || p.itemId || `jp-word:${text}:${w?.kana || text}`,
-        dictionaryForm: text,
-        reading: entry?.reading || w?.kana || text,
-        meaning: entry?.meanings ? entry.meanings.join(', ') : w?.english || w?.meaning || '',
+        dictionaryId: entry.id,
+        dictionaryForm: entry.dictionaryForm,
+        reading: entry.reading,
+        meaning: courseMeaning || (entry.meanings ? entry.meanings.join(', ') : ''),
       });
     }
   }
@@ -155,6 +187,12 @@ export function renderAIStory(state, dependencies) {
   }
 
   async function generateAndRenderStory(st, deps) {
+    if (activeGenerationController) {
+      activeGenerationController.abort();
+    }
+    activeGenerationController = new AbortController();
+    const signal = activeGenerationController.signal;
+
     const promptInput = $('#ai-story-prompt');
     const styleSelect = $('#ai-story-style');
     const lengthSelect = $('#ai-story-length');
@@ -178,7 +216,7 @@ export function renderAIStory(state, dependencies) {
     let fullPrompt = `Тема: ${promptText}. Стиль: ${style === 'dialog' ? 'Диалог персонажей' : 'Повествование'}. Длина: примерно ${lengthMap[length] || '8 предложений'}.`;
 
     const weakWords = useWeakWordsCheckbox?.checked
-      ? getWeakWords(st, 10, deps?.LESSONS || [])
+      ? await getWeakWords(st, 10, deps?.LESSONS || [], { dictionaryStore })
       : [];
 
     btn.disabled = true;
@@ -193,7 +231,7 @@ export function renderAIStory(state, dependencies) {
     `;
 
     try {
-      const rawOrObject = await API.generateAIStory(fullPrompt, weakWords, st.settings);
+      const rawOrObject = await API.generateAIStory(fullPrompt, weakWords, st.settings, { signal });
 
       let storySentences = [];
       if (typeof rawOrObject === 'string') {
@@ -217,6 +255,11 @@ export function renderAIStory(state, dependencies) {
         throw new Error('Некорректная структура данных в ответе ИИ.');
       }
 
+      let resolvedStorySentences = storySentences;
+      const storyId =
+        (typeof rawOrObject === 'object' && rawOrObject?.meta?.storyId) ||
+        `ai-story-${crypto.randomUUID()}`;
+
       try {
         const selectedWordRefs = {};
         if (weakWords && weakWords.length > 0) {
@@ -226,10 +269,6 @@ export function renderAIStory(state, dependencies) {
           });
         }
 
-        const storyId =
-          (typeof rawOrObject === 'object' && rawOrObject?.meta?.storyId) ||
-          `ai-story-${crypto.randomUUID()}`;
-
         const { story: resolvedStory } = await resolveStoryTokens({
           story: storySentences,
           selectedWordRefs,
@@ -237,24 +276,36 @@ export function renderAIStory(state, dependencies) {
           userDictionaryRepository: deps?.userRepository || null,
           aiLexicalProvider: {
             enrichUnknownLexemes: (batch, opts) =>
-              API.enrichUnknownLexemes(batch, st.settings, opts),
+              API.enrichUnknownLexemes(batch, st.settings, { ...opts, signal }),
             resolveAmbiguousToken: (params, opts) =>
-              API.resolveAmbiguousToken(params, st.settings, opts),
+              API.resolveAmbiguousToken(params, st.settings, { ...opts, signal }),
           },
           activeCourseId: st?.activeCourseId || null,
           storyId,
+          signal,
         });
-        storySentences = Array.isArray(resolvedStory)
+        resolvedStorySentences = Array.isArray(resolvedStory)
           ? resolvedStory
           : resolvedStory.story || storySentences;
       } catch (tokenErr) {
         console.warn('[AIStory] Token resolution warning:', tokenErr);
       }
 
+      const storyRecord = {
+        id: storyId,
+        story: resolvedStorySentences,
+        createdAt: new Date().toISOString(),
+        source: 'ai',
+      };
+
       // Render valid story directly
-      renderStoryContent(storySentences, resultContainer, st, deps);
+      renderStoryContent(resolvedStorySentences, storyRecord, resultContainer, st, deps);
       toast('✅ История успешно сгенерирована!');
     } catch (err) {
+      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+        console.log('[AIStory] Story generation aborted');
+        return;
+      }
       console.error('[AIStory] Generation error:', err);
 
       let userMsg = err.message || 'Ошибка генерации истории.';
@@ -289,9 +340,10 @@ export function renderAIStory(state, dependencies) {
     }
   }
 
-  function renderStoryContent(sentences, container, st, deps) {
+  function renderStoryContent(sentences, storyRecord, container, st, deps) {
     const speakFn = deps?.speakJapanese || window.speakJapanese || (() => {});
     const saveFn = deps?.save || window.save || (() => {});
+    const storyId = storyRecord?.id || `ai-story-${Date.now()}`;
 
     let html = `
       <div class="card" data-testid="ai-story-output">
@@ -465,9 +517,11 @@ export function renderAIStory(state, dependencies) {
             .slice(0, 30) || 'ИИ-История';
 
         st.savedNotes.unshift({
-          id: 'ai_story_' + Date.now(),
+          id: `ai_story_note:${storyId}`,
+          sourceStoryId: storyId,
           title: `✨ AI-История: ${title}`,
           content: fullStoryText,
+          story: sentences,
           date: deps?.todayStr ? deps.todayStr() : new Date().toISOString().split('T')[0],
         });
 

@@ -1,38 +1,70 @@
 /* src/ai-story-schema.js — Zod schemas and normalization for AI story generation */
 import { z } from 'zod';
 
+const nullableEnumOrText = (allowed = []) =>
+  z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => {
+      const v = (val ?? '').trim().toLowerCase();
+      if (!v) return null;
+      if (allowed.length > 0 && !allowed.includes(v)) return 'other';
+      return v;
+    });
+
+export const StoryTokenFormSchema = z
+  .object({
+    tense: nullableEnumOrText(['present', 'past', 'nonpast', 'progressive']),
+    politeness: nullableEnumOrText(['plain', 'polite', 'honorific', 'humble']),
+    polarity: nullableEnumOrText(['affirmative', 'negative']),
+    conjugation: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => (val ?? '').trim() || null)
+      .pipe(z.string().max(200).nullable()),
+  })
+  .strip();
+
 export const StoryTokenSchema = z
   .object({
     surface: z
       .string()
       .nullable()
       .optional()
-      .transform((val) => (val ?? '').trim()),
+      .transform((val) => (val ?? '').trim())
+      .pipe(z.string().max(200)),
     reading: z
       .string()
       .nullable()
       .optional()
-      .transform((val) => (val ?? '').trim()),
+      .transform((val) => (val ?? '').trim())
+      .pipe(z.string().max(200)),
     kanji: z
       .string()
       .nullable()
       .optional()
-      .transform((val) => (val ?? '').trim()),
+      .transform((val) => (val ?? '').trim())
+      .pipe(z.string().max(200)),
     writing: z
       .string()
       .nullable()
       .optional()
-      .transform((val) => (val ?? '').trim()),
+      .transform((val) => (val ?? '').trim())
+      .pipe(z.string().max(200)),
     translation: z
       .string()
       .nullable()
       .optional()
-      .transform((val) => (val ?? '').trim()),
+      .transform((val) => (val ?? '').trim())
+      .pipe(z.string().max(500)),
     contextMeaning: z
       .string()
       .nullable()
       .optional()
-      .transform((val) => (val ?? '').trim()),
+      .transform((val) => (val ?? '').trim())
+      .pipe(z.string().max(500)),
     type: z
       .string()
       .nullable()
@@ -40,17 +72,20 @@ export const StoryTokenSchema = z
       .transform((val) => {
         const trimmed = (val ?? '').trim();
         return trimmed.length > 0 ? trimmed : 'Unknown';
-      }),
+      })
+      .pipe(z.string().max(100)),
     partOfSpeechHint: z
       .string()
       .nullable()
       .optional()
-      .transform((val) => (val ?? '').trim()),
+      .transform((val) => (val ?? '').trim())
+      .pipe(z.string().max(100)),
     lemmaHint: z
       .string()
       .nullable()
       .optional()
-      .transform((val) => (val ?? '').trim()),
+      .transform((val) => (val ?? '').trim())
+      .pipe(z.string().max(200)),
     dictionaryForm: z
       .string()
       .nullable()
@@ -86,9 +121,16 @@ export const StoryTokenSchema = z
         const value = (val ?? '').trim();
         return value || null;
       })
-      .refine((val) => val === null || /^W\d+$/i.test(val), {
-        message: 'dictionaryRef должен быть формата W1, W2 и т.д.',
-      }),
+      .pipe(
+        z
+          .string()
+          .max(20)
+          .refine((val) => /^W[1-9]\d*$/i.test(val), {
+            message: 'dictionaryRef должен быть формата W1, W2 и т.д.',
+          })
+          .transform((val) => val.toUpperCase())
+          .nullable()
+      ),
     dictionaryId: z
       .string()
       .nullable()
@@ -97,7 +139,7 @@ export const StoryTokenSchema = z
         const value = (val ?? '').trim();
         return value || null;
       })
-      .pipe(z.string().max(200).nullable()),
+      .pipe(z.string().max(500).nullable()),
     sourceToken: z
       .string()
       .nullable()
@@ -107,7 +149,14 @@ export const StoryTokenSchema = z
         return value || null;
       })
       .pipe(z.string().max(100).nullable()),
-    form: z.any().optional(),
+    form: z
+      .preprocess((val) => {
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          return val;
+        }
+        return null;
+      }, StoryTokenFormSchema.nullable().optional())
+      .default(null),
   })
   .strip()
   .refine(
