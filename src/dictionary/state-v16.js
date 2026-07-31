@@ -31,7 +31,13 @@ function clone(value) {
 
 export function migrateDictionaryItemId(value) {
   if (value == null || value === '') return value;
-  return resolveGeneratedDictionaryAlias(String(value));
+  const raw = String(value);
+  const direct = resolveGeneratedDictionaryAlias(raw);
+  if (direct !== raw) return direct;
+  if (!raw.includes(':') && /^L\d+_V\d+$/i.test(raw)) {
+    return resolveGeneratedDictionaryAlias(`genki-1:vocabulary:${raw}`);
+  }
+  return raw;
 }
 
 export function migrateDictionaryCardId(value) {

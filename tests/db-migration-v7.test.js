@@ -348,7 +348,7 @@ describe('IndexedDB v6 -> v7 migration and review log cleanup fallback', () => {
     expect(reviewLogStore.indexes.has('itemId')).toBe(true);
 
     // Verify all existing records remain intact
-    expect(appStateStore.records).toHaveLength(1);
+    expect(appStateStore.records.find((r) => r.id === 'state' || r.key === 'state')).toBeDefined();
     expect(dictStore.records).toHaveLength(1);
     expect(entryStore.records).toHaveLength(1);
     expect(reviewLogStore.records).toHaveLength(3);

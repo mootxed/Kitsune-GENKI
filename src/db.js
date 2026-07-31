@@ -1,5 +1,7 @@
 /* src/db.js — Promise-based обёртка над IndexedDB с graceful degradation */
 
+import { migrateDictionaryReviewLogEntriesV16 } from './dictionary/state-v16.js';
+
 const DB_NAME = 'KitsuneGenkiDB';
 const DB_VERSION = 7;
 
@@ -226,6 +228,7 @@ class IndexedDBWrapper {
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
           await this._openDatabase(timeoutMs);
+          await this.runReviewLogMigration();
           return;
         } catch (err) {
           lastError = err;
@@ -420,6 +423,142 @@ class IndexedDBWrapper {
         cleanup();
         console.error('[DB] Исключение при открытии IndexedDB:', error);
         reject(error);
+      }
+    });
+  }
+
+  /**
+   * Выполняет одноразовую идемпотентную миграцию IndexedDB review_log и active_session к глобальным dictionaryId
+   */
+  async runReviewLogMigration() {
+    if (
+      !this.db ||
+      !this.db.objectStoreNames ||
+      !this.db.objectStoreNames.contains(STORES.REVIEW_LOG) ||
+      !this.db.objectStoreNames.contains(STORES.APP_STATE)
+    ) {
+      return;
+    }
+
+    const getAllRecords = (store) => {
+      return new Promise((res, rej) => {
+        if (typeof store.getAll === 'function') {
+          const req = store.getAll();
+          req.onsuccess = () => res(req.result || []);
+          req.onerror = () => rej(req.error);
+        } else if (typeof store.openCursor === 'function') {
+          const records = [];
+          const req = store.openCursor();
+          req.onsuccess = (evt) => {
+            const cursor = evt.target.result;
+            if (cursor) {
+              records.push(cursor.value);
+              cursor.continue();
+            } else {
+              res(records);
+            }
+          };
+          req.onerror = () => rej(req.error);
+        } else {
+          res([]);
+        }
+      });
+    };
+
+    return new Promise((resolve, reject) => {
+      try {
+        const checkTx = this.db.transaction([STORES.APP_STATE], 'readonly');
+        if (!checkTx || typeof checkTx.objectStore !== 'function') {
+          resolve();
+          return;
+        }
+        const checkStore = checkTx.objectStore(STORES.APP_STATE);
+        if (!checkStore || typeof checkStore.get !== 'function') {
+          resolve();
+          return;
+        }
+        const checkReq = checkStore.get('review_log_migration_v16');
+        if (!checkReq) {
+          resolve();
+          return;
+        }
+
+        checkReq.onsuccess = async () => {
+          if (checkReq.result && checkReq.result.value === true) {
+            resolve();
+            return;
+          }
+
+          try {
+            const logTx = this.db.transaction([STORES.REVIEW_LOG], 'readonly');
+            if (!logTx || typeof logTx.objectStore !== 'function') {
+              resolve();
+              return;
+            }
+            const logStore = logTx.objectStore(STORES.REVIEW_LOG);
+            const rawEntries = await getAllRecords(logStore);
+            if (!rawEntries || rawEntries.length === 0) {
+              resolve();
+              return;
+            }
+            const migratedEntries = migrateDictionaryReviewLogEntriesV16(rawEntries);
+
+            let rawSessions = [];
+            if (this.db.objectStoreNames.contains(STORES.ACTIVE_SESSION)) {
+              try {
+                const sessionTx = this.db.transaction([STORES.ACTIVE_SESSION], 'readonly');
+                if (sessionTx && typeof sessionTx.objectStore === 'function') {
+                  const sessionStore = sessionTx.objectStore(STORES.ACTIVE_SESSION);
+                  rawSessions = await getAllRecords(sessionStore);
+                }
+              } catch (_) {
+                /* fallback */
+              }
+            }
+            const migratedSessions = migrateDictionaryReviewLogEntriesV16(rawSessions);
+
+            const writeStores = [STORES.REVIEW_LOG, STORES.APP_STATE];
+            if (this.db.objectStoreNames.contains(STORES.ACTIVE_SESSION)) {
+              writeStores.push(STORES.ACTIVE_SESSION);
+            }
+
+            const writeTx = this.db.transaction(writeStores, 'readwrite');
+            if (!writeTx || typeof writeTx.objectStore !== 'function') {
+              resolve();
+              return;
+            }
+            writeTx.oncomplete = () => resolve();
+            writeTx.onerror = () =>
+              reject(writeTx.error || new Error('Review log migration failed'));
+            writeTx.onabort = () =>
+              reject(writeTx.error || new Error('Review log migration aborted'));
+
+            const writeLogStore = writeTx.objectStore(STORES.REVIEW_LOG);
+            for (const entry of migratedEntries) {
+              writeLogStore.put(entry);
+            }
+
+            if (this.db.objectStoreNames.contains(STORES.ACTIVE_SESSION)) {
+              const writeSessionStore = writeTx.objectStore(STORES.ACTIVE_SESSION);
+              for (const session of migratedSessions) {
+                writeSessionStore.put(session);
+              }
+            }
+
+            const writeAppStateStore = writeTx.objectStore(STORES.APP_STATE);
+            writeAppStateStore.put({
+              id: 'review_log_migration_v16',
+              value: true,
+              migratedAt: Date.now(),
+            });
+          } catch (err) {
+            reject(err);
+          }
+        };
+
+        checkReq.onerror = () => resolve();
+      } catch (err) {
+        resolve();
       }
     });
   }
@@ -912,7 +1051,20 @@ class InMemoryFallback {
   }
 
   async initDB() {
-    // Ничего не делаем
+    await this.runReviewLogMigration();
+  }
+
+  async runReviewLogMigration() {
+    if (await this.get(STORES.APP_STATE, 'review_log_migration_v16')) return;
+    const rawEntries = this.storage.get(`${STORES.REVIEW_LOG}:__records__`) || [];
+    const migratedEntries = migrateDictionaryReviewLogEntriesV16(rawEntries);
+    this.storage.set(`${STORES.REVIEW_LOG}:__records__`, migratedEntries);
+
+    const rawSessions = this.storage.get(`${STORES.ACTIVE_SESSION}:__records__`) || [];
+    const migratedSessions = migrateDictionaryReviewLogEntriesV16(rawSessions);
+    this.storage.set(`${STORES.ACTIVE_SESSION}:__records__`, migratedSessions);
+
+    await this.set(STORES.APP_STATE, 'review_log_migration_v16', true);
   }
 
   async get(storeName, key) {

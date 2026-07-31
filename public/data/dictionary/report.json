@@ -1,10 +1,17 @@
 {
   "schemaVersion": 1,
-  "entries": 675,
+  "entries": 668,
   "courseReferences": 676,
-  "duplicateOccurrences": 1,
-  "collisions": [],
-  "aliases": 2069,
-  "tokenForms": 3218,
+  "duplicateOccurrences": 8,
+  "collisions": [
+    {
+      "baseId": "jp-word:看護師:かんごし",
+      "resolvedId": "jp-word:看護師:かんごし:lexeme",
+      "reason": "part-of-speech-or-class",
+      "referenceId": "L11_V115"
+    }
+  ],
+  "aliases": 1381,
+  "tokenForms": 3272,
   "retiredCourseIds": 30
 }

@@ -227,7 +227,9 @@ describe('IndexedDB review_log', () => {
       'eventId',
     ]);
     expect(fakeIndexedDB.stores.get(STORES.APP_STATE)).toBe(existingAppState);
-    expect(existingAppState.records).toEqual([{ id: 'state', value: { xp: 42 } }]);
+    expect(existingAppState.records).toEqual(
+      expect.arrayContaining([{ id: 'state', value: { xp: 42 } }])
+    );
   });
 
   it('добавляет уникальный eventId index при обновлении существующего review_log', async () => {

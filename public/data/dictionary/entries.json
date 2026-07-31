@@ -15,7 +15,7 @@
       "transitivity": null,
       "tokenForms": [
         "Lサイズ",
-        "エルサイズ"
+        "えるさいず"
       ],
       "semanticTags": [
         "nouns"
@@ -31,9 +31,9 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:Tシャツ:Tしゃつ",
+      "id": "jp-word:Tシャツ:てぃーしゃつ",
       "dictionaryForm": "Tシャツ",
-      "reading": "Tしゃつ",
+      "reading": "てぃーしゃつ",
       "meanings": [
         "футболка"
       ],
@@ -42,7 +42,8 @@
       "adjectiveClass": null,
       "transitivity": null,
       "tokenForms": [
-        "Tシャツ"
+        "Tシャツ",
+        "てぃーしゃつ"
       ],
       "semanticTags": [
         "things"
@@ -370,7 +371,6 @@
         "ありました",
         "ありませんでした",
         "ありましょう",
-        "ありましょうка",
         "ありましょうか",
         "あって",
         "ない",
@@ -608,33 +608,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:いしゃ:いしゃ",
-      "dictionaryForm": "いしゃ",
-      "reading": "いしゃ",
-      "meanings": [
-        "доктор"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "いしゃ"
-      ],
-      "semanticTags": [
-        "nouns"
-      ],
-      "romaji": "isha",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:いす:いす",
       "dictionaryForm": "いす",
       "reading": "いす",
@@ -822,33 +795,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:いもうと:いもうと",
-      "dictionaryForm": "いもうと",
-      "reading": "いもうと",
-      "meanings": [
-        "младшая сестра"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "いもうと"
-      ],
-      "semanticTags": [
-        "nouns"
-      ],
-      "romaji": "imooto",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:いらっしゃいませ:いらっしゃいませ",
       "dictionaryForm": "いらっしゃいませ",
       "reading": "いらっしゃいませ",
@@ -1018,33 +964,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:うち:うち",
-      "dictionaryForm": "うち",
-      "reading": "うち",
-      "meanings": [
-        "свой дом"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "うち"
-      ],
-      "semanticTags": [
-        "places"
-      ],
-      "romaji": "uchi",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:うん:うん",
       "dictionaryForm": "うん",
       "reading": "うん",
@@ -1178,33 +1097,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:えん:えん",
-      "dictionaryForm": "えん",
-      "reading": "えん",
-      "meanings": [
-        "_ ен"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "えん"
-      ],
-      "semanticTags": [
-        "money"
-      ],
-      "romaji": "... en",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:おいしい:おいしい",
       "dictionaryForm": "おいしい",
       "reading": "おいしい",
@@ -1249,33 +1141,6 @@
         "nouns"
       ],
       "romaji": "Oosutoraria",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:おかあさん:おかあさん",
-      "dictionaryForm": "おかあさん",
-      "reading": "おかあさん",
-      "meanings": [
-        "мама"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "おかあさん"
-      ],
-      "semanticTags": [
-        "family"
-      ],
-      "romaji": "okaasan",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -1340,87 +1205,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:おとうさん:おとうさん",
-      "dictionaryForm": "おとうさん",
-      "reading": "おとうさん",
-      "meanings": [
-        "папа"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "おとうさん"
-      ],
-      "semanticTags": [
-        "family"
-      ],
-      "romaji": "otoosan",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:おとうと:おとうと",
-      "dictionaryForm": "おとうと",
-      "reading": "おとうと",
-      "meanings": [
-        "младший брат"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "おとうと"
-      ],
-      "semanticTags": [
-        "nouns"
-      ],
-      "romaji": "otooto",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:おなか:おなか",
-      "dictionaryForm": "おなか",
-      "reading": "おなか",
-      "meanings": [
-        "живот"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "おなか"
-      ],
-      "semanticTags": [
-        "nouns"
-      ],
-      "romaji": "onaka",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:おなかがすく:おなかがすく",
       "dictionaryForm": "おなかがすく",
       "reading": "おなかがすく",
@@ -1433,56 +1217,6 @@
       "transitivity": null,
       "tokenForms": [
         "おなかがすく"
-      ],
-      "semanticTags": [],
-      "romaji": "",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:おにいさん:おにいさん",
-      "dictionaryForm": "おにいさん",
-      "reading": "おにいさん",
-      "meanings": [
-        "старший брат"
-      ],
-      "partOfSpeech": null,
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "おにいさん"
-      ],
-      "semanticTags": [],
-      "romaji": "",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:おねえさん:おねえさん",
-      "dictionaryForm": "おねえさん",
-      "reading": "おねえさん",
-      "meanings": [
-        "старшая сестра"
-      ],
-      "partOfSpeech": null,
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "おねえさん"
       ],
       "semanticTags": [],
       "romaji": "",
@@ -2012,6 +1746,34 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:お父さん:おとうさん",
+      "dictionaryForm": "お父さん",
+      "reading": "おとうさん",
+      "meanings": [
+        "папа"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "お父さん",
+        "おとうさん"
+      ],
+      "semanticTags": [
+        "family"
+      ],
+      "romaji": "otoosan",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:お風呂:おふろ",
       "dictionaryForm": "お風呂",
       "reading": "おふろ",
@@ -2065,7 +1827,7 @@
         "お風呂に入りませんでした",
         "おふろにはいりましょう",
         "お風呂に入りましょう",
-        "おふろにはいりましょうка",
+        "おふろにはいりましょうか",
         "お風呂に入りましょうか",
         "おふろにはいって",
         "お風呂に入って",
@@ -2080,6 +1842,34 @@
         "verbs_u"
       ],
       "romaji": "ofuro ni hairu",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:お腹:おなか",
+      "dictionaryForm": "お腹",
+      "reading": "おなか",
+      "meanings": [
+        "живот"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "お腹",
+        "おなか"
+      ],
+      "semanticTags": [
+        "nouns"
+      ],
+      "romaji": "onaka",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -2108,6 +1898,34 @@
         "nouns"
       ],
       "romaji": "obentou",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:お母さん:おかあさん",
+      "dictionaryForm": "お母さん",
+      "reading": "おかあさん",
+      "meanings": [
+        "мама"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "お母さん",
+        "おかあさん"
+      ],
+      "semanticTags": [
+        "family"
+      ],
+      "romaji": "okaasan",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -2172,33 +1990,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:かいしゃいん:かいしゃいん",
-      "dictionaryForm": "かいしゃいん",
-      "reading": "かいしゃいん",
-      "meanings": [
-        "офисный сотрудник"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "かいしゃいん"
-      ],
-      "semanticTags": [
-        "occupation"
-      ],
-      "romaji": "kaishain",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:かかる:かかる",
       "dictionaryForm": "かかる",
       "reading": "かかる",
@@ -2217,7 +2008,6 @@
         "かかりました",
         "かかりませんでした",
         "かかりましょう",
-        "かかりましょうка",
         "かかりましょうか",
         "かかって",
         "かからない",
@@ -2228,33 +2018,6 @@
         "verbs_u"
       ],
       "romaji": "kakar",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:がくせい:がくせい",
-      "dictionaryForm": "がくせい",
-      "reading": "がくせい",
-      "meanings": [
-        "школьник"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "がくせい"
-      ],
-      "semanticTags": [
-        "people"
-      ],
-      "romaji": "gakusee",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -2293,33 +2056,6 @@
         "verbs_ru"
       ],
       "romaji": "megane o kakeru",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:かさ:かさ",
-      "dictionaryForm": "かさ",
-      "reading": "かさ",
-      "meanings": [
-        "зонтик"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "かさ"
-      ],
-      "semanticTags": [
-        "things"
-      ],
-      "romaji": "kasa",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -2454,7 +2190,6 @@
         "かぶりました",
         "かぶりませんでした",
         "かぶりましょう",
-        "かぶりましょうка",
         "かぶりましょうか",
         "かぶって",
         "かぶらない",
@@ -2583,58 +2318,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:かんこく:かんこく",
-      "dictionaryForm": "かんこく",
-      "reading": "かんこく",
-      "meanings": [
-        "юж. корея"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "かんこく"
-      ],
-      "semanticTags": [
-        "countries"
-      ],
-      "romaji": "Kankoku",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:かんごし:かんごし",
-      "dictionaryForm": "かんごし",
-      "reading": "かんごし",
-      "meanings": [
-        "нянька"
-      ],
-      "partOfSpeech": null,
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "かんごし"
-      ],
-      "semanticTags": [],
-      "romaji": "",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:か月:かげつ",
       "dictionaryForm": "か月",
       "reading": "かげつ",
@@ -2742,33 +2425,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:ぎんこう:ぎんこう",
-      "dictionaryForm": "ぎんこう",
-      "reading": "ぎんこう",
-      "meanings": [
-        "банк"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "ぎんこう"
-      ],
-      "semanticTags": [
-        "places"
-      ],
-      "romaji": "ginkoo",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:ください:ください",
       "dictionaryForm": "ください",
       "reading": "ください",
@@ -2784,33 +2440,6 @@
       ],
       "semanticTags": [],
       "romaji": "",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:くつ:くつ",
-      "dictionaryForm": "くつ",
-      "reading": "くつ",
-      "meanings": [
-        "туфли"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "くつ"
-      ],
-      "semanticTags": [
-        "things"
-      ],
-      "romaji": "kutsu",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -2865,33 +2494,6 @@
         "activities"
       ],
       "romaji": "kurasu",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:けいざい:けいざい",
-      "dictionaryForm": "けいざい",
-      "reading": "けいざい",
-      "meanings": [
-        "экономика"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "けいざい"
-      ],
-      "semanticTags": [
-        "majors"
-      ],
-      "romaji": "keezai",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -2979,33 +2581,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:ご:ご",
-      "dictionaryForm": "ご",
-      "reading": "ご",
-      "meanings": [
-        "_ язык"
-      ],
-      "partOfSpeech": "expression",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "ご"
-      ],
-      "semanticTags": [
-        "expressions"
-      ],
-      "romaji": "... go",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:こうがく:こうがく",
       "dictionaryForm": "こうがく",
       "reading": "こうがく",
@@ -3046,33 +2621,6 @@
       ],
       "semanticTags": [],
       "romaji": "",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:こうこうせい:こうこうせい",
-      "dictionaryForm": "こうこうせい",
-      "reading": "こうこうせい",
-      "meanings": [
-        "ученик старшей школы"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "こうこうせい"
-      ],
-      "semanticTags": [
-        "people"
-      ],
-      "romaji": "kookoosee",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -3152,60 +2700,6 @@
         "pointing_words"
       ],
       "romaji": "koko",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:ごご:ごご",
-      "dictionaryForm": "ごご",
-      "reading": "ごご",
-      "meanings": [
-        "полдень"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "ごご"
-      ],
-      "semanticTags": [
-        "time"
-      ],
-      "romaji": "gogo",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:ごぜん:ごぜん",
-      "dictionaryForm": "ごぜん",
-      "reading": "ごぜん",
-      "meanings": [
-        "утро"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "ごぜん"
-      ],
-      "semanticTags": [
-        "time"
-      ],
-      "romaji": "gozen",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -3366,33 +2860,6 @@
         "pointing_words"
       ],
       "romaji": "kore",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:ごろ:ごろ",
-      "dictionaryForm": "ごろ",
-      "reading": "ごろ",
-      "meanings": [
-        "примерно"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "ごろ"
-      ],
-      "semanticTags": [
-        "time"
-      ],
-      "romaji": "... goro",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -3712,33 +3179,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:さかな:さかな",
-      "dictionaryForm": "さかな",
-      "reading": "さかな",
-      "meanings": [
-        "рыба"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "さかな"
-      ],
-      "semanticTags": [
-        "food"
-      ],
-      "romaji": "sakana",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:サッカー:さっかー",
       "dictionaryForm": "サッカー",
       "reading": "さっかー",
@@ -3845,33 +3285,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:じ:じ",
-      "dictionaryForm": "じ",
-      "reading": "じ",
-      "meanings": [
-        "_ часов"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "じ"
-      ],
-      "semanticTags": [
-        "time"
-      ],
-      "romaji": "... ji",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:ジーンズ:じーんず",
       "dictionaryForm": "ジーンズ",
       "reading": "じーんず",
@@ -3914,33 +3327,6 @@
       ],
       "semanticTags": [],
       "romaji": "",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:じてんしゃ:じてんしゃ",
-      "dictionaryForm": "じてんしゃ",
-      "reading": "じてんしゃ",
-      "meanings": [
-        "велосипед"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "じてんしゃ"
-      ],
-      "semanticTags": [
-        "things"
-      ],
-      "romaji": "jitensha",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -4147,33 +3533,6 @@
       ],
       "semanticTags": [],
       "romaji": "",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:しんぶん:しんぶん",
-      "dictionaryForm": "しんぶん",
-      "reading": "しんぶん",
-      "meanings": [
-        "газета"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "しんぶん"
-      ],
-      "semanticTags": [
-        "things"
-      ],
-      "romaji": "shinbun",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -4491,33 +3850,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:せいじ:せいじ",
-      "dictionaryForm": "せいじ",
-      "reading": "せいじ",
-      "meanings": [
-        "политика"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "せいじ"
-      ],
-      "semanticTags": [
-        "nouns"
-      ],
-      "romaji": "seiji",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:せいぶつがく:せいぶつがく",
       "dictionaryForm": "せいぶつがく",
       "reading": "せいぶつがく",
@@ -4533,33 +3865,6 @@
       ],
       "semanticTags": [],
       "romaji": "",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:せき:せき",
-      "dictionaryForm": "せき",
-      "reading": "せき",
-      "meanings": [
-        "кашель"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "せき"
-      ],
-      "semanticTags": [
-        "nouns"
-      ],
-      "romaji": "seki",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -4635,33 +3940,6 @@
       ],
       "semanticTags": [],
       "romaji": "",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:せんせい:せんせい",
-      "dictionaryForm": "せんせい",
-      "reading": "せんせい",
-      "meanings": [
-        "учитель"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "せんせい"
-      ],
-      "semanticTags": [
-        "people"
-      ],
-      "romaji": "sensee",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -4965,33 +4243,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:だいがく:だいがく",
-      "dictionaryForm": "だいがく",
-      "reading": "だいがく",
-      "meanings": [
-        "колледж"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "だいがく"
-      ],
-      "semanticTags": [
-        "occupation"
-      ],
-      "romaji": "daigaku",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:だいがくいんせい:だいがくいんせい",
       "dictionaryForm": "だいがくいんせい",
       "reading": "だいがくいんせい",
@@ -5059,33 +4310,6 @@
         "adverbs"
       ],
       "romaji": "taitei",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:たかい:たかい",
-      "dictionaryForm": "たかい",
-      "reading": "たかい",
-      "meanings": [
-        "высокий / дорогой"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "たかい"
-      ],
-      "semanticTags": [
-        "money"
-      ],
-      "romaji": "takai",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -5227,7 +4451,7 @@
         "たばこを吸いませんでした",
         "たばこをすいましょう",
         "たばこを吸いましょう",
-        "たばこをすいましょうка",
+        "たばこをすいましょうか",
         "たばこを吸いましょうか",
         "たばこをすって",
         "たばこを吸って",
@@ -5306,33 +4530,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:ちゅうごく:ちゅうごく",
-      "dictionaryForm": "ちゅうごく",
-      "reading": "ちゅうごく",
-      "meanings": [
-        "Китай"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "ちゅうごく"
-      ],
-      "semanticTags": [
-        "countries"
-      ],
-      "romaji": "Chuugoku",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:ちょっと:ちょっと",
       "dictionaryForm": "ちょっと",
       "reading": "ちょっと",
@@ -5377,44 +4574,6 @@
         "nouns"
       ],
       "romaji": "tsuaa",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:つける:つける",
-      "dictionaryForm": "つける",
-      "reading": "つける",
-      "meanings": [
-        "включать"
-      ],
-      "partOfSpeech": "verb",
-      "verbClass": "ichidan",
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "つける",
-        "つけます",
-        "つけません",
-        "つけませんか",
-        "つけました",
-        "つけませんでした",
-        "つけましょう",
-        "つけましょうか",
-        "つけて",
-        "つけない",
-        "つけた",
-        "つけなかった"
-      ],
-      "semanticTags": [
-        "verbs_ru"
-      ],
-      "romaji": "tsukeru",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -5718,33 +4877,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:でんわ:でんわ",
-      "dictionaryForm": "でんわ",
-      "reading": "でんわ",
-      "meanings": [
-        "телефон"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "でんわ"
-      ],
-      "semanticTags": [
-        "phone"
-      ],
-      "romaji": "denwa",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:と:と",
       "dictionaryForm": "と",
       "reading": "と",
@@ -5951,33 +5083,6 @@
         "adverbs"
       ],
       "romaji": "douyatte",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:とけい:とけい",
-      "dictionaryForm": "とけい",
-      "reading": "とけい",
-      "meanings": [
-        "часы"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "とけい"
-      ],
-      "semanticTags": [
-        "things"
-      ],
-      "romaji": "tokee",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -6204,33 +5309,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:ともだち:ともだち",
-      "dictionaryForm": "ともだち",
-      "reading": "ともだち",
-      "meanings": [
-        "друг"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "ともだち"
-      ],
-      "semanticTags": [
-        "people"
-      ],
-      "romaji": "tomodachi",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:ドライブ:どらいぶ",
       "dictionaryForm": "ドライブ",
       "reading": "どらいぶ",
@@ -6355,7 +5433,6 @@
         "なくしました",
         "なくしませんでした",
         "なくしましょう",
-        "なくしましょうка",
         "なくしましょうか",
         "なくして",
         "なくさない",
@@ -6444,7 +5521,6 @@
         "なりました",
         "なりませんでした",
         "なりましょう",
-        "なりましょうка",
         "なりましょうか",
         "なって",
         "ならない",
@@ -6492,33 +5568,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:にく:にく",
-      "dictionaryForm": "にく",
-      "reading": "にく",
-      "meanings": [
-        "мясо"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "にく"
-      ],
-      "semanticTags": [
-        "food"
-      ],
-      "romaji": "niku",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:について:について",
       "dictionaryForm": "について",
       "reading": "について",
@@ -6536,33 +5585,6 @@
         "expressions"
       ],
       "romaji": "... ni tsuite",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:にほん:にほん",
-      "dictionaryForm": "にほん",
-      "reading": "にほん",
-      "meanings": [
-        "Япония"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "にほん"
-      ],
-      "semanticTags": [
-        "countries"
-      ],
-      "romaji": "Nihon",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -6625,33 +5647,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:のど:のど",
-      "dictionaryForm": "のど",
-      "reading": "のど",
-      "meanings": [
-        "горло"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "のど"
-      ],
-      "semanticTags": [
-        "nouns"
-      ],
-      "romaji": "nodo",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:のどが渇く:のどがかわく",
       "dictionaryForm": "のどが渇く",
       "reading": "のどがかわく",
@@ -6677,7 +5672,7 @@
         "のどが渇きませんでした",
         "のどがかわきましょう",
         "のどが渇きましょう",
-        "のどがかわきましょうка",
+        "のどがかわきましょうか",
         "のどが渇きましょうか",
         "のどがかわいて",
         "のどが渇いて",
@@ -6773,72 +5768,6 @@
         "expressions"
       ],
       "romaji": "hai",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:はく:はく",
-      "dictionaryForm": "はく",
-      "reading": "はく",
-      "meanings": [
-        "надевать ниже пояса"
-      ],
-      "partOfSpeech": "verb",
-      "verbClass": "godan",
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "はく",
-        "はきます",
-        "はきません",
-        "はきませんか",
-        "はきました",
-        "はきませんでした",
-        "はきましょう",
-        "はきましょうка",
-        "はきましょうか",
-        "はいて",
-        "はかない",
-        "はいた",
-        "はかなかった"
-      ],
-      "semanticTags": [
-        "verbs_u"
-      ],
-      "romaji": "haku",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:はし:はし",
-      "dictionaryForm": "はし",
-      "reading": "はし",
-      "meanings": [
-        "палочки для еды"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "はし"
-      ],
-      "semanticTags": [
-        "nouns"
-      ],
-      "romaji": "hashi",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -6948,33 +5877,6 @@
         "nouns"
       ],
       "romaji": "pasokon",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:はん:はん",
-      "dictionaryForm": "はん",
-      "reading": "はん",
-      "meanings": [
-        "половина"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "はん"
-      ],
-      "semanticTags": [
-        "time"
-      ],
-      "romaji": "han",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -7347,33 +6249,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:ぼうし:ぼうし",
-      "dictionaryForm": "ぼうし",
-      "reading": "ぼうし",
-      "meanings": [
-        "шляпа"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "ぼうし"
-      ],
-      "semanticTags": [
-        "things"
-      ],
-      "romaji": "booshi",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:ホームシック:ほーむしっく",
       "dictionaryForm": "ホームシック",
       "reading": "ほーむしっく",
@@ -7470,33 +6345,6 @@
         "places"
       ],
       "romaji": "hoteru",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:ほん:ほん",
-      "dictionaryForm": "ほん",
-      "reading": "ほん",
-      "meanings": [
-        "книга"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "ほん"
-      ],
-      "semanticTags": [
-        "things"
-      ],
-      "romaji": "hon",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -7847,7 +6695,6 @@
         "もらいました",
         "もらいませんでした",
         "もらいましょう",
-        "もらいましょうка",
         "もらいましょうか",
         "もらって",
         "もらわない",
@@ -7858,60 +6705,6 @@
         "verbs_u"
       ],
       "romaji": "morau",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:やさい:やさい",
-      "dictionaryForm": "やさい",
-      "reading": "やさい",
-      "meanings": [
-        "овощи"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "やさい"
-      ],
-      "semanticTags": [
-        "food"
-      ],
-      "romaji": "yasai",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:やさしい:やさしい",
-      "dictionaryForm": "やさしい",
-      "reading": "やさしい",
-      "meanings": [
-        "лёгкий (о задаче); добрый (о человеке)"
-      ],
-      "partOfSpeech": "adjective",
-      "verbClass": null,
-      "adjectiveClass": "i",
-      "transitivity": null,
-      "tokenForms": [
-        "やさしい"
-      ],
-      "semanticTags": [
-        "i-adjectives"
-      ],
-      "romaji": "yasashii",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -8041,7 +6834,6 @@
         "やりました",
         "やりませんでした",
         "やりましょう",
-        "やりましょうка",
         "やりましょうか",
         "やって",
         "やらない",
@@ -8052,33 +6844,6 @@
         "verbs_u"
       ],
       "romaji": "yaru",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:ゆうびんきょく:ゆうびんきょく",
-      "dictionaryForm": "ゆうびんきょく",
-      "reading": "ゆうびんきょく",
-      "meanings": [
-        "почтовое отделение"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "ゆうびんきょく"
-      ],
-      "semanticTags": [
-        "places"
-      ],
-      "romaji": "yuubinkyoku",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -8195,33 +6960,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:りゅうがくせい:りゅうがくせい",
-      "dictionaryForm": "りゅうがくせい",
-      "reading": "りゅうがくせい",
-      "meanings": [
-        "иностранный ученик"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "りゅうがくせい"
-      ],
-      "semanticTags": [
-        "people"
-      ],
-      "romaji": "ryuugakusee",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:りんご:りんご",
       "dictionaryForm": "りんご",
       "reading": "りんご",
@@ -8264,33 +7002,6 @@
       ],
       "semanticTags": [],
       "romaji": "",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:れきし:れきし",
-      "dictionaryForm": "れきし",
-      "reading": "れきし",
-      "meanings": [
-        "история"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "れきし"
-      ],
-      "semanticTags": [
-        "majors"
-      ],
-      "romaji": "rekishi",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -8373,7 +7084,6 @@
         "わかりました",
         "わかりませんでした",
         "わかりましょう",
-        "わかりましょうка",
         "わかりましょうか",
         "わかって",
         "わからない",
@@ -8384,33 +7094,6 @@
         "verbs_u"
       ],
       "romaji": "wakaru",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:わたし:わたし",
-      "dictionaryForm": "わたし",
-      "reading": "わたし",
-      "meanings": [
-        "я"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "わたし"
-      ],
-      "semanticTags": [
-        "people"
-      ],
-      "romaji": "watashi",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -8533,10 +7216,39 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:易しい:やさしい",
+      "dictionaryForm": "易しい",
+      "reading": "やさしい",
+      "meanings": [
+        "лёгкий (о задаче); добрый (о человеке)"
+      ],
+      "partOfSpeech": "adjective",
+      "verbClass": null,
+      "adjectiveClass": "i",
+      "transitivity": null,
+      "tokenForms": [
+        "易しい",
+        "やさしい"
+      ],
+      "semanticTags": [
+        "i-adjectives"
+      ],
+      "romaji": "yasashii",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:医者:いしゃ",
       "dictionaryForm": "医者",
       "reading": "いしゃ",
       "meanings": [
+        "доктор",
         "врач"
       ],
       "partOfSpeech": "noun",
@@ -8754,7 +7466,7 @@
         "飲みませんでした",
         "のみましょう",
         "飲みましょう",
-        "のみましょうка",
+        "のみましょうか",
         "飲みましょうか",
         "のんで",
         "飲んで",
@@ -9014,7 +7726,7 @@
         "泳ぎませんでした",
         "およぎましょう",
         "泳ぎましょう",
-        "およぎましょうка",
+        "およぎましょうか",
         "泳ぎましょうか",
         "およいで",
         "泳いで",
@@ -9057,6 +7769,62 @@
         "nouns"
       ],
       "romaji": "eki",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:円:えん",
+      "dictionaryForm": "円",
+      "reading": "えん",
+      "meanings": [
+        "_ ен"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "円",
+        "えん"
+      ],
+      "semanticTags": [
+        "money"
+      ],
+      "romaji": "... en",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:温かい:あたたかい",
+      "dictionaryForm": "温かい",
+      "reading": "あたたかい",
+      "meanings": [
+        "тёплый"
+      ],
+      "partOfSpeech": "adjective",
+      "verbClass": null,
+      "adjectiveClass": "i",
+      "transitivity": null,
+      "tokenForms": [
+        "温かい",
+        "あたたかい"
+      ],
+      "semanticTags": [
+        "i-adjectives"
+      ],
+      "romaji": "atatakai",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -9291,6 +8059,34 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:家:うち",
+      "dictionaryForm": "家",
+      "reading": "うち",
+      "meanings": [
+        "свой дом"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "家",
+        "うち"
+      ],
+      "semanticTags": [
+        "places"
+      ],
+      "romaji": "uchi",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:家族:かぞく",
       "dictionaryForm": "家族",
       "reading": "かぞく",
@@ -9426,7 +8222,7 @@
         "歌いませんでした",
         "うたいましょう",
         "歌いましょう",
-        "うたいましょうка",
+        "うたいましょうか",
         "歌いましょうか",
         "うたって",
         "歌って",
@@ -9533,34 +8329,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:花:はな",
-      "dictionaryForm": "花",
-      "reading": "はな",
-      "meanings": [
-        "цветок"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "花",
-        "はな"
-      ],
-      "semanticTags": [
-        "things"
-      ],
-      "romaji": "hana",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:荷物:にもつ",
       "dictionaryForm": "荷物",
       "reading": "にもつ",
@@ -9614,7 +8382,7 @@
         "会いませんでした",
         "あいましょう",
         "会いましょう",
-        "あいましょうка",
+        "あいましょうか",
         "会いましょうか",
         "あって",
         "会って",
@@ -9671,6 +8439,7 @@
       "dictionaryForm": "会社員",
       "reading": "かいしゃいん",
       "meanings": [
+        "офисный сотрудник",
         "сотрудник компании"
       ],
       "partOfSpeech": "noun",
@@ -9682,6 +8451,7 @@
         "かいしゃいん"
       ],
       "semanticTags": [
+        "occupation",
         "nouns"
       ],
       "romaji": "kaishain",
@@ -9801,6 +8571,34 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:咳:せき",
+      "dictionaryForm": "咳",
+      "reading": "せき",
+      "meanings": [
+        "кашель"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "咳",
+        "せき"
+      ],
+      "semanticTags": [
+        "nouns"
+      ],
+      "romaji": "seki",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:覚える:おぼえる",
       "dictionaryForm": "覚える",
       "reading": "おぼえる",
@@ -9869,6 +8667,34 @@
         "places"
       ],
       "romaji": "gakkoo",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:学生:がくせい",
+      "dictionaryForm": "学生",
+      "reading": "がくせい",
+      "meanings": [
+        "школьник"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "学生",
+        "がくせい"
+      ],
+      "semanticTags": [
+        "people"
+      ],
+      "romaji": "gakusee",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -10021,6 +8847,32 @@
       "dictionaryForm": "看護師",
       "reading": "かんごし",
       "meanings": [
+        "нянька"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "看護師",
+        "かんごし"
+      ],
+      "semanticTags": [],
+      "romaji": "",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:看護師:かんごし:lexeme",
+      "dictionaryForm": "看護師",
+      "reading": "かんごし",
+      "meanings": [
         "медсестра; медбрат"
       ],
       "partOfSpeech": null,
@@ -10089,6 +8941,34 @@
         "location_words"
       ],
       "romaji": "aida",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:韓国:かんこく",
+      "dictionaryForm": "韓国",
+      "reading": "かんこく",
+      "meanings": [
+        "юж. корея"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "韓国",
+        "かんこく"
+      ],
+      "semanticTags": [
+        "countries"
+      ],
+      "romaji": "Kankoku",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -10208,7 +9088,7 @@
         "帰りませんでした",
         "かえりましょう",
         "帰りましょう",
-        "かえりましょうка",
+        "かえりましょうか",
         "帰りましょうか",
         "かえって",
         "帰って",
@@ -10418,7 +9298,7 @@
         "休みませんでした",
         "やすみましょう",
         "休みましょう",
-        "やすみましょうка",
+        "やすみましょうか",
         "休みましょうか",
         "やすんで",
         "休んで",
@@ -10468,7 +9348,7 @@
         "急ぎませんでした",
         "いそぎましょう",
         "急ぎましょう",
-        "いそぎましょうка",
+        "いそぎましょうか",
         "急ぎましょうか",
         "いそいで",
         "急いで",
@@ -10539,6 +9419,34 @@
         "nouns"
       ],
       "romaji": "kyonen",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:魚:さかな",
+      "dictionaryForm": "魚",
+      "reading": "さかな",
+      "meanings": [
+        "рыба"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "魚",
+        "さかな"
+      ],
+      "semanticTags": [
+        "food"
+      ],
+      "romaji": "sakana",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -10653,6 +9561,34 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:橋:はし",
+      "dictionaryForm": "橋",
+      "reading": "はし",
+      "meanings": [
+        "палочки для еды"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "橋",
+        "はし"
+      ],
+      "semanticTags": [
+        "nouns"
+      ],
+      "romaji": "hashi",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:狭い:せまい",
       "dictionaryForm": "狭い",
       "reading": "せまい",
@@ -10706,7 +9642,7 @@
         "興味がありませんでした",
         "きょうみがありましょう",
         "興味がありましょう",
-        "きょうみがありましょうка",
+        "きょうみがありましょうか",
         "興味がありましょうか",
         "きょうみがあって",
         "興味があって",
@@ -10837,6 +9773,34 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:銀行:ぎんこう",
+      "dictionaryForm": "銀行",
+      "reading": "ぎんこう",
+      "meanings": [
+        "банк"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "銀行",
+        "ぎんこう"
+      ],
+      "semanticTags": [
+        "places"
+      ],
+      "romaji": "ginkoo",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:九つ:ここのつ",
       "dictionaryForm": "九つ",
       "reading": "ここのつ",
@@ -10855,6 +9819,34 @@
         "numbers"
       ],
       "romaji": "kokonotsu",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:靴:くつ",
+      "dictionaryForm": "靴",
+      "reading": "くつ",
+      "meanings": [
+        "туфли"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "靴",
+        "くつ"
+      ],
+      "semanticTags": [
+        "things"
+      ],
+      "romaji": "kutsu",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -10911,6 +9903,34 @@
         "nouns"
       ],
       "romaji": "kyoodai",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:経済:けいざい",
+      "dictionaryForm": "経済",
+      "reading": "けいざい",
+      "meanings": [
+        "экономика"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "経済",
+        "けいざい"
+      ],
+      "semanticTags": [
+        "majors"
+      ],
+      "romaji": "keezai",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -11316,7 +10336,7 @@
         "言いませんでした",
         "いいましょう",
         "言いましょう",
-        "いいましょうка",
+        "いいましょうか",
         "言いましょうか",
         "いって",
         "言って",
@@ -11415,6 +10435,62 @@
         "numbers"
       ],
       "romaji": "itsutsu",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:午後:ごご",
+      "dictionaryForm": "午後",
+      "reading": "ごご",
+      "meanings": [
+        "полдень"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "午後",
+        "ごご"
+      ],
+      "semanticTags": [
+        "time"
+      ],
+      "romaji": "gogo",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:午前:ごぜん",
+      "dictionaryForm": "午前",
+      "reading": "ごぜん",
+      "meanings": [
+        "утро"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "午前",
+        "ごぜん"
+      ],
+      "semanticTags": [
+        "time"
+      ],
+      "romaji": "gozen",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -11535,6 +10611,34 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:語:ご",
+      "dictionaryForm": "語",
+      "reading": "ご",
+      "meanings": [
+        "языク"
+      ],
+      "partOfSpeech": "expression",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "語",
+        "ご"
+      ],
+      "semanticTags": [
+        "expressions"
+      ],
+      "romaji": "... go",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:公園:こうえん",
       "dictionaryForm": "公園",
       "reading": "こうえん",
@@ -11581,6 +10685,34 @@
         "nouns"
       ],
       "romaji": "kuchi",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:喉:のど",
+      "dictionaryForm": "喉",
+      "reading": "のど",
+      "meanings": [
+        "горло"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "喉",
+        "のど"
+      ],
+      "semanticTags": [
+        "nouns"
+      ],
+      "romaji": "nodo",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -11672,7 +10804,7 @@
         "行きませんでした",
         "いきましょう",
         "行きましょう",
-        "いきましょうка",
+        "いきましょうか",
         "行きましょうか",
         "いって",
         "行って",
@@ -11772,7 +10904,7 @@
         "降りませんでした",
         "ふりましょう",
         "降りましょう",
-        "ふりましょうка",
+        "ふりましょうか",
         "降りましょうか",
         "ふって",
         "降って",
@@ -11787,6 +10919,62 @@
         "verbs_u"
       ],
       "romaji": "furu",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:高い:たかい",
+      "dictionaryForm": "高い",
+      "reading": "たかい",
+      "meanings": [
+        "высокий / дорогой"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "高い",
+        "たかい"
+      ],
+      "semanticTags": [
+        "money"
+      ],
+      "romaji": "takai",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:高校生:こうこうせい",
+      "dictionaryForm": "高校生",
+      "reading": "こうこうせい",
+      "meanings": [
+        "ученик старшей школы"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "高校生",
+        "こうこうせい"
+      ],
+      "semanticTags": [
+        "people"
+      ],
+      "romaji": "kookoosee",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -11843,6 +11031,34 @@
         "i-adjectives"
       ],
       "romaji": "kuroi",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:頃:ごろ",
+      "dictionaryForm": "頃",
+      "reading": "ごろ",
+      "meanings": [
+        "примерно"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "頃",
+        "ごろ"
+      ],
+      "semanticTags": [
+        "time"
+      ],
+      "romaji": "... goro",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -12128,7 +11344,7 @@
         "座りませんでした",
         "すわりましょう",
         "座りましょう",
-        "すわりましょうка",
+        "すわりましょうか",
         "座りましょうか",
         "すわって",
         "座って",
@@ -12310,7 +11526,7 @@
         "撮りませんでした",
         "とりましょう",
         "撮りましょう",
-        "とりましょうка",
+        "とりましょうか",
         "撮りましょうか",
         "とって",
         "撮って",
@@ -12381,6 +11597,34 @@
         "numbers"
       ],
       "romaji": "mittsu",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:傘:かさ",
+      "dictionaryForm": "傘",
+      "reading": "かさ",
+      "meanings": [
+        "зонтик"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "傘",
+        "かさ"
+      ],
+      "semanticTags": [
+        "things"
+      ],
+      "romaji": "kasa",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -12550,7 +11794,7 @@
         "使いませんでした",
         "つかいましょう",
         "使いましょう",
-        "つかいましょうка",
+        "つかいましょうか",
         "使いましょうか",
         "つかって",
         "使って",
@@ -12628,7 +11872,7 @@
         "始まりませんでした",
         "はじまりましょう",
         "始まりましょう",
-        "はじまりましょうка",
+        "はじまりましょうか",
         "始まりましょうか",
         "はじまって",
         "始まって",
@@ -12640,7 +11884,6 @@
         "始まらなかった"
       ],
       "semanticTags": [
-        "подлежащее с частицей が",
         "verbs_u"
       ],
       "romaji": "hajimaru",
@@ -12786,7 +12029,7 @@
         "思いませんでした",
         "おもいましょう",
         "思いましょう",
-        "おもいましょうка",
+        "おもいましょうか",
         "思いましょうか",
         "おもって",
         "思って",
@@ -12836,7 +12079,7 @@
         "死にませんでした",
         "しにましょう",
         "死にましょう",
-        "しにましょうка",
+        "しにましょうか",
         "死にましょうか",
         "しんで",
         "死んで",
@@ -12851,6 +12094,34 @@
         "verbs_u"
       ],
       "romaji": "shinu",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:私:わたし",
+      "dictionaryForm": "私",
+      "reading": "わたし",
+      "meanings": [
+        "я"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "私",
+        "わたし"
+      ],
+      "semanticTags": [
+        "people"
+      ],
+      "romaji": "watashi",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -12942,7 +12213,7 @@
         "飼いませんでした",
         "かいましょう",
         "飼いましょう",
-        "かいましょうка",
+        "かいましょうか",
         "飼いましょうか",
         "かって",
         "飼って",
@@ -13020,7 +12291,7 @@
         "持ちませんでした",
         "もちましょう",
         "持ちましょう",
-        "もちましょうка",
+        "もちましょうか",
         "持ちましょうか",
         "もって",
         "持って",
@@ -13035,56 +12306,6 @@
         "verbs_u"
       ],
       "romaji": "mots",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:持っていく:もっていく",
-      "dictionaryForm": "持っていく",
-      "reading": "もっていく",
-      "meanings": [
-        "уносить; брать с собой"
-      ],
-      "partOfSpeech": "verb",
-      "verbClass": "godan",
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "持っていく",
-        "もっていく",
-        "もっていきます",
-        "持っていきます",
-        "もっていきません",
-        "持っていきません",
-        "もっていきませんか",
-        "持っていきませんか",
-        "もっていきました",
-        "持っていきました",
-        "もっていきませんでした",
-        "持っていきませんでした",
-        "もっていきましょう",
-        "持っていきましょう",
-        "もっていきましょうка",
-        "持っていきましょうか",
-        "もっていって",
-        "持って行って",
-        "もっていかない",
-        "持っていかない",
-        "もっていった",
-        "持って行った",
-        "もっていかなかった",
-        "持っていかなかった"
-      ],
-      "semanticTags": [
-        "verbs_u"
-      ],
-      "romaji": "motteiku",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -13135,6 +12356,84 @@
         "verbs_irr"
       ],
       "romaji": "mottekuru",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:持って行く:もっていく",
+      "dictionaryForm": "持って行く",
+      "reading": "もっていく",
+      "meanings": [
+        "уносить; брать с собой"
+      ],
+      "partOfSpeech": "verb",
+      "verbClass": "godan",
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "持って行く",
+        "もっていく",
+        "もっていきます",
+        "持って行きます",
+        "もっていきません",
+        "持って行きません",
+        "もっていきませんか",
+        "持って行きませんか",
+        "もっていきました",
+        "持って行きました",
+        "もっていきませんでした",
+        "持って行きませんでした",
+        "もっていきましょう",
+        "持って行きましょう",
+        "もっていきましょうか",
+        "持って行きましょうか",
+        "もっていって",
+        "持って行って",
+        "もっていかない",
+        "持って行かない",
+        "もっていった",
+        "持って行った",
+        "もっていかなかった",
+        "持って行かなかった"
+      ],
+      "semanticTags": [
+        "verbs_u"
+      ],
+      "romaji": "motteiku",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:時:じ",
+      "dictionaryForm": "時",
+      "reading": "じ",
+      "meanings": [
+        "_ часов"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "時",
+        "じ"
+      ],
+      "semanticTags": [
+        "time"
+      ],
+      "romaji": "... ji",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -13231,6 +12530,34 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:時計:とけい",
+      "dictionaryForm": "時計",
+      "reading": "とけい",
+      "meanings": [
+        "часы"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "時計",
+        "とけい"
+      ],
+      "semanticTags": [
+        "things"
+      ],
+      "romaji": "tokee",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:次:つぎ",
       "dictionaryForm": "次",
       "reading": "つぎ",
@@ -13249,6 +12576,34 @@
         "nouns"
       ],
       "romaji": "tsugi",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:自転車:じてんしゃ",
+      "dictionaryForm": "自転車",
+      "reading": "じてんしゃ",
+      "meanings": [
+        "велосипед"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "自転車",
+        "じてんしゃ"
+      ],
+      "semanticTags": [
+        "things"
+      ],
+      "romaji": "jitensha",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -13550,7 +12905,7 @@
         "取りませんでした",
         "とりましょう",
         "取りましょう",
-        "とりましょうка",
+        "とりましょうか",
         "取りましょうか",
         "とって",
         "取って",
@@ -13656,7 +13011,7 @@
         "手伝いませんでした",
         "てつだいましょう",
         "手伝いましょう",
-        "てつだいましょうка",
+        "てつだいましょうか",
         "手伝いましょうか",
         "てつだって",
         "手伝って",
@@ -13760,7 +13115,7 @@
         "終わりませんでした",
         "おわりましょう",
         "終わりましょう",
-        "おわりましょうка",
+        "おわりましょうか",
         "終わりましょうか",
         "おわって",
         "終わって",
@@ -13772,7 +13127,6 @@
         "終わらなかった"
       ],
       "semanticTags": [
-        "подлежащее с частицей が",
         "verbs_u"
       ],
       "romaji": "owaru",
@@ -13893,7 +13247,7 @@
         "住みませんでした",
         "すみましょう",
         "住みましょう",
-        "すみましょうка",
+        "すみましょうか",
         "住みましょうか",
         "すんで",
         "住んで",
@@ -14156,34 +13510,6 @@
     },
     {
       "schemaVersion": 1,
-      "id": "jp-word:所:ところ",
-      "dictionaryForm": "所",
-      "reading": "ところ",
-      "meanings": [
-        "место"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "所",
-        "ところ"
-      ],
-      "semanticTags": [
-        "nouns"
-      ],
-      "romaji": "tokoro",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
       "id": "jp-word:暑い:あつい",
       "dictionaryForm": "暑い",
       "reading": "あつい",
@@ -14237,7 +13563,7 @@
         "書きませんでした",
         "かきましょう",
         "書きましょう",
-        "かきましょうка",
+        "かきましょうか",
         "書きましょうか",
         "かいて",
         "書いて",
@@ -14369,7 +13695,7 @@
         "消しませんでした",
         "けしましょう",
         "消しましょう",
-        "けしましょうка",
+        "けしましょうか",
         "消しましょうか",
         "けして",
         "消して",
@@ -14527,7 +13853,7 @@
         "乗りませんでした",
         "のりましょう",
         "乗りましょう",
-        "のりましょうка",
+        "のりましょうか",
         "乗りましょうか",
         "のって",
         "乗って",
@@ -14842,6 +14168,34 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:新聞:しんぶん",
+      "dictionaryForm": "新聞",
+      "reading": "しんぶん",
+      "meanings": [
+        "газета"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "新聞",
+        "しんぶん"
+      ],
+      "semanticTags": [
+        "things"
+      ],
+      "romaji": "shinbun",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:神社:じんじゃ",
       "dictionaryForm": "神社",
       "reading": "じんじゃ",
@@ -14978,7 +14332,7 @@
         "人気がありませんでした",
         "にんきがありましょう",
         "人気がありましょう",
-        "にんきがありましょうка",
+        "にんきがありましょうか",
         "人気がありましょうか",
         "にんきがあって",
         "人気があって",
@@ -15336,7 +14690,7 @@
         "切りませんでした",
         "きりましょう",
         "切りましょう",
-        "きりましょうка",
+        "きりましょうか",
         "切りましょうか",
         "きって",
         "切って",
@@ -15473,6 +14827,34 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:先生:せんせい",
+      "dictionaryForm": "先生",
+      "reading": "せんせい",
+      "meanings": [
+        "учитель"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "先生",
+        "せんせい"
+      ],
+      "semanticTags": [
+        "people"
+      ],
+      "romaji": "sensee",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:川:かわ",
       "dictionaryForm": "川",
       "reading": "かわ",
@@ -15526,7 +14908,7 @@
         "洗いませんでした",
         "あらいましょう",
         "洗いましょう",
-        "あらいましょうка",
+        "あらいましょうか",
         "洗いましょうか",
         "あらって",
         "洗って",
@@ -16036,7 +15418,7 @@
         "太りませんでした",
         "ふとりましょう",
         "太りましょう",
-        "ふとりましょうка",
+        "ふとりましょうか",
         "太りましょうか",
         "ふとって",
         "太って",
@@ -16086,7 +15468,7 @@
         "待ちませんでした",
         "まちましょう",
         "待ちましょう",
-        "まちましょうка",
+        "まちましょうか",
         "待ちましょうか",
         "まって",
         "待って",
@@ -16157,6 +15539,34 @@
         "i-adjectives"
       ],
       "romaji": "ookii",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:大学:だいがく",
+      "dictionaryForm": "大学",
+      "reading": "だいがく",
+      "meanings": [
+        "колледж"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "大学",
+        "だいがく"
+      ],
+      "semanticTags": [
+        "occupation"
+      ],
+      "romaji": "daigaku",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -16414,7 +15824,7 @@
         "弾きませんでした",
         "ひきましょう",
         "弾きましょう",
-        "ひきましょうка",
+        "ひきましょうか",
         "弾きましょうか",
         "ひいて",
         "弾いて",
@@ -16429,34 +15839,6 @@
         "verbs_u"
       ],
       "romaji": "hiku",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:暖かい:あたたかい",
-      "dictionaryForm": "暖かい",
-      "reading": "あたたかい",
-      "meanings": [
-        "тёплый"
-      ],
-      "partOfSpeech": "adjective",
-      "verbClass": null,
-      "adjectiveClass": "i",
-      "transitivity": null,
-      "tokenForms": [
-        "暖かい",
-        "あたたかい"
-      ],
-      "semanticTags": [
-        "i-adjectives"
-      ],
-      "romaji": "atatakai",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -16520,7 +15902,7 @@
         "知りませんでした",
         "しりましょう",
         "知りましょう",
-        "しりましょうка",
+        "しりましょうか",
         "知りましょうか",
         "しって",
         "知って",
@@ -16654,7 +16036,7 @@
         "遅くなりませんでした",
         "おそくなりましょう",
         "遅くなりましょう",
-        "おそくなりましょうка",
+        "おそくなりましょうか",
         "遅くなりましょうか",
         "おそくなって",
         "遅くなって",
@@ -16773,6 +16155,34 @@
         "location_words"
       ],
       "romaji": "naka",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:中国:ちゅうごく",
+      "dictionaryForm": "中国",
+      "reading": "ちゅうごく",
+      "meanings": [
+        "Китай"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "中国",
+        "ちゅうごく"
+      ],
+      "semanticTags": [
+        "countries"
+      ],
+      "romaji": "Chuugoku",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -17089,6 +16499,56 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:点ける:つける",
+      "dictionaryForm": "点ける",
+      "reading": "つける",
+      "meanings": [
+        "включать"
+      ],
+      "partOfSpeech": "verb",
+      "verbClass": "ichidan",
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "点ける",
+        "つける",
+        "つけます",
+        "点けます",
+        "つけません",
+        "点けません",
+        "つけませんか",
+        "点けませんか",
+        "つけました",
+        "点けました",
+        "つけませんでした",
+        "点けませんでした",
+        "つけましょう",
+        "点けましょう",
+        "つけましょうか",
+        "点けましょうか",
+        "つけて",
+        "点けて",
+        "つけない",
+        "点けない",
+        "つけた",
+        "点けた",
+        "つけなかった",
+        "点けなかった"
+      ],
+      "semanticTags": [
+        "verbs_ru"
+      ],
+      "romaji": "tsukeru",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:電気:でんき",
       "dictionaryForm": "電気",
       "reading": "でんき",
@@ -17135,6 +16595,34 @@
         "nouns"
       ],
       "romaji": "densha",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:電話:でんわ",
+      "dictionaryForm": "電話",
+      "reading": "でんわ",
+      "meanings": [
+        "телефон"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "電話",
+        "でんわ"
+      ],
+      "semanticTags": [
+        "phone"
+      ],
+      "romaji": "denwa",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -17220,7 +16708,7 @@
         "登りませんでした",
         "のぼりましょう",
         "登りましょう",
-        "のぼりましょうка",
+        "のぼりましょうか",
         "登りましょうか",
         "のぼって",
         "登って",
@@ -17382,7 +16870,7 @@
         "働きませんでした",
         "はたらきましょう",
         "働きましょう",
-        "はたらきましょうка",
+        "はたらきましょうか",
         "働きましょうか",
         "はたらいて",
         "働いて",
@@ -17488,7 +16976,7 @@
         "読みませんでした",
         "よみましょう",
         "読みましょう",
-        "よみましょうка",
+        "よみましょうか",
         "読みましょうか",
         "よんで",
         "読んで",
@@ -17653,6 +17141,62 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:肉:にく",
+      "dictionaryForm": "肉",
+      "reading": "にく",
+      "meanings": [
+        "мясо"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "肉",
+        "にく"
+      ],
+      "semanticTags": [
+        "food"
+      ],
+      "romaji": "niku",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:日本:にほん",
+      "dictionaryForm": "日本",
+      "reading": "にほん",
+      "meanings": [
+        "Япония"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "日本",
+        "にほん"
+      ],
+      "semanticTags": [
+        "countries"
+      ],
+      "romaji": "Nihon",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:日曜日:にちようび",
       "dictionaryForm": "日曜日",
       "reading": "にちようび",
@@ -17706,7 +17250,7 @@
         "入りませんでした",
         "はいりましょう",
         "入りましょう",
-        "はいりましょうка",
+        "はいりましょうか",
         "入りましょうか",
         "はいって",
         "入って",
@@ -17812,7 +17356,7 @@
         "熱がありませんでした",
         "ねつがありましょう",
         "熱がありましょう",
-        "ねつがありましょうка",
+        "ねつがありましょうか",
         "熱がありましょうか",
         "ねつがあって",
         "熱があって",
@@ -18028,7 +17572,7 @@
         "買いませんでした",
         "かいましょう",
         "買いましょう",
-        "かいましょうка",
+        "かいましょうか",
         "買いましょうか",
         "かって",
         "買って",
@@ -18078,7 +17622,7 @@
         "泊まりませんでした",
         "とまりましょう",
         "泊まりましょう",
-        "とまりましょうка",
+        "とまりましょうか",
         "泊まりましょうか",
         "とまって",
         "泊まって",
@@ -18121,6 +17665,34 @@
         "i-adjectives"
       ],
       "romaji": "shiroi",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:箸:はし",
+      "dictionaryForm": "箸",
+      "reading": "はし",
+      "meanings": [
+        "палочки для еды"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "箸",
+        "はし"
+      ],
+      "semanticTags": [
+        "nouns"
+      ],
+      "romaji": "tokoro",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -18177,6 +17749,34 @@
         "nouns"
       ],
       "romaji": "kami",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:半:はん",
+      "dictionaryForm": "半",
+      "reading": "はん",
+      "meanings": [
+        "половина"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "半",
+        "はん"
+      ],
+      "semanticTags": [
+        "time"
+      ],
+      "romaji": "han",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -18407,6 +18007,34 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:鼻:はな",
+      "dictionaryForm": "鼻",
+      "reading": "はな",
+      "meanings": [
+        "цветок"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "鼻",
+        "はな"
+      ],
+      "semanticTags": [
+        "things"
+      ],
+      "romaji": "hana",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:病院:びょういん",
       "dictionaryForm": "病院",
       "reading": "びょういん",
@@ -18600,7 +18228,7 @@
         "風邪をひきませんでした",
         "かぜをひきましょう",
         "風邪をひきましょう",
-        "かぜをひきましょうка",
+        "かぜをひきましょうか",
         "風邪をひきましょうか",
         "かぜをひいて",
         "風邪をひいて",
@@ -18678,7 +18306,7 @@
         "払いませんでした",
         "はらいましょう",
         "払いましょう",
-        "はらいましょうка",
+        "はらいましょうか",
         "払いましょうか",
         "はらって",
         "払って",
@@ -18756,7 +18384,7 @@
         "聞きませんでした",
         "ききましょう",
         "聞きましょう",
-        "ききましょうка",
+        "ききましょうか",
         "聞きましょうか",
         "きいて",
         "聞いて",
@@ -18934,7 +18562,7 @@
         "返しませんでした",
         "かえしましょう",
         "返しましょう",
-        "かえしましょうка",
+        "かえしましょうか",
         "返しましょうか",
         "かえして",
         "返して",
@@ -19090,7 +18718,7 @@
         "歩きませんでした",
         "あるきましょう",
         "歩きましょう",
-        "あるきましょうка",
+        "あるきましょうか",
         "歩きましょうか",
         "あるいて",
         "歩いて",
@@ -19133,6 +18761,34 @@
         "nouns"
       ],
       "romaji": "haha",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:帽子:ぼうし",
+      "dictionaryForm": "帽子",
+      "reading": "ぼうし",
+      "meanings": [
+        "шляпа"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "帽子",
+        "ぼうし"
+      ],
+      "semanticTags": [
+        "things"
+      ],
+      "romaji": "booshi",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -19239,6 +18895,34 @@
         "nouns"
       ],
       "romaji": "boku",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:本:ほん",
+      "dictionaryForm": "本",
+      "reading": "ほん",
+      "meanings": [
+        "книга"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "本",
+        "ほん"
+      ],
+      "semanticTags": [
+        "things"
+      ],
+      "romaji": "hon",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -19695,6 +19379,34 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:野菜:やさい",
+      "dictionaryForm": "野菜",
+      "reading": "やさい",
+      "meanings": [
+        "овощи"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "野菜",
+        "やさい"
+      ],
+      "semanticTags": [
+        "food"
+      ],
+      "romaji": "yasai",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:薬:くすり",
       "dictionaryForm": "薬",
       "reading": "くすり",
@@ -19748,7 +19460,7 @@
         "薬を飲みませんでした",
         "くすりをのみましょう",
         "薬を飲みましょう",
-        "くすりをのみましょうка",
+        "くすりをのみましょうか",
         "薬を飲みましょうか",
         "くすりをのんで",
         "薬を飲んで",
@@ -19763,6 +19475,34 @@
         "verbs_u"
       ],
       "romaji": "kusuri o nomu",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:友達:ともだち",
+      "dictionaryForm": "友達",
+      "reading": "ともだち",
+      "meanings": [
+        "друг"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "友達",
+        "ともだち"
+      ],
+      "semanticTags": [
+        "people"
+      ],
+      "romaji": "tomodachi",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -19854,7 +19594,7 @@
         "遊びませんでした",
         "あそびましょう",
         "遊びましょう",
-        "あそびましょうка",
+        "あそびましょうか",
         "遊びましょうか",
         "あそんで",
         "遊んで",
@@ -19869,6 +19609,34 @@
         "verbs_u"
       ],
       "romaji": "asobu",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:郵便局:ゆうびんきょく",
+      "dictionaryForm": "郵便局",
+      "reading": "ゆうびんきょく",
+      "meanings": [
+        "почтовое отделение"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "郵便局",
+        "ゆうびんきょく"
+      ],
+      "semanticTags": [
+        "places"
+      ],
+      "romaji": "yuubinkyoku",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -19960,7 +19728,7 @@
         "踊りませんでした",
         "おどりましょう",
         "踊りましょう",
-        "おどりましょうка",
+        "おどりましょうか",
         "踊りましょうか",
         "おどって",
         "踊って",
@@ -20173,6 +19941,56 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:履く:はく",
+      "dictionaryForm": "履く",
+      "reading": "はく",
+      "meanings": [
+        "надевать ниже пояса"
+      ],
+      "partOfSpeech": "verb",
+      "verbClass": "godan",
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "履く",
+        "はく",
+        "はきます",
+        "履きます",
+        "はきません",
+        "履きません",
+        "はきませんか",
+        "履きませんか",
+        "はきました",
+        "履きました",
+        "はきませんでした",
+        "履きませんでした",
+        "はきましょう",
+        "履きましょう",
+        "はきましょうか",
+        "履きましょうか",
+        "はいて",
+        "履いて",
+        "はかない",
+        "履かない",
+        "はいた",
+        "履いた",
+        "はかなかった",
+        "履かなかった"
+      ],
+      "semanticTags": [
+        "verbs_u"
+      ],
+      "romaji": "haku",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:立つ:たつ",
       "dictionaryForm": "立つ",
       "reading": "たつ",
@@ -20198,7 +20016,7 @@
         "立ちませんでした",
         "たちましょう",
         "立ちましょう",
-        "たちましょうка",
+        "たちましょうか",
         "立ちましょうか",
         "たって",
         "立って",
@@ -20239,6 +20057,34 @@
       ],
       "semanticTags": [],
       "romaji": "",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "jp-word:留学生:りゅうがくせい",
+      "dictionaryForm": "留学生",
+      "reading": "りゅうがくせい",
+      "meanings": [
+        "иностранный ученик"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "留学生",
+        "りゅうがくせい"
+      ],
+      "semanticTags": [
+        "people"
+      ],
+      "romaji": "ryuugakusee",
       "source": "curated",
       "confidence": 1,
       "provenance": {
@@ -20489,6 +20335,34 @@
     },
     {
       "schemaVersion": 1,
+      "id": "jp-word:歴史:れきし",
+      "dictionaryForm": "歴史",
+      "reading": "れきし",
+      "meanings": [
+        "история"
+      ],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "transitivity": null,
+      "tokenForms": [
+        "歴史",
+        "れきし"
+      ],
+      "semanticTags": [
+        "majors"
+      ],
+      "romaji": "rekishi",
+      "source": "curated",
+      "confidence": 1,
+      "provenance": {
+        "sourceType": "course-package",
+        "sourceId": "genki-1",
+        "contentVersion": "1"
+      }
+    },
+    {
+      "schemaVersion": 1,
       "id": "jp-word:練習する:れんしゅうする",
       "dictionaryForm": "練習する",
       "reading": "れんしゅうする",
@@ -20642,7 +20516,7 @@
         "話しませんでした",
         "はなしましょう",
         "話しましょう",
-        "はなしましょうка",
+        "はなしましょうか",
         "話しましょうか",
         "はなして",
         "話して",

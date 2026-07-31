@@ -70,6 +70,8 @@ export function sameLessonId(left, right, course = activeCourse) {
 export function lessonOrdinal(value, course = activeCourse) {
   const ordinal = typeof course?.lessonOrdinal === 'function' ? course.lessonOrdinal(value) : null;
   if (Number.isInteger(ordinal) && ordinal >= 0) return ordinal;
+  const match = String(value || '').match(/lesson-(\d+)/i) || String(value || '').match(/^(\d+)$/);
+  if (match) return Number(match[1]) - 1;
   const legacy = Number(value);
   return Number.isFinite(legacy) ? legacy - 1 : -1;
 }

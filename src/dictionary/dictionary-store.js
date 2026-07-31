@@ -2,6 +2,7 @@ import { DictionaryLoader } from './dictionary-loader.js';
 import { DictionaryEntrySchema, normalizeDictionaryEntry } from './dictionary-contract.js';
 import { dictionaryEntryId, userDictionaryEntryId } from './dictionary-id.js';
 import { resolveCourseVocabulary } from './dictionary-merge.js';
+import { resolveGeneratedDictionaryAlias } from './generated-dictionary-aliases.js';
 import {
   findReadingCandidates,
   findTokenCandidates,
@@ -73,6 +74,7 @@ export class DictionaryStore {
     this.userEntries = new Map();
     this.tokenIndex = {};
     this.aliases = new Map();
+    this.courseAliases = new Map(); // courseId -> Map(localId -> dictionaryId)
     this.courseReferences = new Map();
     this.referencesByDictionaryId = new Map();
   }
@@ -144,14 +146,21 @@ export class DictionaryStore {
     return Boolean(this.getDictionaryEntry(id));
   }
 
-  resolveAlias(id) {
+  resolveAlias(id, courseId = null) {
     let current = String(id || '');
+    if (
+      courseId &&
+      this.courseAliases.has(courseId) &&
+      this.courseAliases.get(courseId).has(current)
+    ) {
+      current = this.courseAliases.get(courseId).get(current);
+    }
     const visited = new Set();
     while (this.aliases.has(current) && !visited.has(current)) {
       visited.add(current);
       current = this.aliases.get(current);
     }
-    return current;
+    return resolveGeneratedDictionaryAlias(current);
   }
 
   getAllDictionaryEntries() {
@@ -173,7 +182,13 @@ export class DictionaryStore {
     }
     this.referencesByDictionaryId.get(entry.id).set(reference.id, reference);
     this.aliases.set(reference.id, entry.id);
-    if (reference.localId) this.aliases.set(reference.localId, entry.id);
+    if (reference.courseId && reference.localId) {
+      if (!this.courseAliases.has(reference.courseId)) {
+        this.courseAliases.set(reference.courseId, new Map());
+      }
+      this.courseAliases.get(reference.courseId).set(reference.localId, entry.id);
+      this.aliases.set(`${reference.courseId}:vocabulary:${reference.localId}`, entry.id);
+    }
     return resolveCourseVocabulary(reference, entry);
   }
 

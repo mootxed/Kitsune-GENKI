@@ -90,6 +90,25 @@ export const DictionaryEntrySchema = z
         message: 'adjectiveClass is only valid for adjectives',
       });
     }
+    const CYRILLIC_RE = /[\u0400-\u04FF]/u;
+    const CONTROL_CHARS_RE = /[\u0000-\u001F\u007F-\u009F]/u;
+    for (let i = 0; i < entry.tokenForms.length; i++) {
+      const form = entry.tokenForms[i];
+      if (CYRILLIC_RE.test(form)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['tokenForms', i],
+          message: `tokenForm "${form}" cannot contain Cyrillic characters`,
+        });
+      }
+      if (CONTROL_CHARS_RE.test(form)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['tokenForms', i],
+          message: `tokenForm "${form}" cannot contain control characters`,
+        });
+      }
+    }
     if (new Set(entry.tokenForms).size !== entry.tokenForms.length) {
       context.addIssue({
         code: 'custom',

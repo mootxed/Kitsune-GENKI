@@ -183,7 +183,7 @@ export function conjugateVerb(word) {
     addForm('mashita', wPoliteStem + 'ました', kPoliteStem + 'ました');
     addForm('masendeshita', wPoliteStem + 'ませんでした', kPoliteStem + 'ませんでした');
     addForm('mashou', wPoliteStem + 'ましょう', kPoliteStem + 'ましょう');
-    addForm('mashouka', wPoliteStem + 'ましょうка', kPoliteStem + 'ましょうか'); // Wait, let's keep kana/kanji standard Japanese: ましょうか, and the label takes care of the "ましょうка-форма" format!
+    addForm('mashouka', wPoliteStem + 'ましょうか', kPoliteStem + 'ましょうか'); // Wait, let's keep kana/kanji standard Japanese: ましょうか, and the label takes care of the "ましょうка-форма" format!
 
     // Простые формы: отрицательные (a-row / исключение ある)
     if (writing === 'ある') {

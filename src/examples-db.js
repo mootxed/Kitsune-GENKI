@@ -200,7 +200,11 @@ export class ExamplesDBClass {
       const japanese = item.tokens.map((t) => t.kanji || t.writing || '').join('');
       const reading = item.tokens.map((t) => t.writing || t.kanji || '').join('');
       const translation = item.translation || '';
-      const tokenLexemes = item.tokens.map((t) => t.lexemeId || t.wordId).filter(Boolean);
+      const tokenLexemes = item.tokens
+        .map((t) =>
+          resolveDictionaryAlias(t.dictionaryId || t.knowledgeItemId || t.lexemeId || t.wordId)
+        )
+        .filter(Boolean);
 
       this.addRawSentence({
         japanese,
@@ -430,79 +434,121 @@ export class ExamplesDBClass {
     let idCounter = 1;
 
     for (const raw of this.rawSentences) {
-      let matchedWords;
-      if (raw.targetLexemeIds && raw.targetLexemeIds.length > 0) {
-        const targets = raw.targetLexemeIds.map(resolveDictionaryAlias);
-        matchedWords = allVocab.filter((word) =>
-          targets.includes(
-            word.dictionaryId ||
-              word.knowledgeItemId ||
-              resolveDictionaryAlias(word.lexemeId || word.id)
-          )
-        );
-      } else {
-        matchedWords = allVocab.filter((w) => isWordInSentence(w, raw.japanese));
-      }
-
-      // Ищем частицы в предложении
       const matchedParticles = [];
       for (const p of KNOWN_PARTICLES) {
         if (raw.japanese.includes(p)) {
           matchedParticles.push(p);
         }
       }
-
-      const vocabularyIds = matchedWords.map((w) => w.id);
-
-      // Расчет требуемого урока на основе грамматики и всей лексики предложения
-      const maxVocabLesson = matchedWords.reduce((latest, word) => {
-        const introducedIn =
-          word.lessonIds && word.lessonIds.length > 0
-            ? [...word.lessonIds].sort(compareLessonIds)[0]
-            : canonicalLessonId(1);
-        return latest == null || compareLessonIds(introducedIn, latest) > 0 ? introducedIn : latest;
-      }, null);
-
       const sourceLessonId = canonicalLessonId(raw.sourceLessonId || 1);
-      const lessonRequired =
-        maxVocabLesson != null && compareLessonIds(maxVocabLesson, sourceLessonId) > 0
-          ? maxVocabLesson
-          : sourceLessonId;
 
-      // Для каждого подходящего слова создаем нормализованную модель примера
-      for (const word of matchedWords) {
-        const dictionaryId =
-          word.dictionaryId ||
-          word.knowledgeItemId ||
-          resolveDictionaryAlias(word.lexemeId || word.id);
-        if (!dictionaryId) continue;
+      if (raw.targetLexemeIds && raw.targetLexemeIds.length > 0) {
+        const targetDictionaryIds = [
+          ...new Set(raw.targetLexemeIds.map(resolveDictionaryAlias)),
+        ].filter(Boolean);
 
-        // Дедупликация: целевое слово + текст предложения
-        const dupKey = `${dictionaryId}_${raw.japanese.replace(/[\s、。？！・]/g, '')}`;
-        if (seen.has(dupKey)) continue;
-        seen.add(dupKey);
+        for (const dictionaryId of targetDictionaryIds) {
+          const matchedWords = allVocab.filter(
+            (word) =>
+              resolveDictionaryAlias(
+                word.dictionaryId || word.knowledgeItemId || word.lexemeId || word.id
+              ) === dictionaryId
+          );
 
-        const example = {
-          id: raw.id || `ex-${idCounter++}`,
-          dictionaryId,
-          targetLexemeId: dictionaryId,
-          japanese: raw.japanese,
-          reading: raw.reading,
-          translation: raw.translation,
-          lessonRequired,
-          grammarIds: matchedParticles,
-          vocabularyIds,
-          source: raw.source,
-          acceptedAnswers: raw.acceptedAnswers,
-          requiredForm: raw.requiredForm,
-        };
+          const vocabularyIds = matchedWords.map((w) => w.id);
+          const maxVocabLesson = matchedWords.reduce((latest, word) => {
+            const introducedIn =
+              word.lessonIds && word.lessonIds.length > 0
+                ? [...word.lessonIds].sort(compareLessonIds)[0]
+                : canonicalLessonId(1);
+            return latest == null || compareLessonIds(introducedIn, latest) > 0
+              ? introducedIn
+              : latest;
+          }, null);
 
-        this.examples.push(example);
+          const lessonRequired =
+            maxVocabLesson != null && compareLessonIds(maxVocabLesson, sourceLessonId) > 0
+              ? maxVocabLesson
+              : sourceLessonId;
 
-        if (!this.dictionaryIndex.has(dictionaryId)) {
-          this.dictionaryIndex.set(dictionaryId, []);
+          const dupKey = `${dictionaryId}_${raw.japanese.replace(/[\s、。？！・]/g, '')}`;
+          if (seen.has(dupKey)) continue;
+          seen.add(dupKey);
+
+          const example = {
+            id: raw.id || `ex-${idCounter++}`,
+            dictionaryId,
+            targetLexemeId: dictionaryId,
+            japanese: raw.japanese,
+            reading: raw.reading,
+            translation: raw.translation,
+            lessonRequired,
+            grammarIds: matchedParticles,
+            vocabularyIds,
+            source: raw.source,
+            acceptedAnswers: raw.acceptedAnswers,
+            requiredForm: raw.requiredForm,
+          };
+
+          this.examples.push(example);
+
+          if (!this.dictionaryIndex.has(dictionaryId)) {
+            this.dictionaryIndex.set(dictionaryId, []);
+          }
+          this.dictionaryIndex.get(dictionaryId).push(example);
         }
-        this.dictionaryIndex.get(dictionaryId).push(example);
+      } else {
+        const matchedWords = allVocab.filter((w) => isWordInSentence(w, raw.japanese));
+        const vocabularyIds = matchedWords.map((w) => w.id);
+
+        const maxVocabLesson = matchedWords.reduce((latest, word) => {
+          const introducedIn =
+            word.lessonIds && word.lessonIds.length > 0
+              ? [...word.lessonIds].sort(compareLessonIds)[0]
+              : canonicalLessonId(1);
+          return latest == null || compareLessonIds(introducedIn, latest) > 0
+            ? introducedIn
+            : latest;
+        }, null);
+
+        const lessonRequired =
+          maxVocabLesson != null && compareLessonIds(maxVocabLesson, sourceLessonId) > 0
+            ? maxVocabLesson
+            : sourceLessonId;
+
+        for (const word of matchedWords) {
+          const dictionaryId =
+            word.dictionaryId ||
+            word.knowledgeItemId ||
+            resolveDictionaryAlias(word.lexemeId || word.id);
+          if (!dictionaryId) continue;
+
+          const dupKey = `${dictionaryId}_${raw.japanese.replace(/[\s、。？！・]/g, '')}`;
+          if (seen.has(dupKey)) continue;
+          seen.add(dupKey);
+
+          const example = {
+            id: raw.id || `ex-${idCounter++}`,
+            dictionaryId,
+            targetLexemeId: dictionaryId,
+            japanese: raw.japanese,
+            reading: raw.reading,
+            translation: raw.translation,
+            lessonRequired,
+            grammarIds: matchedParticles,
+            vocabularyIds,
+            source: raw.source,
+            acceptedAnswers: raw.acceptedAnswers,
+            requiredForm: raw.requiredForm,
+          };
+
+          this.examples.push(example);
+
+          if (!this.dictionaryIndex.has(dictionaryId)) {
+            this.dictionaryIndex.set(dictionaryId, []);
+          }
+          this.dictionaryIndex.get(dictionaryId).push(example);
+        }
       }
     }
   }

@@ -7,7 +7,7 @@ import { ensureVocabularySkillCards } from '../src/chapter-vocabulary.js';
 
 const FIRST_REFERENCE = 'genki-1:vocabulary:L1_V022';
 const SECOND_REFERENCE = 'genki-1:vocabulary:L1_V026';
-const DICTIONARY_ID = 'jp-word:せんせい:せんせい';
+const DICTIONARY_ID = 'jp-word:先生:せんせい';
 
 describe('global dictionary FSRS identity', () => {
   it('creates one FSRS card for two course references to the same dictionary entry', () => {

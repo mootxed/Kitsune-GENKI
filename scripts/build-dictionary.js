@@ -189,34 +189,75 @@ async function collectLessonDocuments() {
 
 export async function buildDictionary(options = {}) {
   const mode = options.mode || 'write';
-  const existingDocument = await readJson(ENTRIES_PATH, { schemaVersion: 1, entries: [] });
-  const existingAliasDocument = await readJson(ALIASES_PATH, { schemaVersion: 1, aliases: {} });
-  const existingReport = await readJson(REPORT_PATH, {
-    duplicateOccurrences: 0,
-    collisions: [],
-  });
-  const existingEntries = new Map(
-    (existingDocument.entries || []).map((entry) => [entry.id, normalizeDictionaryEntry(entry)])
-  );
+  const SOURCE_PATH = path.join(ROOT, 'data-source/dictionary/genki-1-vocabulary.json');
+  const sourceDataset = await readJson(SOURCE_PATH, { schemaVersion: 1, entries: [] });
   const courseAliases = await readJson(COURSE_ALIASES_PATH, {
     schemaVersion: 1,
     aliases: {},
     retiredIds: [],
   });
   const lessonDocuments = await collectLessonDocuments();
-  const referenceOnly = lessonDocuments.every((record) =>
-    (record.document.lesson?.vocabulary || []).every(
-      (word) => word.dictionaryId && !word.writtenForm && !word.dictionaryForm
-    )
-  );
-  const entries = new Map(
-    [...existingEntries].filter(([, entry]) => entry.provenance?.sourceId !== COURSE_ID)
-  );
-  const aliases = { ...(existingAliasDocument.aliases || {}) };
-  const references = [];
-  const collisions = referenceOnly ? [...(existingReport.collisions || [])] : [];
-  let duplicateOccurrences = referenceOnly ? Number(existingReport.duplicateOccurrences) || 0 : 0;
 
+  const entries = new Map();
+  const sourceMap = new Map(); // localId -> entry.id
+  const aliases = {};
+  const references = [];
+  const collisions = [];
+  let duplicateOccurrences = 0;
+
+  // 1. Process source dataset entries
+  for (const rawWord of sourceDataset.entries || []) {
+    const candidate = linguisticShape(rawWord);
+    let dictionaryId = candidate.id;
+
+    // Check for kanji retention safety: if rawWord specifies kanji writing, generated dictionaryForm must contain kanji
+    if (
+      /[\\u4e00-\\u9faf]/.test(rawWord.dictionaryForm || rawWord.writtenForm || '') &&
+      !/[\\u4e00-\\u9faf]/.test(candidate.dictionaryForm)
+    ) {
+      throw new Error(
+        `[Dictionary] Kanji lost for ${rawWord.localId}: expected ${rawWord.dictionaryForm}, got ${candidate.dictionaryForm}`
+      );
+    }
+
+    let entry = entries.get(dictionaryId);
+    if (entry) {
+      if (compatibleLexeme(entry, candidate)) {
+        entry = mergeEntries(entry, candidate);
+        duplicateOccurrences++;
+      } else {
+        const disambiguator = rawWord.senseId || candidate.partOfSpeech || 'lexeme';
+        dictionaryId = dictionaryEntryId(candidate, { disambiguator });
+        entry = linguisticShape(rawWord, dictionaryId);
+        collisions.push({
+          baseId: candidate.id,
+          resolvedId: dictionaryId,
+          reason: 'part-of-speech-or-class',
+          referenceId: rawWord.localId,
+        });
+      }
+    } else {
+      entry = candidate;
+    }
+
+    entries.set(dictionaryId, entry);
+    if (rawWord.localId) {
+      sourceMap.set(rawWord.localId, dictionaryId);
+    }
+
+    // Global aliases: legacy lexeme ID, old hiragana ID, and dictionaryId itself
+    if (rawWord.lexemeId && rawWord.lexemeId !== '__none' && rawWord.lexemeId !== dictionaryId) {
+      aliases[rawWord.lexemeId] = dictionaryId;
+    }
+    if (rawWord.writtenForm && rawWord.writtenForm !== candidate.dictionaryForm) {
+      const legacyHiraganaId = `jp-word:${normalizeDictionaryText(rawWord.writtenForm)}:${candidate.reading}`;
+      if (legacyHiraganaId !== dictionaryId) {
+        aliases[legacyHiraganaId] = dictionaryId;
+      }
+    }
+  }
+
+  // 2. Process lesson documents and build course references
   for (const lessonRecord of lessonDocuments) {
     const lesson = lessonRecord.document.lesson || lessonRecord.document;
     const lessonNumber = Number(lesson.lesson_id ?? lesson.localId ?? lesson.id);
@@ -225,37 +266,14 @@ export async function buildDictionary(options = {}) {
     const nextReferences = [];
 
     for (const word of sourceWords) {
-      let dictionaryId = word.dictionaryId || null;
-      let entry = dictionaryId ? existingEntries.get(dictionaryId) : null;
-      if (!entry) {
-        if (!word.writtenForm && !word.dictionaryForm && !word.kanji && !word.writing) {
-          throw new Error(
-            `[Dictionary] ${lessonRecord.file}/${word.id} references missing ${dictionaryId}`
-          );
-        }
-        const candidate = linguisticShape(word);
-        dictionaryId = candidate.id;
-        const current = entries.get(dictionaryId);
-        if (current) {
-          if (compatibleLexeme(current, candidate)) {
-            entry = mergeEntries(current, candidate);
-            duplicateOccurrences++;
-          } else {
-            const disambiguator = word.senseId || candidate.partOfSpeech || 'lexeme';
-            dictionaryId = dictionaryEntryId(candidate, { disambiguator });
-            entry = linguisticShape(word, dictionaryId);
-            collisions.push({
-              baseId: candidate.id,
-              resolvedId: dictionaryId,
-              reason: 'part-of-speech-or-class',
-              referenceId: word.id,
-            });
-          }
-        } else {
-          entry = candidate;
-        }
+      const localId = String(word.localId || word.id).replace(/^genki-1:vocabulary:/, '');
+      const dictionaryId = sourceMap.get(localId) || sourceMap.get(word.id) || word.dictionaryId;
+      if (!dictionaryId || !entries.has(dictionaryId)) {
+        throw new Error(
+          `[Dictionary] ${lessonRecord.file}/${word.id} references missing dictionary ID (${dictionaryId})`
+        );
       }
-      entries.set(dictionaryId, entry);
+
       const reference = referenceFromWord(word, {
         courseLessonId,
         dictionaryId,
@@ -263,31 +281,27 @@ export async function buildDictionary(options = {}) {
       nextReferences.push(reference);
       references.push(reference);
 
-      const legacyIds = uniqueStrings([
-        word.localId,
-        String(word.id || '').startsWith(`${COURSE_ID}:vocabulary:`) ? '' : word.id,
-        word.lexemeId && word.lexemeId !== '__none' ? word.lexemeId : '',
-        reference.id,
-      ]);
-      for (const alias of legacyIds) {
-        if (alias !== dictionaryId) aliases[alias] = dictionaryId;
-      }
+      // Safe global alias: namespaced full course reference ID -> dictionaryId
+      aliases[reference.id] = dictionaryId;
     }
 
     lesson.vocabulary = nextReferences;
     delete lesson.words;
   }
 
+  // 3. Process course aliases (retired/legacy IDs to current dictionary IDs)
   for (const [legacyLocalId, canonicalLocalId] of Object.entries(courseAliases.aliases || {})) {
+    const namespacedLegacy = `${COURSE_ID}:vocabulary:${legacyLocalId}`;
     const target =
-      aliases[canonicalLocalId] || aliases[`${COURSE_ID}:vocabulary:${canonicalLocalId}`];
+      sourceMap.get(canonicalLocalId) ||
+      aliases[`${COURSE_ID}:vocabulary:${canonicalLocalId}`] ||
+      aliases[canonicalLocalId];
     if (!target) {
       throw new Error(
         `[Dictionary] Course alias ${legacyLocalId} targets unknown ${canonicalLocalId}`
       );
     }
-    aliases[legacyLocalId] = target;
-    aliases[`${COURSE_ID}:vocabulary:${legacyLocalId}`] = target;
+    aliases[namespacedLegacy] = target;
   }
 
   const sortedEntries = [...entries.values()].sort((left, right) =>
