@@ -369,6 +369,12 @@ export function renderAIStory(state, dependencies) {
           const tokenId = escapeHtml(t.id || '');
           const type = escapeHtml(t.type || 'Word');
 
+          const sentenceId = escapeHtml(String(s.sentence_id ?? s.sentenceId ?? idx + 1));
+          const formTense = escapeHtml(t.form?.tense || '');
+          const formPoliteness = escapeHtml(t.form?.politeness || '');
+          const formPolarity = escapeHtml(t.form?.polarity || '');
+          const formConjugation = escapeHtml(t.form?.conjugation || '');
+
           if (t.resolution?.status === 'non-lexical' || t.type === 'Punctuation') {
             return mainText;
           }
@@ -385,6 +391,12 @@ export function renderAIStory(state, dependencies) {
               data-writing="${subText}"
               data-translation="${trans}"
               data-type="${type}"
+              data-story-id="${escapeHtml(storyId)}"
+              data-sentence-id="${sentenceId}"
+              data-form-tense="${formTense}"
+              data-form-politeness="${formPoliteness}"
+              data-form-polarity="${formPolarity}"
+              data-form-conjugation="${formConjugation}"
               style="display: inline-flex; flex-direction: column; align-items: center; margin: 2px 4px; padding: 2px 4px; background: var(--bg-secondary, rgba(0,0,0,0.04)); border-radius: 4px; vertical-align: bottom; cursor: pointer;"
               title="${trans}">
               <span style="font-size: 16px; font-weight: 700;">${mainText}</span>
@@ -401,6 +413,12 @@ export function renderAIStory(state, dependencies) {
             data-kanji="${mainText}"
             data-translation="${trans}"
             data-type="${type}"
+            data-story-id="${escapeHtml(storyId)}"
+            data-sentence-id="${sentenceId}"
+            data-form-tense="${formTense}"
+            data-form-politeness="${formPoliteness}"
+            data-form-polarity="${formPolarity}"
+            data-form-conjugation="${formConjugation}"
             style="display: inline-flex; flex-direction: column; align-items: center; margin: 2px 4px; padding: 2px 4px; background: var(--bg-secondary, rgba(0,0,0,0.04)); border-radius: 4px; vertical-align: bottom; cursor: pointer;"
             title="${trans}">
             <span style="font-size: 16px; font-weight: 700;">${mainText}</span>

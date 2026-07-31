@@ -492,12 +492,9 @@ export function openWordBottomSheet(tokenElement, customStore = null) {
     }
   }
 
-  // Show "open word page" button only when dictionaryId and entry exist and status is resolved/ambiguous
+  // Show "open word page" button only when dictionaryId and entry exist and status is resolved
   if (openPageBtn) {
-    const canOpen =
-      dictionaryId &&
-      entry &&
-      (resolutionStatus === 'resolved' || resolutionStatus === 'ambiguous');
+    const canOpen = dictionaryId && entry && resolutionStatus === 'resolved';
     openPageBtn.hidden = !canOpen;
     if (canOpen) {
       openPageBtn.onclick = () => {
@@ -578,7 +575,11 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
   const navFn = dependencies?.nav || window.nav || (() => {});
 
   if (!storyId) {
-    renderStories(state, dependencies);
+    if (typeof navFn === 'function') {
+      navFn('library', {}, true);
+    } else {
+      renderStories(state, dependencies);
+    }
     return;
   }
 
@@ -597,26 +598,37 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
       title: savedNote.title || 'История AI',
       content: savedNote.story,
       source: 'ai',
+      courseId: savedNote.courseId || options.courseId || null,
     };
   } else {
     // 2. Builtin course story: extract lessonId from storyId or options or contentIndex
+    const rawStoryId = storyId.includes(':story:')
+      ? storyId.split(':story:')[1]
+      : storyId.includes(':')
+        ? storyId.split(':').pop()
+        : storyId;
     const targetCourseId =
-      options.courseId || (storyId.includes(':') ? storyId.split(':')[0] : state?.activeCourseId);
+      options.courseId ||
+      (storyId.includes(':') ? storyId.split(':')[0] : state?.activeCourseId || 'genki-1');
     let lessonId = options.lessonId;
 
     if (!lessonId) {
       try {
         const contentIndex = await loadContentIndex(targetCourseId);
-        const storyMeta = contentIndex?.stories?.find(
-          (s) =>
-            s &&
-            (s.storyId === storyId ||
-              s.id === storyId ||
-              String(storyId).endsWith(`:${s.id}`) ||
-              String(storyId).endsWith(`:${s.storyId}`))
-        );
-        if (storyMeta) {
-          lessonId = storyMeta.lesson_id || storyMeta.lessonId;
+        const chapters = contentIndex?.chapters || [];
+        const chapter = chapters.find((c) => {
+          if (!c) return false;
+          const sMetaId = c.storyMeta?.storyId != null ? String(c.storyMeta.storyId) : null;
+          const cId = c.id != null ? String(c.id) : null;
+          return (
+            sMetaId === String(rawStoryId) ||
+            cId === String(rawStoryId) ||
+            (sMetaId && storyId === `${targetCourseId}:story:${sMetaId}`) ||
+            (cId && storyId === `${targetCourseId}:story:${cId}`)
+          );
+        });
+        if (chapter) {
+          lessonId = chapter.id;
         }
       } catch (err) {
         // ignore index load fallback
@@ -625,9 +637,9 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
 
     if (!lessonId) {
       if (storyId.includes(':story:')) {
-        lessonId = storyId.split(':story:')[0];
+        lessonId = storyId.split(':story:')[1];
       } else if (storyId.includes(':')) {
-        lessonId = storyId.split(':')[0];
+        lessonId = storyId.split(':')[1];
       } else {
         lessonId = storyId;
       }
@@ -647,12 +659,30 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
   if (signal?.aborted) return;
 
   if (!storyToOpen) {
-    renderStories(state, dependencies);
+    const storyBody = $('#story-body');
+    if (storyBody) {
+      storyBody.innerHTML = `
+        <div class="story-content">
+          <div class="story-meta">
+            <span class="badge badge-warning">История не найдена</span>
+          </div>
+          <div class="story-text">
+            <p>Запрошенная история не найдена.</p>
+          </div>
+          <div class="story-actions" style="margin-top: 16px;">
+            <button class="btn-primary" onclick="window.nav && window.nav('library')">
+              📚 Вернуться в библиотеку
+            </button>
+          </div>
+        </div>`;
+    } else if (typeof navFn === 'function') {
+      navFn('library', {}, true);
+    }
     return;
   }
 
   // 3. Render story content directly (route handler is already on story route)
-  await renderStoryContent(storyToOpen, state, dependencies);
+  await renderStoryContent(storyToOpen, state, dependencies, { courseId: options.courseId });
   if (signal?.aborted) return;
 
   // 4. Handle sentence scrolling & token highlight
@@ -719,23 +749,25 @@ function setupStoryInteractions() {
 }
 
 // Функция рендеринга содержимого истории
-export async function renderStoryContent(story, state, dependencies) {
+export async function renderStoryContent(story, state, dependencies, options = {}) {
   const storyTitle = $('#story-title');
   const storyTitleJp = $('#story-title-jp');
 
   if (storyTitle) storyTitle.textContent = story.title;
   if (storyTitleJp) storyTitleJp.textContent = story.titleJP || '';
 
-  const coursePrefix = state?.activeCourseId || story.courseId || 'genki-1';
+  const sourceCourseId = options?.courseId || story.courseId || state?.activeCourseId || 'genki-1';
   const rawId = story.id || story.storyId || 'story';
-  const storyId = String(rawId).includes(':') ? String(rawId) : `${coursePrefix}:story:${rawId}`;
+  const isAi = story.source === 'ai' || String(rawId).startsWith('ai-story');
+  const storyId =
+    isAi || String(rawId).includes(':') ? String(rawId) : `${sourceCourseId}:story:${rawId}`;
   let contentToRender = story.content || [];
 
   try {
     const resolved = await resolveStoryTokens({
       story: contentToRender,
       dictionaryStore,
-      activeCourseId: state?.activeCourseId || null,
+      activeCourseId: sourceCourseId,
       storyId,
     });
     contentToRender = resolved.story || contentToRender;
@@ -778,11 +810,11 @@ export async function renderStoryContent(story, state, dependencies) {
 
 // Переход к истории с триггеров вне роутера
 export async function navigateToStory(story, state, dependencies) {
-  await renderStoryContent(story, state, dependencies);
   const navFn = dependencies?.nav || window.nav || (() => {});
   navFn('story', {
     storyId: story.id || story.storyId,
     lessonId: story.lessonId || story.lesson_id,
+    courseId: story.courseId,
   });
 }
 

@@ -13,6 +13,7 @@
  */
 
 import { ExamplesDB } from '../examples-db.js';
+import { compareLessonIds } from '../courses/course-context.js';
 
 /**
  * @typedef {Object} LessonReference
@@ -180,7 +181,7 @@ export class DictionaryRelationsIndex {
    * @param {import('./dictionary-store.js').DictionaryStore} dictionaryStore
    * @param {import('../examples-db.js').ExamplesDBClass} [examplesDB]
    */
-  buildLessonIndex(dictionaryStore, examplesDB = null) {
+  buildLessonIndex(dictionaryStore, examplesDB = null, state = null) {
     this._lessonIndex.clear();
     const db = examplesDB || ExamplesDB;
 
@@ -190,6 +191,20 @@ export class DictionaryRelationsIndex {
     }
 
     const courseRefs = dictionaryStore.courseReferences || new Map();
+
+    const getStatus = (lessonId) => {
+      if (typeof window !== 'undefined' && typeof window.chState === 'function') {
+        const cs = window.chState(lessonId);
+        if (cs?.completed) return 'completed';
+        if (cs?.started) return 'in_progress';
+      }
+      if (state?.chapters?.[lessonId]) {
+        const st = state.chapters[lessonId];
+        if (st.completed) return 'completed';
+        if (st.started) return 'in_progress';
+      }
+      return 'available';
+    };
 
     for (const [, ref] of courseRefs) {
       if (!ref) continue;
@@ -202,14 +217,14 @@ export class DictionaryRelationsIndex {
 
       const lessonId = ref.lessonId || ref.chapterId || ref.introducedIn;
       this._lessonIndex.get(dictionaryId).push({
-        courseId: ref.courseId,
+        courseId: ref.courseId || 'genki-1',
         lessonId: lessonId,
-        introducedIn: ref.introducedIn,
+        introducedIn: ref.introducedIn || lessonId,
         courseMeaning: ref.courseMeaning || '',
-        introduced: true,
+        introduced: false, // will be resolved per courseId below
         occurrenceCount: 1,
         sources: ['vocabulary'],
-        status: 'available',
+        status: getStatus(lessonId),
       });
     }
 
@@ -225,7 +240,7 @@ export class DictionaryRelationsIndex {
           this._lessonIndex.set(canonical, lessonList);
         }
 
-        const primaryRef = lessonList.find((r) => r.introduced);
+        const primaryRef = lessonList[0];
         const primaryLessonId = primaryRef ? primaryRef.lessonId || primaryRef.introducedIn : null;
 
         for (const ex of examples || []) {
@@ -248,9 +263,27 @@ export class DictionaryRelationsIndex {
               introduced: false,
               occurrenceCount: 1,
               sources: [ex.source || 'example'],
-              status: 'available',
+              status: getStatus(exLessonId),
             });
           }
+        }
+      }
+    }
+
+    // Resolve single "introduced: true" per courseId (the reference with minimum lessonId)
+    for (const [, list] of this._lessonIndex) {
+      const byCourse = new Map();
+      for (const ref of list) {
+        const cId = ref.courseId || 'genki-1';
+        if (!byCourse.has(cId)) byCourse.set(cId, []);
+        byCourse.get(cId).push(ref);
+      }
+
+      for (const [, courseList] of byCourse) {
+        courseList.sort((a, b) => compareLessonIds(a.lessonId, b.lessonId));
+        courseList[0].introduced = true;
+        for (let i = 1; i < courseList.length; i++) {
+          courseList[i].introduced = false;
         }
       }
     }

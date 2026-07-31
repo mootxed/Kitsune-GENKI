@@ -226,10 +226,24 @@ export function getDictionaryDetails({
     ? relationsIndex.getExampleReferences(canonical, dictionaryStore)
     : [];
 
-  const examples = rawExamples.map((ex) => ({
-    ...ex,
-    normalizedSource: normalizeExampleSource(ex.source),
-  }));
+  const examples = rawExamples.map((ex) => {
+    const isStory = ex.source === 'story' || ex.origin === 'story';
+    const isAi = ['ai', 'ai-story', 'generated'].includes(ex.source) || ex.trustLevel === 'ai';
+    const isCurated = !isStory && !isAi && normalizeExampleSource(ex.source) === 'curated';
+
+    return {
+      ...ex,
+      normalizedSource: normalizeExampleSource(ex.source),
+      trustLevel: isCurated ? 'curated' : isAi ? 'ai' : 'unknown',
+      origin: isStory
+        ? 'story'
+        : ['note', 'cultural'].includes(ex.source)
+          ? 'note'
+          : ['curated', 'curated-word', 'course'].includes(ex.source)
+            ? 'course'
+            : 'generated',
+    };
+  });
 
   // 5. Conjugations (deterministic, uses existing engine)
   const currentLesson = _getCurrentLesson(state, activeCourseId);
@@ -311,13 +325,21 @@ export function getDictionaryDetails({
 function _getCurrentLesson(state, activeCourseId) {
   if (!state) return null;
 
-  // Try to find the highest completed/started lesson number
-  const chapters = state.chapters || {};
+  const targetCourseId = activeCourseId || state.activeCourseId || 'genki-1';
+
+  // Check course-scoped progress first if available
+  const courseChapters = state.courseProgress?.[targetCourseId]?.chapters || state.chapters || {};
+
   let maxLesson = 0;
   let found = false;
 
-  for (const [lessonId, chapterState] of Object.entries(chapters)) {
+  for (const [lessonId, chapterState] of Object.entries(courseChapters)) {
     if (!chapterState?.started) continue;
+
+    // Verify course match if lessonId is prefixed
+    if (String(lessonId).includes(':') && !String(lessonId).startsWith(`${targetCourseId}:`)) {
+      continue;
+    }
 
     // Extract lesson number from lessonId (e.g. 'lesson-3' → 3)
     const match = String(lessonId).match(/(\d+)/);

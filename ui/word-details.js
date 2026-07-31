@@ -27,6 +27,7 @@ import {
   builtinStoryToDescriptor,
 } from '../src/dictionary/story-occurrence-index.js';
 import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
+import { resolveStoryTokens } from '../src/ai/story-token-resolver.js';
 import {
   formatConfidence,
   formatRetrievability,
@@ -326,14 +327,28 @@ function renderExamples(examples) {
 
   const exHtml = examples
     .slice(0, 8)
-    .map(
-      (ex) => `
+    .map((ex) => {
+      const isStory = ex.origin === 'story' || ex.source === 'story';
+      const isCurated =
+        !isStory &&
+        (ex.trustLevel === 'curated' ||
+          ex.normalizedSource === 'curated' ||
+          ex.source === 'curated');
+      const isAi = !isStory && !isCurated && (ex.trustLevel === 'ai' || ex.source === 'ai');
+      const sourceLabel = isStory
+        ? '📖 Из истории'
+        : isCurated
+          ? '✓ Проверенный пример'
+          : isAi
+            ? '🤖 AI'
+            : '❓ Неизвестно';
+      return `
     <div class="word-example">
       <p class="word-example-jp" lang="ja">${escapeHtml(ex.sentence)}</p>
       ${ex.translation ? `<p class="word-example-trans">${escapeHtml(ex.translation)}</p>` : ''}
-      <span class="word-example-source">${ex.source === 'curated' || ex.normalizedSource === 'curated' ? '✓ Проверенный пример' : ex.source === 'ai' ? '🤖 AI' : ex.source === 'story' ? '📖 Из истории' : '❓ Неизвестно'}</span>
-    </div>`
-    )
+      <span class="word-example-source">${sourceLabel}</span>
+    </div>`;
+    })
     .join('<hr class="word-example-divider">');
 
   return `
@@ -538,17 +553,33 @@ export async function renderWordDetails(state, dependencies, options = {}, conte
       try {
         const activeCourseId = state?.activeCourseId || 'genki-1';
         const contentIndex = await loadContentIndex(activeCourseId);
-        if (contentIndex && Array.isArray(contentIndex.stories)) {
-          for (const sMeta of contentIndex.stories) {
-            try {
-              const lessonId = sMeta.lesson_id || sMeta.lessonId || sMeta.id;
-              const { story } = await loadChapterData(lessonId, activeCourseId);
-              if (story) {
-                descriptors.push(builtinStoryToDescriptor(story, activeCourseId));
+        const chapters = contentIndex?.chapters || [];
+        for (const chapter of chapters) {
+          if (!chapter || (!chapter.story && !chapter.storyMeta)) continue;
+          try {
+            const lessonId = chapter.id;
+            const { story } = await loadChapterData(lessonId, activeCourseId);
+            if (story) {
+              let storyToResolve = story;
+              try {
+                const resolved = await resolveStoryTokens({
+                  story,
+                  dictionaryStore: dictStore,
+                  activeCourseId,
+                  disableAiFallback: true,
+                  aiLexicalProvider: null,
+                });
+                storyToResolve = resolved.story || story;
+              } catch (resolveErr) {
+                console.warn(
+                  '[WordDetails] Failed resolving built-in story tokens for index:',
+                  resolveErr
+                );
               }
-            } catch {
-              // ignore failure for single story
+              descriptors.push(builtinStoryToDescriptor(storyToResolve, activeCourseId));
             }
+          } catch {
+            // ignore failure for single story
           }
         }
       } catch {
@@ -635,8 +666,9 @@ export async function renderWordDetails(state, dependencies, options = {}, conte
     body.querySelectorAll('.word-lesson-item-btn').forEach((btn) => {
       btn.onclick = () => {
         const lessonId = btn.dataset.lessonId;
+        const courseId = btn.dataset.courseId;
         if (lessonId) {
-          navFn('chapter', { chapterId: lessonId });
+          navFn('chapter', { courseId, chapterId: lessonId });
         }
       };
     });

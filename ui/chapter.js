@@ -3,7 +3,14 @@ import { refreshStreakDisplay } from './shared.js';
 import { $, $$, todayStr } from '../src/utils.js';
 import { allCards, dueCards } from '../src/srs-helpers.js';
 import { XP_CHECK, XP_CHAPTER_FULL, addXP } from '../src/xp-system.js';
-import { CONTENT_INDEX, getLesson, ensureLesson, startChapter, markActivity } from './home.js';
+import {
+  CONTENT_INDEX,
+  getLesson,
+  ensureLesson,
+  startChapter,
+  markActivity,
+  switchCourseRuntime,
+} from './home.js';
 import { countAvailableCardsForSession } from '../src/srs-limits.js';
 import { StudyPlan } from '../studyplan.js';
 import {
@@ -37,8 +44,24 @@ import { getOrGenerateDailyPlan } from '../src/daily-plan.js';
 import { openGrammarLesson } from './grammar-lesson.js';
 
 // ---------- Render: Chapter ----------
-export async function renderChapter(id, state, dependencies, context = {}) {
-  const { signal } = context;
+export async function renderChapter(id, state, dependencies, context = {}, options = {}) {
+  const opts =
+    options && typeof options === 'object' && Object.keys(options).length > 0
+      ? options
+      : context && typeof context === 'object' && !context.signal
+        ? context
+        : {};
+  const { signal } = context && context.signal ? context : {};
+
+  // Safely handle cross-course navigation
+  if (opts.courseId && state?.activeCourseId && opts.courseId !== state.activeCourseId) {
+    try {
+      await switchCourseRuntime(opts.courseId);
+    } catch (err) {
+      console.warn('[Chapter] Could not switch course runtime:', err);
+    }
+  }
+
   // Лениво подгружаем контент главы перед отображением
   try {
     await ensureLesson(id);
@@ -520,4 +543,31 @@ export async function renderChapter(id, state, dependencies, context = {}) {
       dependencies?.renderHome?.();
     };
   });
+
+  const focusGrammarId = opts.focusGrammarId || opts.grammarId;
+  if (focusGrammarId) {
+    setTimeout(() => {
+      const safeGrammarId =
+        typeof window !== 'undefined' && window.CSS && typeof window.CSS.escape === 'function'
+          ? window.CSS.escape(String(focusGrammarId))
+          : String(focusGrammarId);
+      const targetEl =
+        document.querySelector(`[data-check="${safeGrammarId}"]`) ||
+        document.querySelector(`[data-grammar-id="${safeGrammarId}"]`);
+      if (targetEl) {
+        const parentSection = targetEl.closest('.card, .collapsible-section');
+        const toggleBtn = parentSection?.querySelector('#toggle-grammar-topics');
+        if (toggleBtn) {
+          const extras = parentSection.querySelectorAll('.grammar-extra-item');
+          extras.forEach((item) => item.classList.remove('hidden'));
+          toggleBtn.textContent = 'Свернуть темы';
+        }
+        if (typeof targetEl.scrollIntoView === 'function') {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        targetEl.classList.add('grammar-focus-highlight');
+        setTimeout(() => targetEl.classList.remove('grammar-focus-highlight'), 3000);
+      }
+    }, 100);
+  }
 }

@@ -28,6 +28,7 @@ import { DEFAULT_COURSE_ID } from '../src/courses/course-registry.js';
 import { db, STORES } from '../src/db.js';
 import { ExamplesDB } from '../src/examples-db.js';
 import { dictionaryRelationsIndex } from '../src/dictionary/dictionary-relations-index.js';
+import { storyOccurrenceIndex } from '../src/dictionary/story-occurrence-index.js';
 import { dictionaryStore } from '../src/dictionary/dictionary-store.js';
 import { formatDateKey, parseDateKey } from '../src/local-date.js';
 import {
@@ -95,6 +96,7 @@ export async function switchCourseRuntime(nextCourseId, options = {}) {
   CONTENT_INDEX = [];
   ExamplesDB.clearCourseScope();
   dictionaryRelationsIndex.invalidate();
+  storyOccurrenceIndex.invalidate();
   clearGrammarQuizCache();
   clearSupplementalPracticeCache();
   course.clearCache();
