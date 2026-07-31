@@ -794,3 +794,82 @@ export function undoPracticeTask(appState, chapterId, taskId, options = {}) {
     evaluateAndCompleteChapter,
   });
 }
+
+/**
+ * Resolves the dynamic status of a lesson: 'completed' | 'in_progress' | 'locked' | 'available'.
+ * @param {object} options
+ * @param {object} [options.state]
+ * @param {string} [options.courseId]
+ * @param {string|number} [options.lessonId]
+ * @param {object} [options.chapterMeta]
+ * @returns {'completed'|'in_progress'|'locked'|'available'}
+ */
+export function resolveLessonStatus({
+  state = null,
+  courseId = 'genki-1',
+  lessonId = null,
+  chapterMeta = null,
+} = {}) {
+  if (lessonId == null || lessonId === '') return 'available';
+
+  const cId = courseId || 'genki-1';
+  const rawId = String(lessonId);
+
+  const keysToTry = [
+    rawId,
+    `${cId}:${rawId}`,
+    rawId.includes(':') ? rawId : `genki-1:lesson-${rawId}`,
+    rawId.startsWith('lesson-') ? rawId : `lesson-${rawId}`,
+  ];
+
+  let chapterState = null;
+  if (state?.chapters) {
+    for (const key of keysToTry) {
+      if (state.chapters[key]) {
+        chapterState = state.chapters[key];
+        break;
+      }
+    }
+  }
+
+  if (!chapterState && typeof window !== 'undefined' && typeof window.chState === 'function') {
+    for (const key of keysToTry) {
+      const cs = window.chState(key);
+      if (cs) {
+        chapterState = cs;
+        break;
+      }
+    }
+  }
+
+  const courseProgress =
+    state?.courses?.[cId]?.lessonProgress?.[rawId] ||
+    state?.courseProgress?.[cId]?.lessonProgress?.[rawId];
+
+  // 1. Completed
+  if (
+    courseProgress?.completed ||
+    chapterState?.completedAt ||
+    chapterState?.completed ||
+    (chapterState && isChapterCompleted(chapterState, chapterMeta, state)) ||
+    (state && isEffectivelyCompleted(state, rawId))
+  ) {
+    return 'completed';
+  }
+
+  // 2. In progress
+  if (
+    courseProgress?.started ||
+    chapterState?.started ||
+    (chapterState?.checklist && Object.values(chapterState.checklist).some(Boolean))
+  ) {
+    return 'in_progress';
+  }
+
+  // 3. Locked
+  if (courseProgress?.locked || chapterState?.locked) {
+    return 'locked';
+  }
+
+  return 'available';
+}

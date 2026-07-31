@@ -22,6 +22,7 @@ import { resolveDictionaryAlias } from './dictionary-store.js';
 import { conjugateVerb, conjugateAdjective, FORMS_METADATA } from '../verb-conjugator.js';
 import { getDictionaryFSRS } from './dictionary-fsrs-service.js';
 import { getTypeBasedGrammarLinks, normalizeExampleSource } from './dictionary-relations-index.js';
+import { resolveLessonStatus } from '../chapter-progress.js';
 
 // ---------------------------------------------------------------------------
 // Token form labels (localized to Russian)
@@ -75,17 +76,23 @@ export function localizeTokenForm(form) {
  * @param {number|null} currentLesson — user's current lesson number (null = unknown)
  * @returns {Array<{formId, label, kana, kanji, availability: 'learned'|'available'|'future'|'unknown'}>}
  */
-export function getConjugationsWithStatus(entry, currentLesson = null) {
+export function getConjugationsWithStatus(entry, currentLesson = null, state = null) {
   if (!entry) return [];
 
   let rawForms = [];
   if (entry.partOfSpeech === 'verb') {
     if (!entry.verbClass) return [];
+    const normalizedVerbClass =
+      entry.verbClass === 'ru' || entry.verbClass === 'v1'
+        ? 'ichidan'
+        : entry.verbClass === 'u' || entry.verbClass === 'v5'
+          ? 'godan'
+          : entry.verbClass;
     const wordForConjugator = {
       writing: entry.reading || entry.dictionaryForm,
       kanji: entry.dictionaryForm,
       partOfSpeech: 'verb',
-      verbClass: entry.verbClass,
+      verbClass: normalizedVerbClass,
     };
     try {
       rawForms = conjugateVerb(wordForConjugator);
@@ -113,7 +120,27 @@ export function getConjugationsWithStatus(entry, currentLesson = null) {
     const meta = FORMS_METADATA[form.formId] || { lessonUnlocked: form.lessonUnlocked || 99 };
     const lessonUnlocked = form.lessonUnlocked ?? meta.lessonUnlocked;
     let availability = 'unknown';
-    if (currentLesson == null) {
+
+    if (state) {
+      if (lessonUnlocked === 0) {
+        availability = 'learned';
+      } else {
+        const lessonStatus = resolveLessonStatus({
+          state,
+          courseId: 'genki-1',
+          lessonId: lessonUnlocked,
+        });
+        if (lessonStatus === 'completed') {
+          availability = 'learned';
+        } else if (lessonStatus === 'in_progress' || lessonStatus === 'available') {
+          availability = 'available';
+        } else if (lessonStatus === 'locked') {
+          availability = 'future';
+        } else {
+          availability = 'unknown';
+        }
+      }
+    } else if (currentLesson == null) {
       availability = 'unknown';
     } else if (lessonUnlocked === 0 || currentLesson >= lessonUnlocked) {
       availability = 'learned';
@@ -122,6 +149,7 @@ export function getConjugationsWithStatus(entry, currentLesson = null) {
     } else {
       availability = 'future';
     }
+
     return {
       formId: form.formId,
       label: form.label,
@@ -247,7 +275,7 @@ export function getDictionaryDetails({
 
   // 5. Conjugations (deterministic, uses existing engine)
   const currentLesson = _getCurrentLesson(state, activeCourseId);
-  const conjugations = getConjugationsWithStatus(entry, currentLesson);
+  const conjugations = getConjugationsWithStatus(entry, currentLesson, state);
 
   // 6. Grammar topics
   const grammarTopics = getTypeBasedGrammarLinks(entry);

@@ -297,7 +297,9 @@ function renderGrammarTopics(grammarTopics) {
       (t) => `
     <button class="word-grammar-topic-btn btn-ghost"
       data-grammar-id="${escapeHtml(t.grammarId || t.id || '')}"
-      data-chapter-id="${escapeHtml(t.chapterId || t.lessonId || '')}"
+      data-chapter-id="${escapeHtml(t.lessonId || t.chapterId || '')}"
+      data-course-id="${escapeHtml(t.courseId || '')}"
+      data-topic-id="${escapeHtml(t.topicId || '')}"
       aria-label="Открыть грамматику: ${escapeHtml(t.title || t.grammarId)}">
       <span class="word-grammar-topic-title">${escapeHtml(t.title || t.grammarId)}</span>
       ${t.reason ? `<span class="word-grammar-topic-reason">${escapeHtml(t.reason)}</span>` : ''}
@@ -346,8 +348,10 @@ function renderExamples(examples) {
         isStory && (ex.storyId || ex.sourceLessonId)
           ? `<button class="word-story-link-btn btn-ghost btn-sm"
               data-story-id="${escapeHtml(ex.storyId || ex.sourceLessonId || '')}"
-              data-sentence-id="${escapeHtml(ex.sentenceId || '')}"
-              data-token-id="${escapeHtml(ex.tokenId || '')}">
+              data-sentence-id="${escapeHtml(ex.sentenceId ?? '')}"
+              data-token-id="${escapeHtml(ex.tokenId || '')}"
+              data-lesson-id="${escapeHtml(ex.sourceLessonId || '')}"
+              data-course-id="${escapeHtml(ex.courseId || '')}">
               Открыть в истории 📖
             </button>`
           : '';
@@ -705,9 +709,11 @@ export async function renderWordDetails(state, dependencies, options = {}, conte
     body.querySelectorAll('.word-grammar-topic-btn').forEach((btn) => {
       btn.onclick = () => {
         const chapterId = btn.dataset.chapterId;
+        const courseId = btn.dataset.courseId || undefined;
         const grammarId = btn.dataset.grammarId;
+        const topicId = btn.dataset.topicId || undefined;
         if (chapterId) {
-          navFn('chapter', { chapterId, focusGrammarId: grammarId });
+          navFn('chapter', { courseId, chapterId, focusGrammarId: topicId || grammarId });
         }
       };
     });

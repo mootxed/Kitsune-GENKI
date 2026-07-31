@@ -14,6 +14,7 @@
 
 import { ExamplesDB } from '../examples-db.js';
 import { compareLessonIds } from '../courses/course-context.js';
+import { resolveLessonStatus } from '../chapter-progress.js';
 
 /**
  * @typedef {Object} LessonReference
@@ -85,7 +86,7 @@ export const GRAMMAR_REGISTRY = [
     lessonId: 'genki-1:lesson-3',
     topicId: 'L3_g1',
   },
-  { grammarId: 'polite-past', courseId: 'genki-1', lessonId: 'genki-1:lesson-3', topicId: 'L3_g1' },
+  { grammarId: 'polite-past', courseId: 'genki-1', lessonId: 'genki-1:lesson-4', topicId: 'L4_g6' },
   { grammarId: 'te-form', courseId: 'genki-1', lessonId: 'genki-1:lesson-6', topicId: 'L6_g1' },
   { grammarId: 'tai-form', courseId: 'genki-1', lessonId: 'genki-1:lesson-11', topicId: 'L11_g1' },
   { grammarId: 'i-adjective', courseId: 'genki-1', lessonId: 'genki-1:lesson-5', topicId: 'L5_g1' },
@@ -100,13 +101,22 @@ export const GRAMMAR_REGISTRY = [
 export function resolveGrammarTopicId(grammarId) {
   if (!grammarId) return null;
   const match = GRAMMAR_REGISTRY.find((r) => r.grammarId === grammarId || r.topicId === grammarId);
-  return match ? match.topicId : grammarId;
+  if (match) {
+    return `${match.courseId}:grammar:${match.topicId}`;
+  }
+  if (String(grammarId).startsWith('genki-1:grammar:')) {
+    return grammarId;
+  }
+  if (/^L\d+_g\d+$/i.test(String(grammarId))) {
+    return `genki-1:grammar:${grammarId}`;
+  }
+  return grammarId;
 }
 
 /**
  * Get type-based grammar links for an entry (verbs/adjectives).
  * @param {import('./dictionary-contract.js').DictionaryEntry} entry
- * @returns {Array<{grammarId: string, topicId?: string, reason: string, linkType: string}>}
+ * @returns {Array<{grammarId: string, topicId?: string, lessonId?: string, courseId?: string, reason: string, linkType: string}>}
  */
 export function getTypeBasedGrammarLinks(entry) {
   if (!entry) return [];
@@ -119,6 +129,8 @@ export function getTypeBasedGrammarLinks(entry) {
         grammarId: 'polite-present',
         topicId: 'L3_g1',
         chapterId: '3',
+        lessonId: 'genki-1:lesson-3',
+        courseId: 'genki-1',
         title: 'ます (Вежливое настоящее)',
         reason: 'Доступно для всех глаголов',
       },
@@ -126,13 +138,17 @@ export function getTypeBasedGrammarLinks(entry) {
         grammarId: 'polite-negative',
         topicId: 'L3_g1',
         chapterId: '3',
+        lessonId: 'genki-1:lesson-3',
+        courseId: 'genki-1',
         title: 'ません (Вежливое отрицательное)',
         reason: 'Доступно для всех глаголов',
       },
       {
         grammarId: 'polite-past',
-        topicId: 'L3_g1',
-        chapterId: '3',
+        topicId: 'L4_g6',
+        chapterId: '4',
+        lessonId: 'genki-1:lesson-4',
+        courseId: 'genki-1',
         title: 'ました (Вежливое прошедшее)',
         reason: 'Доступно для всех глаголов',
       },
@@ -140,6 +156,8 @@ export function getTypeBasedGrammarLinks(entry) {
         grammarId: 'te-form',
         topicId: 'L6_g1',
         chapterId: '6',
+        lessonId: 'genki-1:lesson-6',
+        courseId: 'genki-1',
         title: 'て-форма',
         reason: 'Доступно для всех глаголов',
       },
@@ -147,6 +165,8 @@ export function getTypeBasedGrammarLinks(entry) {
         grammarId: 'tai-form',
         topicId: 'L11_g1',
         chapterId: '11',
+        lessonId: 'genki-1:lesson-11',
+        courseId: 'genki-1',
         title: 'たいです (Хотеть)',
         reason: 'Доступно для всех глаголов',
       },
@@ -160,6 +180,8 @@ export function getTypeBasedGrammarLinks(entry) {
         grammarId: 'i-adjective',
         topicId: 'L5_g1',
         chapterId: '5',
+        lessonId: 'genki-1:lesson-5',
+        courseId: 'genki-1',
         title: 'い-прилагательные',
         reason: 'Доступно для い-прилагательных',
         linkType: 'type-based',
@@ -169,6 +191,8 @@ export function getTypeBasedGrammarLinks(entry) {
         grammarId: 'na-adjective',
         topicId: 'L5_g2',
         chapterId: '5',
+        lessonId: 'genki-1:lesson-5',
+        courseId: 'genki-1',
         title: 'な-прилагательные',
         reason: 'Доступно для な-прилагательных',
         linkType: 'type-based',
@@ -336,23 +360,23 @@ export class DictionaryRelationsIndex {
     if (!dictionaryId) return [];
     const canonical = dictionaryStore?.resolveAlias(dictionaryId) || dictionaryId;
 
-    // Try index first
+    let refs = [];
     if (this._builtLessons && this._lessonIndex.has(canonical)) {
-      return this._lessonIndex.get(canonical);
-    }
-
-    // Fallback: build or query store directly
-    if (dictionaryStore) {
+      refs = this._lessonIndex.get(canonical);
+    } else if (dictionaryStore) {
       if (!this._builtLessons) {
         this.buildLessonIndex(dictionaryStore, null, state);
         if (this._lessonIndex.has(canonical)) {
-          return this._lessonIndex.get(canonical);
+          refs = this._lessonIndex.get(canonical);
         }
       }
 
-      if (typeof dictionaryStore.findCourseReferencesForDictionary === 'function') {
-        const refs = dictionaryStore.findCourseReferencesForDictionary(canonical);
-        return refs.map((ref) => ({
+      if (
+        refs.length === 0 &&
+        typeof dictionaryStore.findCourseReferencesForDictionary === 'function'
+      ) {
+        const rawRefs = dictionaryStore.findCourseReferencesForDictionary(canonical);
+        refs = rawRefs.map((ref) => ({
           courseId: ref.courseId,
           lessonId: ref.lessonId || ref.chapterId || ref.introducedIn,
           introducedIn: ref.introducedIn,
@@ -360,12 +384,18 @@ export class DictionaryRelationsIndex {
           introduced: true,
           occurrenceCount: 1,
           sources: ['vocabulary'],
-          status: 'available',
         }));
       }
     }
 
-    return [];
+    return refs.map((ref) => ({
+      ...ref,
+      status: resolveLessonStatus({
+        state,
+        courseId: ref.courseId,
+        lessonId: ref.lessonId || ref.introducedIn,
+      }),
+    }));
   }
 
   // -------------------------------------------------------------------------
@@ -432,6 +462,10 @@ export class DictionaryRelationsIndex {
           translation: ex.translation || '',
           source: ex.source || 'curated',
           storyId: ex.storyId || null,
+          sentenceId: ex.sentenceId ?? null,
+          tokenId: ex.tokenId || null,
+          sourceLessonId: ex.sourceLessonId || null,
+          courseId: ex.courseId || null,
           lessonRequired: ex.lessonRequired || 1,
         });
       }

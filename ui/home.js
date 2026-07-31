@@ -22,6 +22,7 @@ import {
   loadSupplementalPracticeData,
   SUPPLEMENTAL_PRACTICE_SCHEMA_VERSION,
 } from '../src/supplemental-practice.js';
+import { resolveStoryTokens } from '../src/ai/story-token-resolver.js';
 import { clearGrammarQuizCache } from '../src/grammar-quiz-content.js';
 import { switchActiveCourse, syncActiveCourseProgress } from '../src/courses/course-state.js';
 import { DEFAULT_COURSE_ID } from '../src/courses/course-registry.js';
@@ -523,7 +524,32 @@ export async function ensureLesson(id) {
   // Register in ExamplesDB
   ExamplesDB.registerLesson(normalized);
   if (story) {
-    ExamplesDB.registerStory(story);
+    let storyToRegister = story;
+    if (story.content && Array.isArray(story.content)) {
+      try {
+        const sourceCourseId = story.courseId || getActiveCourse()?.id || 'genki-1';
+        const rawId = story.id || story.storyId || 'story';
+        const isAi = story.source === 'ai' || String(rawId).startsWith('ai-story');
+        const storyId =
+          isAi || String(rawId).includes(':') ? String(rawId) : `${sourceCourseId}:story:${rawId}`;
+
+        const res = await resolveStoryTokens({
+          story: story.content,
+          dictionaryStore,
+          activeCourseId: sourceCourseId,
+          storyId,
+        });
+        if (res && res.story) {
+          storyToRegister = { ...story, content: res.story, courseId: sourceCourseId };
+        }
+      } catch (err) {
+        console.warn(
+          '[Home] Failed to resolve story tokens before registering in ExamplesDB:',
+          err
+        );
+      }
+    }
+    ExamplesDB.registerStory(storyToRegister);
   }
   ExamplesDB.rebuildIndex();
   dictionaryRelationsIndex.buildExampleIndex(ExamplesDB, dictionaryStore);

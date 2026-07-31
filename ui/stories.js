@@ -620,11 +620,14 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
           if (!c) return false;
           const sMetaId = c.storyMeta?.storyId != null ? String(c.storyMeta.storyId) : null;
           const cId = c.id != null ? String(c.id) : null;
+          const cleanRaw = String(rawStoryId).replace(/^lesson-/, '');
           return (
             sMetaId === String(rawStoryId) ||
             cId === String(rawStoryId) ||
+            cId === cleanRaw ||
             (sMetaId && storyId === `${targetCourseId}:story:${sMetaId}`) ||
-            (cId && storyId === `${targetCourseId}:story:${cId}`)
+            (cId && storyId === `${targetCourseId}:story:${cId}`) ||
+            (cId && storyId === `${targetCourseId}:story:lesson-${cId}`)
           );
         });
         if (chapter) {
@@ -646,10 +649,14 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
     }
 
     try {
-      const { story } = await loadChapterData(lessonId, targetCourseId);
+      let loaded = await loadChapterData(lessonId, targetCourseId).catch(() => null);
+      if (!loaded?.story && String(lessonId).startsWith('lesson-')) {
+        const canonicalKey = `${targetCourseId}:${lessonId}`;
+        loaded = await loadChapterData(canonicalKey, targetCourseId).catch(() => null);
+      }
       if (signal?.aborted) return;
-      if (story) {
-        storyToOpen = story;
+      if (loaded?.story) {
+        storyToOpen = loaded.story;
       }
     } catch (err) {
       console.warn('[Stories] Could not load story chunk for route:', err);
@@ -682,7 +689,10 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
   }
 
   // 3. Render story content directly (route handler is already on story route)
-  await renderStoryContent(storyToOpen, state, dependencies, { courseId: options.courseId });
+  await renderStoryContent(storyToOpen, state, dependencies, {
+    courseId: options.courseId,
+    signal,
+  });
   if (signal?.aborted) return;
 
   // 4. Handle sentence scrolling & token highlight
@@ -750,6 +760,9 @@ function setupStoryInteractions() {
 
 // Функция рендеринга содержимого истории
 export async function renderStoryContent(story, state, dependencies, options = {}) {
+  const signal = options?.signal;
+  if (signal?.aborted) return;
+
   const storyTitle = $('#story-title');
   const storyTitleJp = $('#story-title-jp');
 
@@ -770,13 +783,17 @@ export async function renderStoryContent(story, state, dependencies, options = {
       activeCourseId: sourceCourseId,
       storyId,
     });
+    if (signal?.aborted) return;
     contentToRender = resolved.story || contentToRender;
   } catch (err) {
     console.warn('[Stories] Could not resolve built-in story tokens:', err);
   }
 
+  if (signal?.aborted) return;
+
   const storyBody = $('#story-body');
   if (storyBody) {
+    if (signal?.aborted) return;
     storyBody.innerHTML = `
   <div class="story-content">
     <div class="story-meta">
@@ -798,6 +815,7 @@ export async function renderStoryContent(story, state, dependencies, options = {
   `;
   }
 
+  if (signal?.aborted) return;
   setupStoryInteractions();
 
   const finishBtn = document.getElementById('btn-finish-story');

@@ -325,7 +325,8 @@ export async function renderChapter(id, state, dependencies, context = {}, optio
             const checked = grammarStatus === 'completed';
             const locked = grammarStatus === 'locked';
             const hiddenClass = idx >= 4 ? 'grammar-extra-item hidden' : '';
-            return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''} ${hiddenClass}" data-kind="grammar" data-check="${g.id}" data-testid="check-${g.id}">
+            const localGrammarId = g.localId || (g.id ? g.id.split(':').pop() : '');
+            return `<div class="check-item ${checked ? 'done' : ''} ${locked ? 'locked' : ''} ${hiddenClass}" data-kind="grammar" data-check="${g.id}" data-grammar-id="${g.id}" data-grammar-local-id="${localGrammarId}" data-testid="check-${g.id}">
               <div class="checkbox">${checked ? '✓' : ''}</div>
               <div class="check-label-group">
                 <span class="check-label">${g.title}</span>
@@ -549,23 +550,35 @@ export async function renderChapter(id, state, dependencies, context = {}, optio
   if (focusGrammarId) {
     setTimeout(() => {
       const resolvedTopicId = resolveGrammarTopicId(focusGrammarId);
-      const safeGrammarId =
-        typeof window !== 'undefined' && window.CSS && typeof window.CSS.escape === 'function'
-          ? window.CSS.escape(String(focusGrammarId))
-          : String(focusGrammarId);
-      const safeTopicId =
-        resolvedTopicId &&
+      const rawGrammarId = String(focusGrammarId);
+      const localId = rawGrammarId.includes(':') ? rawGrammarId.split(':').pop() : rawGrammarId;
+      const globalId = rawGrammarId.includes(':')
+        ? rawGrammarId
+        : `genki-1:grammar:${rawGrammarId}`;
+
+      const safeCss = (val) =>
+        val &&
         typeof window !== 'undefined' &&
         window.CSS &&
         typeof window.CSS.escape === 'function'
-          ? window.CSS.escape(String(resolvedTopicId))
-          : String(resolvedTopicId || '');
+          ? window.CSS.escape(String(val))
+          : String(val || '');
+
+      const safeFocus = safeCss(rawGrammarId);
+      const safeResolved = safeCss(resolvedTopicId);
+      const safeLocal = safeCss(localId);
+      const safeGlobal = safeCss(globalId);
 
       const targetEl =
-        (safeTopicId && document.querySelector(`[data-check="${safeTopicId}"]`)) ||
-        (safeTopicId && document.querySelector(`[data-grammar-id="${safeTopicId}"]`)) ||
-        document.querySelector(`[data-check="${safeGrammarId}"]`) ||
-        document.querySelector(`[data-grammar-id="${safeGrammarId}"]`);
+        (safeResolved && document.querySelector(`[data-check="${safeResolved}"]`)) ||
+        (safeResolved && document.querySelector(`[data-grammar-id="${safeResolved}"]`)) ||
+        (safeResolved && document.querySelector(`[data-grammar-local-id="${safeResolved}"]`)) ||
+        (safeGlobal && document.querySelector(`[data-check="${safeGlobal}"]`)) ||
+        (safeGlobal && document.querySelector(`[data-grammar-id="${safeGlobal}"]`)) ||
+        (safeLocal && document.querySelector(`[data-grammar-local-id="${safeLocal}"]`)) ||
+        (safeLocal && document.querySelector(`[data-check="${safeLocal}"]`)) ||
+        (safeFocus && document.querySelector(`[data-check="${safeFocus}"]`)) ||
+        (safeFocus && document.querySelector(`[data-grammar-id="${safeFocus}"]`));
       if (targetEl) {
         const parentSection = targetEl.closest('.card, .collapsible-section');
         const toggleBtn = parentSection?.querySelector('#toggle-grammar-topics');
