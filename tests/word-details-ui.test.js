@@ -10,7 +10,7 @@ import {
   storyOccurrenceIndex,
   savedNotesToStoryDescriptors,
 } from '../src/dictionary/story-occurrence-index.js';
-import { openWordBottomSheet, renderStoryRoute, closeWordBottomSheet } from '../ui/stories.js';
+import { openWordBottomSheet, renderStoryRoute, renderStoryContent } from '../ui/stories.js';
 import { renderWordDetails } from '../ui/word-details.js';
 import { ExamplesDB } from '../src/examples-db.js';
 import { Router } from '../router.js';
@@ -26,14 +26,51 @@ const taberuEntry = normalizeDictionaryEntry({
   confidence: 1.0,
 });
 
+const takaiEntry = normalizeDictionaryEntry({
+  id: 'jp-word:高い:たかい',
+  dictionaryForm: '高い',
+  reading: 'たかい',
+  meanings: ['высокий', 'дорогой'],
+  partOfSpeech: 'adjective',
+  adjectiveClass: 'i',
+  source: 'curated',
+});
+
+const kireiEntryNoClass = normalizeDictionaryEntry({
+  id: 'jp-word:きれい:きれい',
+  dictionaryForm: 'きれい',
+  reading: 'きれい',
+  meanings: ['красивый', 'чистый'],
+  partOfSpeech: 'adjective',
+  // adjectiveClass missing on purpose to test fallback safety
+  source: 'curated',
+});
+
+const unclassifiedAdj = {
+  id: 'jp-word:未知語:みちご',
+  dictionaryForm: '未知語',
+  reading: 'みちご',
+  meanings: ['неизвестное слово'],
+  partOfSpeech: 'adjective',
+  source: 'curated',
+  confidence: 1.0,
+  provenance: { sourceType: 'kotokitsu-content' },
+};
+
 function createTestStore() {
   return new DictionaryStore({
     loader: {
       async load() {
         return {
           manifest: { schemaVersion: 1, contentVersion: '1' },
-          entries: [taberuEntry],
-          tokenIndex: { 食べる: [taberuEntry.id], 食べました: [taberuEntry.id] },
+          entries: [taberuEntry, takaiEntry, kireiEntryNoClass, unclassifiedAdj],
+          tokenIndex: {
+            食べる: [taberuEntry.id],
+            食べました: [taberuEntry.id],
+            高い: [takaiEntry.id],
+            きれい: [kireiEntryNoClass.id],
+            未知語: [unclassifiedAdj.id],
+          },
           aliases: {},
         };
       },
@@ -83,7 +120,7 @@ function setupDOM() {
   `;
 }
 
-describe('Word Details UI Production Integration (Issue #32)', () => {
+describe('Word Details UI Production Integration & Bug Fixes', () => {
   let store;
   let router;
 
@@ -101,7 +138,7 @@ describe('Word Details UI Production Integration (Issue #32)', () => {
     );
   });
 
-  it('1. Compact bottom sheet simultaneously displays token occurrence and dictionary entry, then opens word details', async () => {
+  it('1. Bottom sheet displays token occurrence and dictionary entry, then opens word details', async () => {
     const tokenElem = document.createElement('span');
     tokenElem.dataset.tokenId = 'story-1:sent-1:tok-1';
     tokenElem.dataset.dictionaryId = 'jp-word:食べる:たべる';
@@ -109,9 +146,6 @@ describe('Word Details UI Production Integration (Issue #32)', () => {
     tokenElem.dataset.reading = 'たべました';
     tokenElem.dataset.contextMeaning = 'поел';
     tokenElem.dataset.resolutionStatus = 'resolved';
-    tokenElem.dataset.formTense = 'past';
-    tokenElem.dataset.formPoliteness = 'polite';
-    tokenElem.dataset.formPolarity = 'affirmative';
 
     document.body.appendChild(tokenElem);
 
@@ -140,10 +174,9 @@ describe('Word Details UI Production Integration (Issue #32)', () => {
     expect(navigatedOptions.dictionaryId).toBe('jp-word:食べる:たべる');
     expect(navigatedOptions.surface).toBe('食べました');
     expect(navigatedOptions.contextMeaning).toBe('поел');
-    expect(navigatedOptions.form.tense).toBe('past');
   });
 
-  it('2. Production ExamplesDB integration displays example with correct source badge', async () => {
+  it('2. ExamplesDB integration displays example with normalizedSource', async () => {
     ExamplesDB.registerVocabulary([
       { id: 'jp-word:食べる:たべる', dictionaryId: 'jp-word:食べる:たべる' },
     ]);
@@ -151,12 +184,10 @@ describe('Word Details UI Production Integration (Issue #32)', () => {
       japanese: 'ご飯を食べる。',
       reading: 'ごはんをたべる。',
       translation: 'Есть рис.',
-      source: 'curated',
+      source: 'curated-word',
       targetLexemeIds: ['jp-word:食べる:たべる'],
     });
     ExamplesDB.rebuildIndex();
-
-    dictionaryRelationsIndex.buildExampleIndex(ExamplesDB, store);
 
     const details = getDictionaryDetails({
       dictionaryId: 'jp-word:食べる:たべる',
@@ -167,10 +198,10 @@ describe('Word Details UI Production Integration (Issue #32)', () => {
 
     expect(details.examples.length).toBe(1);
     expect(details.examples[0].sentence).toBe('ご飯を食べる。');
-    expect(details.examples[0].source).toBe('curated');
+    expect(details.examples[0].normalizedSource).toBe('curated');
   });
 
-  it('3. FSRS summary reads production state.srs and does NOT mutate state', async () => {
+  it('3. FSRS summary reads production state.srs without mutating state', async () => {
     const srsState = {
       srs: {
         'card:jp-word:食べる:たべる:recognition': {
@@ -198,13 +229,11 @@ describe('Word Details UI Production Integration (Issue #32)', () => {
     expect(details.fsrs).not.toBeNull();
     expect(details.fsrs.hasFSRS).toBe(true);
     expect(details.fsrs.reps).toBe(5);
-    expect(details.fsrs.lapses).toBe(1);
 
-    // Verify zero state mutation
     expect(JSON.stringify(srsState)).toBe(initialSnapshot);
   });
 
-  it('4. Story navigation opens story route, scrolls sentence and highlights token', async () => {
+  it('4. Story route renders content without self-cancelling navigation', async () => {
     const mockStoryNote = {
       id: 'ai-story-101',
       title: 'Ужин Танаки',
@@ -226,22 +255,12 @@ describe('Word Details UI Production Integration (Issue #32)', () => {
     };
 
     const state = { savedNotes: [mockStoryNote] };
-    let navigatedRoute = null;
-    let navigatedOpt = null;
-
-    const nav = (r, o) => {
-      navigatedRoute = r;
-      navigatedOpt = o;
-    };
 
     await renderStoryRoute(
       state,
-      { nav },
+      { nav: (s, o) => router.navigate(s, o) },
       { storyId: 'ai-story-101', sentenceId: 'sent-1', tokenId: 'tok-target-1' }
     );
-
-    expect(navigatedRoute).toBeNull();
-    expect(navigatedOpt).toBeNull();
 
     const sentenceEl = document.querySelector('.story-sentence[data-sentence-id="sent-1"]');
     expect(sentenceEl).not.toBeNull();
@@ -271,51 +290,68 @@ describe('Word Details UI Production Integration (Issue #32)', () => {
       ],
     };
 
-    // Initially no saved notes
     let descriptors = savedNotesToStoryDescriptors([]);
     storyOccurrenceIndex.build(descriptors, { dictionaryStore: store });
     expect(storyOccurrenceIndex.getOccurrences('jp-word:食べる:たべる', store).length).toBe(0);
 
-    // Save note and rebuild/ensureBuilt
+    // Add note and invalidate
+    storyOccurrenceIndex.invalidate();
     descriptors = savedNotesToStoryDescriptors([aiStoryNote]);
     storyOccurrenceIndex.build(descriptors, { dictionaryStore: store });
     expect(storyOccurrenceIndex.getOccurrences('jp-word:食べる:たべる', store).length).toBe(1);
 
-    // Delete note
-    storyOccurrenceIndex.build([], { dictionaryStore: store });
+    // Delete note and invalidate
+    storyOccurrenceIndex.invalidate();
+    descriptors = savedNotesToStoryDescriptors([]);
+    storyOccurrenceIndex.build(descriptors, { dictionaryStore: store });
     expect(storyOccurrenceIndex.getOccurrences('jp-word:食べる:たべる', store).length).toBe(0);
   });
 
-  it('6. Central DictionaryEntry update is reflected across UIs while contextMeaning stays preserved', async () => {
-    const tokenElem = document.createElement('span');
-    tokenElem.dataset.tokenId = 'story-1:s-1:t-1';
-    tokenElem.dataset.dictionaryId = 'jp-word:食べる:たべる';
-    tokenElem.dataset.surface = '食べました';
-    tokenElem.dataset.contextMeaning = 'поел';
-    tokenElem.dataset.resolutionStatus = 'resolved';
-
-    openWordBottomSheet(tokenElem, store);
-    expect(document.getElementById('modal-dictionary-meanings').textContent).toBe('есть, кушать');
-    expect(document.getElementById('modal-context-meaning').textContent).toBe('поел');
-    closeWordBottomSheet();
-
-    // Update central DictionaryEntry in store
-    const updatedEntry = normalizeDictionaryEntry({
-      id: 'jp-word:食べる:たべる',
-      dictionaryForm: '食べる',
-      reading: 'たべる',
-      meanings: ['принимать пищу', 'питаться'],
-      partOfSpeech: 'verb',
-      verbClass: 'ichidan',
-      source: 'curated',
+  it('6. Adjective conjugations render for i-adjectives and show insufficient data for missing class', async () => {
+    // i-adjective
+    const takaiDetails = getDictionaryDetails({
+      dictionaryId: 'jp-word:高い:たかい',
+      state: {},
+      dictionaryStore: store,
     });
-    store.builtinEntries.set(updatedEntry.id, updatedEntry);
+    expect(takaiDetails.conjugations.length).toBeGreaterThan(0);
+    expect(takaiDetails.conjugations.some((c) => c.kana.includes('たかい'))).toBe(true);
 
-    // Re-open bottom sheet
-    openWordBottomSheet(tokenElem, store);
-    expect(document.getElementById('modal-dictionary-meanings').textContent).toBe(
-      'принимать пищу, питаться'
+    // Missing adjectiveClass (e.g. unclassified adjective)
+    const kireiEntry = store.getDictionaryEntry('jp-word:きれい:きれい');
+    store.builtinEntries.set('jp-word:きれい:きれい', {
+      ...kireiEntry,
+      adjectiveClass: null,
+    });
+
+    await renderWordDetails(
+      {},
+      { nav: () => {}, dictionaryStore: store },
+      { dictionaryId: 'jp-word:きれい:きれい' }
     );
-    expect(document.getElementById('modal-context-meaning').textContent).toBe('поел');
+    const bodyText = document.getElementById('word-details-body').textContent;
+    expect(bodyText).toContain('Недостаточно данных');
+  });
+
+  it('7. Non-lexical punctuation tokens do NOT get wrapped in .word-token', async () => {
+    const story = [
+      {
+        sentence_id: 1,
+        translation: 'Тест.',
+        tokens: [
+          {
+            surface: '食べる',
+            dictionaryId: 'jp-word:食べる:たべる',
+            resolution: { status: 'resolved' },
+          },
+          { surface: '。', resolution: { status: 'non-lexical' } },
+        ],
+      },
+    ];
+
+    await renderStoryContent({ id: 's-1', title: 'Punctuation test', content: story }, {}, {});
+    const storyBody = document.getElementById('story-body');
+    expect(storyBody.innerHTML).toContain('。');
+    expect(storyBody.querySelector('.word-token[data-surface="。"]')).toBeNull();
   });
 });

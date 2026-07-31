@@ -1,5 +1,6 @@
 /* ui/ai-story.js — AI Story Generator UI module */
 import { $ } from '../src/utils.js';
+import { storyOccurrenceIndex } from '../src/dictionary/story-occurrence-index.js';
 import { API } from '../services.js';
 import { wordById } from '../src/srs-helpers.js';
 import { parseAndValidateAIStory } from '../src/ai-story-parser.js';
@@ -525,6 +526,7 @@ export function renderAIStory(state, dependencies) {
           date: deps?.todayStr ? deps.todayStr() : new Date().toISOString().split('T')[0],
         });
 
+        storyOccurrenceIndex.invalidate();
         saveFn();
         toast('Сохранено в заметки 📚');
         saveBtn.textContent = '✓ Сохранено';

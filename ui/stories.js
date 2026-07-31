@@ -2,7 +2,8 @@
 
 import { $, $$ } from '../src/utils.js';
 import { CONTENT_INDEX } from './home.js';
-import { loadChapterData } from '../src/content-loader.js';
+import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
+import { storyOccurrenceIndex } from '../src/dictionary/story-occurrence-index.js';
 import { formatLessonLabel, sameLessonId } from '../src/courses/course-context.js';
 
 // Локальный контекст зависимостей
@@ -185,6 +186,7 @@ export function renderLibraryNotes(state, dependencies) {
       if (!id) return;
       expandedNoteIds.delete(id);
       state.savedNotes = (state.savedNotes || []).filter((n) => n.id !== id);
+      storyOccurrenceIndex.invalidate();
       save();
       renderLibraryNotes(state, dependencies);
     };
@@ -307,15 +309,19 @@ function renderInteractiveStory(content, storyId = 'story') {
     .map((sentence, sIdx) => {
       const sentenceId = sentence.sentence_id ?? sentence.sentenceId ?? sIdx + 1;
       const tokensHtml = (sentence.tokens || [])
-        .map((tok) => {
+        .map((tok, tokenIndex) => {
           const rawToken = tok || {};
           const occ = normalizeLegacyStoryToken(
             {
               ...rawToken,
               dictionaryId: rawToken.dictionaryId || rawToken.lexemeId || rawToken.knowledgeItemId,
             },
-            { storyId, sentenceId }
+            { storyId, sentenceId, tokenIndex }
           );
+
+          if (occ.resolution?.status === 'non-lexical') {
+            return escapeHtmlLocal(occ.surface);
+          }
 
           const surface = escapeHtmlLocal(occ.surface);
           const reading = escapeHtmlLocal(occ.reading);
@@ -593,11 +599,42 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
       source: 'ai',
     };
   } else {
-    // 2. Builtin course story: extract lessonId from storyId or options
-    const lessonId =
-      options.lessonId || storyId.split(':story:')[0] || storyId.split(':')[0] || storyId;
+    // 2. Builtin course story: extract lessonId from storyId or options or contentIndex
+    const targetCourseId =
+      options.courseId || (storyId.includes(':') ? storyId.split(':')[0] : state?.activeCourseId);
+    let lessonId = options.lessonId;
+
+    if (!lessonId) {
+      try {
+        const contentIndex = await loadContentIndex(targetCourseId);
+        const storyMeta = contentIndex?.stories?.find(
+          (s) =>
+            s &&
+            (s.storyId === storyId ||
+              s.id === storyId ||
+              String(storyId).endsWith(`:${s.id}`) ||
+              String(storyId).endsWith(`:${s.storyId}`))
+        );
+        if (storyMeta) {
+          lessonId = storyMeta.lesson_id || storyMeta.lessonId;
+        }
+      } catch (err) {
+        // ignore index load fallback
+      }
+    }
+
+    if (!lessonId) {
+      if (storyId.includes(':story:')) {
+        lessonId = storyId.split(':story:')[0];
+      } else if (storyId.includes(':')) {
+        lessonId = storyId.split(':')[0];
+      } else {
+        lessonId = storyId;
+      }
+    }
+
     try {
-      const { story } = await loadChapterData(lessonId, state?.activeCourseId);
+      const { story } = await loadChapterData(lessonId, targetCourseId);
       if (signal?.aborted) return;
       if (story) {
         storyToOpen = story;
@@ -614,8 +651,8 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
     return;
   }
 
-  // 3. Open and render story
-  await openStory(storyToOpen, state, dependencies);
+  // 3. Render story content directly (route handler is already on story route)
+  await renderStoryContent(storyToOpen, state, dependencies);
   if (signal?.aborted) return;
 
   // 4. Handle sentence scrolling & token highlight
@@ -681,8 +718,8 @@ function setupStoryInteractions() {
   });
 }
 
-// Функция открытия истории
-async function openStory(story, state, dependencies) {
+// Функция рендеринга содержимого истории
+export async function renderStoryContent(story, state, dependencies) {
   const storyTitle = $('#story-title');
   const storyTitleJp = $('#story-title-jp');
 
@@ -706,7 +743,9 @@ async function openStory(story, state, dependencies) {
     console.warn('[Stories] Could not resolve built-in story tokens:', err);
   }
 
-  $('#story-body').innerHTML = `
+  const storyBody = $('#story-body');
+  if (storyBody) {
+    storyBody.innerHTML = `
   <div class="story-content">
     <div class="story-meta">
       <span class="story-lesson-badge">${formatLessonLabel(story.lessonId || story.lesson_id)}</span>
@@ -725,6 +764,7 @@ async function openStory(story, state, dependencies) {
     }
   </div>
   `;
+  }
 
   setupStoryInteractions();
 
@@ -734,8 +774,20 @@ async function openStory(story, state, dependencies) {
       startStoryQuiz(story, state, dependencies);
     };
   }
+}
 
-  nav('story');
+// Переход к истории с триггеров вне роутера
+export async function navigateToStory(story, state, dependencies) {
+  await renderStoryContent(story, state, dependencies);
+  const navFn = dependencies?.nav || window.nav || (() => {});
+  navFn('story', {
+    storyId: story.id || story.storyId,
+    lessonId: story.lessonId || story.lesson_id,
+  });
+}
+
+export async function openStory(story, state, dependencies) {
+  return navigateToStory(story, state, dependencies);
 }
 
 // Функция запуска квиза по истории

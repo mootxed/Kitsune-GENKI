@@ -25,6 +25,8 @@ import { resolveDictionaryAlias } from './dictionary-store.js';
  * @property {string} id
  * @property {string} dictionaryId  — canonical dictionaryId
  * @property {string} storyId
+ * @property {string|null} lessonId
+ * @property {string|null} courseId
  * @property {string} storyTitle
  * @property {string|number} sentenceId
  * @property {string} tokenId
@@ -44,13 +46,13 @@ export class StoryOccurrenceIndex {
 
   /**
    * Build the index from a list of story descriptors.
-   * Each descriptor: { storyId, storyTitle, source, content: sentence[] }
+   * Each descriptor: { storyId, lessonId?, courseId?, storyTitle, source, content: sentence[] }
    * Sentences: { sentence_id, tokens[], translation }
    * Tokens: canonical TokenOccurrence (must have dictionaryId set if resolved)
    *
    * Also accepts saved notes from state.savedNotes that have a `story` property.
    *
-   * @param {Array<{storyId: string, storyTitle: string, source: string, content: object[]}>} stories
+   * @param {Array<{storyId: string, lessonId?: string, courseId?: string, storyTitle: string, source: string, content: object[]}>} stories
    * @param {object|import('./dictionary-store.js').DictionaryStore} [options] — options object or dictionaryStore instance
    */
   build(stories, options = {}) {
@@ -61,7 +63,7 @@ export class StoryOccurrenceIndex {
     this._dictStore = dictStore;
 
     for (const story of stories || []) {
-      const { storyId, storyTitle, source, content } = story;
+      const { storyId, lessonId, courseId, storyTitle, source, content } = story;
       if (!storyId || !Array.isArray(content)) continue;
 
       for (const sentence of content) {
@@ -93,6 +95,12 @@ export class StoryOccurrenceIndex {
             id: occurrenceId,
             dictionaryId: canonicalId,
             storyId: String(storyId),
+            lessonId: lessonId
+              ? String(lessonId)
+              : story.lesson_id
+                ? String(story.lesson_id)
+                : null,
+            courseId: courseId ? String(courseId) : null,
             storyTitle: String(storyTitle || storyId),
             sentenceId: sentenceId,
             tokenId: token.id || occurrenceId,
@@ -165,6 +173,8 @@ export function savedNotesToStoryDescriptors(savedNotes) {
     .filter((n) => n && n.story && Array.isArray(n.story))
     .map((n) => ({
       storyId: n.sourceStoryId || n.id,
+      lessonId: n.lessonId || n.lesson_id || null,
+      courseId: n.courseId || null,
       storyTitle: n.title || n.id,
       source: 'ai',
       content: n.story,
@@ -182,6 +192,8 @@ export function builtinStoryToDescriptor(story, courseId) {
   const storyId = String(rawId).includes(':') ? String(rawId) : `${courseId}:story:${rawId}`;
   return {
     storyId,
+    lessonId: story.lesson_id || story.lessonId || null,
+    courseId: courseId || story.courseId || null,
     storyTitle: story.title || storyId,
     source: 'curated',
     content: story.content || [],

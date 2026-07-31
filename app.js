@@ -784,7 +784,20 @@ function setupRouter() {
   router = initRouter({
     home: (options, context) => renderHome(state, dependencies, options, context),
     course: (options, context) => renderCourse(state, dependencies, options, context),
-    chapter: (id, context) => renderChapter(parseInt(id), state, dependencies, context),
+    chapter: (options, context) => {
+      const rawId =
+        typeof options === 'object' && options !== null
+          ? options.chapterId || options.lessonId || options.id
+          : options;
+      const parsedId = parseInt(rawId, 10);
+      return renderChapter(
+        isNaN(parsedId) ? 1 : parsedId,
+        state,
+        dependencies,
+        context,
+        typeof options === 'object' ? options : {}
+      );
+    },
     srs: (options, context) => renderSrsDashboard(options, context),
     profile: (options, context) => renderProfile(state, dependencies, options, context),
     shop: (options, context) => renderShop(state, dependencies, options, context),

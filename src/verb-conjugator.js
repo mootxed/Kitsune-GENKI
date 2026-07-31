@@ -246,11 +246,11 @@ export function conjugateVerb(word) {
  * @returns {Array<Object>} Массив структурированных форм.
  */
 export function conjugateAdjective(word) {
-  if (!word || word.partOfSpeech !== 'adjective') return [];
+  if (!word || word.partOfSpeech !== 'adjective' || !word.adjectiveClass) return [];
 
   const writing = word.writing || word.dictionaryForm || '';
   const kanji = word.kanji || word.dictionaryForm || writing;
-  const adjClass = word.adjectiveClass || (writing.endsWith('い') ? 'i' : 'na');
+  const adjClass = word.adjectiveClass;
 
   if (adjClass === 'i') {
     let kanaStem = writing.endsWith('い') ? writing.slice(0, -1) : writing;

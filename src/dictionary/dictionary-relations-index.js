@@ -12,6 +12,8 @@
  * FSRS relations are maintained separately in dictionary-fsrs-service.js.
  */
 
+import { ExamplesDB } from '../examples-db.js';
+
 /**
  * @typedef {Object} LessonReference
  * @property {string} courseId
@@ -86,26 +88,31 @@ export function getTypeBasedGrammarLinks(entry) {
     const verbLinks = [
       {
         grammarId: 'polite-present',
+        chapterId: '3',
         title: 'ます (Вежливое настоящее)',
         reason: 'Доступно для всех глаголов',
       },
       {
         grammarId: 'polite-negative',
+        chapterId: '3',
         title: 'ません (Вежливое отрицательное)',
         reason: 'Доступно для всех глаголов',
       },
       {
         grammarId: 'polite-past',
+        chapterId: '3',
         title: 'ました (Вежливое прошедшее)',
         reason: 'Доступно для всех глаголов',
       },
       {
         grammarId: 'te-form',
+        chapterId: '6',
         title: 'て-форма',
         reason: 'Доступно для всех глаголов',
       },
       {
         grammarId: 'tai-form',
+        chapterId: '11',
         title: 'たいです (Хотеть)',
         reason: 'Доступно для всех глаголов',
       },
@@ -117,6 +124,7 @@ export function getTypeBasedGrammarLinks(entry) {
     if (entry.adjectiveClass === 'i') {
       links.push({
         grammarId: 'i-adjective',
+        chapterId: '5',
         title: 'い-прилагательные',
         reason: 'Доступно для い-прилагательных',
         linkType: 'type-based',
@@ -124,6 +132,7 @@ export function getTypeBasedGrammarLinks(entry) {
     } else if (entry.adjectiveClass === 'na') {
       links.push({
         grammarId: 'na-adjective',
+        chapterId: '5',
         title: 'な-прилагательные',
         reason: 'Доступно для な-прилагательных',
         linkType: 'type-based',
@@ -165,15 +174,24 @@ export class DictionaryRelationsIndex {
   // -------------------------------------------------------------------------
 
   /**
-   * Build lesson references from DictionaryStore.
-   * Should be called once after course data is loaded.
+   * Build lesson references from DictionaryStore and ExamplesDB.
+   * Calculates primary introduction and reuse occurrences.
    *
    * @param {import('./dictionary-store.js').DictionaryStore} dictionaryStore
+   * @param {import('../examples-db.js').ExamplesDBClass} [examplesDB]
    */
-  buildLessonIndex(dictionaryStore) {
+  buildLessonIndex(dictionaryStore, examplesDB = null) {
     this._lessonIndex.clear();
+    const db = examplesDB || ExamplesDB;
 
-    for (const [refId, ref] of dictionaryStore.courseReferences || new Map()) {
+    if (!dictionaryStore) {
+      this._builtLessons = true;
+      return;
+    }
+
+    const courseRefs = dictionaryStore.courseReferences || new Map();
+
+    for (const [, ref] of courseRefs) {
       if (!ref) continue;
       const dictionaryId = dictionaryStore.resolveAlias(ref.dictionaryId) || ref.dictionaryId;
       if (!dictionaryId) continue;
@@ -188,8 +206,53 @@ export class DictionaryRelationsIndex {
         lessonId: lessonId,
         introducedIn: ref.introducedIn,
         courseMeaning: ref.courseMeaning || '',
-        introduced: true, // first occurrence in the course
+        introduced: true,
+        occurrenceCount: 1,
+        sources: ['vocabulary'],
+        status: 'available',
       });
+    }
+
+    // Check ExamplesDB for additional lesson occurrences
+    if (db && db.dictionaryIndex) {
+      for (const [rawDictId, examples] of db.dictionaryIndex) {
+        const canonical = dictionaryStore.resolveAlias(rawDictId) || rawDictId;
+        if (!canonical) continue;
+
+        let lessonList = this._lessonIndex.get(canonical);
+        if (!lessonList) {
+          lessonList = [];
+          this._lessonIndex.set(canonical, lessonList);
+        }
+
+        const primaryRef = lessonList.find((r) => r.introduced);
+        const primaryLessonId = primaryRef ? primaryRef.lessonId || primaryRef.introducedIn : null;
+
+        for (const ex of examples || []) {
+          const exLessonId =
+            ex.sourceLessonId || (ex.lessonRequired ? String(ex.lessonRequired) : null);
+          if (!exLessonId) continue;
+
+          let targetRef = lessonList.find((r) => String(r.lessonId) === String(exLessonId));
+          if (targetRef) {
+            targetRef.occurrenceCount = (targetRef.occurrenceCount || 1) + 1;
+            if (!targetRef.sources.includes(ex.source || 'example')) {
+              targetRef.sources.push(ex.source || 'example');
+            }
+          } else {
+            lessonList.push({
+              courseId: primaryRef ? primaryRef.courseId : 'genki-1',
+              lessonId: exLessonId,
+              introducedIn: primaryLessonId || exLessonId,
+              courseMeaning: primaryRef ? primaryRef.courseMeaning : '',
+              introduced: false,
+              occurrenceCount: 1,
+              sources: [ex.source || 'example'],
+              status: 'available',
+            });
+          }
+        }
+      }
     }
 
     this._builtLessons = true;
@@ -210,19 +273,28 @@ export class DictionaryRelationsIndex {
       return this._lessonIndex.get(canonical);
     }
 
-    // Fallback: query store directly
-    if (
-      dictionaryStore &&
-      typeof dictionaryStore.findCourseReferencesForDictionary === 'function'
-    ) {
-      const refs = dictionaryStore.findCourseReferencesForDictionary(canonical);
-      return refs.map((ref) => ({
-        courseId: ref.courseId,
-        lessonId: ref.lessonId || ref.chapterId || ref.introducedIn,
-        introducedIn: ref.introducedIn,
-        courseMeaning: ref.courseMeaning || '',
-        introduced: true,
-      }));
+    // Fallback: build or query store directly
+    if (dictionaryStore) {
+      if (!this._builtLessons) {
+        this.buildLessonIndex(dictionaryStore);
+        if (this._lessonIndex.has(canonical)) {
+          return this._lessonIndex.get(canonical);
+        }
+      }
+
+      if (typeof dictionaryStore.findCourseReferencesForDictionary === 'function') {
+        const refs = dictionaryStore.findCourseReferencesForDictionary(canonical);
+        return refs.map((ref) => ({
+          courseId: ref.courseId,
+          lessonId: ref.lessonId || ref.chapterId || ref.introducedIn,
+          introducedIn: ref.introducedIn,
+          courseMeaning: ref.courseMeaning || '',
+          introduced: true,
+          occurrenceCount: 1,
+          sources: ['vocabulary'],
+          status: 'available',
+        }));
+      }
     }
 
     return [];
@@ -309,6 +381,9 @@ export class DictionaryRelationsIndex {
   getExampleReferences(dictionaryId, dictionaryStore = null) {
     if (!dictionaryId) return [];
     const canonical = dictionaryStore?.resolveAlias(dictionaryId) || dictionaryId;
+    if (!this._builtExamples && ExamplesDB) {
+      this.buildExampleIndex(ExamplesDB, dictionaryStore);
+    }
     return this._exampleIndex.get(canonical) || [];
   }
 

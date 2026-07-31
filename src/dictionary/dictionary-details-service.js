@@ -93,11 +93,12 @@ export function getConjugationsWithStatus(entry, currentLesson = null) {
       return [];
     }
   } else if (entry.partOfSpeech === 'adjective') {
+    if (!entry.adjectiveClass) return [];
     const wordForConjugator = {
       writing: entry.reading || entry.dictionaryForm,
       kanji: entry.dictionaryForm,
       partOfSpeech: 'adjective',
-      adjectiveClass: entry.adjectiveClass || (entry.dictionaryForm.endsWith('い') ? 'i' : 'na'),
+      adjectiveClass: entry.adjectiveClass,
     };
     try {
       rawForms = conjugateAdjective(wordForConjugator);
@@ -221,9 +222,14 @@ export function getDictionaryDetails({
   }
 
   // 4. Examples (from relationsIndex or empty)
-  const examples = relationsIndex
+  const rawExamples = relationsIndex
     ? relationsIndex.getExampleReferences(canonical, dictionaryStore)
     : [];
+
+  const examples = rawExamples.map((ex) => ({
+    ...ex,
+    normalizedSource: normalizeExampleSource(ex.source),
+  }));
 
   // 5. Conjugations (deterministic, uses existing engine)
   const currentLesson = _getCurrentLesson(state, activeCourseId);

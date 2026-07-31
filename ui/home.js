@@ -27,6 +27,8 @@ import { switchActiveCourse, syncActiveCourseProgress } from '../src/courses/cou
 import { DEFAULT_COURSE_ID } from '../src/courses/course-registry.js';
 import { db, STORES } from '../src/db.js';
 import { ExamplesDB } from '../src/examples-db.js';
+import { dictionaryRelationsIndex } from '../src/dictionary/dictionary-relations-index.js';
+import { dictionaryStore } from '../src/dictionary/dictionary-store.js';
 import { formatDateKey, parseDateKey } from '../src/local-date.js';
 import {
   REQUIRED_CHAPTER_SECTIONS,
@@ -92,6 +94,7 @@ export async function switchCourseRuntime(nextCourseId, options = {}) {
   LESSONS = [];
   CONTENT_INDEX = [];
   ExamplesDB.clearCourseScope();
+  dictionaryRelationsIndex.invalidate();
   clearGrammarQuizCache();
   clearSupplementalPracticeCache();
   course.clearCache();
@@ -360,6 +363,7 @@ export async function loadLessons(options = {}) {
       ExamplesDB.registerLesson(l);
     });
     ExamplesDB.rebuildIndex();
+    dictionaryRelationsIndex.buildExampleIndex(ExamplesDB, dictionaryStore);
   }
 
   for (const [store, key, val] of pendingCacheWrites) {
@@ -418,6 +422,7 @@ export async function loadLessons(options = {}) {
       if (!isCurrentLoad()) return;
       ExamplesDB.registerParticlesDictionary(data);
       ExamplesDB.rebuildIndex();
+      dictionaryRelationsIndex.buildExampleIndex(ExamplesDB, dictionaryStore);
     }
   } catch (e) {
     console.warn('Не удалось загрузить словарь частиц для ExamplesDB:', e);
@@ -434,6 +439,7 @@ export async function loadLessons(options = {}) {
       if (!isCurrentLoad()) return;
       ExamplesDB.registerCuratedWordExamples(data);
       ExamplesDB.rebuildIndex();
+      dictionaryRelationsIndex.buildExampleIndex(ExamplesDB, dictionaryStore);
     }
   } catch (e) {
     console.warn('Не удалось загрузить curated примеры для ExamplesDB:', e);
@@ -518,6 +524,7 @@ export async function ensureLesson(id) {
     ExamplesDB.registerStory(story);
   }
   ExamplesDB.rebuildIndex();
+  dictionaryRelationsIndex.buildExampleIndex(ExamplesDB, dictionaryStore);
 
   if (!LESSONS.some((l) => l.id === id)) {
     LESSONS.push(normalized);

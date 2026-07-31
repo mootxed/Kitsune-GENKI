@@ -24,7 +24,9 @@ import { dictionaryRelationsIndex } from '../src/dictionary/dictionary-relations
 import {
   storyOccurrenceIndex,
   savedNotesToStoryDescriptors,
+  builtinStoryToDescriptor,
 } from '../src/dictionary/story-occurrence-index.js';
+import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
 import {
   formatConfidence,
   formatRetrievability,
@@ -216,14 +218,24 @@ function renderFSRS(fsrs) {
 }
 
 function renderConjugations(conjugations, entry) {
-  if (!entry || entry.partOfSpeech !== 'verb') return '';
+  if (!entry || (entry.partOfSpeech !== 'verb' && entry.partOfSpeech !== 'adjective')) return '';
 
-  if (!entry.verbClass) {
+  if (entry.partOfSpeech === 'verb' && !entry.verbClass) {
     return `
       <section class="word-details-section" aria-labelledby="wd-conj-heading">
         <h2 id="wd-conj-heading" class="word-details-section-title">🔄 Спряжения</h2>
         <div class="word-details-card">
           <p class="word-details-empty">Недостаточно данных для построения спряжений<br><small>Тип глагола не известен</small></p>
+        </div>
+      </section>`;
+  }
+
+  if (entry.partOfSpeech === 'adjective' && !entry.adjectiveClass) {
+    return `
+      <section class="word-details-section" aria-labelledby="wd-conj-heading">
+        <h2 id="wd-conj-heading" class="word-details-section-title">🔄 Спряжения</h2>
+        <div class="word-details-card">
+          <p class="word-details-empty">Недостаточно данных для построения спряжений<br><small>Класс прилагательного не известен</small></p>
         </div>
       </section>`;
   }
@@ -404,6 +416,8 @@ function renderStoryOccurrences(occurrences, nav) {
           ${occ.translation ? `<p class="word-story-trans">${escapeHtml(occ.translation)}</p>` : ''}
           <button class="btn-ghost word-story-open-btn"
             data-story-id="${escapeHtml(occ.storyId)}"
+            data-lesson-id="${escapeHtml(occ.lessonId || '')}"
+            data-course-id="${escapeHtml(occ.courseId || '')}"
             data-sentence-id="${escapeHtml(String(occ.sentenceId))}"
             data-token-id="${escapeHtml(occ.tokenId)}"
             aria-label="Открыть в истории: ${escapeHtml(occ.storyTitle)}">
@@ -464,11 +478,13 @@ function setupStoryNavigation(container, nav) {
   container.querySelectorAll('.word-story-open-btn').forEach((btn) => {
     btn.onclick = () => {
       const storyId = btn.dataset.storyId;
+      const lessonId = btn.dataset.lessonId || undefined;
+      const courseId = btn.dataset.courseId || undefined;
       const sentenceId = btn.dataset.sentenceId;
       const tokenId = btn.dataset.tokenId;
       if (!storyId) return;
       // Navigate to story with highlight context
-      nav('story', { storyId, sentenceId, tokenId, highlight: true });
+      nav('story', { storyId, lessonId, courseId, sentenceId, tokenId, highlight: true });
     };
   });
 }
@@ -508,15 +524,38 @@ export async function renderWordDetails(state, dependencies, options = {}, conte
   // Show skeleton while loading
   body.innerHTML = renderSkeleton();
 
+  const dictStore = dependencies?.dictionaryStore || dictionaryStore;
+
   try {
-    await dictionaryStore.ensureLoaded();
+    await dictStore.ensureLoaded();
     if (signal?.aborted) return;
 
-    // Build story occurrence index from saved notes (if not already built)
+    // Build story occurrence index from saved notes and built-in stories (if not already built)
     if (!storyOccurrenceIndex.isBuilt) {
       const savedNotes = state?.savedNotes || [];
       const descriptors = savedNotesToStoryDescriptors(savedNotes);
-      storyOccurrenceIndex.build(descriptors, { dictionaryStore });
+
+      try {
+        const activeCourseId = state?.activeCourseId || 'genki-1';
+        const contentIndex = await loadContentIndex(activeCourseId);
+        if (contentIndex && Array.isArray(contentIndex.stories)) {
+          for (const sMeta of contentIndex.stories) {
+            try {
+              const lessonId = sMeta.lesson_id || sMeta.lessonId || sMeta.id;
+              const { story } = await loadChapterData(lessonId, activeCourseId);
+              if (story) {
+                descriptors.push(builtinStoryToDescriptor(story, activeCourseId));
+              }
+            } catch {
+              // ignore failure for single story
+            }
+          }
+        }
+      } catch {
+        // ignore failure if course content index unavailable
+      }
+
+      storyOccurrenceIndex.build(descriptors, { dictionaryStore: dictStore });
     }
 
     // Build TokenOccurrence context from options (if opened from a token click)
@@ -540,7 +579,7 @@ export async function renderWordDetails(state, dependencies, options = {}, conte
       tokenOccurrence,
       activeCourseId: state?.activeCourseId || null,
       state,
-      dictionaryStore,
+      dictionaryStore: dictStore,
       relationsIndex: dictionaryRelationsIndex,
       storyIndex: storyOccurrenceIndex,
       srs: dependencies?.SRS || null,
