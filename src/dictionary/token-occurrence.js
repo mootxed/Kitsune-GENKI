@@ -91,6 +91,10 @@ export function normalizeLegacyStoryToken(rawToken, context = {}) {
 
   if (dictionaryId && dictionaryStore) {
     dictionaryId = dictionaryStore.resolveAlias(dictionaryId) || dictionaryId;
+    const entry = dictionaryStore.getDictionaryEntry(dictionaryId);
+    if (!entry) {
+      dictionaryId = null;
+    }
   } else if (dictionaryId) {
     dictionaryId = resolveDictionaryAlias(dictionaryId) || dictionaryId;
   }
@@ -109,7 +113,7 @@ export function normalizeLegacyStoryToken(rawToken, context = {}) {
     status = 'resolved';
     source =
       rawToken.resolution?.source || (dictionaryId.startsWith('user-') ? 'user-ai' : 'builtin');
-  } else if (rawToken.resolution) {
+  } else if (rawToken.resolution && rawToken.resolution.status !== 'resolved') {
     status = rawToken.resolution.status || 'missing';
     source = rawToken.resolution.source || 'none';
     confidence =

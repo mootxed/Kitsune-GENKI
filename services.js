@@ -1,6 +1,10 @@
 /* services.js — OpenRouter chat & AI Story Generator with Zod Validation & Repair */
 import { parseAndValidateAIStory } from './src/ai-story-parser.js';
 import { getOpenRouterKey } from './src/openrouter-key.js';
+import {
+  LexicalEnrichmentResponseSchema,
+  AmbiguityResolutionResponseSchema,
+} from './src/ai/schemas.js';
 
 const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_TIMEOUT_MS = 45000;
@@ -188,7 +192,7 @@ async function generateAIStory(userPrompt, weakWords, settings, options = {}) {
 4. Для склонённых содержательных слов по возможности добавляй необязательные поля dictionaryForm, dictionaryReading и dictionaryMeaning. Старые четыре поля токена обязательны.
 ${
   weakWords && weakWords.length > 0
-    ? `- ОБЯЗАТЕЛЬНО используй в сюжете эти слова: ${weakWords.join(', ')}`
+    ? `- ОБЯЗАТЕЛЬНО используй в сюжете эти слова: ${weakWords.map((w, idx) => `${w} (обозначь как dictionaryRef: "W${idx + 1}")`).join(', ')}`
     : ''
 }
 
@@ -305,9 +309,117 @@ ${errorDetails || firstAttemptResult.message}
   throw finalError;
 }
 
+// ---- AI Lexical Provider Methods for Token Resolver ----
+
+async function enrichUnknownLexemes(unknownBatch, settings = {}, options = {}) {
+  const apiKey = getOpenRouterKey() || settings?.openrouterKey;
+  if (!apiKey) {
+    throw new Error('Не задан API-ключ OpenRouter. Откройте Настройки.');
+  }
+  const key = apiKey.trim();
+  const model = settings?.model || 'deepseek/deepseek-v4-flash';
+
+  const systemPrompt = `Ты — эксперт-лингвист по японскому языку. Твоя задача — вернуть словарные статьи для незнакомых токенов из текста.
+КРИТИЧЕСКИ ВАЖНО: Ответ должен быть ИСКЛЮЧИТЕЛЬНО валидным JSON объектом вида:
+{
+  "entries": [
+    {
+      "tokenKey": "...",
+      "dictionaryForm": "...",
+      "reading": "...",
+      "meanings": ["..."],
+      "partOfSpeech": "noun",
+      "verbClass": null,
+      "adjectiveClass": null,
+      "tokenForms": ["..."],
+      "confidence": 0.9
+    }
+  ]
+}
+Значения partOfSpeech должны быть из: "noun", "verb", "adjective", "adverb", "particle", "expression", "other".
+Допустимые verbClass: "godan", "ichidan", "irregular", null.
+Допустимые adjectiveClass: "i", "na", null.`;
+
+  const res = await openRouterRequest({
+    model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Незнакомые токены:\n${JSON.stringify(unknownBatch, null, 2)}` },
+    ],
+    key,
+    signal: options.signal,
+    timeoutMs: options.timeoutMs,
+  });
+
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error('OpenRouter error ' + res.status + ': ' + t.slice(0, 160));
+  }
+
+  const data = await res.json();
+  const rawContent = data.choices?.[0]?.message?.content || '';
+  const cleanedJson = rawContent
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .trim();
+  const parsed = JSON.parse(cleanedJson);
+  return LexicalEnrichmentResponseSchema.parse(parsed);
+}
+
+async function resolveAmbiguousToken(params, settings = {}, options = {}) {
+  const apiKey = getOpenRouterKey() || settings?.openrouterKey;
+  if (!apiKey) {
+    throw new Error('Не задан API-ключ OpenRouter. Откройте Настройки.');
+  }
+  const key = apiKey.trim();
+  const model = settings?.model || 'deepseek/deepseek-v4-flash';
+
+  const { surface, sentence, sentenceTranslation, candidateIds, candidatesSummary } = params;
+
+  const systemPrompt = `Ты — эксперт по контекстному значению японских слов.
+Определи, какой dictionaryId подходит для слова "${surface}" в предложении:
+"${sentence}" (перевод: "${sentenceTranslation}").
+
+Кандидаты:
+${JSON.stringify(candidatesSummary, null, 2)}
+
+Верни ТОЛЬКО JSON:
+{
+  "selectedDictionaryId": "выбранный_id_из_кандидатов",
+  "confidence": 0.95
+}`;
+
+  const res = await openRouterRequest({
+    model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Какое значение имеет "${surface}"?` },
+    ],
+    key,
+    signal: options.signal,
+    timeoutMs: options.timeoutMs,
+  });
+
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error('OpenRouter error ' + res.status + ': ' + t.slice(0, 160));
+  }
+
+  const data = await res.json();
+  const rawContent = data.choices?.[0]?.message?.content || '';
+  const cleanedJson = rawContent
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .trim();
+  const parsed = JSON.parse(cleanedJson);
+  return AmbiguityResolutionResponseSchema.parse(parsed);
+}
+
 export const API = {
   askSensei,
   generateAIStory,
+  enrichUnknownLexemes,
+  resolveAmbiguousToken,
   openRouterRequest,
   SYSTEM_PROMPT,
   getSystemPrompt,

@@ -201,11 +201,21 @@ export function renderAIStory(state, dependencies) {
       }
 
       try {
+        const selectedWordRefs = {};
+        if (weakWords && weakWords.length > 0) {
+          weakWords.forEach((w, idx) => {
+            selectedWordRefs[`W${idx + 1}`] = w;
+          });
+        }
+
         const { story: resolvedStory } = await resolveStoryTokens({
           story: storySentences,
+          selectedWordRefs,
           dictionaryStore,
           userDictionaryRepository: deps?.userRepository || null,
+          aiLexicalProvider: API,
           activeCourseId: st?.activeCourseId || null,
+          storyId: `ai-story-${Date.now()}`,
         });
         storySentences = Array.isArray(resolvedStory)
           ? resolvedStory
@@ -274,9 +284,45 @@ export function renderAIStory(state, dependencies) {
           const subText =
             rawSubText && rawSubText !== (t.surface || t.kanji) ? escapeHtml(rawSubText) : '';
           const trans = escapeHtml(t.contextMeaning || t.translation || '');
+          const dictionaryId = escapeHtml(t.dictionaryId || '');
+          const status = escapeHtml(t.resolution?.status || 'missing');
+          const tokenId = escapeHtml(t.id || '');
+          const type = escapeHtml(t.type || 'Word');
 
-          return `<span class="ai-token" style="display: inline-flex; flex-direction: column; align-items: center; margin: 2px 4px; padding: 2px 4px; background: var(--bg-secondary, rgba(0,0,0,0.04)); border-radius: 4px; vertical-align: bottom;" title="${trans}">
-            ${subText ? `<span style="font-size: 10px; color: var(--text-muted);">${subText}</span>` : ''}
+          if (t.resolution?.status === 'non-lexical' || t.type === 'Punctuation') {
+            return mainText;
+          }
+
+          if (subText) {
+            return `<ruby><span class="word-token ai-token"
+              data-token-id="${tokenId}"
+              data-dictionary-id="${dictionaryId}"
+              data-surface="${mainText}"
+              data-reading="${subText}"
+              data-context-meaning="${trans}"
+              data-resolution-status="${status}"
+              data-kanji="${mainText}"
+              data-writing="${subText}"
+              data-translation="${trans}"
+              data-type="${type}"
+              style="display: inline-flex; flex-direction: column; align-items: center; margin: 2px 4px; padding: 2px 4px; background: var(--bg-secondary, rgba(0,0,0,0.04)); border-radius: 4px; vertical-align: bottom; cursor: pointer;"
+              title="${trans}">
+              <span style="font-size: 16px; font-weight: 700;">${mainText}</span>
+            </span><rt>${subText}</rt></ruby>`;
+          }
+
+          return `<span class="word-token ai-token"
+            data-token-id="${tokenId}"
+            data-dictionary-id="${dictionaryId}"
+            data-surface="${mainText}"
+            data-reading="${subText}"
+            data-context-meaning="${trans}"
+            data-resolution-status="${status}"
+            data-kanji="${mainText}"
+            data-translation="${trans}"
+            data-type="${type}"
+            style="display: inline-flex; flex-direction: column; align-items: center; margin: 2px 4px; padding: 2px 4px; background: var(--bg-secondary, rgba(0,0,0,0.04)); border-radius: 4px; vertical-align: bottom; cursor: pointer;"
+            title="${trans}">
             <span style="font-size: 16px; font-weight: 700;">${mainText}</span>
           </span>`;
         })
@@ -349,6 +395,17 @@ export function renderAIStory(state, dependencies) {
       };
     });
 
+    // Attach word token bottom sheet listeners
+    container.querySelectorAll('.word-token').forEach((tok) => {
+      tok.onclick = (e) => {
+        e.stopPropagation();
+        const openSheet = deps?.openWordBottomSheet || window.openWordBottomSheet;
+        if (typeof openSheet === 'function') {
+          openSheet(tok);
+        }
+      };
+    });
+
     // New story button
     const newBtn = container.querySelector('#ai-story-new-btn');
     if (newBtn) {
@@ -370,13 +427,13 @@ export function renderAIStory(state, dependencies) {
         const fullStoryText = sentences
           .map(
             (s) =>
-              `${s.speaker}: ${s.tokens.map((t) => t.kanji || t.writing || '').join('')}\n(${s.translation})`
+              `${s.speaker}: ${(s.tokens || []).map((t) => t.surface || t.kanji || t.writing || '').join('')}\n(${s.translation})`
           )
           .join('\n\n');
 
         const title =
-          sentences[0]?.tokens
-            .map((t) => t.kanji || t.writing || '')
+          (sentences[0]?.tokens || [])
+            .map((t) => t.surface || t.kanji || t.writing || '')
             .join('')
             .slice(0, 30) || 'ИИ-История';
 

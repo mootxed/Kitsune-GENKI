@@ -57,6 +57,24 @@ export const StoryTokenSchema = z
         return value || null;
       })
       .pipe(z.string().max(500).nullable()),
+    dictionaryRef: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => {
+        const value = (val ?? '').trim();
+        return value || null;
+      })
+      .pipe(z.string().max(200).nullable()),
+    dictionaryId: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => {
+        const value = (val ?? '').trim();
+        return value || null;
+      })
+      .pipe(z.string().max(200).nullable()),
     sourceToken: z
       .string()
       .nullable()

@@ -297,9 +297,10 @@ async function renderLibraryGrammar(state, dependencies) {
 
 import { normalizeLegacyStoryToken } from '../src/dictionary/token-occurrence.js';
 import { dictionaryStore } from '../src/dictionary/dictionary-store.js';
+import { resolveStoryTokens } from '../src/ai/story-token-resolver.js';
 
 // Функция рендеринга интерактивной истории с токенами
-function renderInteractiveStory(content) {
+function renderInteractiveStory(content, storyId = 'story') {
   if (!Array.isArray(content)) return '';
 
   return content
@@ -308,6 +309,7 @@ function renderInteractiveStory(content) {
       const tokensHtml = (sentence.tokens || [])
         .map((rawToken, idx) => {
           const occ = normalizeLegacyStoryToken(rawToken, {
+            storyId,
             sentenceId,
             tokenIndex: idx,
             dictionaryStore,
@@ -447,19 +449,34 @@ function setupStoryInteractions() {
 }
 
 // Функция открытия истории
-function openStory(story, state, dependencies) {
+async function openStory(story, state, dependencies) {
   const storyTitle = $('#story-title');
   const storyTitleJp = $('#story-title-jp');
 
   if (storyTitle) storyTitle.textContent = story.title;
   if (storyTitleJp) storyTitleJp.textContent = story.titleJP || '';
 
+  const storyId = story.id || story.storyId || 'story';
+  let contentToRender = story.content || [];
+
+  try {
+    const resolved = await resolveStoryTokens({
+      story: contentToRender,
+      dictionaryStore,
+      activeCourseId: state?.activeCourseId || null,
+      storyId,
+    });
+    contentToRender = resolved.story || contentToRender;
+  } catch (err) {
+    console.warn('[Stories] Could not resolve built-in story tokens:', err);
+  }
+
   $('#story-body').innerHTML = `
   <div class="story-content">
     <div class="story-meta">
       <span class="story-lesson-badge">${formatLessonLabel(story.lessonId || story.lesson_id)}</span>
     </div>
-    <div class="story-text">${renderInteractiveStory(story.content)}</div>
+    <div class="story-text">${renderInteractiveStory(contentToRender, storyId)}</div>
     ${
       story.questions && story.questions.length > 0
         ? `

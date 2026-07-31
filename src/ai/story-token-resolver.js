@@ -3,6 +3,7 @@ import {
   normalizeLegacyStoryToken,
   TokenOccurrenceSchema,
 } from '../dictionary/token-occurrence.js';
+import { canonicalHiragana } from '../dictionary/dictionary-id.js';
 import { LexicalEnrichmentResponseSchema, AmbiguityResolutionResponseSchema } from './schemas.js';
 
 export const AI_DISAMBIGUATION_MIN_CONFIDENCE = 0.75;
@@ -26,7 +27,15 @@ export async function resolveStoryTokens(options = {}) {
   await dictionaryStore.ensureLoaded();
 
   const isStoryObject = rawStory && typeof rawStory === 'object' && Array.isArray(rawStory.story);
-  const sentences = isStoryObject ? rawStory.story : Array.isArray(rawStory) ? rawStory : [];
+  const isContentObject =
+    rawStory && typeof rawStory === 'object' && Array.isArray(rawStory.content);
+  const sentences = isStoryObject
+    ? rawStory.story
+    : isContentObject
+      ? rawStory.content
+      : Array.isArray(rawStory)
+        ? rawStory
+        : [];
 
   const statistics = {
     totalLexicalTokens: 0,
@@ -40,7 +49,7 @@ export async function resolveStoryTokens(options = {}) {
   };
 
   const resolvedSentences = [];
-  const missingLexemeMap = new Map(); // tokenKey -> { tokenKey, surface, reading, sentence, sentenceTranslation, occReferences }
+  const missingLexemeMap = new Map(); // tokenKey -> { tokenKey, surface, reading, lemmaHint, sentence, sentenceTranslation, tokenForms, occReferences }
 
   for (let sIdx = 0; sIdx < sentences.length; sIdx++) {
     const s = sentences[sIdx];
@@ -90,11 +99,29 @@ export async function resolveStoryTokens(options = {}) {
         }
       }
 
-      // Step 2: Direct dictionaryId check
+      // Step 2: Direct dictionaryId check (with validation & compatibility check)
       if (occ.dictionaryId) {
         const resolvedId = dictionaryStore.resolveAlias(occ.dictionaryId);
         const entry = dictionaryStore.getDictionaryEntry(resolvedId);
+        let isValid = false;
+
         if (entry) {
+          const normSurface = occ.surface.normalize('NFKC').trim();
+          const normReading = occ.reading ? occ.reading.normalize('NFKC').trim() : '';
+          const entryForms = (entry.tokenForms || []).map((f) => f.normalize('NFKC').trim());
+          const entryForm = entry.dictionaryForm.normalize('NFKC').trim();
+          const entryReading = entry.reading ? entry.reading.normalize('NFKC').trim() : '';
+
+          if (
+            normSurface === entryForm ||
+            entryForms.includes(normSurface) ||
+            (normReading && normReading === entryReading)
+          ) {
+            isValid = true;
+          }
+        }
+
+        if (isValid && entry) {
           const isUser = entry.source === 'ai' || entry.id.startsWith('user-word:');
           occ = TokenOccurrenceSchema.parse({
             ...occ,
@@ -109,6 +136,17 @@ export async function resolveStoryTokens(options = {}) {
           else statistics.builtinHits++;
           resolvedTokens.push(occ);
           continue;
+        } else {
+          // Cleared corrupted/unmatched dictionaryId
+          occ = TokenOccurrenceSchema.parse({
+            ...occ,
+            dictionaryId: null,
+            resolution: {
+              status: 'missing',
+              source: 'none',
+              confidence: 1,
+            },
+          });
         }
       }
 
@@ -235,11 +273,20 @@ export async function resolveStoryTokens(options = {}) {
         continue;
       }
 
-      // Step 6: Missing lexeme -> Add to batch enrichment map
-      const lemmaHint =
-        rawToken.dictionaryForm || rawToken.lemmaHint || rawToken.lemma || occ.surface;
-      const readingHint = rawToken.dictionaryReading || occ.reading;
+      // Step 6: Missing lexeme -> Add to batch enrichment map (with NFKC & canonical hiragana normalization)
+      const lemmaHint = (
+        rawToken.dictionaryForm ||
+        rawToken.lemmaHint ||
+        rawToken.lemma ||
+        occ.surface
+      )
+        .normalize('NFKC')
+        .trim();
+      const readingHint = canonicalHiragana(
+        rawToken.dictionaryReading || occ.reading || occ.surface
+      );
       const normKey = `${lemmaHint}:${readingHint}`;
+
       if (!missingLexemeMap.has(normKey)) {
         missingLexemeMap.set(normKey, {
           tokenKey: `unknown-${missingLexemeMap.size + 1}`,
@@ -248,8 +295,14 @@ export async function resolveStoryTokens(options = {}) {
           lemmaHint,
           sentence: sentenceText,
           sentenceTranslation,
+          tokenForms: [occ.surface],
           occReferences: [],
         });
+      } else {
+        const existing = missingLexemeMap.get(normKey);
+        if (!existing.tokenForms.includes(occ.surface)) {
+          existing.tokenForms.push(occ.surface);
+        }
       }
 
       missingLexemeMap.get(normKey).occReferences.push({ sIdx, tIdx: resolvedTokens.length, occ });
@@ -283,54 +336,96 @@ export async function resolveStoryTokens(options = {}) {
 
       if (parsedAi.success && Array.isArray(parsedAi.data.entries)) {
         for (const item of parsedAi.data.entries) {
-          const matchingLexeme = Array.from(missingLexemeMap.values()).find(
-            (m) => m.tokenKey === item.tokenKey
-          );
+          try {
+            const matchingLexeme = Array.from(missingLexemeMap.values()).find(
+              (m) => m.tokenKey === item.tokenKey
+            );
 
-          if (!matchingLexeme) continue;
+            if (!matchingLexeme) continue;
 
-          // Check if curated entry exists
-          const curatedCheck = dictionaryStore.findDictionaryCandidatesByToken(item.dictionaryForm);
-          let assignedId = null;
-          let source = 'user-ai';
+            // Separate candidates by builtin vs user-ai
+            const curatedCheck = dictionaryStore.findDictionaryCandidatesByToken(
+              item.dictionaryForm
+            );
+            const allCandidates = curatedCheck.candidates || [];
+            const builtinCandidates = [];
+            const userAiCandidates = [];
 
-          if (curatedCheck.candidates.length > 0) {
-            assignedId = curatedCheck.candidates[0];
-            source = 'builtin';
-          } else {
-            const regResult = await dictionaryStore.registerUserDictionaryEntry({
-              dictionaryForm: item.dictionaryForm,
-              reading: item.reading,
-              meanings: item.meanings,
-              partOfSpeech: item.partOfSpeech,
-              verbClass: item.verbClass,
-              adjectiveClass: item.adjectiveClass,
-              tokenForms: [matchingLexeme.surface, ...(item.tokenForms || [])],
-              confidence: item.confidence,
-              verified: false,
-              targetDictionaryId: 'user-dict:ai-cache',
-              provenance: {
-                sourceType: 'ai-story-token',
-                sourceId: String(storyId),
-              },
-            });
+            for (const cid of allCandidates) {
+              const centry = dictionaryStore.getDictionaryEntry(cid);
+              if (centry) {
+                if (centry.source === 'ai' || centry.id.startsWith('user-word:')) {
+                  userAiCandidates.push(cid);
+                } else {
+                  builtinCandidates.push(cid);
+                }
+              }
+            }
 
-            assignedId = regResult.entry.id;
-            if (regResult.created) statistics.generatedEntries++;
-          }
+            let assignedId = null;
+            let source = 'user-ai';
 
-          // Update occurrence tokens
-          for (const ref of matchingLexeme.occReferences) {
-            const currentToken = resolvedSentences[ref.sIdx].tokens[ref.tIdx];
-            resolvedSentences[ref.sIdx].tokens[ref.tIdx] = TokenOccurrenceSchema.parse({
-              ...currentToken,
-              dictionaryId: assignedId,
-              resolution: {
-                status: 'resolved',
-                source,
-                confidence: item.confidence || 0.8,
-              },
-            });
+            if (builtinCandidates.length === 1) {
+              assignedId = builtinCandidates[0];
+              source = 'builtin';
+            } else if (builtinCandidates.length > 1) {
+              // Exact reading match among builtins or first builtin
+              const exactMatch = builtinCandidates.find((cid) => {
+                const e = dictionaryStore.getDictionaryEntry(cid);
+                return e && e.reading === canonicalHiragana(item.reading);
+              });
+              assignedId = exactMatch || builtinCandidates[0];
+              source = 'builtin';
+            } else if (userAiCandidates.length > 0) {
+              assignedId = userAiCandidates[0];
+              source = 'user-ai';
+            } else {
+              // Register new user dictionary entry
+              const allForms = [
+                ...new Set([
+                  matchingLexeme.surface,
+                  ...(matchingLexeme.tokenForms || []),
+                  ...(item.tokenForms || []),
+                ]),
+              ];
+
+              const regResult = await dictionaryStore.registerUserDictionaryEntry({
+                dictionaryForm: item.dictionaryForm,
+                reading: item.reading,
+                meanings: item.meanings,
+                partOfSpeech: item.partOfSpeech,
+                verbClass: item.verbClass,
+                adjectiveClass: item.adjectiveClass,
+                tokenForms: allForms,
+                confidence: typeof item.confidence === 'number' ? item.confidence : 0.8,
+                verified: false,
+                targetDictionaryId: 'user-dict:ai-cache',
+                provenance: {
+                  sourceType: 'ai-story-token',
+                  sourceId: String(storyId),
+                },
+              });
+
+              assignedId = regResult.entry.id;
+              if (regResult.created) statistics.generatedEntries++;
+            }
+
+            // Update occurrence tokens
+            const conf = typeof item.confidence === 'number' ? item.confidence : 0.8;
+            for (const ref of matchingLexeme.occReferences) {
+              const currentToken = resolvedSentences[ref.sIdx].tokens[ref.tIdx];
+              resolvedSentences[ref.sIdx].tokens[ref.tIdx] = TokenOccurrenceSchema.parse({
+                ...currentToken,
+                dictionaryId: assignedId,
+                resolution: {
+                  status: 'resolved',
+                  source,
+                  confidence: conf,
+                },
+              });
+            }
+          } catch (itemErr) {
+            console.warn('[StoryTokenResolver] Item registration warning:', itemErr);
           }
         }
       }
@@ -352,7 +447,9 @@ export async function resolveStoryTokens(options = {}) {
 
   const updatedStory = isStoryObject
     ? { ...rawStory, story: resolvedSentences }
-    : resolvedSentences;
+    : isContentObject
+      ? { ...rawStory, content: resolvedSentences }
+      : resolvedSentences;
 
   return {
     story: updatedStory,

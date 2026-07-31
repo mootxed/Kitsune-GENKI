@@ -217,31 +217,25 @@ export const LexicalEnrichmentItemSchema = z
     reading: cleanText(200),
     meanings: z.array(cleanText(500)).min(1).max(20),
     partOfSpeech: cleanText(100).transform((val) => {
-      const lower = val.toLowerCase();
-      if (
-        [
-          'verb',
-          'noun',
-          'adjective',
-          'adverb',
-          'particle',
-          'expression',
-          'conjunction',
-          'prefix',
-          'suffix',
-          'counter',
-        ].includes(lower)
-      ) {
+      const lower = (val || '').toLowerCase().trim();
+      if (['noun', 'verb', 'adjective', 'adverb', 'particle', 'expression'].includes(lower)) {
         return lower;
       }
-      return val;
+      return 'other';
     }),
-    verbClass: z.enum(['godan', 'ichidan', 'irregular']).nullable().optional(),
-    adjectiveClass: z.enum(['i', 'na']).nullable().optional(),
+    verbClass: z.enum(['godan', 'ichidan', 'irregular']).nullable().optional().default(null),
+    adjectiveClass: z.enum(['i', 'na']).nullable().optional().default(null),
     tokenForms: z.array(cleanText(200)).default([]),
     confidence: z.number().min(0).max(1).default(0.8),
   })
-  .strip();
+  .strip()
+  .transform((item) => {
+    return {
+      ...item,
+      verbClass: item.partOfSpeech === 'verb' ? item.verbClass || null : null,
+      adjectiveClass: item.partOfSpeech === 'adjective' ? item.adjectiveClass || null : null,
+    };
+  });
 
 export const LexicalEnrichmentResponseSchema = z
   .object({
