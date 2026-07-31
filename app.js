@@ -129,6 +129,7 @@ import { renderUserDictionaries } from './ui/user-dictionaries.js';
 import { renderWordDetails } from './ui/word-details.js';
 import { refreshUserDictionaryLesson } from './src/user-dictionaries/runtime.js';
 import { shouldShowOnboarding } from './src/onboarding-state.js';
+import { initPomodoro } from './ui/pomodoro.js';
 
 // ===== ГЛОБАЛЬНЫЕ ЭКСПОРТЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ =====
 window.SRS = SRS;
@@ -903,6 +904,9 @@ async function init() {
 
     // Настройка роутера
     setupRouter();
+
+    // Инициализация подсистемы Pomodoro
+    initPomodoro(createDependencies());
 
     // Первичная маршрутизация: проверяем необходимость показа Onboarding
     if (shouldShowOnboarding(state)) {

@@ -89,8 +89,7 @@ describe('GENKI I vocabulary migration', () => {
 
   it('runs before the course state migration and remains a no-op when repeated', () => {
     const migrated = runMigrations({ version: 13, srs: {}, reviewEvents: [] });
-    expect(CURRENT_VERSION).toBe(16);
-    expect(migrated.version).toBe(16);
+    expect(migrated.version).toBe(CURRENT_VERSION);
     expect(runMigrations(migrated)).toEqual(migrated);
   });
 });

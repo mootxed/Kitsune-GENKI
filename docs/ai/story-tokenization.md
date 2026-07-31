@@ -57,12 +57,14 @@ Each token in a sentence is stored as a `TokenOccurrence`:
 ```
 
 #### Statuses:
+
 - `resolved`: Successfully matched to a `DictionaryEntry`.
 - `ambiguous`: Multiple candidate dictionary entries matched without a confident resolution.
 - `missing`: Unknown word without dictionary candidate.
 - `non-lexical`: Punctuation, symbols, or formatting tokens without dictionary entries.
 
 #### Sources:
+
 - `builtin`: Curated dictionary entry.
 - `user-ai`: User AI cache entry (`user-dict:ai-cache`).
 - `ai-context`: Ambiguity resolved via AI context call.

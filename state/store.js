@@ -26,11 +26,17 @@ import {
   migrateGenki1StateV15,
 } from '../src/courses/genki-1/migrations/state-v15.js';
 import { migrateDictionaryStateV16 } from '../src/dictionary/state-v16.js';
+import {
+  createDefaultPomodoroSettings,
+  createDefaultPomodoroState,
+  normalizePomodoroSettings,
+  normalizePomodoroState,
+} from '../src/pomodoro/pomodoro-state.js';
 
 const LS_STATE = 'kitsune_state_v1';
 
 // Текущая версия схемы данных
-export const CURRENT_VERSION = 16;
+export const CURRENT_VERSION = 17;
 
 // Глобальное состояние приложения
 export let state = null;
@@ -352,6 +358,19 @@ const MIGRATIONS = {
   }),
   15: (oldState) => migrateGenki1StateV15(oldState),
   16: (oldState) => migrateDictionaryStateV16(oldState),
+  17: (oldState) => {
+    const baseState = { ...oldState };
+    const settings = baseState.settings || {};
+    return {
+      ...baseState,
+      settings: {
+        ...settings,
+        pomodoro: normalizePomodoroSettings(settings.pomodoro),
+      },
+      pomodoro: normalizePomodoroState(baseState.pomodoro, settings.pomodoro),
+      version: 17,
+    };
+  },
 };
 
 // ---------- Default State ----------
@@ -416,7 +435,9 @@ export function defaultState() {
       notificationState: { lastDailyDigestDate: null, lastDailyDigestSlot: null },
       darkMode: 'auto',
       hideRomaji: false,
+      pomodoro: createDefaultPomodoroSettings(),
     },
+    pomodoro: createDefaultPomodoroState(),
     chatHistory: [], // normalized AI chat messages; legacy role/content is accepted on load
     xp: 0,
     level: 1,
@@ -577,6 +598,8 @@ function normalizeRuntimeShape(loadedState) {
     ...base.workbookSettings,
     ...(normalized.workbookSettings || {}),
   };
+  normalized.settings.pomodoro = normalizePomodoroSettings(normalized.settings?.pomodoro);
+  normalized.pomodoro = normalizePomodoroState(loadedState.pomodoro, normalized.settings.pomodoro);
   normalizeVocabularyLockState(normalized);
   syncActiveCourseProgress(normalized);
   return normalized;

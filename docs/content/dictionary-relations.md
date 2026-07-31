@@ -17,10 +17,11 @@ DictionaryEntry
 
 ## Агрегация данных — DictionaryDetailsService
 
-Агрегацию данных выполняет read-only сервис `DictionaryDetailsService` (`src/dictionary/dictionary-details-service.js`). 
+Агрегацию данных выполняет read-only сервис `DictionaryDetailsService` (`src/dictionary/dictionary-details-service.js`).
 Он собирает агрегированную карточку без изменения состояния приложения или расписания FSRS.
 
 ### Контракт `getDictionaryDetails`
+
 - `dictionaryId`: канонический ID слова (после alias resolution).
 - `entry`: ссылка на центральный `DictionaryEntry`.
 - `context`: контекст текущего токена (`TokenOccurrence`).

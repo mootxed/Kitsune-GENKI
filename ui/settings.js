@@ -13,6 +13,7 @@ import { getDailyStudyDigest } from '../src/daily-study-digest.js';
 import { resetApplicationData, commitState } from '../state/store.js';
 import { updateThemeCommand } from '../src/domain-commands.js';
 import { getOpenRouterKey, setOpenRouterKey } from '../src/openrouter-key.js';
+import { openPanel as openPomodoroPanel } from './pomodoro.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -43,6 +44,13 @@ export function renderSettings(state, dependencies) {
           <div class="set-hint">Открывайте начатые и уже завершённые главы курса.</div>
         </div>
         <button class="btn-ghost" id="btn-course" data-testid="settings-course-btn">Открыть</button>
+      </div>
+      <div class="set-item settings-destination">
+        <div>
+          <label>🍅 Таймер Pomodoro</label>
+          <div class="set-hint">Интервальный таймер учебных сессий.</div>
+        </div>
+        <button class="btn-ghost" id="btn-pomodoro-panel" data-testid="settings-pomodoro-btn">Открыть</button>
       </div>
     </div>
 
@@ -219,6 +227,7 @@ export function renderSettings(state, dependencies) {
   });
   bindEvent('#btn-study-plan', 'click', () => nav('plan'));
   bindEvent('#btn-course', 'click', () => nav('course'));
+  bindEvent('#btn-pomodoro-panel', 'click', () => openPomodoroPanel());
   bindEvent('#btn-legal-info', 'click', () => showLegalInfoModal());
   bindEvent('#set-hide-romaji', 'change', (e) => {
     s.hideRomaji = e.target.checked;
