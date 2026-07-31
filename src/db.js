@@ -490,16 +490,17 @@ class IndexedDBWrapper {
           }
 
           try {
-            const logTx = this.db.transaction([STORES.REVIEW_LOG], 'readonly');
-            if (!logTx || typeof logTx.objectStore !== 'function') {
-              resolve();
-              return;
-            }
-            const logStore = logTx.objectStore(STORES.REVIEW_LOG);
-            const rawEntries = await getAllRecords(logStore);
-            if (!rawEntries || rawEntries.length === 0) {
-              resolve();
-              return;
+            let rawEntries = [];
+            if (this.db.objectStoreNames.contains(STORES.REVIEW_LOG)) {
+              try {
+                const logTx = this.db.transaction([STORES.REVIEW_LOG], 'readonly');
+                if (logTx && typeof logTx.objectStore === 'function') {
+                  const logStore = logTx.objectStore(STORES.REVIEW_LOG);
+                  rawEntries = (await getAllRecords(logStore)) || [];
+                }
+              } catch (_) {
+                /* fallback */
+              }
             }
             const migratedEntries = migrateDictionaryReviewLogEntriesV16(rawEntries);
 
@@ -509,7 +510,7 @@ class IndexedDBWrapper {
                 const sessionTx = this.db.transaction([STORES.ACTIVE_SESSION], 'readonly');
                 if (sessionTx && typeof sessionTx.objectStore === 'function') {
                   const sessionStore = sessionTx.objectStore(STORES.ACTIVE_SESSION);
-                  rawSessions = await getAllRecords(sessionStore);
+                  rawSessions = (await getAllRecords(sessionStore)) || [];
                 }
               } catch (_) {
                 /* fallback */
@@ -517,7 +518,10 @@ class IndexedDBWrapper {
             }
             const migratedSessions = migrateDictionaryReviewLogEntriesV16(rawSessions);
 
-            const writeStores = [STORES.REVIEW_LOG, STORES.APP_STATE];
+            const writeStores = [STORES.APP_STATE];
+            if (this.db.objectStoreNames.contains(STORES.REVIEW_LOG)) {
+              writeStores.push(STORES.REVIEW_LOG);
+            }
             if (this.db.objectStoreNames.contains(STORES.ACTIVE_SESSION)) {
               writeStores.push(STORES.ACTIVE_SESSION);
             }
@@ -533,9 +537,11 @@ class IndexedDBWrapper {
             writeTx.onabort = () =>
               reject(writeTx.error || new Error('Review log migration aborted'));
 
-            const writeLogStore = writeTx.objectStore(STORES.REVIEW_LOG);
-            for (const entry of migratedEntries) {
-              writeLogStore.put(entry);
+            if (this.db.objectStoreNames.contains(STORES.REVIEW_LOG)) {
+              const writeLogStore = writeTx.objectStore(STORES.REVIEW_LOG);
+              for (const entry of migratedEntries) {
+                writeLogStore.put(entry);
+              }
             }
 
             if (this.db.objectStoreNames.contains(STORES.ACTIVE_SESSION)) {
@@ -1064,7 +1070,11 @@ class InMemoryFallback {
     const migratedSessions = migrateDictionaryReviewLogEntriesV16(rawSessions);
     this.storage.set(`${STORES.ACTIVE_SESSION}:__records__`, migratedSessions);
 
-    await this.set(STORES.APP_STATE, 'review_log_migration_v16', true);
+    await this.set(STORES.APP_STATE, 'review_log_migration_v16', {
+      id: 'review_log_migration_v16',
+      value: true,
+      migratedAt: Date.now(),
+    });
   }
 
   async get(storeName, key) {

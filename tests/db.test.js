@@ -93,14 +93,25 @@ describe('IndexedDBWrapper resilience and recovery', () => {
     mockIDBDatabase.onversionchange();
     expect(wrapper.isInitialized).toBe(false);
 
-    mockIDBDatabase.transaction.mockReturnValue({
-      objectStore: () => ({
-        get: () => {
-          const req = { onsuccess: null, onerror: null, result: { value: 'test' } };
-          setTimeout(() => req.onsuccess && req.onsuccess(), 0);
-          return req;
-        },
-      }),
+    mockIDBDatabase.transaction.mockImplementation(() => {
+      const tx = {
+        objectStore: () => ({
+          get: () => {
+            const req = {
+              onsuccess: null,
+              onerror: null,
+              result: { id: 'test-key', value: 'test' },
+            };
+            setTimeout(() => req.onsuccess && req.onsuccess(), 0);
+            return req;
+          },
+          put: () => {},
+        }),
+        oncomplete: null,
+        onerror: null,
+      };
+      setTimeout(() => tx.oncomplete && tx.oncomplete(), 0);
+      return tx;
     });
 
     const getTask = wrapper.get(STORES.APP_STATE, 'test-key');

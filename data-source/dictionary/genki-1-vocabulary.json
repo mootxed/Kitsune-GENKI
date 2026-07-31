@@ -791,7 +791,7 @@
       "semanticTags": [
         "expressions"
       ],
-      "lexemeId": "～ご_～後_expression_спустя"
+      "lexemeId": "__none"
     },
     {
       "localId": "L1_V027",
@@ -1384,7 +1384,7 @@
       "dictionaryForm": "看護師",
       "reading": "かんごし",
       "meanings": [
-        "нянька"
+        "медсестра"
       ],
       "partOfSpeech": "noun",
       "verbClass": null,
@@ -11851,7 +11851,7 @@
       "semanticTags": [
         "verbs_u"
       ],
-      "lexemeId": "かう_買う_verb_godan_покупать"
+      "lexemeId": "__none"
     },
     {
       "localId": "L11_V089",

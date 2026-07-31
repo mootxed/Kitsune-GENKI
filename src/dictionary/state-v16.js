@@ -20,7 +20,16 @@ const ITEM_ID_ARRAY_FIELDS = new Set([
   'dictionaryIds',
   'hardestItemIds',
 ]);
-const CARD_ID_ARRAY_FIELDS = new Set(['cardIds', 'hardestCardIds', 'activeCardIds']);
+const CARD_ID_FIELDS = new Set(['cardId', 'currentCardId', 'activeCardId']);
+const CARD_ID_ARRAY_FIELDS = new Set([
+  'cardIds',
+  'hardestCardIds',
+  'activeCardIds',
+  'queue',
+  'pendingCards',
+  'completedCards',
+  'initialCardIds',
+]);
 
 function clone(value) {
   if (value == null) return value;
@@ -62,7 +71,7 @@ function migrateReferences(value) {
   for (const [key, entry] of Object.entries(value)) {
     if (ITEM_ID_FIELDS.has(key) && typeof entry === 'string') {
       result[key] = migrateDictionaryItemId(entry);
-    } else if (key === 'cardId' && typeof entry === 'string') {
+    } else if (CARD_ID_FIELDS.has(key) && typeof entry === 'string') {
       result[key] = migrateDictionaryCardId(entry);
     } else if (key === 'id' && isCardLike) {
       result[key] = migrateDictionaryCardId(entry);

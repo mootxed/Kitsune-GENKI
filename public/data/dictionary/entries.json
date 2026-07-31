@@ -8847,35 +8847,10 @@
       "dictionaryForm": "看護師",
       "reading": "かんごし",
       "meanings": [
-        "нянька"
-      ],
-      "partOfSpeech": "noun",
-      "verbClass": null,
-      "adjectiveClass": null,
-      "transitivity": null,
-      "tokenForms": [
-        "看護師",
-        "かんごし"
-      ],
-      "semanticTags": [],
-      "romaji": "",
-      "source": "curated",
-      "confidence": 1,
-      "provenance": {
-        "sourceType": "course-package",
-        "sourceId": "genki-1",
-        "contentVersion": "1"
-      }
-    },
-    {
-      "schemaVersion": 1,
-      "id": "jp-word:看護師:かんごし:lexeme",
-      "dictionaryForm": "看護師",
-      "reading": "かんごし",
-      "meanings": [
+        "медсестра",
         "медсестра; медбрат"
       ],
-      "partOfSpeech": null,
+      "partOfSpeech": "noun",
       "verbClass": null,
       "adjectiveClass": null,
       "transitivity": null,

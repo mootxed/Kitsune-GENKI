@@ -159,11 +159,26 @@ export class DictionaryLoader {
       }
     }
 
+    const entryTokenFormsMap = new Map();
+    for (const entry of entries) {
+      const forms = new Set(
+        (entry.tokenForms || []).map((tf) => normalizeDictionaryText(tf)).filter(Boolean)
+      );
+      entryTokenFormsMap.set(entry.id, forms);
+    }
+
     const tokenIndex = tokenDocument.tokens || {};
     for (const [token, candidateIds] of Object.entries(tokenIndex)) {
+      const normalizedToken = normalizeDictionaryText(token);
       for (const id of candidateIds) {
-        if (!entryIds.has(id)) {
+        const forms = entryTokenFormsMap.get(id);
+        if (!forms) {
           throw new Error(`[Dictionary] Token index "${token}" references unknown entry ID ${id}`);
+        }
+        if (!forms.has(normalizedToken)) {
+          throw new Error(
+            `[Dictionary] Token index "${token}" references entry ${id} which does not contain token form`
+          );
         }
       }
     }

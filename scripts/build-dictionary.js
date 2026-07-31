@@ -104,17 +104,27 @@ function linguisticShape(raw, dictionaryId = null) {
   });
 }
 
+function compatibleField(left, right) {
+  if (left === null || left === undefined) return true;
+  if (right === null || right === undefined) return true;
+  return left === right;
+}
+
 function compatibleLexeme(left, right) {
   return (
-    left.partOfSpeech === right.partOfSpeech &&
-    left.verbClass === right.verbClass &&
-    left.adjectiveClass === right.adjectiveClass
+    compatibleField(left.partOfSpeech, right.partOfSpeech) &&
+    compatibleField(left.verbClass, right.verbClass) &&
+    compatibleField(left.adjectiveClass, right.adjectiveClass)
   );
 }
 
 function mergeEntries(left, right) {
   return normalizeDictionaryEntry({
     ...left,
+    partOfSpeech: left.partOfSpeech || right.partOfSpeech || null,
+    verbClass: left.verbClass || right.verbClass || null,
+    adjectiveClass: left.adjectiveClass || right.adjectiveClass || null,
+    transitivity: left.transitivity || right.transitivity || null,
     meanings: uniqueStrings([left.meanings, right.meanings]),
     tokenForms: uniqueStrings([left.tokenForms, right.tokenForms]),
     semanticTags: uniqueStrings([left.semanticTags, right.semanticTags]),
@@ -201,9 +211,19 @@ export async function buildDictionary(options = {}) {
   const entries = new Map();
   const sourceMap = new Map(); // localId -> entry.id
   const aliases = {};
+  const aliasTargets = new Map();
   const references = [];
   const collisions = [];
   let duplicateOccurrences = 0;
+
+  function registerAlias(aliasKey, targetId) {
+    if (!aliasKey || !targetId) return;
+    if (!aliasTargets.has(aliasKey)) {
+      aliasTargets.set(aliasKey, new Set());
+    }
+    aliasTargets.get(aliasKey).add(targetId);
+    aliases[aliasKey] = targetId;
+  }
 
   // 1. Process source dataset entries
   for (const rawWord of sourceDataset.entries || []) {
@@ -247,12 +267,12 @@ export async function buildDictionary(options = {}) {
 
     // Global aliases: legacy lexeme ID, old hiragana ID, and dictionaryId itself
     if (rawWord.lexemeId && rawWord.lexemeId !== '__none' && rawWord.lexemeId !== dictionaryId) {
-      aliases[rawWord.lexemeId] = dictionaryId;
+      registerAlias(rawWord.lexemeId, dictionaryId);
     }
     if (rawWord.writtenForm && rawWord.writtenForm !== candidate.dictionaryForm) {
       const legacyHiraganaId = `jp-word:${normalizeDictionaryText(rawWord.writtenForm)}:${candidate.reading}`;
       if (legacyHiraganaId !== dictionaryId) {
-        aliases[legacyHiraganaId] = dictionaryId;
+        registerAlias(legacyHiraganaId, dictionaryId);
       }
     }
   }
@@ -282,7 +302,7 @@ export async function buildDictionary(options = {}) {
       references.push(reference);
 
       // Safe global alias: namespaced full course reference ID -> dictionaryId
-      aliases[reference.id] = dictionaryId;
+      registerAlias(reference.id, dictionaryId);
     }
 
     lesson.vocabulary = nextReferences;
@@ -301,7 +321,22 @@ export async function buildDictionary(options = {}) {
         `[Dictionary] Course alias ${legacyLocalId} targets unknown ${canonicalLocalId}`
       );
     }
-    aliases[namespacedLegacy] = target;
+    registerAlias(namespacedLegacy, target);
+  }
+
+  const aliasCollisions = [];
+  for (const [aliasKey, targets] of aliasTargets.entries()) {
+    if (targets.size > 1) {
+      aliasCollisions.push({ aliasKey, targets: Array.from(targets) });
+    }
+  }
+  if (aliasCollisions.length > 0) {
+    const details = aliasCollisions
+      .map((c) => `  "${c.aliasKey}" -> [${c.targets.join(', ')}]`)
+      .join('\n');
+    throw new Error(
+      `[Dictionary] Alias collision error: single legacy alias registered for multiple canonical dictionary IDs:\n${details}`
+    );
   }
 
   const sortedEntries = [...entries.values()].sort((left, right) =>

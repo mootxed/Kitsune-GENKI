@@ -126,4 +126,39 @@ describe('IndexedDB review_log migration v16', () => {
     const secondRunLogs = await getReviewLogsForCard(globalId);
     expect(secondRunLogs.length).toBe(1);
   });
+
+  it('migrates active_session even when review_log is completely empty and writes migration marker', async () => {
+    const database = await initializeDB();
+
+    const activeSessionRecord = {
+      id: 'current',
+      queue: ['L1_V023', 'L1_V023::recall'],
+      currentCardId: 'L1_V023',
+    };
+
+    if (typeof database.putRecord === 'function') {
+      await database.clear(STORES.REVIEW_LOG);
+      await database.putRecord(STORES.ACTIVE_SESSION, activeSessionRecord);
+      await database.delete(STORES.APP_STATE, 'review_log_migration_v16');
+
+      await database.runReviewLogMigration();
+
+      const migratedSession = await database.get(STORES.ACTIVE_SESSION, 'current');
+      const expectedGlobalId = 'jp-word:学生:がくせい';
+      expect(migratedSession.queue).toEqual([expectedGlobalId, `${expectedGlobalId}::recall`]);
+      expect(migratedSession.currentCardId).toBe(expectedGlobalId);
+
+      const marker = await database.get(STORES.APP_STATE, 'review_log_migration_v16');
+      expect(marker).toBeTruthy();
+      expect(marker.value).toBe(true);
+
+      // Subsequent migration call should do nothing
+      await database.runReviewLogMigration();
+      const sessionAfterSecondRun = await database.get(STORES.ACTIVE_SESSION, 'current');
+      expect(sessionAfterSecondRun.queue).toEqual([
+        expectedGlobalId,
+        `${expectedGlobalId}::recall`,
+      ]);
+    }
+  });
 });
