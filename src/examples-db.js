@@ -80,6 +80,9 @@ export class ExamplesDBClass {
     targetLexemeIds = null,
     id = null,
     scope = null,
+    storyId = null,
+    sentenceId = null,
+    tokens = null,
   }) {
     if (!japanese || !japanese.trim()) return;
     const trimmedJp = japanese.trim();
@@ -96,6 +99,9 @@ export class ExamplesDBClass {
         );
       }
       if (id && !existing.id) existing.id = id;
+      if (storyId && !existing.storyId) existing.storyId = storyId;
+      if (sentenceId && !existing.sentenceId) existing.sentenceId = sentenceId;
+      if (tokens && !existing.tokens) existing.tokens = tokens;
       return;
     }
     this.rawSentences.push({
@@ -109,6 +115,9 @@ export class ExamplesDBClass {
       requiredForm,
       targetLexemeIds: Array.isArray(targetLexemeIds) ? targetLexemeIds : null,
       scope: resolvedScope,
+      storyId: storyId || null,
+      sentenceId: sentenceId || null,
+      tokens: tokens || null,
     });
   }
 
@@ -192,10 +201,19 @@ export class ExamplesDBClass {
   registerStory(storyData) {
     if (!storyData || !storyData.content) return;
     const lessonId = canonicalLessonId(storyData.lessonId || storyData.lesson_id || storyData.id);
+    const rawStoryId = storyData.storyId || storyData.id;
+    const storyId = rawStoryId
+      ? String(rawStoryId).includes(':')
+        ? String(rawStoryId)
+        : storyData.courseId
+          ? `${storyData.courseId}:story:${rawStoryId}`
+          : String(rawStoryId)
+      : null;
 
     for (const item of storyData.content) {
       if (!item.tokens) continue;
 
+      const sentenceId = item.sentence_id ?? item.sentenceId;
       // Сборка предложения из токенов
       const japanese = item.tokens.map((t) => t.surface || t.kanji || t.writing || '').join('');
       const reading = item.tokens
@@ -203,9 +221,10 @@ export class ExamplesDBClass {
         .join('');
       const translation = item.translation || '';
       const tokenLexemes = item.tokens
-        .map((t) =>
-          resolveDictionaryAlias(t.dictionaryId || t.knowledgeItemId || t.lexemeId || t.wordId)
-        )
+        .map((t) => {
+          const rawId = t.dictionaryId || t.knowledgeItemId || t.lexemeId || t.wordId;
+          return resolveDictionaryAlias(rawId) || rawId;
+        })
         .filter(Boolean);
 
       this.addRawSentence({
@@ -214,6 +233,9 @@ export class ExamplesDBClass {
         translation,
         sourceLessonId: lessonId,
         source: 'story',
+        storyId,
+        sentenceId,
+        tokens: item.tokens,
         targetLexemeIds: tokenLexemes.length > 0 ? tokenLexemes : null,
       });
     }
@@ -446,15 +468,19 @@ export class ExamplesDBClass {
 
       if (raw.targetLexemeIds && raw.targetLexemeIds.length > 0) {
         const targetDictionaryIds = [
-          ...new Set(raw.targetLexemeIds.map(resolveDictionaryAlias)),
+          ...new Set(raw.targetLexemeIds.map((id) => resolveDictionaryAlias(id) || id)),
         ].filter(Boolean);
 
         for (const dictionaryId of targetDictionaryIds) {
           const matchedWords = allVocab.filter(
             (word) =>
-              resolveDictionaryAlias(
+              (resolveDictionaryAlias(
                 word.dictionaryId || word.knowledgeItemId || word.lexemeId || word.id
-              ) === dictionaryId
+              ) ||
+                word.dictionaryId ||
+                word.knowledgeItemId ||
+                word.lexemeId ||
+                word.id) === dictionaryId
           );
 
           const vocabularyIds = matchedWords.map((w) => w.id);
@@ -477,6 +503,11 @@ export class ExamplesDBClass {
           if (seen.has(dupKey)) continue;
           seen.add(dupKey);
 
+          const matchedToken = (raw.tokens || []).find((t) => {
+            const tId = t.dictionaryId || t.knowledgeItemId || t.lexemeId || t.wordId;
+            return (resolveDictionaryAlias(tId) || tId) === dictionaryId;
+          });
+
           const example = {
             id: raw.id || `ex-${idCounter++}`,
             dictionaryId,
@@ -489,6 +520,9 @@ export class ExamplesDBClass {
             grammarIds: matchedParticles,
             vocabularyIds,
             source: raw.source,
+            storyId: raw.storyId || null,
+            sentenceId: raw.sentenceId || null,
+            tokenId: matchedToken?.id || null,
             acceptedAnswers: raw.acceptedAnswers,
             requiredForm: raw.requiredForm,
           };
@@ -542,6 +576,9 @@ export class ExamplesDBClass {
             grammarIds: matchedParticles,
             vocabularyIds,
             source: raw.source,
+            storyId: raw.storyId || null,
+            sentenceId: raw.sentenceId || null,
+            tokenId: null,
             acceptedAnswers: raw.acceptedAnswers,
             requiredForm: raw.requiredForm,
           };

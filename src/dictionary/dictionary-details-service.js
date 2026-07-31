@@ -259,7 +259,7 @@ export function getDictionaryDetails({
   // 7. Lessons (from DictionaryRelationsIndex / DictionaryStore course references)
   let lessons = [];
   const refs = relationsIndex
-    ? relationsIndex.getLessonReferences(canonical, dictionaryStore)
+    ? relationsIndex.getLessonReferences(canonical, dictionaryStore, state)
     : dictionaryStore
       ? dictionaryStore.findCourseReferencesForDictionary(canonical)
       : [];
@@ -341,8 +341,8 @@ function _getCurrentLesson(state, activeCourseId) {
       continue;
     }
 
-    // Extract lesson number from lessonId (e.g. 'lesson-3' → 3)
-    const match = String(lessonId).match(/(\d+)/);
+    // Extract lesson number from lessonId (e.g. 'genki-1:lesson-12' → 12)
+    const match = String(lessonId).match(/lesson-(\d+)$/i) || String(lessonId).match(/^(\d+)$/);
     if (match) {
       const n = parseInt(match[1], 10);
       if (n > maxLesson) {

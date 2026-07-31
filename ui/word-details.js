@@ -342,11 +342,23 @@ function renderExamples(examples) {
           : isAi
             ? '🤖 AI'
             : '❓ Неизвестно';
+      const storyLink =
+        isStory && (ex.storyId || ex.sourceLessonId)
+          ? `<button class="word-story-link-btn btn-ghost btn-sm"
+              data-story-id="${escapeHtml(ex.storyId || ex.sourceLessonId || '')}"
+              data-sentence-id="${escapeHtml(ex.sentenceId || '')}"
+              data-token-id="${escapeHtml(ex.tokenId || '')}">
+              Открыть в истории 📖
+            </button>`
+          : '';
       return `
     <div class="word-example">
       <p class="word-example-jp" lang="ja">${escapeHtml(ex.sentence)}</p>
       ${ex.translation ? `<p class="word-example-trans">${escapeHtml(ex.translation)}</p>` : ''}
-      <span class="word-example-source">${sourceLabel}</span>
+      <div class="word-example-footer">
+        <span class="word-example-source">${sourceLabel}</span>
+        ${storyLink}
+      </div>
     </div>`;
     })
     .join('<hr class="word-example-divider">');
@@ -371,17 +383,29 @@ function renderLessons(lessons) {
       </section>`;
   }
 
+  const STATUS_LABELS = {
+    completed: '✓ Пройден',
+    in_progress: '⏳ В процессе',
+    'in-progress': '⏳ В процессе',
+    available: 'Доступен',
+    locked: '🔒 Заблокирован',
+  };
+
   const lessonHtml = lessons
-    .map(
-      (l) => `
+    .map((l) => {
+      const statusLabel = STATUS_LABELS[l.status] || STATUS_LABELS.available;
+      const countLabel =
+        l.occurrenceCount && l.occurrenceCount > 1 ? ` (${l.occurrenceCount})` : '';
+      return `
     <button class="word-lesson-item-btn btn-ghost ${l.isActiveCourse ? 'word-lesson-item--active' : ''}"
       data-lesson-id="${escapeHtml(l.lessonId || l.introducedIn || '')}"
       data-course-id="${escapeHtml(l.courseId || '')}">
       <span class="word-lesson-course">${escapeHtml(l.courseId)}</span>
-      <span class="word-lesson-id">${escapeHtml(l.introduced ? `Впервые: ${l.introducedIn || l.lessonId}` : `Также встречается: урок ${l.lessonId}`)}</span>
+      <span class="word-lesson-id">${escapeHtml(l.introduced ? `Впервые: ${l.introducedIn || l.lessonId}` : `Также встречается: урок ${l.lessonId}`)}${countLabel}</span>
+      <span class="word-lesson-status badge badge-sm ${l.status === 'completed' ? 'badge-success' : l.status?.includes('progress') ? 'badge-info' : ''}">${escapeHtml(statusLabel)}</span>
       ${l.courseMeaning ? `<span class="word-lesson-meaning">${escapeHtml(l.courseMeaning)}</span>` : ''}
-    </button>`
-    )
+    </button>`;
+    })
     .join('');
 
   return `
@@ -490,7 +514,7 @@ function renderError(message) {
 // ---------------------------------------------------------------------------
 
 function setupStoryNavigation(container, nav) {
-  container.querySelectorAll('.word-story-open-btn').forEach((btn) => {
+  container.querySelectorAll('.word-story-open-btn, .word-story-link-btn').forEach((btn) => {
     btn.onclick = () => {
       const storyId = btn.dataset.storyId;
       const lessonId = btn.dataset.lessonId || undefined;
@@ -547,28 +571,49 @@ export async function renderWordDetails(state, dependencies, options = {}, conte
 
     // Build story occurrence index from saved notes and built-in stories (if not already built)
     if (!storyOccurrenceIndex.isBuilt) {
+      const activeCourseId = state?.activeCourseId || 'genki-1';
       const savedNotes = state?.savedNotes || [];
       const descriptors = savedNotesToStoryDescriptors(savedNotes);
 
       try {
-        const activeCourseId = state?.activeCourseId || 'genki-1';
         const contentIndex = await loadContentIndex(activeCourseId);
+        if (signal?.aborted || (state?.activeCourseId && state.activeCourseId !== activeCourseId))
+          return;
+
         const chapters = contentIndex?.chapters || [];
         for (const chapter of chapters) {
+          if (signal?.aborted || (state?.activeCourseId && state.activeCourseId !== activeCourseId))
+            return;
           if (!chapter || (!chapter.story && !chapter.storyMeta)) continue;
           try {
             const lessonId = chapter.id;
             const { story } = await loadChapterData(lessonId, activeCourseId);
+            if (
+              signal?.aborted ||
+              (state?.activeCourseId && state.activeCourseId !== activeCourseId)
+            )
+              return;
+
             if (story) {
               let storyToResolve = story;
+              const builtinStoryId = String(story.storyId || story.id || '').includes(':')
+                ? String(story.storyId || story.id)
+                : `${activeCourseId}:story:${story.storyId || story.id}`;
+
               try {
                 const resolved = await resolveStoryTokens({
                   story,
+                  storyId: builtinStoryId,
                   dictionaryStore: dictStore,
                   activeCourseId,
                   disableAiFallback: true,
                   aiLexicalProvider: null,
                 });
+                if (
+                  signal?.aborted ||
+                  (state?.activeCourseId && state.activeCourseId !== activeCourseId)
+                )
+                  return;
                 storyToResolve = resolved.story || story;
               } catch (resolveErr) {
                 console.warn(
@@ -586,7 +631,12 @@ export async function renderWordDetails(state, dependencies, options = {}, conte
         // ignore failure if course content index unavailable
       }
 
-      storyOccurrenceIndex.build(descriptors, { dictionaryStore: dictStore });
+      if (signal?.aborted || (state?.activeCourseId && state.activeCourseId !== activeCourseId))
+        return;
+      storyOccurrenceIndex.build(descriptors, {
+        dictionaryStore: dictStore,
+        courseId: state?.activeCourseId || 'genki-1',
+      });
     }
 
     // Build TokenOccurrence context from options (if opened from a token click)

@@ -527,6 +527,7 @@ export async function ensureLesson(id) {
   }
   ExamplesDB.rebuildIndex();
   dictionaryRelationsIndex.buildExampleIndex(ExamplesDB, dictionaryStore);
+  dictionaryRelationsIndex.invalidateLessons();
 
   if (!LESSONS.some((l) => l.id === id)) {
     LESSONS.push(normalized);

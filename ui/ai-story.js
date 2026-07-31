@@ -538,6 +538,7 @@ export function renderAIStory(state, dependencies) {
         st.savedNotes.unshift({
           id: `ai_story_note:${storyId}`,
           sourceStoryId: storyId,
+          courseId: st.activeCourseId || 'genki-1',
           title: `✨ AI-История: ${title}`,
           content: fullStoryText,
           story: sentences,

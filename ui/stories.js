@@ -571,7 +571,7 @@ export function closeWordBottomSheet() {
  */
 export async function renderStoryRoute(state, dependencies, options = {}, context = {}) {
   const signal = context?.signal;
-  const storyId = options?.storyId;
+  const storyId = String(options?.storyId ?? '');
   const navFn = dependencies?.nav || window.nav || (() => {});
 
   if (!storyId) {

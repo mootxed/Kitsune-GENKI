@@ -42,6 +42,7 @@ import {
 import { isPracticeTaskEnabled } from '../src/practice-tasks.js';
 import { getOrGenerateDailyPlan } from '../src/daily-plan.js';
 import { openGrammarLesson } from './grammar-lesson.js';
+import { resolveGrammarTopicId } from '../src/dictionary/dictionary-relations-index.js';
 
 // ---------- Render: Chapter ----------
 export async function renderChapter(id, state, dependencies, context = {}, options = {}) {
@@ -547,11 +548,22 @@ export async function renderChapter(id, state, dependencies, context = {}, optio
   const focusGrammarId = opts.focusGrammarId || opts.grammarId;
   if (focusGrammarId) {
     setTimeout(() => {
+      const resolvedTopicId = resolveGrammarTopicId(focusGrammarId);
       const safeGrammarId =
         typeof window !== 'undefined' && window.CSS && typeof window.CSS.escape === 'function'
           ? window.CSS.escape(String(focusGrammarId))
           : String(focusGrammarId);
+      const safeTopicId =
+        resolvedTopicId &&
+        typeof window !== 'undefined' &&
+        window.CSS &&
+        typeof window.CSS.escape === 'function'
+          ? window.CSS.escape(String(resolvedTopicId))
+          : String(resolvedTopicId || '');
+
       const targetEl =
+        (safeTopicId && document.querySelector(`[data-check="${safeTopicId}"]`)) ||
+        (safeTopicId && document.querySelector(`[data-grammar-id="${safeTopicId}"]`)) ||
         document.querySelector(`[data-check="${safeGrammarId}"]`) ||
         document.querySelector(`[data-grammar-id="${safeGrammarId}"]`);
       if (targetEl) {

@@ -72,13 +72,41 @@ export function normalizeExampleSource(source) {
 // Type-based grammar rules
 // ---------------------------------------------------------------------------
 
+export const GRAMMAR_REGISTRY = [
+  {
+    grammarId: 'polite-present',
+    courseId: 'genki-1',
+    lessonId: 'genki-1:lesson-3',
+    topicId: 'L3_g1',
+  },
+  {
+    grammarId: 'polite-negative',
+    courseId: 'genki-1',
+    lessonId: 'genki-1:lesson-3',
+    topicId: 'L3_g1',
+  },
+  { grammarId: 'polite-past', courseId: 'genki-1', lessonId: 'genki-1:lesson-3', topicId: 'L3_g1' },
+  { grammarId: 'te-form', courseId: 'genki-1', lessonId: 'genki-1:lesson-6', topicId: 'L6_g1' },
+  { grammarId: 'tai-form', courseId: 'genki-1', lessonId: 'genki-1:lesson-11', topicId: 'L11_g1' },
+  { grammarId: 'i-adjective', courseId: 'genki-1', lessonId: 'genki-1:lesson-5', topicId: 'L5_g1' },
+  {
+    grammarId: 'na-adjective',
+    courseId: 'genki-1',
+    lessonId: 'genki-1:lesson-5',
+    topicId: 'L5_g2',
+  },
+];
+
+export function resolveGrammarTopicId(grammarId) {
+  if (!grammarId) return null;
+  const match = GRAMMAR_REGISTRY.find((r) => r.grammarId === grammarId || r.topicId === grammarId);
+  return match ? match.topicId : grammarId;
+}
+
 /**
- * Returns grammar topic IDs applicable to the given entry by its word class.
- * These are GENKI I grammar patterns that apply to all words of this type.
- * We don't enumerate them into every DictionaryEntry — instead we compute them.
- *
+ * Get type-based grammar links for an entry (verbs/adjectives).
  * @param {import('./dictionary-contract.js').DictionaryEntry} entry
- * @returns {Array<{grammarId: string, reason: string, linkType: string}>}
+ * @returns {Array<{grammarId: string, topicId?: string, reason: string, linkType: string}>}
  */
 export function getTypeBasedGrammarLinks(entry) {
   if (!entry) return [];
@@ -89,30 +117,35 @@ export function getTypeBasedGrammarLinks(entry) {
     const verbLinks = [
       {
         grammarId: 'polite-present',
+        topicId: 'L3_g1',
         chapterId: '3',
         title: 'ます (Вежливое настоящее)',
         reason: 'Доступно для всех глаголов',
       },
       {
         grammarId: 'polite-negative',
+        topicId: 'L3_g1',
         chapterId: '3',
         title: 'ません (Вежливое отрицательное)',
         reason: 'Доступно для всех глаголов',
       },
       {
         grammarId: 'polite-past',
+        topicId: 'L3_g1',
         chapterId: '3',
         title: 'ました (Вежливое прошедшее)',
         reason: 'Доступно для всех глаголов',
       },
       {
         grammarId: 'te-form',
+        topicId: 'L6_g1',
         chapterId: '6',
         title: 'て-форма',
         reason: 'Доступно для всех глаголов',
       },
       {
         grammarId: 'tai-form',
+        topicId: 'L11_g1',
         chapterId: '11',
         title: 'たいです (Хотеть)',
         reason: 'Доступно для всех глаголов',
@@ -125,6 +158,7 @@ export function getTypeBasedGrammarLinks(entry) {
     if (entry.adjectiveClass === 'i') {
       links.push({
         grammarId: 'i-adjective',
+        topicId: 'L5_g1',
         chapterId: '5',
         title: 'い-прилагательные',
         reason: 'Доступно для い-прилагательных',
@@ -133,6 +167,7 @@ export function getTypeBasedGrammarLinks(entry) {
     } else if (entry.adjectiveClass === 'na') {
       links.push({
         grammarId: 'na-adjective',
+        topicId: 'L5_g2',
         chapterId: '5',
         title: 'な-прилагательные',
         reason: 'Доступно для な-прилагательных',
@@ -297,7 +332,7 @@ export class DictionaryRelationsIndex {
    * @param {import('./dictionary-store.js').DictionaryStore} [dictionaryStore]
    * @returns {LessonReference[]}
    */
-  getLessonReferences(dictionaryId, dictionaryStore = null) {
+  getLessonReferences(dictionaryId, dictionaryStore = null, state = null) {
     if (!dictionaryId) return [];
     const canonical = dictionaryStore?.resolveAlias(dictionaryId) || dictionaryId;
 
@@ -309,7 +344,7 @@ export class DictionaryRelationsIndex {
     // Fallback: build or query store directly
     if (dictionaryStore) {
       if (!this._builtLessons) {
-        this.buildLessonIndex(dictionaryStore);
+        this.buildLessonIndex(dictionaryStore, null, state);
         if (this._lessonIndex.has(canonical)) {
           return this._lessonIndex.get(canonical);
         }

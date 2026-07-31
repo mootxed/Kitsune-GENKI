@@ -38,6 +38,7 @@ import { initTabSync } from './src/tab-sync.js';
 
 // Утилиты
 import { $, $$, todayStr, formatTimeUntilReset } from './src/utils.js';
+import { canonicalLessonId } from './src/courses/course-context.js';
 import {
   XP_PER_LEVEL,
   XP_CARD,
@@ -789,9 +790,9 @@ function setupRouter() {
         typeof options === 'object' && options !== null
           ? options.chapterId || options.lessonId || options.id
           : options;
-      const parsedId = parseInt(rawId, 10);
+      const chapterId = canonicalLessonId(rawId) || rawId || 1;
       return renderChapter(
-        isNaN(parsedId) ? 1 : parsedId,
+        chapterId,
         state,
         dependencies,
         context,

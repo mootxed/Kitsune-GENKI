@@ -9,11 +9,12 @@ import { dictionaryRelationsIndex } from '../src/dictionary/dictionary-relations
 import { renderStoryRoute, renderStoryContent } from '../ui/stories.js';
 import { renderChapter } from '../ui/chapter.js';
 import { canonicalLessonId } from '../src/courses/course-context.js';
+import { resolveStoryTokens } from '../src/ai/story-token-resolver.js';
 
 describe('Builtin Stories, Indexing, and Navigation Fixes', () => {
   let mockState;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     document.body.innerHTML = `
       <div id="app">
         <div id="story-title"></div>
@@ -46,12 +47,13 @@ describe('Builtin Stories, Indexing, and Navigation Fixes', () => {
       },
     };
 
+    await dictionaryStore.ensureLoaded();
     storyOccurrenceIndex.invalidate();
     dictionaryRelationsIndex.invalidate();
   });
 
-  it('1 & 2. resolves built-in story tokens before indexing into StoryOccurrenceIndex', async () => {
-    const storyWithResolvedToken = {
+  it('1. resolves built-in story tokens with resolveStoryTokens before indexing', async () => {
+    const rawStory = {
       id: '3',
       title: 'Встреча в кафе',
       content: [
@@ -63,7 +65,6 @@ describe('Builtin Stories, Indexing, and Navigation Fixes', () => {
               surface: '私',
               reading: 'わたし',
               dictionaryId: 'watashi',
-              resolution: { status: 'resolved' },
               type: 'Word',
             },
           ],
@@ -71,17 +72,78 @@ describe('Builtin Stories, Indexing, and Navigation Fixes', () => {
       ],
     };
 
-    const descriptor = builtinStoryToDescriptor(storyWithResolvedToken, 'genki-1');
+    const builtinStoryId = 'genki-1:story:3';
+    const { story: resolvedStory } = await resolveStoryTokens({
+      story: rawStory,
+      storyId: builtinStoryId,
+      dictionaryStore,
+      activeCourseId: 'genki-1',
+      disableAiFallback: true,
+    });
+
+    const descriptor = builtinStoryToDescriptor(resolvedStory, 'genki-1');
     storyOccurrenceIndex.build([descriptor], { dictionaryStore });
 
     expect(storyOccurrenceIndex.isBuilt).toBe(true);
-    const occurrences = storyOccurrenceIndex.getOccurrences('watashi', dictionaryStore);
+    const targetDictId = resolvedStory.content[0].tokens[0].dictionaryId || 'watashi';
+    const occurrences = storyOccurrenceIndex.getOccurrences(targetDictId, dictionaryStore);
     expect(occurrences.length).toBeGreaterThan(0);
-    expect(occurrences[0].storyId).toBe('genki-1:story:3');
+    expect(occurrences[0].storyId).toBe(builtinStoryId);
     expect(occurrences[0].surface).toBe('私');
+    expect(occurrences[0].tokenId).toBe(resolvedStory.content[0].tokens[0].id);
   });
 
-  it('3. invalidates StoryOccurrenceIndex on course switch', () => {
+  it('2. matches indexed StoryOccurrence.tokenId with rendered data-token-id', async () => {
+    const rawStory = {
+      id: 3,
+      storyId: 3,
+      title: 'Числовая история',
+      content: [
+        {
+          sentence_id: 1,
+          translation: 'Тест токенов.',
+          tokens: [
+            {
+              surface: '私',
+              reading: 'わたし',
+              dictionaryId: 'watashi',
+              type: 'Word',
+            },
+          ],
+        },
+      ],
+    };
+
+    const builtinStoryId = 'genki-1:story:3';
+    const { story: resolvedStory } = await resolveStoryTokens({
+      story: rawStory,
+      storyId: builtinStoryId,
+      dictionaryStore,
+      activeCourseId: 'genki-1',
+      disableAiFallback: true,
+    });
+
+    const descriptor = builtinStoryToDescriptor(resolvedStory, 'genki-1');
+    storyOccurrenceIndex.build([descriptor], { dictionaryStore });
+    const targetDictId = resolvedStory.content[0].tokens[0].dictionaryId || 'watashi';
+    const occurrences = storyOccurrenceIndex.getOccurrences(targetDictId, dictionaryStore);
+
+    expect(occurrences.length).toBe(1);
+    const indexedTokenId = occurrences[0].tokenId;
+
+    await renderStoryContent(resolvedStory, mockState, {}, { storyId: builtinStoryId });
+    const tokenEl = document.querySelector(`[data-token-id="${indexedTokenId}"]`);
+    expect(tokenEl).not.toBeNull();
+    expect(tokenEl.dataset.storyId).toBe(builtinStoryId);
+  });
+
+  it('3. handles numeric storyId in renderStoryRoute without TypeError', async () => {
+    await expect(
+      renderStoryRoute(mockState, {}, { storyId: 3, courseId: 'genki-1' })
+    ).resolves.not.toThrow();
+  });
+
+  it('4. invalidates StoryOccurrenceIndex on course switch', () => {
     storyOccurrenceIndex.build([], { dictionaryStore });
     expect(storyOccurrenceIndex.isBuilt).toBe(true);
 
@@ -89,7 +151,7 @@ describe('Builtin Stories, Indexing, and Navigation Fixes', () => {
     expect(storyOccurrenceIndex.isBuilt).toBe(false);
   });
 
-  it('4. uses source course ID priority for story rendering and token resolution', async () => {
+  it('5. uses source course ID priority for story rendering and token resolution', async () => {
     const storyObj = {
       id: '5',
       courseId: 'genki-2',
@@ -107,7 +169,7 @@ describe('Builtin Stories, Indexing, and Navigation Fixes', () => {
     expect(storyBody.innerHTML).toContain('data-story-id="genki-2:story:5"');
   });
 
-  it('5. fresh AI story tokens include storyId, sentenceId, and form data attributes', async () => {
+  it('6. fresh AI story tokens include storyId, sentenceId, and form data attributes', async () => {
     const aiSentences = [
       {
         speaker: 'Мари',
@@ -143,19 +205,18 @@ describe('Builtin Stories, Indexing, and Navigation Fixes', () => {
 
     await renderStoryRoute(mockState, {}, { storyId: 'ai-story-1' });
     const tokenEl = document.querySelector('[data-token-id="tok-1"]');
-    if (tokenEl) {
-      expect(tokenEl.getAttribute('data-story-id')).toBe('ai-story-1');
-      expect(tokenEl.getAttribute('data-sentence-id')).toBe('101');
-      expect(tokenEl.getAttribute('data-form-tense')).toBe('past');
-      expect(tokenEl.getAttribute('data-form-politeness')).toBe('polite');
-    }
+    expect(tokenEl).not.toBeNull();
+    expect(tokenEl.getAttribute('data-story-id')).toBe('ai-story-1');
+    expect(tokenEl.getAttribute('data-sentence-id')).toBe('101');
+    expect(tokenEl.getAttribute('data-form-tense')).toBe('past');
+    expect(tokenEl.getAttribute('data-form-politeness')).toBe('polite');
   });
 
-  it('6 & 7. renderChapter accepts options and handles focusGrammarId', async () => {
+  it('7. renderChapter accepts options and matches focusGrammarId', async () => {
     const chapterOptions = {
       courseId: 'genki-1',
       chapterId: 3,
-      focusGrammarId: 'genki-1:lesson-3:grammar-1',
+      focusGrammarId: 'te-form',
     };
 
     await renderChapter(3, mockState, {}, {}, chapterOptions);
@@ -183,22 +244,35 @@ describe('Builtin Stories, Indexing, and Navigation Fixes', () => {
     expect(db.examples[0].lessonRequired).toBe(canonicalLessonId('3'));
   });
 
-  it('11. story examples are categorized with origin="story" and display "📖 Из истории"', () => {
-    const rawExamples = [
-      {
-        sentence: '学校に行きます。',
-        translation: 'Иду в школу.',
-        source: 'story',
-        origin: 'story',
-        trustLevel: 'curated',
-      },
-    ];
-
-    const isStory = rawExamples[0].origin === 'story' || rawExamples[0].source === 'story';
-    expect(isStory).toBe(true);
+  it('9. story examples store storyId, sentenceId, and tokenId in ExamplesDB', () => {
+    const db = new ExamplesDBClass();
+    db.registerVocabulary([{ id: 'v1', dictionaryId: 'neko', lessonIds: ['1'] }]);
+    db.registerStory({
+      id: 3,
+      courseId: 'genki-1',
+      lessonId: 3,
+      content: [
+        {
+          sentence_id: 12,
+          translation: 'Кошка срёт',
+          tokens: [
+            {
+              id: 'tok-neko',
+              surface: '猫',
+              dictionaryId: 'neko',
+            },
+          ],
+        },
+      ],
+    });
+    db.rebuildIndex();
+    expect(db.examples.length).toBe(1);
+    expect(db.examples[0].storyId).toBe('genki-1:story:3');
+    expect(db.examples[0].sentenceId).toBe(12);
+    expect(db.examples[0].tokenId).toBe('tok-neko');
   });
 
-  it('14. bottom sheet hides open page button for unresolved or ambiguous tokens', async () => {
+  it('10. bottom sheet hides open page button for unresolved or ambiguous tokens', async () => {
     const { openWordBottomSheet } = await import('../ui/stories.js');
 
     const tokenSpan = document.createElement('span');
