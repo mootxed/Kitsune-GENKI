@@ -41,6 +41,31 @@
  */
 
 // ---------------------------------------------------------------------------
+// Example source normalization
+// ---------------------------------------------------------------------------
+
+/**
+ * Normalize example source.
+ * @param {string} source
+ * @returns {'curated'|'ai'|'unknown'}
+ */
+export function normalizeExampleSource(source) {
+  if (
+    ['curated', 'curated-word', 'global', 'story', 'contextProduction', 'note', 'course'].includes(
+      source
+    )
+  ) {
+    return 'curated';
+  }
+
+  if (['ai', 'ai-story', 'generated'].includes(source)) {
+    return 'ai';
+  }
+
+  return 'unknown';
+}
+
+// ---------------------------------------------------------------------------
 // Type-based grammar rules
 // ---------------------------------------------------------------------------
 

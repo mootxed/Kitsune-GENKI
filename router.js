@@ -26,6 +26,7 @@ const SCREEN_TITLES = {
   'word-search': 'Поиск слов',
   statistics: 'Статистика',
   'user-dictionaries': 'Мои словари',
+  'word-details': 'Детали слова',
 };
 
 export class Router {
@@ -48,6 +49,7 @@ export class Router {
       'word-search',
       'statistics',
       'user-dictionaries',
+      'word-details',
     ];
     this.renderHandlers = {};
     this.navigationId = 0;

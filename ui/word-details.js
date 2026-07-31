@@ -20,6 +20,7 @@
 
 import { dictionaryStore } from '../src/dictionary/dictionary-store.js';
 import { getDictionaryDetails } from '../src/dictionary/dictionary-details-service.js';
+import { dictionaryRelationsIndex } from '../src/dictionary/dictionary-relations-index.js';
 import {
   storyOccurrenceIndex,
   savedNotesToStoryDescriptors,
@@ -281,10 +282,13 @@ function renderGrammarTopics(grammarTopics) {
   const topicsHtml = grammarTopics
     .map(
       (t) => `
-    <div class="word-grammar-topic">
+    <button class="word-grammar-topic-btn btn-ghost"
+      data-grammar-id="${escapeHtml(t.grammarId || t.id || '')}"
+      data-chapter-id="${escapeHtml(t.chapterId || t.lessonId || '')}"
+      aria-label="Открыть грамматику: ${escapeHtml(t.title || t.grammarId)}">
       <span class="word-grammar-topic-title">${escapeHtml(t.title || t.grammarId)}</span>
       ${t.reason ? `<span class="word-grammar-topic-reason">${escapeHtml(t.reason)}</span>` : ''}
-    </div>`
+    </button>`
     )
     .join('');
 
@@ -315,7 +319,7 @@ function renderExamples(examples) {
     <div class="word-example">
       <p class="word-example-jp" lang="ja">${escapeHtml(ex.sentence)}</p>
       ${ex.translation ? `<p class="word-example-trans">${escapeHtml(ex.translation)}</p>` : ''}
-      <span class="word-example-source">${ex.source === 'curated' ? '✓' : '🤖'}</span>
+      <span class="word-example-source">${ex.source === 'curated' || ex.normalizedSource === 'curated' ? '✓ Проверенный пример' : ex.source === 'ai' ? '🤖 AI' : ex.source === 'story' ? '📖 Из истории' : '❓ Неизвестно'}</span>
     </div>`
     )
     .join('<hr class="word-example-divider">');
@@ -343,11 +347,13 @@ function renderLessons(lessons) {
   const lessonHtml = lessons
     .map(
       (l) => `
-    <div class="word-lesson-item ${l.isActiveCourse ? 'word-lesson-item--active' : ''}">
+    <button class="word-lesson-item-btn btn-ghost ${l.isActiveCourse ? 'word-lesson-item--active' : ''}"
+      data-lesson-id="${escapeHtml(l.lessonId || l.introducedIn || '')}"
+      data-course-id="${escapeHtml(l.courseId || '')}">
       <span class="word-lesson-course">${escapeHtml(l.courseId)}</span>
-      <span class="word-lesson-id">${escapeHtml(l.introducedIn || l.lessonId || '—')}</span>
+      <span class="word-lesson-id">${escapeHtml(l.introduced ? `Впервые: ${l.introducedIn || l.lessonId}` : `Также встречается: урок ${l.lessonId}`)}</span>
       ${l.courseMeaning ? `<span class="word-lesson-meaning">${escapeHtml(l.courseMeaning)}</span>` : ''}
-    </div>`
+    </button>`
     )
     .join('');
 
@@ -478,10 +484,11 @@ function setupStoryNavigation(container, nav) {
  * @param {object} dependencies   — { nav, SRS, ... }
  * @param {object} options        — { dictionaryId, tokenId, storyId, sentenceId, surface, contextMeaning }
  */
-export function renderWordDetails(state, dependencies, options = {}) {
+export async function renderWordDetails(state, dependencies, options = {}, context = {}) {
   const body = document.getElementById('word-details-body');
   if (!body) return;
 
+  const signal = context?.signal;
   const navFn = dependencies?.nav || window.nav || (() => {});
   const {
     dictionaryId,
@@ -501,85 +508,102 @@ export function renderWordDetails(state, dependencies, options = {}) {
   // Show skeleton while loading
   body.innerHTML = renderSkeleton();
 
-  // Ensure store is loaded then render
-  dictionaryStore
-    .ensureLoaded()
-    .then(async () => {
-      // Build story occurrence index from saved notes (if not already built)
-      if (!storyOccurrenceIndex.isBuilt) {
-        const savedNotes = state?.savedNotes || [];
-        const descriptors = savedNotesToStoryDescriptors(savedNotes);
-        storyOccurrenceIndex.build(descriptors);
-      }
+  try {
+    await dictionaryStore.ensureLoaded();
+    if (signal?.aborted) return;
 
-      // Build TokenOccurrence context from options (if opened from a token click)
-      let tokenOccurrence = null;
-      if (surface) {
-        tokenOccurrence = {
-          id: tokenId || null,
-          surface,
-          reading: ctxReading || surface,
-          contextMeaning: contextMeaning || null,
-          storyId: storyId || null,
-          sentenceId: sentenceId || null,
-          form: options.form || {},
-          resolution: { status: 'resolved' },
-        };
-      }
+    // Build story occurrence index from saved notes (if not already built)
+    if (!storyOccurrenceIndex.isBuilt) {
+      const savedNotes = state?.savedNotes || [];
+      const descriptors = savedNotesToStoryDescriptors(savedNotes);
+      storyOccurrenceIndex.build(descriptors, { dictionaryStore });
+    }
 
-      // Gather all details
-      let details;
-      try {
-        details = getDictionaryDetails({
-          dictionaryId,
-          tokenOccurrence,
-          activeCourseId: state?.activeCourseId || null,
-          state,
-          dictionaryStore,
-          storyIndex: storyOccurrenceIndex,
-          srs: dependencies?.SRS || null,
-        });
-      } catch (err) {
-        console.error('[WordDetails] Error gathering details:', err);
-        body.innerHTML = renderError(err.message);
-        return;
-      }
+    // Build TokenOccurrence context from options (if opened from a token click)
+    let tokenOccurrence = null;
+    if (surface) {
+      tokenOccurrence = {
+        id: tokenId || null,
+        surface,
+        reading: ctxReading || surface,
+        contextMeaning: contextMeaning || null,
+        storyId: storyId || null,
+        sentenceId: sentenceId || null,
+        form: options.form || {},
+        resolution: { status: 'resolved' },
+      };
+    }
 
-      if (details.status === 'not-found') {
-        body.innerHTML = renderNotFound(dictionaryId);
-        return;
-      }
-
-      const {
-        entry,
-        context,
-        examples,
-        conjugations,
-        grammarTopics,
-        lessons,
-        storyOccurrences,
-        fsrs,
-      } = details;
-
-      // Render all sections
-      body.innerHTML = `
-      <div class="word-details-page">
-        ${renderHeader(entry, context)}
-        ${renderCoreEntry(entry)}
-        ${renderContextForm(context)}
-        ${renderFSRS(fsrs)}
-        ${renderConjugations(conjugations, entry)}
-        ${renderGrammarTopics(grammarTopics)}
-        ${renderExamples(examples)}
-        ${renderLessons(lessons)}
-        ${renderStoryOccurrences(storyOccurrences, navFn)}
-      </div>`;
-
-      // Wire up story navigation buttons
-      setupStoryNavigation(body, navFn);
-    })
-    .catch((err) => {
-      console.error('[WordDetails] Store load error:', err);
-      body.innerHTML = renderError('Не удалось загрузить словарь');
+    // Gather all details
+    const details = getDictionaryDetails({
+      dictionaryId,
+      tokenOccurrence,
+      activeCourseId: state?.activeCourseId || null,
+      state,
+      dictionaryStore,
+      relationsIndex: dictionaryRelationsIndex,
+      storyIndex: storyOccurrenceIndex,
+      srs: dependencies?.SRS || null,
     });
+
+    if (signal?.aborted) return;
+
+    if (details.status === 'not-found') {
+      body.innerHTML = renderNotFound(dictionaryId);
+      return;
+    }
+
+    const {
+      entry,
+      context: tokenCtx,
+      examples,
+      conjugations,
+      grammarTopics,
+      lessons,
+      storyOccurrences,
+      fsrs,
+    } = details;
+
+    // Render all sections
+    body.innerHTML = `
+    <div class="word-details-page">
+      ${renderHeader(entry, tokenCtx)}
+      ${renderCoreEntry(entry)}
+      ${renderContextForm(tokenCtx)}
+      ${renderFSRS(fsrs)}
+      ${renderConjugations(conjugations, entry)}
+      ${renderGrammarTopics(grammarTopics)}
+      ${renderExamples(examples)}
+      ${renderLessons(lessons)}
+      ${renderStoryOccurrences(storyOccurrences, navFn)}
+    </div>`;
+
+    // Wire up story navigation buttons
+    setupStoryNavigation(body, navFn);
+
+    // Wire up grammar buttons
+    body.querySelectorAll('.word-grammar-topic-btn').forEach((btn) => {
+      btn.onclick = () => {
+        const chapterId = btn.dataset.chapterId;
+        const grammarId = btn.dataset.grammarId;
+        if (chapterId) {
+          navFn('chapter', { chapterId, focusGrammarId: grammarId });
+        }
+      };
+    });
+
+    // Wire up lesson buttons
+    body.querySelectorAll('.word-lesson-item-btn').forEach((btn) => {
+      btn.onclick = () => {
+        const lessonId = btn.dataset.lessonId;
+        if (lessonId) {
+          navFn('chapter', { chapterId: lessonId });
+        }
+      };
+    });
+  } catch (err) {
+    if (signal?.aborted) return;
+    console.error('[WordDetails] Error rendering details:', err);
+    body.innerHTML = renderError(err.message || 'Не удалось загрузить словарь');
+  }
 }

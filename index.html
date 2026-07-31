@@ -729,18 +729,28 @@
         class="bottom-sheet"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modal-kanji"
+        aria-labelledby="modal-token-surface"
       >
         <div class="bottom-sheet-backdrop"></div>
         <div class="bottom-sheet-content">
           <div class="bottom-sheet-handle"></div>
           <div class="bottom-sheet-body">
-            <div class="bottom-sheet-header">
-              <h2 id="modal-kanji" class="word-kanji" lang="ja"></h2>
-              <span id="modal-type" class="word-type-badge"></span>
+            <div class="bottom-sheet-token-section">
+              <div class="bottom-sheet-header">
+                <h2 id="modal-token-surface" class="word-kanji" lang="ja"></h2>
+                <h2 id="modal-kanji" class="word-kanji hidden" lang="ja"></h2>
+                <span id="modal-type" class="word-type-badge"></span>
+              </div>
+              <p id="modal-token-reading" class="word-reading" lang="ja"></p>
+              <p id="modal-context-meaning" class="word-translation"></p>
             </div>
-            <p id="modal-reading" class="word-reading" lang="ja"></p>
-            <p id="modal-translation" class="word-translation"></p>
+            <div id="modal-dictionary-section" class="bottom-sheet-dict-section">
+              <h3 id="modal-dictionary-form" class="word-dict-form" lang="ja"></h3>
+              <p id="modal-dictionary-reading" class="word-dict-reading" lang="ja"></p>
+              <p id="modal-reading" class="word-reading hidden" lang="ja"></p>
+              <p id="modal-dictionary-meanings" class="word-dict-meanings"></p>
+              <p id="modal-translation" class="word-translation hidden"></p>
+            </div>
             <p id="modal-source" class="word-source-badge" aria-live="polite"></p>
             <button
               id="btn-open-word-page"

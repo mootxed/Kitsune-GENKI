@@ -24,7 +24,7 @@ export function initRouter(handlers) {
   router.registerRenderHandler('library', handlers.library);
   router.registerRenderHandler('settings', handlers.settings);
   router.registerRenderHandler('plan', handlers.plan);
-  router.registerRenderHandler('story', () => {}); // История рендерится через openStory
+  router.registerRenderHandler('story', handlers.story || (() => {}));
   router.registerRenderHandler('quests', handlers.quests);
   router.registerRenderHandler('ai-story', handlers['ai-story']);
   router.registerRenderHandler('crossword', handlers.crossword);

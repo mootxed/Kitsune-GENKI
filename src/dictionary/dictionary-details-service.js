@@ -19,9 +19,9 @@
  */
 
 import { resolveDictionaryAlias } from './dictionary-store.js';
-import { conjugateVerb } from '../verb-conjugator.js';
+import { conjugateVerb, conjugateAdjective, FORMS_METADATA } from '../verb-conjugator.js';
 import { getDictionaryFSRS } from './dictionary-fsrs-service.js';
-import { getTypeBasedGrammarLinks } from './dictionary-relations-index.js';
+import { getTypeBasedGrammarLinks, normalizeExampleSource } from './dictionary-relations-index.js';
 
 // ---------------------------------------------------------------------------
 // Token form labels (localized to Russian)
@@ -68,21 +68,6 @@ export function localizeTokenForm(form) {
 // Conjugation with lesson visibility
 // ---------------------------------------------------------------------------
 
-const FORM_AVAILABILITY = {
-  dictionary: { lessonUnlocked: 0 },
-  masu: { lessonUnlocked: 3 },
-  masen: { lessonUnlocked: 3 },
-  masenka: { lessonUnlocked: 3 },
-  mashita: { lessonUnlocked: 4 },
-  masendeshita: { lessonUnlocked: 4 },
-  mashou: { lessonUnlocked: 5 },
-  mashouka: { lessonUnlocked: 5 },
-  te: { lessonUnlocked: 6 },
-  nai: { lessonUnlocked: 8 },
-  ta: { lessonUnlocked: 9 },
-  nakatta: { lessonUnlocked: 9 },
-};
-
 /**
  * Get conjugation forms with availability status.
  *
@@ -91,31 +76,47 @@ const FORM_AVAILABILITY = {
  * @returns {Array<{formId, label, kana, kanji, availability: 'learned'|'available'|'future'|'unknown'}>}
  */
 export function getConjugationsWithStatus(entry, currentLesson = null) {
-  if (!entry || entry.partOfSpeech !== 'verb') return [];
-  if (!entry.verbClass) return []; // Unknown class → no conjugations
+  if (!entry) return [];
 
-  const wordForConjugator = {
-    writing: entry.reading, // kana-only writing for conjugator
-    kanji: entry.dictionaryForm,
-    partOfSpeech: 'verb',
-    verbClass: entry.verbClass,
-  };
-
-  let rawForms;
-  try {
-    rawForms = conjugateVerb(wordForConjugator);
-  } catch {
+  let rawForms = [];
+  if (entry.partOfSpeech === 'verb') {
+    if (!entry.verbClass) return [];
+    const wordForConjugator = {
+      writing: entry.reading || entry.dictionaryForm,
+      kanji: entry.dictionaryForm,
+      partOfSpeech: 'verb',
+      verbClass: entry.verbClass,
+    };
+    try {
+      rawForms = conjugateVerb(wordForConjugator);
+    } catch {
+      return [];
+    }
+  } else if (entry.partOfSpeech === 'adjective') {
+    const wordForConjugator = {
+      writing: entry.reading || entry.dictionaryForm,
+      kanji: entry.dictionaryForm,
+      partOfSpeech: 'adjective',
+      adjectiveClass: entry.adjectiveClass || (entry.dictionaryForm.endsWith('い') ? 'i' : 'na'),
+    };
+    try {
+      rawForms = conjugateAdjective(wordForConjugator);
+    } catch {
+      return [];
+    }
+  } else {
     return [];
   }
 
   return rawForms.filter(Boolean).map((form) => {
-    const meta = FORM_AVAILABILITY[form.formId] || { lessonUnlocked: 99 };
+    const meta = FORMS_METADATA[form.formId] || { lessonUnlocked: form.lessonUnlocked || 99 };
+    const lessonUnlocked = form.lessonUnlocked ?? meta.lessonUnlocked;
     let availability = 'unknown';
     if (currentLesson == null) {
       availability = 'unknown';
-    } else if (meta.lessonUnlocked === 0 || currentLesson >= meta.lessonUnlocked) {
+    } else if (lessonUnlocked === 0 || currentLesson >= lessonUnlocked) {
       availability = 'learned';
-    } else if (meta.lessonUnlocked <= (currentLesson || 0) + 2) {
+    } else if (lessonUnlocked <= (currentLesson || 0) + 2) {
       availability = 'available';
     } else {
       availability = 'future';
@@ -125,7 +126,7 @@ export function getConjugationsWithStatus(entry, currentLesson = null) {
       label: form.label,
       kana: form.kana,
       kanji: form.kanji,
-      lessonUnlocked: meta.lessonUnlocked,
+      lessonUnlocked,
       availability,
     };
   });
@@ -235,27 +236,35 @@ export function getDictionaryDetails({
     grammarTopics.push(...explicitLinks);
   }
 
-  // 7. Lessons (from DictionaryStore course references)
+  // 7. Lessons (from DictionaryRelationsIndex / DictionaryStore course references)
   let lessons = [];
-  if (dictionaryStore) {
-    const refs = dictionaryStore.findCourseReferencesForDictionary(canonical);
-    lessons = refs.map((ref) => ({
-      courseId: ref.courseId,
-      lessonId: ref.lessonId || ref.chapterId || ref.introducedIn,
-      introducedIn: ref.introducedIn,
-      courseMeaning: ref.courseMeaning || '',
-      isActiveCourse: ref.courseId === activeCourseId,
-    }));
-    // Active course first
-    lessons.sort((a, b) => {
-      if (a.isActiveCourse && !b.isActiveCourse) return -1;
-      if (!a.isActiveCourse && b.isActiveCourse) return 1;
-      return 0;
-    });
-  }
+  const refs = relationsIndex
+    ? relationsIndex.getLessonReferences(canonical, dictionaryStore)
+    : dictionaryStore
+      ? dictionaryStore.findCourseReferencesForDictionary(canonical)
+      : [];
+
+  lessons = refs.map((ref) => ({
+    courseId: ref.courseId,
+    lessonId: ref.lessonId || ref.chapterId || ref.introducedIn,
+    introducedIn: ref.introducedIn,
+    courseMeaning: ref.courseMeaning || '',
+    introduced: ref.introduced !== undefined ? Boolean(ref.introduced) : true,
+    occurrenceCount: ref.occurrenceCount || 1,
+    sources: ref.sources || ['vocabulary'],
+    status: ref.status || 'available',
+    isActiveCourse: ref.courseId === activeCourseId,
+  }));
+
+  // Active course first
+  lessons.sort((a, b) => {
+    if (a.isActiveCourse && !b.isActiveCourse) return -1;
+    if (!a.isActiveCourse && b.isActiveCourse) return 1;
+    return 0;
+  });
 
   // 8. Story occurrences (from storyIndex)
-  const storyOccurrences = storyIndex ? storyIndex.getOccurrences(canonical) : [];
+  const storyOccurrences = storyIndex ? storyIndex.getOccurrences(canonical, dictionaryStore) : [];
 
   // 9. FSRS summary (read-only, no mutations)
   let fsrs = null;

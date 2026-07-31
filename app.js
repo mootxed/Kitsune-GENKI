@@ -109,7 +109,12 @@ import {
   initSessionBatching,
 } from './ui/flashcards.js';
 import { renderShop, SHOP_ITEMS } from './ui/shop.js';
-import { renderStories, openWordBottomSheet, closeWordBottomSheet } from './ui/stories.js';
+import {
+  renderStories,
+  renderStoryRoute,
+  openWordBottomSheet,
+  closeWordBottomSheet,
+} from './ui/stories.js';
 import { renderSensei, setChatHistory, importReviewExplanationToChat } from './ui/chat.js';
 import { renderSettings } from './ui/settings.js';
 import { renderCrossword } from './ui/crossword.js';
@@ -784,6 +789,7 @@ function setupRouter() {
     profile: (options, context) => renderProfile(state, dependencies, options, context),
     shop: (options, context) => renderShop(state, dependencies, options, context),
     library: (options, context) => renderStories(state, dependencies, options, context),
+    story: (options, context) => renderStoryRoute(state, dependencies, options, context),
     sensei: (options, context) => renderSensei(state, dependencies, options, context),
     settings: (options, context) => renderSettings(state, dependencies, options, context),
     plan: (options, context) => renderPlan(state, dependencies, options, context),

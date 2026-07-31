@@ -197,8 +197,10 @@ export class ExamplesDBClass {
       if (!item.tokens) continue;
 
       // Сборка предложения из токенов
-      const japanese = item.tokens.map((t) => t.kanji || t.writing || '').join('');
-      const reading = item.tokens.map((t) => t.writing || t.kanji || '').join('');
+      const japanese = item.tokens.map((t) => t.surface || t.kanji || t.writing || '').join('');
+      const reading = item.tokens
+        .map((t) => t.reading || t.writing || t.surface || t.kanji || '')
+        .join('');
       const translation = item.translation || '';
       const tokenLexemes = item.tokens
         .map((t) =>

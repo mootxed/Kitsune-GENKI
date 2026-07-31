@@ -145,7 +145,7 @@ export const CourseVocabularyReferenceSchema = z
     introducedIn: NonEmptyText,
     lessonId: NonEmptyText.optional(),
     chapterId: NonEmptyText.optional(),
-    courseMeaning: NonEmptyText,
+    courseMeaning: z.string().trim().max(2_000).default(''),
     tags: z.array(NonEmptyText).max(100).default([]),
     note: OptionalText,
     contextProduction: z.unknown().nullable().default(null),
@@ -228,7 +228,7 @@ export function normalizeCourseVocabularyReference(raw) {
       (typeof raw.meaning === 'string' && raw.meaning.trim()) ||
       (typeof raw.translation === 'string' && raw.translation.trim()) ||
       (Array.isArray(raw.meanings) && raw.meanings[0]) ||
-      'meaning',
+      '',
     tags: raw.tags || [],
     note: raw.note || null,
     contextProduction: raw.contextProduction || raw.context_production || null,

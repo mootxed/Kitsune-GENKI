@@ -1,8 +1,8 @@
 /**
- * Модуль детерминированного спряжения японских глаголов для Kitsune-GENKI.
+ * Модуль детерминированного спряжения японских глаголов и прилагательных для Kitsune-GENKI.
  */
 
-const FORMS_METADATA = {
+export const FORMS_METADATA = {
   dictionary: { label: 'Словарная форма', lessonUnlocked: 3 },
   masu: { label: 'ます-форма (вежливое утвердительное)', lessonUnlocked: 3 },
   masen: { label: 'ません-форма (вежливое отрицательное)', lessonUnlocked: 3 },
@@ -13,7 +13,7 @@ const FORMS_METADATA = {
     lessonUnlocked: 4,
   },
   mashou: { label: 'ましょう-форма (вежливое побудительное)', lessonUnlocked: 5 },
-  mashouka: { label: 'ましょうка-форма (вежливое предложение помощи)', lessonUnlocked: 5 },
+  mashouka: { label: 'ましょうか-форма (вежливое предложение помощи)', lessonUnlocked: 5 },
   te: { label: 'て-форма (деепричастная)', lessonUnlocked: 6 },
   nai: { label: 'ない-форма (простое отрицательное)', lessonUnlocked: 8 },
   ta: { label: 'た-форма (простое прошедшее утвердительное)', lessonUnlocked: 9 },
@@ -237,4 +237,131 @@ export function conjugateVerb(word) {
 
   // Возвращаем упорядоченный список форм согласно FORMS_METADATA
   return Object.keys(FORMS_METADATA).map((id) => result[id]);
+}
+
+/**
+ * Спрягает японское прилагательное (い-прилагательное или な-прилагательное).
+ *
+ * @param {Object} word — { writing, kanji, partOfSpeech: 'adjective', adjectiveClass: 'i'|'na' }
+ * @returns {Array<Object>} Массив структурированных форм.
+ */
+export function conjugateAdjective(word) {
+  if (!word || word.partOfSpeech !== 'adjective') return [];
+
+  const writing = word.writing || word.dictionaryForm || '';
+  const kanji = word.kanji || word.dictionaryForm || writing;
+  const adjClass = word.adjectiveClass || (writing.endsWith('い') ? 'i' : 'na');
+
+  if (adjClass === 'i') {
+    let kanaStem = writing.endsWith('い') ? writing.slice(0, -1) : writing;
+    let kanjiStem = kanji.endsWith('い') ? kanji.slice(0, -1) : kanji;
+
+    // Исключение для いい / 良い
+    if (writing === 'いい' || kanji === '良い') {
+      kanaStem = 'よ';
+      kanjiStem = '良';
+    }
+
+    return [
+      {
+        formId: 'dictionary',
+        label: 'Словарная / Настоящее (простая)',
+        kana: writing,
+        kanji: kanji,
+        lessonUnlocked: 5,
+      },
+      {
+        formId: 'polite_present',
+        label: 'Настоящее утвердительное (вежливая)',
+        kana: writing + 'です',
+        kanji: kanji + 'です',
+        lessonUnlocked: 5,
+      },
+      {
+        formId: 'i_negative',
+        label: 'Настоящее отрицательное (простая)',
+        kana: kanaStem + 'くない',
+        kanji: kanjiStem + 'くない',
+        lessonUnlocked: 5,
+      },
+      {
+        formId: 'polite_negative',
+        label: 'Настоящее отрицательное (вежливая)',
+        kana: kanaStem + 'くないです',
+        kanji: kanjiStem + 'くないです',
+        lessonUnlocked: 5,
+      },
+      {
+        formId: 'i_past',
+        label: 'Прошедшее утвердительное (простая)',
+        kana: kanaStem + 'かった',
+        kanji: kanjiStem + 'かった',
+        lessonUnlocked: 5,
+      },
+      {
+        formId: 'polite_past',
+        label: 'Прошедшее утвердительное (вежливая)',
+        kana: kanaStem + 'かったです',
+        kanji: kanjiStem + 'かったです',
+        lessonUnlocked: 5,
+      },
+      {
+        formId: 'i_past_negative',
+        label: 'Прошедшее отрицательное (простая)',
+        kana: kanaStem + 'くなかった',
+        kanji: kanjiStem + 'くなかった',
+        lessonUnlocked: 5,
+      },
+      {
+        formId: 'polite_past_negative',
+        label: 'Прошедшее отрицательное (вежливая)',
+        kana: kanaStem + 'くなかったです',
+        kanji: kanjiStem + 'くなかったです',
+        lessonUnlocked: 5,
+      },
+    ];
+  } else if (adjClass === 'na') {
+    const baseKana = writing.replace(/（な）|\(な\)|な$/, '');
+    const baseKanji = kanji.replace(/（な）|\(な\)|な$/, '');
+
+    return [
+      {
+        formId: 'dictionary',
+        label: 'Словарная (основа)',
+        kana: baseKana,
+        kanji: baseKanji,
+        lessonUnlocked: 5,
+      },
+      {
+        formId: 'polite_present',
+        label: 'Настоящее утвердительное (вежливая)',
+        kana: baseKana + 'です',
+        kanji: baseKanji + 'です',
+        lessonUnlocked: 5,
+      },
+      {
+        formId: 'polite_negative',
+        label: 'Настоящее отрицательное (вежливая)',
+        kana: baseKana + 'ではありません',
+        kanji: baseKanji + 'ではありません',
+        lessonUnlocked: 5,
+      },
+      {
+        formId: 'polite_past',
+        label: 'Прошедшее утвердительное (вежливая)',
+        kana: baseKana + 'でした',
+        kanji: baseKanji + 'でした',
+        lessonUnlocked: 5,
+      },
+      {
+        formId: 'polite_past_negative',
+        label: 'Прошедшее отрицательное (вежливая)',
+        kana: baseKana + 'ではありませんでした',
+        kanji: baseKanji + 'ではありませんでした',
+        lessonUnlocked: 5,
+      },
+    ];
+  }
+
+  return [];
 }

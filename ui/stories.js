@@ -305,19 +305,17 @@ function renderInteractiveStory(content, storyId = 'story') {
 
   return content
     .map((sentence, sIdx) => {
-      const sentenceId = sentence.sentence_id || sIdx + 1;
+      const sentenceId = sentence.sentence_id ?? sentence.sentenceId ?? sIdx + 1;
       const tokensHtml = (sentence.tokens || [])
-        .map((rawToken, idx) => {
-          const occ = normalizeLegacyStoryToken(rawToken, {
-            storyId,
-            sentenceId,
-            tokenIndex: idx,
-            dictionaryStore,
-          });
-
-          if (occ.resolution.status === 'non-lexical' || rawToken.type === 'Punctuation') {
-            return escapeHtmlLocal(occ.surface);
-          }
+        .map((tok) => {
+          const rawToken = tok || {};
+          const occ = normalizeLegacyStoryToken(
+            {
+              ...rawToken,
+              dictionaryId: rawToken.dictionaryId || rawToken.lexemeId || rawToken.knowledgeItemId,
+            },
+            { storyId, sentenceId }
+          );
 
           const surface = escapeHtmlLocal(occ.surface);
           const reading = escapeHtmlLocal(occ.reading);
@@ -326,15 +324,25 @@ function renderInteractiveStory(content, storyId = 'story') {
           const status = escapeHtmlLocal(occ.resolution.status);
           const tokenId = escapeHtmlLocal(occ.id);
           const posType = escapeHtmlLocal(rawToken.type || 'Word');
+          const tense = escapeHtmlLocal(occ.form?.tense || '');
+          const politeness = escapeHtmlLocal(occ.form?.politeness || '');
+          const polarity = escapeHtmlLocal(occ.form?.polarity || '');
+          const conjugation = escapeHtmlLocal(occ.form?.conjugation || '');
 
           if (reading && reading !== surface) {
             return `<ruby><span class="word-token" 
                   data-token-id="${tokenId}"
+                  data-story-id="${escapeHtmlLocal(storyId || '')}"
+                  data-sentence-id="${escapeHtmlLocal(String(sentenceId))}"
                   data-dictionary-id="${dictionaryId}"
                   data-surface="${surface}"
                   data-reading="${reading}"
                   data-context-meaning="${contextMeaning}"
                   data-resolution-status="${status}"
+                  data-form-tense="${tense}"
+                  data-form-politeness="${politeness}"
+                  data-form-polarity="${polarity}"
+                  data-form-conjugation="${conjugation}"
                   data-kanji="${surface}"
                   data-writing="${reading}"
                   data-translation="${contextMeaning}"
@@ -343,11 +351,17 @@ function renderInteractiveStory(content, storyId = 'story') {
 
           return `<span class="word-token" 
                 data-token-id="${tokenId}"
+                data-story-id="${escapeHtmlLocal(storyId || '')}"
+                data-sentence-id="${escapeHtmlLocal(String(sentenceId))}"
                 data-dictionary-id="${dictionaryId}"
                 data-surface="${surface}"
                 data-reading="${reading}"
                 data-context-meaning="${contextMeaning}"
                 data-resolution-status="${status}"
+                data-form-tense="${tense}"
+                data-form-politeness="${politeness}"
+                data-form-polarity="${polarity}"
+                data-form-conjugation="${conjugation}"
                 data-kanji="${surface}"
                 data-translation="${contextMeaning}"
                 data-type="${posType}">${surface}</span>`;
@@ -355,7 +369,7 @@ function renderInteractiveStory(content, storyId = 'story') {
         .join('');
 
       return `
-      <div class="story-sentence">
+      <div class="story-sentence" data-story-id="${escapeHtmlLocal(storyId || '')}" data-sentence-id="${escapeHtmlLocal(String(sentenceId))}">
         ${sentence.speaker ? `<strong class="speaker">${escapeHtmlLocal(sentence.speaker)}:</strong>` : ''}
         <p class="sentence-jp">${tokensHtml}</p>
         <button class="toggle-translation-btn">Показать перевод</button>
@@ -366,10 +380,14 @@ function renderInteractiveStory(content, storyId = 'story') {
     .join('');
 }
 
+let bottomSheetReturnFocus = null;
+
 // Функция открытия Bottom Sheet для перевода слова
 export function openWordBottomSheet(tokenElement, customStore = null) {
   const sheet = $('#word-bottom-sheet');
   if (!sheet) return;
+
+  bottomSheetReturnFocus = tokenElement || document.activeElement;
 
   const dataset = tokenElement.dataset || {};
   const surface = dataset.surface || dataset.kanji || '';
@@ -377,6 +395,13 @@ export function openWordBottomSheet(tokenElement, customStore = null) {
   const contextMeaning = dataset.contextMeaning || dataset.translation || '';
   const dictionaryId = dataset.dictionaryId || null;
   const resolutionStatus = dataset.resolutionStatus || 'resolved';
+
+  const modalTokenSurface = $('#modal-token-surface');
+  const modalTokenReading = $('#modal-token-reading');
+  const modalContextMeaning = $('#modal-context-meaning');
+  const modalDictForm = $('#modal-dictionary-form');
+  const modalDictReading = $('#modal-dictionary-reading');
+  const modalDictMeanings = $('#modal-dictionary-meanings');
 
   const modalKanji = $('#modal-kanji');
   const modalReading = $('#modal-reading');
@@ -391,6 +416,31 @@ export function openWordBottomSheet(tokenElement, customStore = null) {
     entry = activeStore.getDictionaryEntry(dictionaryId);
   }
 
+  // Token occurrence details
+  if (modalTokenSurface) modalTokenSurface.textContent = surface;
+  if (modalTokenReading) modalTokenReading.textContent = reading !== surface ? reading : '';
+  if (modalContextMeaning) modalContextMeaning.textContent = contextMeaning;
+
+  // Dictionary entry details
+  if (modalDictForm) {
+    if (entry) {
+      modalDictForm.textContent = entry.dictionaryForm;
+    } else if (resolutionStatus === 'missing' || resolutionStatus === 'dangling') {
+      modalDictForm.textContent = 'Словарная запись не найдена';
+    } else if (resolutionStatus === 'ambiguous') {
+      modalDictForm.textContent = 'Не удалось однозначно определить словарную запись';
+    } else {
+      modalDictForm.textContent = '';
+    }
+  }
+
+  if (modalDictReading)
+    modalDictReading.textContent =
+      entry?.reading && entry.reading !== entry.dictionaryForm ? entry.reading : '';
+  if (modalDictMeanings)
+    modalDictMeanings.textContent = entry?.meanings ? entry.meanings.join(', ') : '';
+
+  // Legacy elements support
   if (modalKanji) modalKanji.textContent = entry?.dictionaryForm || surface;
   if (modalReading) {
     const displayReading =
@@ -426,7 +476,9 @@ export function openWordBottomSheet(tokenElement, customStore = null) {
       modalSource.textContent = '✓ Проверенная запись KotoKitsu';
       modalSource.className = 'word-source-badge word-source-badge--curated';
     } else if (entry?.source === 'ai') {
-      modalSource.textContent = '🤖 Создано AI';
+      const confStr =
+        typeof entry.confidence === 'number' ? ` (${Math.round(entry.confidence * 100)}%)` : '';
+      modalSource.textContent = `🤖 Создано AI${confStr}${entry.verified ? ' · Проверено' : ''}`;
       modalSource.className = 'word-source-badge word-source-badge--ai';
     } else {
       modalSource.textContent = '';
@@ -434,11 +486,12 @@ export function openWordBottomSheet(tokenElement, customStore = null) {
     }
   }
 
-  // Show "open word page" button only when dictionaryId is known and status is resolved/ambiguous
+  // Show "open word page" button only when dictionaryId and entry exist and status is resolved/ambiguous
   if (openPageBtn) {
     const canOpen =
       dictionaryId &&
-      (resolutionStatus === 'resolved' || resolutionStatus === 'ambiguous' || !resolutionStatus);
+      entry &&
+      (resolutionStatus === 'resolved' || resolutionStatus === 'ambiguous');
     openPageBtn.hidden = !canOpen;
     if (canOpen) {
       openPageBtn.onclick = () => {
@@ -450,8 +503,14 @@ export function openWordBottomSheet(tokenElement, customStore = null) {
           reading: reading !== surface ? reading : null,
           contextMeaning,
           tokenId: dataset.tokenId || null,
-          storyId: null,
-          sentenceId: null,
+          storyId: dataset.storyId || null,
+          sentenceId: dataset.sentenceId || null,
+          form: {
+            tense: dataset.formTense || null,
+            politeness: dataset.formPoliteness || null,
+            polarity: dataset.formPolarity || null,
+            conjugation: dataset.formConjugation || null,
+          },
         });
       };
     }
@@ -488,6 +547,103 @@ function _posLabel(pos) {
 export function closeWordBottomSheet() {
   const sheet = $('#word-bottom-sheet');
   if (sheet) sheet.classList.remove('active');
+
+  if (bottomSheetReturnFocus && typeof bottomSheetReturnFocus.focus === 'function') {
+    try {
+      bottomSheetReturnFocus.focus();
+    } catch {
+      // ignore focus errors
+    }
+    bottomSheetReturnFocus = null;
+  }
+}
+
+/**
+ * Route handler to navigate to and render a story with optional sentence & token highlight.
+ *
+ * @param {object} state
+ * @param {object} dependencies
+ * @param {object} options — { storyId, sentenceId, tokenId, highlight }
+ * @param {object} [context] — { signal }
+ */
+export async function renderStoryRoute(state, dependencies, options = {}, context = {}) {
+  const signal = context?.signal;
+  const storyId = options?.storyId;
+  const navFn = dependencies?.nav || window.nav || (() => {});
+
+  if (!storyId) {
+    renderStories(state, dependencies);
+    return;
+  }
+
+  // 1. Check if storyId matches a saved note (AI story)
+  const savedNotes = state?.savedNotes || [];
+  const savedNote = savedNotes.find(
+    (n) =>
+      n && (n.id === storyId || n.sourceStoryId === storyId || String(n.id) === String(storyId))
+  );
+
+  let storyToOpen = null;
+  if (savedNote && Array.isArray(savedNote.story)) {
+    storyToOpen = {
+      id: savedNote.id,
+      storyId: savedNote.id,
+      title: savedNote.title || 'История AI',
+      content: savedNote.story,
+      source: 'ai',
+    };
+  } else {
+    // 2. Builtin course story: extract lessonId from storyId or options
+    const lessonId =
+      options.lessonId || storyId.split(':story:')[0] || storyId.split(':')[0] || storyId;
+    try {
+      const { story } = await loadChapterData(lessonId, state?.activeCourseId);
+      if (signal?.aborted) return;
+      if (story) {
+        storyToOpen = story;
+      }
+    } catch (err) {
+      console.warn('[Stories] Could not load story chunk for route:', err);
+    }
+  }
+
+  if (signal?.aborted) return;
+
+  if (!storyToOpen) {
+    renderStories(state, dependencies);
+    return;
+  }
+
+  // 3. Open and render story
+  await openStory(storyToOpen, state, dependencies);
+  if (signal?.aborted) return;
+
+  // 4. Handle sentence scrolling & token highlight
+  const safeCss = (str) =>
+    typeof window !== 'undefined' && window.CSS && typeof window.CSS.escape === 'function'
+      ? window.CSS.escape(String(str))
+      : String(str).replace(/"/g, '\\"');
+  const { sentenceId, tokenId, highlight } = options;
+  if (sentenceId != null) {
+    const sentenceEl = document.querySelector(
+      `.story-sentence[data-sentence-id="${safeCss(sentenceId)}"]`
+    );
+    if (sentenceEl) {
+      if (typeof sentenceEl.scrollIntoView === 'function') {
+        sentenceEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }
+
+  if (tokenId && highlight !== false) {
+    const tokenEl = document.querySelector(`.word-token[data-token-id="${safeCss(tokenId)}"]`);
+    if (tokenEl) {
+      tokenEl.classList.add('word-token-highlighted');
+      setTimeout(() => {
+        tokenEl.classList.remove('word-token-highlighted');
+      }, 3500);
+    }
+  }
 }
 
 // Закрытие по нажатию Escape

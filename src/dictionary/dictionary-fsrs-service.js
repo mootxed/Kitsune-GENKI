@@ -18,6 +18,7 @@
 import { SKILLS, cardsForItem } from '../knowledge-model.js';
 import { calculateMastery } from '../mastery.js';
 import { resolveDictionaryAlias } from './dictionary-store.js';
+import { localDateKey } from '../local-date.js';
 
 /**
  * @typedef {Object} FSRSSummary
@@ -60,7 +61,7 @@ export function getDictionaryFSRS({ dictionaryId, state, srs, now = Date.now() }
   const canonical = resolveDictionaryAlias(dictionaryId) || dictionaryId;
 
   // Collect all SRS cards for this dictionaryId
-  const srsRecords = state.srsRecords || {};
+  const srsRecords = state.srs || state.srsRecords || {};
   const cards = cardsForItem(srsRecords, canonical);
 
   if (cards.length === 0) {
@@ -114,7 +115,7 @@ export function getDictionaryFSRS({ dictionaryId, state, srs, now = Date.now() }
   // Next review: earliest due date among all cards
   const dueTimestamps = cards.map((c) => Number(c.due)).filter((d) => Number.isFinite(d) && d > 0);
   const earliestDue = dueTimestamps.length ? Math.min(...dueTimestamps) : null;
-  const nextReviewDate = earliestDue ? new Date(earliestDue).toISOString().split('T')[0] : null;
+  const nextReviewDate = earliestDue ? localDateKey(earliestDue) : null;
 
   return {
     dictionaryId: canonical,

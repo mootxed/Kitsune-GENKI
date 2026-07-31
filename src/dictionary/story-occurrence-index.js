@@ -51,9 +51,14 @@ export class StoryOccurrenceIndex {
    * Also accepts saved notes from state.savedNotes that have a `story` property.
    *
    * @param {Array<{storyId: string, storyTitle: string, source: string, content: object[]}>} stories
+   * @param {object|import('./dictionary-store.js').DictionaryStore} [options] — options object or dictionaryStore instance
    */
-  build(stories) {
+  build(stories, options = {}) {
     this._index.clear();
+    const dictStore =
+      options?.dictionaryStore ||
+      (options && typeof options.resolveAlias === 'function' ? options : null);
+    this._dictStore = dictStore;
 
     for (const story of stories || []) {
       const { storyId, storyTitle, source, content } = story;
@@ -73,7 +78,10 @@ export class StoryOccurrenceIndex {
           const resolution = token.resolution;
           if (resolution && resolution.status !== 'resolved') continue;
 
-          const canonicalId = resolveDictionaryAlias(rawDictionaryId) || rawDictionaryId;
+          const canonicalId =
+            (dictStore
+              ? dictStore.resolveAlias(rawDictionaryId)
+              : resolveDictionaryAlias(rawDictionaryId)) || rawDictionaryId;
           const surface = token.surface || token.kanji || '';
           if (!surface) continue;
 
@@ -107,13 +115,28 @@ export class StoryOccurrenceIndex {
   }
 
   /**
+   * Ensure index is built; builds if not already built or if forced.
+   * @param {Array} stories
+   * @param {object} [options]
+   */
+  ensureBuilt(stories, options = {}) {
+    if (!this._built || options?.force) {
+      this.build(stories, options);
+    }
+  }
+
+  /**
    * Get all occurrences for a given dictionaryId (after alias resolution).
    * @param {string} dictionaryId
+   * @param {import('./dictionary-store.js').DictionaryStore} [dictionaryStore]
    * @returns {StoryOccurrence[]}
    */
-  getOccurrences(dictionaryId) {
+  getOccurrences(dictionaryId, dictionaryStore = null) {
     if (!dictionaryId) return [];
-    const canonical = resolveDictionaryAlias(dictionaryId) || dictionaryId;
+    const store = dictionaryStore || this._dictStore;
+    const canonical =
+      (store ? store.resolveAlias(dictionaryId) : resolveDictionaryAlias(dictionaryId)) ||
+      dictionaryId;
     return this._index.get(canonical) || [];
   }
 
