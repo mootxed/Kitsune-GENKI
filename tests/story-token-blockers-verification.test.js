@@ -121,11 +121,11 @@ describe('Issue #31 hardiness verification tests', () => {
     expect(res.story[0].tokens[0].dictionaryId).toBeNull();
   });
 
-  it('1. Existing ambiguity does NOT create new AI entry when context resolution fails or confidence is low', async () => {
+  it('1. Existing ambiguity does NOT create new AI entry when AI enrichment returns kana lemma for kanji homonyms', async () => {
     const store = new DictionaryStore({ loader: createMockLoader(), userRepository: null });
-    const initialUserEntriesCount = store.userEntries.size;
 
-    const aiProvider = {
+    // Test A: No context provider supplied
+    const aiProviderNoContext = {
       async enrichUnknownLexemes() {
         return {
           entries: [
@@ -133,17 +133,11 @@ describe('Issue #31 hardiness verification tests', () => {
               tokenKey: 'unknown-1',
               dictionaryForm: 'はし',
               reading: 'はし',
-              meanings: ['неизвестный омоним'],
+              meanings: ['палочки или мост'],
               partOfSpeech: 'noun',
               confidence: 0.9,
             },
           ],
-        };
-      },
-      async resolveAmbiguousToken() {
-        return {
-          selectedDictionaryId: bridgeEntry.id,
-          confidence: 0.5, // Low confidence
         };
       },
     };
@@ -157,16 +151,38 @@ describe('Issue #31 hardiness verification tests', () => {
       },
     ];
 
-    const res = await resolveStoryTokens({
+    const resNoContext = await resolveStoryTokens({
       story,
       dictionaryStore: store,
-      aiLexicalProvider: aiProvider,
+      aiLexicalProvider: aiProviderNoContext,
     });
 
-    expect(res.statistics.generatedEntries).toBe(0);
-    expect(store.userEntries.size).toBe(initialUserEntriesCount);
-    expect(res.story[0].tokens[0].dictionaryId).toBeNull();
-    expect(res.story[0].tokens[0].resolution.status).toBe('ambiguous');
+    expect(resNoContext.story[0].tokens[0].resolution.status).toBe('ambiguous');
+    expect(resNoContext.story[0].tokens[0].dictionaryId).toBeNull();
+    expect(resNoContext.statistics.generatedEntries).toBe(0);
+    expect(store.getDictionaryEntry('user-word:はし:はし')).toBeNull();
+
+    // Test B: Context provider returns low confidence (0.5)
+    const aiProviderLowContext = {
+      ...aiProviderNoContext,
+      async resolveAmbiguousToken() {
+        return {
+          selectedDictionaryId: bridgeEntry.id,
+          confidence: 0.5,
+        };
+      },
+    };
+
+    const resLowContext = await resolveStoryTokens({
+      story,
+      dictionaryStore: store,
+      aiLexicalProvider: aiProviderLowContext,
+    });
+
+    expect(resLowContext.story[0].tokens[0].resolution.status).toBe('ambiguous');
+    expect(resLowContext.story[0].tokens[0].dictionaryId).toBeNull();
+    expect(resLowContext.statistics.generatedEntries).toBe(0);
+    expect(store.getDictionaryEntry('user-word:はし:はし')).toBeNull();
   });
 
   it('2 & 3. Confidence thresholds: confidence < 0.6 is not saved; confidence >= 0.6 is saved', async () => {

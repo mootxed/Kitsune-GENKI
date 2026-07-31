@@ -481,13 +481,20 @@ export async function resolveStoryTokens(options = {}) {
           }
           const item = parsedItem.data;
 
-          // Separate candidates by builtin vs user-ai
-          const curatedCheck = dictionaryStore.findDictionaryCandidatesByToken(item.dictionaryForm);
-          const allCandidates = curatedCheck.candidates || [];
+          const normForm = (item.dictionaryForm || matchingLexeme.surface).normalize('NFKC').trim();
+          const normReading = canonicalHiragana(item.reading || matchingLexeme.reading);
+
+          const tokenCandidates =
+            dictionaryStore.findDictionaryCandidatesByToken(normForm).candidates || [];
+          const readingCandidates =
+            dictionaryStore.findDictionaryCandidatesByReading(normReading).candidates || [];
+
+          const allDiscoveredIds = [...new Set([...tokenCandidates, ...readingCandidates])];
+
           const builtinCandidates = [];
           const userAiCandidates = [];
 
-          for (const cid of allCandidates) {
+          for (const cid of allDiscoveredIds) {
             const centry = dictionaryStore.getDictionaryEntry(cid);
             if (centry) {
               if (centry.source === 'ai' || centry.id.startsWith('user-word:')) {
@@ -498,35 +505,47 @@ export async function resolveStoryTokens(options = {}) {
             }
           }
 
-          const normReading = canonicalHiragana(item.reading);
-          const filterMatching = (cids) =>
-            cids.filter((cid) => {
-              const e = dictionaryStore.getDictionaryEntry(cid);
-              return (
-                e &&
-                e.dictionaryForm === item.dictionaryForm &&
-                canonicalHiragana(e.reading) === normReading
-              );
-            });
+          const discoveredCandidates = [...builtinCandidates, ...userAiCandidates];
+          const hasExistingCandidates = discoveredCandidates.length > 0;
 
-          const matchingBuiltins = filterMatching(builtinCandidates);
-          const matchingUserAi = filterMatching(userAiCandidates);
+          // Candidates with exact lemma and reading match
+          const exactLemmaCandidates = discoveredCandidates.filter((cid) => {
+            const e = dictionaryStore.getDictionaryEntry(cid);
+            return (
+              e &&
+              (e.dictionaryForm === normForm || (e.tokenForms || []).includes(normForm)) &&
+              canonicalHiragana(e.reading) === normReading
+            );
+          });
 
-          const hasExistingCandidates = matchingBuiltins.length > 0 || matchingUserAi.length > 0;
+          // Candidates with compatible reading
+          const readingCompatibleCandidates = discoveredCandidates.filter((cid) => {
+            const e = dictionaryStore.getDictionaryEntry(cid);
+            return (
+              e &&
+              (canonicalHiragana(e.reading) === normReading ||
+                (e.tokenForms || []).includes(normForm))
+            );
+          });
+
+          const candidateSet =
+            exactLemmaCandidates.length > 0
+              ? exactLemmaCandidates
+              : readingCompatibleCandidates.length > 0
+                ? readingCompatibleCandidates
+                : discoveredCandidates;
 
           let assignedId = null;
           let source = 'user-ai';
           let isAmbiguousFailure = false;
 
-          if (matchingBuiltins.length === 1 && matchingUserAi.length === 0) {
-            assignedId = matchingBuiltins[0];
-            source = 'builtin';
-          } else if (matchingBuiltins.length === 0 && matchingUserAi.length === 1) {
-            assignedId = matchingUserAi[0];
-            source = 'user-ai';
+          if (candidateSet.length === 1) {
+            assignedId = candidateSet[0];
+            const entry = dictionaryStore.getDictionaryEntry(assignedId);
+            source =
+              entry?.source === 'ai' || entry?.id?.startsWith('user-word:') ? 'user-ai' : 'builtin';
           } else if (hasExistingCandidates) {
-            // Existing candidates exist, but 1 candidate wasn't picked directly -> run context resolution
-            const candidateSet = [...matchingBuiltins, ...matchingUserAi];
+            // Existing candidates exist (e.g. 橋/箸 for はし) -> MUST NOT create new AI entry!
             if (
               aiLexicalProvider &&
               typeof aiLexicalProvider.resolveAmbiguousToken === 'function'
@@ -568,7 +587,6 @@ export async function resolveStoryTokens(options = {}) {
               }
             }
             if (!assignedId) {
-              // Existing candidates exist, but ambiguity could NOT be resolved confidently -> DO NOT CREATE NEW ENTRY!
               isAmbiguousFailure = true;
             }
           } else {

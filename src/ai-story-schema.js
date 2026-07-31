@@ -139,7 +139,15 @@ export const StoryTokenSchema = z
         const value = (val ?? '').trim();
         return value || null;
       })
-      .pipe(z.string().max(500).nullable()),
+      .pipe(
+        z
+          .string()
+          .max(500)
+          .refine((val) => val === null || /^[a-z0-9_-]+:.+$/i.test(val), {
+            message: 'dictionaryId должен быть формата namespace:id',
+          })
+          .nullable()
+      ),
     sourceToken: z
       .string()
       .nullable()
@@ -149,14 +157,7 @@ export const StoryTokenSchema = z
         return value || null;
       })
       .pipe(z.string().max(100).nullable()),
-    form: z
-      .preprocess((val) => {
-        if (val && typeof val === 'object' && !Array.isArray(val)) {
-          return val;
-        }
-        return null;
-      }, StoryTokenFormSchema.nullable().optional())
-      .default(null),
+    form: StoryTokenFormSchema.nullable().optional().default(null),
   })
   .strip()
   .refine(
