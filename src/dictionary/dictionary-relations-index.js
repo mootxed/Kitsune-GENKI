@@ -88,13 +88,13 @@ export const GRAMMAR_REGISTRY = [
   },
   { grammarId: 'polite-past', courseId: 'genki-1', lessonId: 'genki-1:lesson-4', topicId: 'L4_g6' },
   { grammarId: 'te-form', courseId: 'genki-1', lessonId: 'genki-1:lesson-6', topicId: 'L6_g1' },
-  { grammarId: 'tai-form', courseId: 'genki-1', lessonId: 'genki-1:lesson-11', topicId: 'L11_g1' },
+  { grammarId: 'tai-form', courseId: 'genki-1', lessonId: 'genki-1:lesson-11', topicId: 'L11_g4' },
   { grammarId: 'i-adjective', courseId: 'genki-1', lessonId: 'genki-1:lesson-5', topicId: 'L5_g1' },
   {
     grammarId: 'na-adjective',
     courseId: 'genki-1',
     lessonId: 'genki-1:lesson-5',
-    topicId: 'L5_g2',
+    topicId: 'L5_g1',
   },
 ];
 
@@ -163,7 +163,7 @@ export function getTypeBasedGrammarLinks(entry) {
       },
       {
         grammarId: 'tai-form',
-        topicId: 'L11_g1',
+        topicId: 'L11_g4',
         chapterId: '11',
         lessonId: 'genki-1:lesson-11',
         courseId: 'genki-1',
@@ -189,7 +189,7 @@ export function getTypeBasedGrammarLinks(entry) {
     } else if (entry.adjectiveClass === 'na') {
       links.push({
         grammarId: 'na-adjective',
-        topicId: 'L5_g2',
+        topicId: 'L5_g1',
         chapterId: '5',
         lessonId: 'genki-1:lesson-5',
         courseId: 'genki-1',

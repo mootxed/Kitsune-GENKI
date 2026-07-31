@@ -23,7 +23,7 @@ import {
   isPracticeItemCompleted,
   isBasicVocabularyEvidencePresent,
 } from './chapter-evidence.js';
-import { compareLessonIds, sameLessonId } from './courses/course-context.js';
+import { compareLessonIds, lessonOrdinal, sameLessonId } from './courses/course-context.js';
 
 export {
   normalizedChapterId,
@@ -463,13 +463,45 @@ export function getPriorKnowledgeChapterIds(appState) {
     : [];
 }
 
+function isLessonCompletedInState(appState, lessonRef) {
+  if (!lessonRef) return false;
+  if (typeof lessonRef === 'object') {
+    if (lessonRef.completed || lessonRef.completedAt) return true;
+  }
+  const id = normalizedChapterId(typeof lessonRef === 'object' ? lessonRef.id : lessonRef);
+  if (!id) return false;
+  const chapterState = appState?.chapters?.[id];
+  if (chapterState?.completed || chapterState?.completedAt) return true;
+  return isEffectivelyCompleted(appState, lessonRef);
+}
+
 export function isChapterAvailable(appState, chapters, chapterId) {
   const normalizedId = normalizedChapterId(chapterId);
-  const index = chapters.findIndex((chapter) => sameLessonId(chapter.id, normalizedId));
-  if (index < 0) return false;
-  if (index === 0) return true;
-  const previous = chapters[index - 1];
-  return isEffectivelyCompleted(appState, previous);
+  if (Array.isArray(chapters) && chapters.length > 0) {
+    const index = chapters.findIndex((chapter) => sameLessonId(chapter.id, normalizedId));
+    if (index >= 0) {
+      if (index === 0) return true;
+      const previous = chapters[index - 1];
+      return isLessonCompletedInState(appState, previous);
+    }
+  }
+
+  const ord = lessonOrdinal(normalizedId || chapterId);
+  if (ord <= 0) return true;
+
+  const raw = String(normalizedId || chapterId || '');
+  let prevId = null;
+  if (raw.includes(':lesson-')) {
+    const parts = raw.split(':lesson-');
+    prevId = `${parts[0]}:lesson-${Number(parts[1]) - 1}`;
+  } else if (raw.startsWith('lesson-')) {
+    prevId = `lesson-${Number(raw.replace('lesson-', '')) - 1}`;
+  } else if (/^\d+$/.test(raw)) {
+    prevId = String(Number(raw) - 1);
+  } else {
+    prevId = ord;
+  }
+  return isLessonCompletedInState(appState, prevId);
 }
 
 function segmentIsCompleted(segment, appState, chapters) {
@@ -809,6 +841,7 @@ export function resolveLessonStatus({
   courseId = 'genki-1',
   lessonId = null,
   chapterMeta = null,
+  contentIndex = null,
 } = {}) {
   if (lessonId == null || lessonId === '') return 'available';
 
@@ -869,6 +902,14 @@ export function resolveLessonStatus({
   // 3. Locked
   if (courseProgress?.locked || chapterState?.locked) {
     return 'locked';
+  }
+
+  if (state) {
+    const chaptersList =
+      contentIndex || (typeof window !== 'undefined' ? window.CONTENT_INDEX : null);
+    if (!isChapterAvailable(state, chaptersList, rawId)) {
+      return 'locked';
+    }
   }
 
   return 'available';

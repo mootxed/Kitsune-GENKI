@@ -83,6 +83,7 @@ export class ExamplesDBClass {
     storyId = null,
     sentenceId = null,
     tokens = null,
+    courseId = null,
   }) {
     if (!japanese || !japanese.trim()) return;
     const trimmedJp = japanese.trim();
@@ -99,6 +100,7 @@ export class ExamplesDBClass {
         );
       }
       if (id && !existing.id) existing.id = id;
+      if (courseId && !existing.courseId) existing.courseId = courseId;
       if (storyId && !existing.storyId) existing.storyId = storyId;
       if (sentenceId && !existing.sentenceId) existing.sentenceId = sentenceId;
       if (tokens && !existing.tokens) existing.tokens = tokens;
@@ -106,6 +108,7 @@ export class ExamplesDBClass {
     }
     this.rawSentences.push({
       id: id || null,
+      courseId: courseId || null,
       japanese: trimmedJp,
       reading: reading.trim(),
       translation: translation.trim(),
@@ -227,6 +230,9 @@ export class ExamplesDBClass {
         })
         .filter(Boolean);
 
+      const derivedCourseId =
+        storyData.courseId || (storyId && storyId.includes(':') ? storyId.split(':')[0] : null);
+
       this.addRawSentence({
         japanese,
         reading,
@@ -237,6 +243,7 @@ export class ExamplesDBClass {
         sentenceId,
         tokens: item.tokens,
         targetLexemeIds: tokenLexemes.length > 0 ? tokenLexemes : null,
+        courseId: derivedCourseId,
       });
     }
   }
@@ -515,6 +522,7 @@ export class ExamplesDBClass {
             japanese: raw.japanese,
             reading: raw.reading,
             translation: raw.translation,
+            courseId: raw.courseId || null,
             sourceLessonId,
             lessonRequired,
             grammarIds: matchedParticles,
@@ -571,6 +579,7 @@ export class ExamplesDBClass {
             japanese: raw.japanese,
             reading: raw.reading,
             translation: raw.translation,
+            courseId: raw.courseId || null,
             sourceLessonId,
             lessonRequired,
             grammarIds: matchedParticles,

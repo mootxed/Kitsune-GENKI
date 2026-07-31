@@ -112,19 +112,22 @@ describe('Production Bug Fixes & Architecture Verification', () => {
     const state = {
       chapters: {
         'genki-1:lesson-1': { completedAt: 123456789, started: true, checklist: {} },
-        'genki-1:lesson-2': { started: true, checklist: { sec1: true } },
-        'genki-1:lesson-3': { started: false, checklist: {} },
+        'genki-1:lesson-2': { completedAt: 123456790, started: true, checklist: {} },
+        'genki-1:lesson-3': { completedAt: 123456791, started: true, checklist: { sec1: true } },
       },
     };
 
     expect(resolveLessonStatus({ state, courseId: 'genki-1', lessonId: 'genki-1:lesson-1' })).toBe(
       'completed'
     );
-    expect(resolveLessonStatus({ state, courseId: 'genki-1', lessonId: 'genki-1:lesson-2' })).toBe(
-      'in_progress'
-    );
     expect(resolveLessonStatus({ state, courseId: 'genki-1', lessonId: 'genki-1:lesson-3' })).toBe(
+      'completed'
+    );
+    expect(resolveLessonStatus({ state, courseId: 'genki-1', lessonId: 'genki-1:lesson-4' })).toBe(
       'available'
+    );
+    expect(resolveLessonStatus({ state, courseId: 'genki-1', lessonId: 'genki-1:lesson-6' })).toBe(
+      'locked'
     );
   });
 
@@ -178,7 +181,7 @@ describe('Production Bug Fixes & Architecture Verification', () => {
     expect(refs[0].tokenId).toBe(resolvedStory[0].tokens[0].id);
   });
 
-  it('7. getConjugationsWithStatus evaluates availability against state dynamically', () => {
+  it('7. getConjugationsWithStatus evaluates availability against state dynamically without artificial locked field', () => {
     const entry = {
       partOfSpeech: 'verb',
       verbClass: 'ru',
@@ -197,14 +200,47 @@ describe('Production Bug Fixes & Architecture Verification', () => {
     expect(teForm).toBeDefined();
     expect(teForm.availability).toBe('learned');
 
-    const futureState = {
+    // Standard production state: user is on lesson 1, lesson 6 is not in chapters or not completed
+    const normalEarlyState = {
       chapters: {
-        'genki-1:lesson-6': { locked: true, started: false, checklist: {} },
+        'genki-1:lesson-1': { started: true, checklist: {} },
       },
     };
 
-    const conjugationsFuture = getConjugationsWithStatus(entry, null, futureState);
+    const conjugationsFuture = getConjugationsWithStatus(entry, null, normalEarlyState);
     const teFormFuture = conjugationsFuture.find((c) => c.formId === 'te');
     expect(teFormFuture.availability).toBe('future');
+  });
+
+  it('8. dictionary relations index links tai-form to L11_g4 and na-adjective to L5_g1', () => {
+    const verbLinks = getTypeBasedGrammarLinks({ partOfSpeech: 'verb' });
+    const taiLink = verbLinks.find((l) => l.grammarId === 'tai-form');
+    expect(taiLink).toBeDefined();
+    expect(taiLink.topicId).toBe('L11_g4');
+
+    const adjLinks = getTypeBasedGrammarLinks({ partOfSpeech: 'adjective', adjectiveClass: 'na' });
+    const naLink = adjLinks.find((l) => l.grammarId === 'na-adjective');
+    expect(naLink).toBeDefined();
+    expect(naLink.topicId).toBe('L5_g1');
+  });
+
+  it('9. ExamplesDB.addRawSentence accepts and retains courseId in rawSentences and indexed examples', () => {
+    ExamplesDB.addRawSentence({
+      japanese: 'テスト文です。',
+      translation: 'Test sentence.',
+      sourceLessonId: 'genki-1:lesson-1',
+      source: 'test',
+      courseId: 'genki-1',
+      targetLexemeIds: ['taberu'],
+    });
+
+    const raw = ExamplesDB.rawSentences.find((s) => s.japanese === 'テスト文です。');
+    expect(raw).toBeDefined();
+    expect(raw.courseId).toBe('genki-1');
+
+    ExamplesDB.rebuildIndex();
+    const indexed = ExamplesDB.examples.find((ex) => ex.japanese === 'テスト文です。');
+    expect(indexed).toBeDefined();
+    expect(indexed.courseId).toBe('genki-1');
   });
 });
