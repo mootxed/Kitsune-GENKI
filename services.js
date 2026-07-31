@@ -149,6 +149,18 @@ async function generateAIStory(userPrompt, weakWords, settings, options = {}) {
     throw new Error('API-ключ слишком короткий. Проверьте правильность ключа.');
   }
 
+  const knownWords = (weakWords || []).map((w, idx) => {
+    if (typeof w === 'string') {
+      return { ref: `W${idx + 1}`, dictionaryForm: w, reading: '', meaning: '' };
+    }
+    return {
+      ref: `W${idx + 1}`,
+      dictionaryForm: w.dictionaryForm || w.kanji || '',
+      reading: w.reading || w.kana || '',
+      meaning: w.meaning || '',
+    };
+  });
+
   const systemPrompt = `Ты — профессиональный генератор интерактивных историй для изучения японского языка уровня N5.
 
 КРИТИЧЕСКИ ВАЖНО: Твой ответ должен быть ИСКЛЮЧИТЕЛЬНО валидным JSON без markdown разметки.
@@ -161,7 +173,8 @@ async function generateAIStory(userPrompt, weakWords, settings, options = {}) {
       "sentence_id": 1,
       "speaker": "Имя говорящего",
       "tokens": [
-        { "kanji": "私", "writing": "わたし", "translation": "я", "type": "Pronoun", "dictionaryForm": "私", "dictionaryReading": "わたし", "dictionaryMeaning": "я" },
+        { "kanji": "食べました", "writing": "たべました", "dictionaryRef": "W1", "translation": "поел" },
+        { "kanji": "私", "writing": "わたし", "translation": "я", "type": "Pronoun" },
         { "kanji": "は", "writing": "は", "translation": "(тема)", "type": "Particle" }
       ],
       "translation": "Полный перевод предложения"
@@ -175,7 +188,7 @@ async function generateAIStory(userPrompt, weakWords, settings, options = {}) {
 1. СТИЛЬ "ПОВЕСТВОВАНИЕ" (Рассказ от одного лица):
    - Роль ("speaker") для ВСЕХ предложений должна быть одинаковой — "Рассказчик" или "私".
    - Исключи любые вопросы самому себе (вроде "買いますか？" - "Я куплю?"). Пиши только утверждения: "お菓子も買います。" ("Затем я покупаю еще и сладости.").
-   - Действия других людей описывай от третьего лица: "店員さんが袋를くれます。" ("Продавец дает мне пакет.").
+   - Действия других людей описывай от третьего лица: "店員さんが袋をくれます。" ("Продавец дает мне пакет.").
 
 2. СТИЛЬ "ДИАЛОГ" (Разговор двух персонажей, например, Клиент "私" и Продавец "店員"):
    - Роли в поле "speaker" должны ЧЕТКО меняться в зависимости от того, кто говорит.
@@ -189,10 +202,10 @@ async function generateAIStory(userPrompt, weakWords, settings, options = {}) {
 1. Создай историю (5-10 предложений) на естественном японском языке уровня N5 (вежливая форма ~masu / ~desu).
 2. Перевод на русский ("translation") должен быть живым, художественным и естественным. Избегай дословного "роботизированного" перевода (особенно для частиц вроде も).
 3. Перевод культурных реалий: Переводи "コンビニ" (konbini) как "конбини", "круглосуточный магазин" или "минимаркет" (но никогда не переводи как "удобный магазин").
-4. Для склонённых содержательных слов по возможности добавляй необязательные поля dictionaryForm, dictionaryReading и dictionaryMeaning. Старые четыре поля токена обязательны.
+4. Если слово входит в переданный список известных слов (known words), укажи для него dictionaryRef: "W1", "W2" и т.д. Не генерируй заново словарные данные (dictionaryForm/dictionaryReading/dictionaryMeaning) для слов с dictionaryRef.
 ${
-  weakWords && weakWords.length > 0
-    ? `- ОБЯЗАТЕЛЬНО используй в сюжете эти слова: ${weakWords.map((w, idx) => `${w} (обозначь как dictionaryRef: "W${idx + 1}")`).join(', ')}`
+  knownWords.length > 0
+    ? `\nСписок известных слов для обязательного целевого использования (указывай dictionaryRef):\n${JSON.stringify(knownWords, null, 2)}\n`
     : ''
 }
 
@@ -362,8 +375,15 @@ async function enrichUnknownLexemes(unknownBatch, settings = {}, options = {}) {
     .replace(/```json/gi, '')
     .replace(/```/g, '')
     .trim();
-  const parsed = JSON.parse(cleanedJson);
-  return LexicalEnrichmentResponseSchema.parse(parsed);
+  try {
+    const parsed = JSON.parse(cleanedJson);
+    if (parsed && Array.isArray(parsed.entries)) {
+      return { entries: parsed.entries };
+    }
+  } catch (parseErr) {
+    console.warn('[API] Could not parse enrichUnknownLexemes JSON:', parseErr);
+  }
+  return { entries: [] };
 }
 
 async function resolveAmbiguousToken(params, settings = {}, options = {}) {

@@ -40,10 +40,27 @@ export function getWeakWords(state, limit = 10, lessons = []) {
 
   for (const p of profiles) {
     const w = wordById(p.itemId, lessons);
-    const text = w?.kanji || w?.kana || w?.word || p.itemId;
+    let entry = null;
+    if (dictionaryStore && typeof dictionaryStore.getDictionaryEntry === 'function') {
+      const resolvedId = dictionaryStore.resolveAlias(p.itemId);
+      entry = dictionaryStore.getDictionaryEntry(resolvedId || p.itemId);
+      if (!entry && (w?.kanji || w?.word)) {
+        const cands = dictionaryStore.findDictionaryCandidatesByToken(w.kanji || w.word);
+        if (cands && cands.candidates && cands.candidates.length > 0) {
+          entry = dictionaryStore.getDictionaryEntry(cands.candidates[0]);
+        }
+      }
+    }
+
+    const text = entry?.dictionaryForm || w?.kanji || w?.word || p.itemId;
     if (text && !seen.has(text)) {
       seen.add(text);
-      words.push(text);
+      words.push({
+        dictionaryId: entry?.id || p.itemId || `jp-word:${text}:${w?.kana || text}`,
+        dictionaryForm: text,
+        reading: entry?.reading || w?.kana || text,
+        meaning: entry?.meanings ? entry.meanings.join(', ') : w?.english || w?.meaning || '',
+      });
     }
   }
 
@@ -204,18 +221,28 @@ export function renderAIStory(state, dependencies) {
         const selectedWordRefs = {};
         if (weakWords && weakWords.length > 0) {
           weakWords.forEach((w, idx) => {
-            selectedWordRefs[`W${idx + 1}`] = w;
+            const refKey = `W${idx + 1}`;
+            selectedWordRefs[refKey] = typeof w === 'string' ? w : w.dictionaryId;
           });
         }
+
+        const storyId =
+          (typeof rawOrObject === 'object' && rawOrObject?.meta?.storyId) ||
+          `ai-story-${crypto.randomUUID()}`;
 
         const { story: resolvedStory } = await resolveStoryTokens({
           story: storySentences,
           selectedWordRefs,
           dictionaryStore,
           userDictionaryRepository: deps?.userRepository || null,
-          aiLexicalProvider: API,
+          aiLexicalProvider: {
+            enrichUnknownLexemes: (batch, opts) =>
+              API.enrichUnknownLexemes(batch, st.settings, opts),
+            resolveAmbiguousToken: (params, opts) =>
+              API.resolveAmbiguousToken(params, st.settings, opts),
+          },
           activeCourseId: st?.activeCourseId || null,
-          storyId: `ai-story-${Date.now()}`,
+          storyId,
         });
         storySentences = Array.isArray(resolvedStory)
           ? resolvedStory

@@ -3,24 +3,36 @@ import { z } from 'zod';
 
 export const StoryTokenSchema = z
   .object({
+    surface: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => (val ?? '').trim()),
+    reading: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => (val ?? '').trim()),
     kanji: z
       .string()
       .nullable()
       .optional()
-      .transform((val) => (val ?? '').trim())
-      .pipe(z.string().max(200)),
+      .transform((val) => (val ?? '').trim()),
     writing: z
       .string()
       .nullable()
       .optional()
-      .transform((val) => (val ?? '').trim())
-      .pipe(z.string().max(200)),
+      .transform((val) => (val ?? '').trim()),
     translation: z
       .string()
       .nullable()
       .optional()
-      .transform((val) => (val ?? '').trim())
-      .pipe(z.string().max(500)),
+      .transform((val) => (val ?? '').trim()),
+    contextMeaning: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => (val ?? '').trim()),
     type: z
       .string()
       .nullable()
@@ -28,8 +40,17 @@ export const StoryTokenSchema = z
       .transform((val) => {
         const trimmed = (val ?? '').trim();
         return trimmed.length > 0 ? trimmed : 'Unknown';
-      })
-      .pipe(z.string().max(100)),
+      }),
+    partOfSpeechHint: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => (val ?? '').trim()),
+    lemmaHint: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => (val ?? '').trim()),
     dictionaryForm: z
       .string()
       .nullable()
@@ -65,7 +86,9 @@ export const StoryTokenSchema = z
         const value = (val ?? '').trim();
         return value || null;
       })
-      .pipe(z.string().max(200).nullable()),
+      .refine((val) => val === null || /^W\d+$/i.test(val), {
+        message: 'dictionaryRef должен быть формата W1, W2 и т.д.',
+      }),
     dictionaryId: z
       .string()
       .nullable()
@@ -84,12 +107,19 @@ export const StoryTokenSchema = z
         return value || null;
       })
       .pipe(z.string().max(100).nullable()),
+    form: z.any().optional(),
   })
   .strip()
-  .refine((token) => token.kanji.trim().length > 0 || token.writing.trim().length > 0, {
-    message: 'Токен должен содержать хотя бы одно непустое значение в kanji или writing',
-    path: ['kanji'],
-  });
+  .refine(
+    (token) =>
+      (token.surface && token.surface.length > 0) ||
+      (token.kanji && token.kanji.length > 0) ||
+      (token.writing && token.writing.length > 0),
+    {
+      message: 'Токен должен содержать хотя бы одно непустое значение в surface, kanji или writing',
+      path: ['surface'],
+    }
+  );
 
 export const StorySentenceSchema = z
   .object({

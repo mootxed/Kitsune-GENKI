@@ -456,7 +456,9 @@ async function openStory(story, state, dependencies) {
   if (storyTitle) storyTitle.textContent = story.title;
   if (storyTitleJp) storyTitleJp.textContent = story.titleJP || '';
 
-  const storyId = story.id || story.storyId || 'story';
+  const coursePrefix = state?.activeCourseId || 'genki-1';
+  const rawId = story.id || story.storyId || 'story';
+  const storyId = String(rawId).includes(':') ? String(rawId) : `${coursePrefix}:story:${rawId}`;
   let contentToRender = story.content || [];
 
   try {
