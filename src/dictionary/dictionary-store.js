@@ -281,6 +281,7 @@ export class DictionaryStore {
       : userDictionaryEntryId(input, {
           disambiguator: input.disambiguator || input.senseId,
         });
+    const targetDictId = input.targetDictionaryId || PERSONAL_DICTIONARY_ID;
     const candidate = normalizeDictionaryEntry({
       ...input,
       id,
@@ -288,7 +289,7 @@ export class DictionaryStore {
       source: 'ai',
       confidence: input.confidence ?? 0.5,
       verified: input.verified === true,
-      provenance: { sourceType: 'ai-user' },
+      provenance: input.provenance || { sourceType: 'ai-user' },
     });
     const current = this.userEntries.get(id);
     const entry = deepFreeze(
@@ -306,13 +307,18 @@ export class DictionaryStore {
     );
 
     if (this.userRepository) {
-      let dictionary = await this.userRepository.getDictionary(PERSONAL_DICTIONARY_ID);
+      let dictionary = await this.userRepository.getDictionary(targetDictId);
       if (!dictionary) {
         dictionary = createUserDictionaryModel({
-          id: PERSONAL_DICTIONARY_ID,
-          name: 'Личный словарь',
-          description: 'Слова, добавленные пользователем и AI Сенсеем',
-          kind: 'personal',
+          id: targetDictId,
+          name: targetDictId === 'user-dict:ai-cache' ? 'AI Кэш словаря' : 'Личный словарь',
+          description:
+            targetDictId === 'user-dict:ai-cache'
+              ? 'Системный кэш токенизации историй'
+              : 'Слова, добавленные пользователем и AI Сенсеем',
+          kind: targetDictId === 'user-dict:ai-cache' ? 'ai-cache' : 'personal',
+          sourceType: 'ai',
+          hidden: targetDictId === 'user-dict:ai-cache',
         });
         await this.userRepository.saveDictionary(dictionary);
       }

@@ -6,6 +6,8 @@ import { parseAndValidateAIStory } from '../src/ai-story-parser.js';
 import { getWeakVocabularyItems } from '../src/vocabulary-weakness-service.js';
 import { ensureAIPrivacyDisclosure } from '../src/ai-disclosure.js';
 import { getOpenRouterKey } from '../src/openrouter-key.js';
+import { resolveStoryTokens } from '../src/ai/story-token-resolver.js';
+import { dictionaryStore } from '../src/dictionary/dictionary-store.js';
 
 function escapeHtml(str) {
   if (typeof str !== 'string') return '';
@@ -198,6 +200,20 @@ export function renderAIStory(state, dependencies) {
         throw new Error('Некорректная структура данных в ответе ИИ.');
       }
 
+      try {
+        const { story: resolvedStory } = await resolveStoryTokens({
+          story: storySentences,
+          dictionaryStore,
+          userDictionaryRepository: deps?.userRepository || null,
+          activeCourseId: st?.activeCourseId || null,
+        });
+        storySentences = Array.isArray(resolvedStory)
+          ? resolvedStory
+          : resolvedStory.story || storySentences;
+      } catch (tokenErr) {
+        console.warn('[AIStory] Token resolution warning:', tokenErr);
+      }
+
       // Render valid story directly
       renderStoryContent(storySentences, resultContainer, st, deps);
       toast('✅ История успешно сгенерирована!');
@@ -247,13 +263,17 @@ export function renderAIStory(state, dependencies) {
     `;
 
     sentences.forEach((s, idx) => {
-      const sentenceText = s.tokens.map((t) => t.kanji || t.writing || '').join('');
-      const tokensHtml = s.tokens
+      const sentenceText = (s.tokens || [])
+        .map((t) => t.surface || t.kanji || t.writing || '')
+        .join('');
+      const tokensHtml = (s.tokens || [])
         .map((t) => {
-          const mainText = escapeHtml(t.kanji || t.writing || '');
+          const mainText = escapeHtml(t.surface || t.kanji || t.writing || '');
+          const rawSubText =
+            t.reading || (t.kanji && t.writing && t.kanji !== t.writing ? t.writing : '');
           const subText =
-            t.kanji && t.writing && t.kanji !== t.writing ? escapeHtml(t.writing) : '';
-          const trans = escapeHtml(t.translation || '');
+            rawSubText && rawSubText !== (t.surface || t.kanji) ? escapeHtml(rawSubText) : '';
+          const trans = escapeHtml(t.contextMeaning || t.translation || '');
 
           return `<span class="ai-token" style="display: inline-flex; flex-direction: column; align-items: center; margin: 2px 4px; padding: 2px 4px; background: var(--bg-secondary, rgba(0,0,0,0.04)); border-radius: 4px; vertical-align: bottom;" title="${trans}">
             ${subText ? `<span style="font-size: 10px; color: var(--text-muted);">${subText}</span>` : ''}

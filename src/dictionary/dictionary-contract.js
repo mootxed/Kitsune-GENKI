@@ -24,7 +24,13 @@ const PartOfSpeech = z
 
 export const DictionaryProvenanceSchema = z
   .object({
-    sourceType: z.enum(['kotokitsu-content', 'course-package', 'ai-user']),
+    sourceType: z.enum([
+      'kotokitsu-content',
+      'course-package',
+      'ai-user',
+      'ai-story-token',
+      'ai-story',
+    ]),
     sourceId: z.string().trim().max(500).nullable().optional(),
     contentVersion: z.string().trim().max(100).nullable().optional(),
   })

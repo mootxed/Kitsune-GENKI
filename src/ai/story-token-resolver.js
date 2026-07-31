@@ -1,0 +1,361 @@
+/* src/ai/story-token-resolver.js — Story Token Resolver with Local Lookup & AI Fallback */
+import {
+  normalizeLegacyStoryToken,
+  TokenOccurrenceSchema,
+} from '../dictionary/token-occurrence.js';
+import { LexicalEnrichmentResponseSchema, AmbiguityResolutionResponseSchema } from './schemas.js';
+
+export const AI_DISAMBIGUATION_MIN_CONFIDENCE = 0.75;
+
+export async function resolveStoryTokens(options = {}) {
+  const {
+    story: rawStory,
+    selectedWordRefs = {},
+    sentenceContext = {},
+    dictionaryStore,
+    userDictionaryRepository = null,
+    aiLexicalProvider = null,
+    activeCourseId = null,
+    storyId = `story-${Date.now()}`,
+  } = options;
+
+  if (!dictionaryStore) {
+    throw new Error('[StoryTokenResolver] dictionaryStore is required');
+  }
+
+  await dictionaryStore.ensureLoaded();
+
+  const isStoryObject = rawStory && typeof rawStory === 'object' && Array.isArray(rawStory.story);
+  const sentences = isStoryObject ? rawStory.story : Array.isArray(rawStory) ? rawStory : [];
+
+  const statistics = {
+    totalLexicalTokens: 0,
+    explicitReferenceHits: 0,
+    builtinHits: 0,
+    userAiHits: 0,
+    ambiguousTokens: 0,
+    generatedEntries: 0,
+    unresolvedTokens: 0,
+    lexicalAiCalls: 0,
+  };
+
+  const resolvedSentences = [];
+  const missingLexemeMap = new Map(); // tokenKey -> { tokenKey, surface, reading, sentence, sentenceTranslation, occReferences }
+
+  for (let sIdx = 0; sIdx < sentences.length; sIdx++) {
+    const s = sentences[sIdx];
+    const sentenceId = s.sentence_id || sIdx + 1;
+    const sentenceText = (s.tokens || [])
+      .map((t) => t.kanji || t.writing || t.surface || '')
+      .join('');
+    const sentenceTranslation = s.translation || '';
+
+    const tokens = s.tokens || [];
+    const resolvedTokens = [];
+
+    for (let tIdx = 0; tIdx < tokens.length; tIdx++) {
+      const rawToken = tokens[tIdx];
+      let occ = normalizeLegacyStoryToken(rawToken, {
+        storyId,
+        sentenceId,
+        tokenIndex: tIdx,
+        dictionaryStore,
+      });
+
+      if (occ.resolution.status === 'non-lexical') {
+        resolvedTokens.push(occ);
+        continue;
+      }
+
+      statistics.totalLexicalTokens++;
+
+      // Step 1: Explicit Reference (dictionaryRef: W1)
+      const refKey = rawToken.dictionaryRef || rawToken.sourceToken || rawToken.ref;
+      if (refKey && selectedWordRefs[refKey]) {
+        const explicitId = selectedWordRefs[refKey];
+        const entry = dictionaryStore.getDictionaryEntry(explicitId);
+        if (entry) {
+          occ = TokenOccurrenceSchema.parse({
+            ...occ,
+            dictionaryId: entry.id,
+            resolution: {
+              status: 'resolved',
+              source: 'explicit-reference',
+              confidence: 1,
+            },
+          });
+          statistics.explicitReferenceHits++;
+          resolvedTokens.push(occ);
+          continue;
+        }
+      }
+
+      // Step 2: Direct dictionaryId check
+      if (occ.dictionaryId) {
+        const resolvedId = dictionaryStore.resolveAlias(occ.dictionaryId);
+        const entry = dictionaryStore.getDictionaryEntry(resolvedId);
+        if (entry) {
+          const isUser = entry.source === 'ai' || entry.id.startsWith('user-word:');
+          occ = TokenOccurrenceSchema.parse({
+            ...occ,
+            dictionaryId: entry.id,
+            resolution: {
+              status: 'resolved',
+              source: isUser ? 'user-ai' : 'builtin',
+              confidence: 1,
+            },
+          });
+          if (isUser) statistics.userAiHits++;
+          else statistics.builtinHits++;
+          resolvedTokens.push(occ);
+          continue;
+        }
+      }
+
+      // Step 3 & 4: Lookup in DictionaryStore (curated + user AI cache)
+      const lookup = dictionaryStore.findDictionaryCandidatesByToken(occ.surface);
+      let candidates = lookup.candidates || [];
+
+      if (candidates.length === 0 && occ.reading && occ.reading !== occ.surface) {
+        const readingLookup = dictionaryStore.findDictionaryCandidatesByReading(occ.reading);
+        candidates = readingLookup.candidates || [];
+      }
+
+      if (candidates.length === 1) {
+        const entryId = candidates[0];
+        const entry = dictionaryStore.getDictionaryEntry(entryId);
+        const isUser = entry && (entry.source === 'ai' || entry.id.startsWith('user-word:'));
+        occ = TokenOccurrenceSchema.parse({
+          ...occ,
+          dictionaryId: entryId,
+          resolution: {
+            status: 'resolved',
+            source: isUser ? 'user-ai' : 'builtin',
+            confidence: 1,
+          },
+        });
+        if (isUser) statistics.userAiHits++;
+        else statistics.builtinHits++;
+        resolvedTokens.push(occ);
+        continue;
+      }
+
+      // Step 5: Ambiguity resolution
+      if (candidates.length > 1) {
+        const candidateEntries = candidates
+          .map((id) => dictionaryStore.getDictionaryEntry(id))
+          .filter(Boolean);
+
+        // Local ranking score
+        const scored = candidateEntries.map((entry) => {
+          let score = 0;
+          if (entry.dictionaryForm === occ.surface) score += 3;
+          if (entry.reading === occ.reading) score += 2;
+          if (entry.tokenForms.includes(occ.surface)) score += 1;
+          if (activeCourseId && dictionaryStore.getIntroducedLesson(entry.id, activeCourseId)) {
+            score += 0.5; // active course ranking boost
+          }
+          return { entry, score };
+        });
+
+        scored.sort((a, b) => b.score - a.score);
+
+        const topScore = scored[0].score;
+        const runnerUpScore = scored[1] ? scored[1].score : 0;
+
+        if (topScore >= 3 && topScore - runnerUpScore >= 1.5) {
+          const entry = scored[0].entry;
+          const isUser = entry.source === 'ai' || entry.id.startsWith('user-word:');
+          occ = TokenOccurrenceSchema.parse({
+            ...occ,
+            dictionaryId: entry.id,
+            resolution: {
+              status: 'resolved',
+              source: isUser ? 'user-ai' : 'builtin',
+              confidence: 0.9,
+            },
+          });
+          if (isUser) statistics.userAiHits++;
+          else statistics.builtinHits++;
+          resolvedTokens.push(occ);
+          continue;
+        }
+
+        // If context AI call is supported on provider
+        if (aiLexicalProvider && typeof aiLexicalProvider.resolveAmbiguousToken === 'function') {
+          try {
+            statistics.lexicalAiCalls++;
+            const aiRes = await aiLexicalProvider.resolveAmbiguousToken({
+              surface: occ.surface,
+              sentence: sentenceText,
+              sentenceTranslation,
+              candidateIds: candidates,
+              candidatesSummary: candidateEntries.map((e) => ({
+                id: e.id,
+                meaning: e.meanings.join(', '),
+              })),
+            });
+
+            const parsed = AmbiguityResolutionResponseSchema.safeParse(aiRes);
+            if (
+              parsed.success &&
+              candidates.includes(parsed.data.selectedDictionaryId) &&
+              parsed.data.confidence >= AI_DISAMBIGUATION_MIN_CONFIDENCE
+            ) {
+              occ = TokenOccurrenceSchema.parse({
+                ...occ,
+                dictionaryId: parsed.data.selectedDictionaryId,
+                resolution: {
+                  status: 'resolved',
+                  source: 'ai-context',
+                  confidence: parsed.data.confidence,
+                },
+              });
+              statistics.builtinHits++;
+              resolvedTokens.push(occ);
+              continue;
+            }
+          } catch (err) {
+            console.warn('[StoryTokenResolver] Ambiguity resolution AI call failed:', err);
+          }
+        }
+
+        // Leave as ambiguous if unresolved
+        occ = TokenOccurrenceSchema.parse({
+          ...occ,
+          dictionaryId: null,
+          resolution: {
+            status: 'ambiguous',
+            source: 'none',
+            confidence: 0,
+          },
+        });
+        statistics.ambiguousTokens++;
+        resolvedTokens.push(occ);
+        continue;
+      }
+
+      // Step 6: Missing lexeme -> Add to batch enrichment map
+      const lemmaHint =
+        rawToken.dictionaryForm || rawToken.lemmaHint || rawToken.lemma || occ.surface;
+      const readingHint = rawToken.dictionaryReading || occ.reading;
+      const normKey = `${lemmaHint}:${readingHint}`;
+      if (!missingLexemeMap.has(normKey)) {
+        missingLexemeMap.set(normKey, {
+          tokenKey: `unknown-${missingLexemeMap.size + 1}`,
+          surface: occ.surface,
+          reading: occ.reading,
+          lemmaHint,
+          sentence: sentenceText,
+          sentenceTranslation,
+          occReferences: [],
+        });
+      }
+
+      missingLexemeMap.get(normKey).occReferences.push({ sIdx, tIdx: resolvedTokens.length, occ });
+      resolvedTokens.push(occ);
+    }
+
+    resolvedSentences.push({
+      ...s,
+      tokens: resolvedTokens,
+    });
+  }
+
+  // Step 6 (batch fallback): Enrich unknown lexemes via AI call
+  if (
+    missingLexemeMap.size > 0 &&
+    aiLexicalProvider &&
+    typeof aiLexicalProvider.enrichUnknownLexemes === 'function'
+  ) {
+    const unknownBatch = Array.from(missingLexemeMap.values()).map((item) => ({
+      tokenKey: item.tokenKey,
+      surface: item.surface,
+      reading: item.reading,
+      sentence: item.sentence,
+      sentenceTranslation: item.sentenceTranslation,
+    }));
+
+    try {
+      statistics.lexicalAiCalls++;
+      const rawAiResponse = await aiLexicalProvider.enrichUnknownLexemes(unknownBatch);
+      const parsedAi = LexicalEnrichmentResponseSchema.safeParse(rawAiResponse);
+
+      if (parsedAi.success && Array.isArray(parsedAi.data.entries)) {
+        for (const item of parsedAi.data.entries) {
+          const matchingLexeme = Array.from(missingLexemeMap.values()).find(
+            (m) => m.tokenKey === item.tokenKey
+          );
+
+          if (!matchingLexeme) continue;
+
+          // Check if curated entry exists
+          const curatedCheck = dictionaryStore.findDictionaryCandidatesByToken(item.dictionaryForm);
+          let assignedId = null;
+          let source = 'user-ai';
+
+          if (curatedCheck.candidates.length > 0) {
+            assignedId = curatedCheck.candidates[0];
+            source = 'builtin';
+          } else {
+            const regResult = await dictionaryStore.registerUserDictionaryEntry({
+              dictionaryForm: item.dictionaryForm,
+              reading: item.reading,
+              meanings: item.meanings,
+              partOfSpeech: item.partOfSpeech,
+              verbClass: item.verbClass,
+              adjectiveClass: item.adjectiveClass,
+              tokenForms: [matchingLexeme.surface, ...(item.tokenForms || [])],
+              confidence: item.confidence,
+              verified: false,
+              targetDictionaryId: 'user-dict:ai-cache',
+              provenance: {
+                sourceType: 'ai-story-token',
+                sourceId: String(storyId),
+              },
+            });
+
+            assignedId = regResult.entry.id;
+            if (regResult.created) statistics.generatedEntries++;
+          }
+
+          // Update occurrence tokens
+          for (const ref of matchingLexeme.occReferences) {
+            const currentToken = resolvedSentences[ref.sIdx].tokens[ref.tIdx];
+            resolvedSentences[ref.sIdx].tokens[ref.tIdx] = TokenOccurrenceSchema.parse({
+              ...currentToken,
+              dictionaryId: assignedId,
+              resolution: {
+                status: 'resolved',
+                source,
+                confidence: item.confidence || 0.8,
+              },
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[StoryTokenResolver] Batch AI enrichment failed:', err);
+    }
+  }
+
+  // Count final unresolved tokens
+  for (const sentence of resolvedSentences) {
+    for (const token of sentence.tokens) {
+      if (token.resolution.status === 'missing' || token.resolution.status === 'ambiguous') {
+        statistics.unresolvedTokens++;
+      }
+    }
+  }
+
+  console.info('[StoryTokenResolver]', statistics);
+
+  const updatedStory = isStoryObject
+    ? { ...rawStory, story: resolvedSentences }
+    : resolvedSentences;
+
+  return {
+    story: updatedStory,
+    statistics,
+  };
+}

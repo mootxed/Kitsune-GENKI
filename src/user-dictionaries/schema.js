@@ -56,8 +56,9 @@ export const UserDictionarySchema = z
     description: cleanString(USER_DICTIONARY_LIMITS.description).default(''),
     createdAt: isoDate,
     updatedAt: isoDate,
-    sourceType: z.enum(['manual', 'import']),
-    kind: z.enum(['personal', 'regular']).default('regular'),
+    sourceType: z.enum(['manual', 'import', 'ai']),
+    kind: z.enum(['personal', 'regular', 'ai-cache']).default('regular'),
+    hidden: z.boolean().optional(),
     schemaVersion: z.literal(USER_DICTIONARY_SCHEMA_VERSION),
   })
   .strict();

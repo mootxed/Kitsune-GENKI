@@ -210,6 +210,52 @@ export const QuizResponseSchema = z
   })
   .strip();
 
+export const LexicalEnrichmentItemSchema = z
+  .object({
+    tokenKey: cleanText(100),
+    dictionaryForm: cleanText(200),
+    reading: cleanText(200),
+    meanings: z.array(cleanText(500)).min(1).max(20),
+    partOfSpeech: cleanText(100).transform((val) => {
+      const lower = val.toLowerCase();
+      if (
+        [
+          'verb',
+          'noun',
+          'adjective',
+          'adverb',
+          'particle',
+          'expression',
+          'conjunction',
+          'prefix',
+          'suffix',
+          'counter',
+        ].includes(lower)
+      ) {
+        return lower;
+      }
+      return val;
+    }),
+    verbClass: z.enum(['godan', 'ichidan', 'irregular']).nullable().optional(),
+    adjectiveClass: z.enum(['i', 'na']).nullable().optional(),
+    tokenForms: z.array(cleanText(200)).default([]),
+    confidence: z.number().min(0).max(1).default(0.8),
+  })
+  .strip();
+
+export const LexicalEnrichmentResponseSchema = z
+  .object({
+    entries: z.array(LexicalEnrichmentItemSchema),
+  })
+  .strip();
+
+export const AmbiguityResolutionResponseSchema = z
+  .object({
+    selectedDictionaryId: cleanText(200),
+    confidence: z.number().min(0).max(1),
+  })
+  .strip();
+
 export const StructuredResponseSchema = z.union([
   ExplanationResponseSchema,
   ExplanationWithQuizResponseSchema,

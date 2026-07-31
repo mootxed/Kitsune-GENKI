@@ -295,39 +295,69 @@ async function renderLibraryGrammar(state, dependencies) {
   });
 }
 
+import { normalizeLegacyStoryToken } from '../src/dictionary/token-occurrence.js';
+import { dictionaryStore } from '../src/dictionary/dictionary-store.js';
+
 // Функция рендеринга интерактивной истории с токенами
 function renderInteractiveStory(content) {
+  if (!Array.isArray(content)) return '';
+
   return content
-    .map((sentence) => {
-      const tokensHtml = sentence.tokens
-        .map((token, idx) => {
-          if (token.type === 'Punctuation') {
-            return token.kanji;
+    .map((sentence, sIdx) => {
+      const sentenceId = sentence.sentence_id || sIdx + 1;
+      const tokensHtml = (sentence.tokens || [])
+        .map((rawToken, idx) => {
+          const occ = normalizeLegacyStoryToken(rawToken, {
+            sentenceId,
+            tokenIndex: idx,
+            dictionaryStore,
+          });
+
+          if (occ.resolution.status === 'non-lexical' || rawToken.type === 'Punctuation') {
+            return escapeHtmlLocal(occ.surface);
           }
 
-          if (token.writing && token.writing !== token.kanji) {
+          const surface = escapeHtmlLocal(occ.surface);
+          const reading = escapeHtmlLocal(occ.reading);
+          const dictionaryId = escapeHtmlLocal(occ.dictionaryId || '');
+          const contextMeaning = escapeHtmlLocal(occ.contextMeaning || '');
+          const status = escapeHtmlLocal(occ.resolution.status);
+          const tokenId = escapeHtmlLocal(occ.id);
+          const posType = escapeHtmlLocal(rawToken.type || 'Word');
+
+          if (reading && reading !== surface) {
             return `<ruby><span class="word-token" 
-                  data-word-id="${sentence.sentence_id}-${idx}"
-                  data-kanji="${token.kanji}"
-                  data-writing="${token.writing}"
-                  data-translation="${token.translation}"
-                  data-type="${token.type}">${token.kanji}</span><rt>${token.writing}</rt></ruby>`;
+                  data-token-id="${tokenId}"
+                  data-dictionary-id="${dictionaryId}"
+                  data-surface="${surface}"
+                  data-reading="${reading}"
+                  data-context-meaning="${contextMeaning}"
+                  data-resolution-status="${status}"
+                  data-kanji="${surface}"
+                  data-writing="${reading}"
+                  data-translation="${contextMeaning}"
+                  data-type="${posType}">${surface}</span><rt>${reading}</rt></ruby>`;
           }
 
           return `<span class="word-token" 
-                data-word-id="${sentence.sentence_id}-${idx}"
-                data-kanji="${token.kanji}"
-                data-translation="${token.translation}"
-                data-type="${token.type}">${token.kanji}</span>`;
+                data-token-id="${tokenId}"
+                data-dictionary-id="${dictionaryId}"
+                data-surface="${surface}"
+                data-reading="${reading}"
+                data-context-meaning="${contextMeaning}"
+                data-resolution-status="${status}"
+                data-kanji="${surface}"
+                data-translation="${contextMeaning}"
+                data-type="${posType}">${surface}</span>`;
         })
         .join('');
 
       return `
       <div class="story-sentence">
-        ${sentence.speaker ? `<strong class="speaker">${sentence.speaker}:</strong>` : ''}
+        ${sentence.speaker ? `<strong class="speaker">${escapeHtmlLocal(sentence.speaker)}:</strong>` : ''}
         <p class="sentence-jp">${tokensHtml}</p>
         <button class="toggle-translation-btn">Показать перевод</button>
-        <p class="sentence-translation hidden">${sentence.translation}</p>
+        <p class="sentence-translation hidden">${escapeHtmlLocal(sentence.translation)}</p>
       </div>
     `;
     })
@@ -335,26 +365,56 @@ function renderInteractiveStory(content) {
 }
 
 // Функция открытия Bottom Sheet для перевода слова
-export function openWordBottomSheet(tokenElement) {
+export function openWordBottomSheet(tokenElement, customStore = null) {
   const sheet = $('#word-bottom-sheet');
   if (!sheet) return;
 
-  const kanji = tokenElement.dataset.kanji;
-  const writing = tokenElement.dataset.writing || kanji;
-  const translation = tokenElement.dataset.translation;
-  const type = tokenElement.dataset.type;
+  const dataset = tokenElement.dataset || {};
+  const surface = dataset.surface || dataset.kanji || '';
+  const reading = dataset.reading || dataset.writing || surface;
+  const contextMeaning = dataset.contextMeaning || dataset.translation || '';
+  const dictionaryId = dataset.dictionaryId || null;
 
   const modalKanji = $('#modal-kanji');
   const modalReading = $('#modal-reading');
   const modalTranslation = $('#modal-translation');
   const modalType = $('#modal-type');
 
-  if (modalKanji) modalKanji.textContent = kanji;
-  if (modalReading) modalReading.textContent = writing !== kanji ? writing : '';
-  if (modalTranslation) modalTranslation.textContent = translation;
-  if (modalType) modalType.textContent = type;
+  let entry = null;
+  const activeStore = customStore || dictionaryStore || window.dictionaryStore || null;
+  if (dictionaryId && activeStore && typeof activeStore.getDictionaryEntry === 'function') {
+    entry = activeStore.getDictionaryEntry(dictionaryId);
+  }
+
+  if (modalKanji) modalKanji.textContent = entry?.dictionaryForm || surface;
+  if (modalReading) {
+    const displayReading =
+      reading !== surface ? reading : entry?.reading !== surface ? entry?.reading : '';
+    modalReading.textContent = displayReading || '';
+  }
+
+  if (modalTranslation) {
+    const globalMeanings = entry?.meanings ? entry.meanings.join(', ') : '';
+    if (contextMeaning && globalMeanings && contextMeaning !== globalMeanings) {
+      modalTranslation.textContent = `${contextMeaning} (Значения: ${globalMeanings})`;
+    } else {
+      modalTranslation.textContent =
+        contextMeaning || globalMeanings || 'Слово не найдено в словаре';
+    }
+  }
+
+  if (modalType) {
+    const srcTag =
+      entry?.source === 'ai' ? ' [AI]' : entry?.source === 'curated' ? ' [Словарь]' : '';
+    modalType.textContent = (entry?.partOfSpeech || dataset.type || 'Слово') + srcTag;
+  }
 
   sheet.classList.add('active');
+
+  const backdrop = sheet.querySelector('.bottom-sheet-backdrop');
+  if (backdrop) {
+    backdrop.onclick = () => closeWordBottomSheet();
+  }
 }
 
 // Функция закрытия Bottom Sheet
@@ -363,8 +423,8 @@ export function closeWordBottomSheet() {
   if (sheet) sheet.classList.remove('active');
 }
 
-// Функция установки обработчиков переключения переводов
-function setupTranslationToggleHandlers() {
+// Функция установки обработчиков клика по токенам и переключения переводов
+function setupStoryInteractions() {
   const buttons = $$('.toggle-translation-btn');
   buttons.forEach((btn) => {
     btn.onclick = (e) => {
@@ -374,6 +434,14 @@ function setupTranslationToggleHandlers() {
         const isHidden = translation.classList.toggle('hidden');
         btn.textContent = isHidden ? 'Показать перевод' : 'Скрыть перевод';
       }
+    };
+  });
+
+  const tokens = $$('.word-token');
+  tokens.forEach((tok) => {
+    tok.onclick = (e) => {
+      e.stopPropagation();
+      openWordBottomSheet(tok);
     };
   });
 }
@@ -406,7 +474,7 @@ function openStory(story, state, dependencies) {
   </div>
   `;
 
-  setupTranslationToggleHandlers();
+  setupStoryInteractions();
 
   const finishBtn = document.getElementById('btn-finish-story');
   if (finishBtn) {

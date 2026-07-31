@@ -18,8 +18,11 @@ export function createUserDictionaryModel(input = {}, now = new Date().toISOStri
     description: String(input.description || '').trim(),
     createdAt: input.createdAt || now,
     updatedAt: now,
-    sourceType: input.sourceType === 'import' ? 'import' : 'manual',
-    kind: input.kind === 'personal' ? 'personal' : 'regular',
+    sourceType:
+      input.sourceType === 'import' ? 'import' : input.sourceType === 'ai' ? 'ai' : 'manual',
+    kind:
+      input.kind === 'personal' ? 'personal' : input.kind === 'ai-cache' ? 'ai-cache' : 'regular',
+    hidden: input.hidden === true,
     schemaVersion: USER_DICTIONARY_SCHEMA_VERSION,
   });
 }
