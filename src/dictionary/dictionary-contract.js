@@ -223,7 +223,12 @@ export function normalizeCourseVocabularyReference(raw) {
     introducedIn: raw.introducedIn || raw.lessonId || raw.chapterId,
     ...(raw.lessonId ? { lessonId: raw.lessonId } : {}),
     ...(raw.chapterId ? { chapterId: raw.chapterId } : {}),
-    courseMeaning: raw.courseMeaning || raw.meaning || raw.translation,
+    courseMeaning:
+      (typeof raw.courseMeaning === 'string' && raw.courseMeaning.trim()) ||
+      (typeof raw.meaning === 'string' && raw.meaning.trim()) ||
+      (typeof raw.translation === 'string' && raw.translation.trim()) ||
+      (Array.isArray(raw.meanings) && raw.meanings[0]) ||
+      'meaning',
     tags: raw.tags || [],
     note: raw.note || null,
     contextProduction: raw.contextProduction || raw.context_production || null,

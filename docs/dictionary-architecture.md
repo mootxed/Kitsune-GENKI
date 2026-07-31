@@ -24,4 +24,5 @@ ExamplesDB хранит только примеры и их индекс по `d
 - [гибридная токенизация историй](ai/story-tokenization.md);
 - [ссылка курса](content/course-vocabulary-reference.md);
 - [индекс и разрешение токенов](content/token-index.md);
+- [связанная архитектура данных и сервисы](content/dictionary-relations.md);
 - [генерация, миграция, backup и offline](content/global-dictionary.md).
