@@ -748,6 +748,17 @@ let homeRuntimeDependencies = {};
 
 export function renderHome(_appState = state, dependencies = null) {
   if (dependencies) homeRuntimeDependencies = dependencies;
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 6
+      ? 'Доброй ночи'
+      : hour < 12
+        ? 'Доброе утро'
+        : hour < 18
+          ? 'Добрый день'
+          : 'Добрый вечер';
+  const greetingTitle = document.getElementById('home-greeting-title');
+  if (greetingTitle) greetingTitle.textContent = greeting;
   const today = todayStr();
   state.dailyCards = countCompletedReviewsForDate(state, today);
   state.history[today] = state.dailyCards;
@@ -906,6 +917,7 @@ export function renderHomeTodayCard(appState, dailyPlan) {
   }
 
   const taskTypeLabel = {
+    'start-chapter': 'ТЕКУЩАЯ ГЛАВА',
     review: 'ОБЯЗАТЕЛЬНО · FSRS',
     vocabulary: 'ОБЯЗАТЕЛЬНО · НОВЫЕ СЛОВА',
     grammar: 'ГРАММАТИКА',
@@ -914,6 +926,7 @@ export function renderHomeTodayCard(appState, dailyPlan) {
     bonus: 'ДОПОЛНИТЕЛЬНО',
   };
   const taskIcon = {
+    'start-chapter': '始',
     review: '↻',
     vocabulary: '語',
     grammar: '文',

@@ -13,6 +13,7 @@
     <title>KotoKitsu — Независимый тренажёр японского языка</title>
     <link rel="manifest" href="manifest.json" />
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles-redesign.css" />
     <link rel="apple-touch-icon" href="icon.svg" />
   </head>
   <body>
@@ -40,10 +41,10 @@
       <section class="screen hidden" id="screen-home" data-testid="screen-home">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox">🦊</span>
+            <span class="logo-fox brand-fox-mark" aria-hidden="true">🦊</span>
             <div>
-              <h1 class="app-title">KotoKitsu</h1>
-              <p class="app-subtitle">Тренажёр японского</p>
+              <h1 class="app-title" id="home-greeting-title">Добро пожаловать</h1>
+              <p class="app-subtitle" id="home-greeting-subtitle">План на сегодня готов</p>
             </div>
           </div>
           <div class="app-header-right">
@@ -93,18 +94,34 @@
           </div>
           <span class="streak-flame">🔥</span>
 
-          <button
-            class="continue-learning-card"
-            id="btn-continue-learning"
-            data-testid="continue-learning-btn"
-          >
-            <span class="continue-mark">続</span>
-            <span class="continue-copy">
-              <strong id="continue-learning-title">Продолжить обучение</strong>
-              <small id="continue-learning-context">Определяем следующий шаг…</small>
-            </span>
-            <span class="continue-arrow">→</span>
-          </button>
+          <section class="home-hero" aria-labelledby="continue-learning-title">
+            <div class="home-hero-copy">
+              <span class="home-hero-eyebrow">СЛЕДУЮЩИЙ ШАГ</span>
+              <button
+                class="continue-learning-card"
+                id="btn-continue-learning"
+                data-testid="continue-learning-btn"
+              >
+                <span class="continue-mark" aria-hidden="true">続</span>
+                <span class="continue-copy">
+                  <strong id="continue-learning-title">Продолжить обучение</strong>
+                  <small id="continue-learning-context">Определяем следующий шаг…</small>
+                </span>
+                <span class="continue-arrow" aria-hidden="true">Начать <b>→</b></span>
+              </button>
+            </div>
+            <figure class="home-mascot" aria-hidden="true">
+              <span class="home-mascot-halo"></span>
+              <img
+                src="assets/mascot/mascot-hero-medium.webp"
+                width="512"
+                height="512"
+                alt=""
+                loading="eager"
+                decoding="async"
+              />
+            </figure>
+          </section>
 
           <section
             class="home-today-card"
@@ -689,23 +706,43 @@
 
       <!-- ===== BOTTOM NAV ===== -->
       <nav class="tabbar" data-testid="tabbar">
+        <div class="sidebar-brand" aria-hidden="true">
+          <span class="sidebar-brand-mark">🦊</span>
+          <strong>KotoKitsu</strong>
+        </div>
         <div class="tab-indicator"></div>
         <button class="tab active" data-nav="home" data-testid="tab-home">
-          <span class="tab-ic">🏠</span><span>Главная</span>
+          <span class="tab-ic" aria-hidden="true">⌂</span><span>Главная</span>
+        </button>
+        <button class="tab desktop-only-tab" data-nav="plan">
+          <span class="tab-ic" aria-hidden="true">▣</span><span>План</span>
+        </button>
+        <button class="tab desktop-only-tab" data-nav="course">
+          <span class="tab-ic" aria-hidden="true">▥</span><span>Курс</span>
         </button>
         <button class="tab" data-nav="srs" data-testid="tab-srs">
-          <span class="tab-ic">🎴</span><span class="tab-badge hidden" id="tab-srs-badge">0</span
-          ><span>SRS</span>
+          <span class="tab-ic" aria-hidden="true">↔</span
+          ><span class="tab-badge hidden" id="tab-srs-badge">0</span><span>SRS</span>
         </button>
         <button class="tab" data-nav="sensei" data-testid="tab-sensei">
-          <span class="tab-ic">🤖</span><span>Инструменты</span>
+          <span class="tab-ic" aria-hidden="true">◇</span><span>Инструменты</span>
         </button>
         <button class="tab" data-nav="library" data-testid="tab-library">
-          <span class="tab-ic">📖</span><span>Учебник</span>
+          <span class="tab-ic" aria-hidden="true">▤</span><span>Учебник</span>
         </button>
         <button class="tab" data-nav="profile" data-testid="tab-profile">
-          <span class="tab-ic">👤</span><span>Профиль</span>
+          <span class="tab-ic" aria-hidden="true">◎</span><span>Профиль</span>
         </button>
+        <button class="tab desktop-only-tab" data-nav="statistics">
+          <span class="tab-ic" aria-hidden="true">⌁</span><span>Статистика</span>
+        </button>
+        <button class="tab desktop-only-tab sidebar-settings-tab" data-nav="settings">
+          <span class="tab-ic" aria-hidden="true">⚙</span><span>Настройки</span>
+        </button>
+        <div class="sidebar-storage-status" aria-hidden="true">
+          <span></span>
+          <div><strong>Данные сохранены</strong><small>Доступно без сети</small></div>
+        </div>
       </nav>
 
       <div id="toast" data-testid="toast" aria-live="polite" role="status"></div>

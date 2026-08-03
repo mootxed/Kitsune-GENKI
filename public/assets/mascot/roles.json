@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "roles": {
+    "onboarding-large": "mascot-onboarding-large.webp",
+    "hero-medium": "mascot-hero-medium.webp",
+    "message-compact": "mascot-message-compact.webp",
+    "success": "mascot-message-compact.webp",
+    "explaining": "mascot-message-compact.webp",
+    "resting": "mascot-message-compact.webp",
+    "warning": "mascot-message-compact.webp"
+  },
+  "fallbackNote": "Compact emotional roles temporarily share the approved explaining pose until dedicated transparent renders are supplied."
+}

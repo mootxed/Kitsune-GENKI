@@ -28,3 +28,15 @@ The story cover images `Story1.webp` through `Story12.webp` represent AI-generat
 - **Transformations**: Generated artwork files were converted from PNG to WebP format.
 - **Pending Confirmation**: Generator service name, model version, exact prompts, dates, and terms of service are currently marked as `unknown` / `needs-author-confirmation` in [ASSET_PROVENANCE.json](../../ASSET_PROVENANCE.json).
 - **Legal Status Note**: AI-generated origin does not guarantee absence of accidental similarity to third-party works. They are not declared CC0 or GPL until generator service terms are recorded.
+
+---
+
+## 3. KotoKitsu mascot (`public/assets/mascot/*.webp`)
+
+The redesign mascot was supplied by the project owner in the KotoKitsu design-prototype archive on 2026-08-03.
+
+- **Origin**: Project-owner-supplied generated artwork; the exact generator and model are not recorded.
+- **Visual contract**: Orange fox, cream muzzle/chest/tail tip, indigo details, and a short blue scarf in a soft 3D style.
+- **Transformations**: The transparent source PNG was resized into role-specific WebP assets for onboarding, hero, and compact-message contexts. No visual content was added.
+- **Role mapping**: [public/assets/mascot/roles.json](../../public/assets/mascot/roles.json) keeps product roles independent even while compact emotional states temporarily share one approved pose.
+- **Pending confirmation**: Generator terms, model, and final project licensing status remain `unknown` / `needs-author-confirmation` in `ASSET_PROVENANCE.json`.
