@@ -57,7 +57,7 @@ export function renderProfile(state, dependencies) {
   body.innerHTML = `
     <div class="profile-header">
     <div class="profile-avatar" id="profile-avatar-display">${state.currentAvatar || '🦊'}</div>
-    <h2 class="profile-name">Kitsune Genki</h2>
+    <h2 class="profile-name">KotoKitsu</h2>
     <div class="profile-title" id="profile-title">${state.currentTitle || 'Новичок'}</div>
     
       <!-- Капсула: иконка ранга перекрывает белую плашку -->

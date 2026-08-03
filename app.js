@@ -880,7 +880,7 @@ export function checkStorageDegradedBanner() {
     btn.onclick = async () => {
       try {
         const data = await exportFullProgress();
-        downloadJSON(data, `kitsune-backup-${new Date().toISOString().slice(0, 10)}.json`);
+        downloadJSON(data, `kotokitsu-backup-${new Date().toISOString().slice(0, 10)}.json`);
       } catch (err) {
         toast('Ошибка экспорта: ' + err.message);
       }

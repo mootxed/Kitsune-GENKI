@@ -4,6 +4,7 @@ import { countAvailableCardsForSession } from '../src/srs-limits.js';
 import { XP_PER_LEVEL } from '../src/xp-system.js';
 import { $, todayStr, pluralDays } from '../src/utils.js';
 import { parseDateKey } from '../src/local-date.js';
+import { dueCards } from '../src/srs-helpers.js';
 
 // ===== COMPLETION SCREEN (ЭКРАН УСПЕХА) =====
 export function showCompletionScreen(options) {
@@ -76,8 +77,9 @@ export function syncAvatars() {
 // ---------- Update SRS Badge ----------
 export function updateSrsBadge() {
   const s = state || (typeof window !== 'undefined' ? window.state : null);
-  if (!window.dueCards || !s?.srs) return;
-  const due = countAvailableCardsForSession(window.dueCards(s.srs), s.srs);
+  if (!s?.srs) return;
+  const rawDue = dueCards(s.srs);
+  const due = countAvailableCardsForSession(rawDue, s.srs);
   const badge =
     document.getElementById('tab-srs-badge') ||
     document.querySelector('.tab-badge[data-tab="srs"]');

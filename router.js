@@ -33,18 +33,50 @@ const SCREEN_TITLES = {
 const PARENT_TAB_MAP = {
   dictionary: 'srs',
   'user-dictionaries': 'srs',
+  'word-details': 'srs',
+
   'ai-story': 'sensei',
   crossword: 'sensei',
   'word-search': 'sensei',
+
   story: 'library',
+  course: 'library',
+  chapter: 'library',
+
   quests: 'profile',
   statistics: 'profile',
   settings: 'profile',
   shop: 'profile',
+  'dev-tools': 'profile',
+
+  plan: 'home',
 };
 
-export function getParentTab(screenName) {
+export function getParentTab(screenName, origin = null) {
+  if (screenName === 'word-details' && origin) {
+    return PARENT_TAB_MAP[origin] || origin;
+  }
   return PARENT_TAB_MAP[screenName] || screenName;
+}
+
+export function isElementVisible(el) {
+  if (!el) return false;
+  if (typeof window !== 'undefined' && window.getComputedStyle) {
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+  }
+  if (el.classList?.contains('hidden')) return false;
+  return true;
+}
+
+export function resolveActiveNavigationTab(screenName, origin = null) {
+  const directTabs = [...document.querySelectorAll(`.tab[data-nav="${screenName}"]`)];
+  const visibleDirect = directTabs.find(isElementVisible);
+  if (visibleDirect) return visibleDirect;
+
+  const parentName = getParentTab(screenName, origin);
+  const parentTabs = [...document.querySelectorAll(`.tab[data-nav="${parentName}"]`)];
+  return parentTabs.find(isElementVisible) || null;
 }
 
 export class Router {
@@ -156,13 +188,14 @@ export class Router {
       );
     }
 
-    // Управление активными табами
-    const activeTabName = getParentTab(name);
+    // Управление активными табами: ровно ОДИН активный видимый таб
+    const activeTab = resolveActiveNavigationTab(
+      name,
+      typeof opt === 'object' ? opt?.origin : null
+    );
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach((t) => {
-      const isDirect = t.dataset.nav === name;
-      const isParent = t.dataset.nav === activeTabName;
-      t.classList.toggle('active', isDirect || isParent);
+      t.classList.toggle('active', t === activeTab);
     });
 
     // Обновление индикатора табов

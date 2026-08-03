@@ -1,7 +1,7 @@
 /* src/srs-helpers.js — pure queries over SRS records */
 import { SRS } from '../srs.js';
 import { parseCardIdentity } from './knowledge-model.js';
-import { getDictionaryEntry } from './dictionary/dictionary-store.js';
+import { getDictionaryEntry, dictionaryStore } from './dictionary/dictionary-store.js';
 import { isPriorKnowledge, shouldChapterHaveVocabularyCards } from './chapter-progress.js';
 import {
   canonicalizeKnowledgeItemId,
@@ -29,20 +29,33 @@ export function wordById(wordId, lessons) {
   if (!wordId) return null;
   const itemId = canonicalizeKnowledgeItemId(parseCardIdentity(wordId).itemId);
 
-  const dictionaryEntry = getDictionaryEntry(itemId);
-  if (dictionaryEntry) return dictionaryEntry;
-
   if (Array.isArray(lessons) && lessons.length > 0) {
     for (const l of lessons) {
       const wordList = l.words || l.vocabulary || [];
-      const w = wordList.find(
-        (x) =>
-          canonicalizeKnowledgeItemId(x.id) === itemId ||
-          canonicalizeKnowledgeItemId(x.dictionaryId || x.knowledgeItemId) === itemId
-      );
+      const w = wordList.find((x) => {
+        const candidateId = canonicalizeKnowledgeItemId(x.id);
+        const dictionaryId = canonicalizeKnowledgeItemId(x.dictionaryId || x.knowledgeItemId);
+        return candidateId === itemId || dictionaryId === itemId;
+      });
       if (w) return w;
     }
   }
+
+  if (dictionaryStore && typeof dictionaryStore.getCourseVocabularyReference === 'function') {
+    const courseRef = dictionaryStore.getCourseVocabularyReference(itemId);
+    if (courseRef) {
+      const resolved = dictionaryStore.resolveCourseVocabularyReference(courseRef);
+      if (resolved) return resolved;
+    }
+  }
+
+  if (dictionaryStore && typeof dictionaryStore.resolveVocabularyRuntimeItem === 'function') {
+    const runtimeItem = dictionaryStore.resolveVocabularyRuntimeItem(itemId);
+    if (runtimeItem) return runtimeItem;
+  }
+
+  const dictionaryEntry = getDictionaryEntry(itemId);
+  if (dictionaryEntry) return dictionaryEntry;
 
   if (typeof window !== 'undefined' && (window.__DEV_MODE__ || window.devMode)) {
     console.warn(`[wordById] Word not found: ${wordId}`);

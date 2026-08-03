@@ -1,14 +1,11 @@
-// ui/flashcards/dictionary.js - Экран словаря, фильтрация, карточки и прогресс освоения
-
 import { $, $$, escapeHtml } from '../../src/utils.js';
 import { isWordUnlocked, cardChapter, wordById } from '../../src/srs-helpers.js';
 import { cardsForItem, vocabularySkills } from '../../src/knowledge-model.js';
 import { calculateMastery } from '../../src/mastery.js';
 import { SRS } from '../../srs.js';
-import { ExamplesDB } from '../../src/examples-db.js';
-import { CURATED_PARTICLE_SENTENCES } from '../../src/particle-templates.js';
 import { openDictionaryModal } from './dictionary-modal.js';
 import { displayWordForm, getUnlockedKanjiLesson } from '../../src/course-orthography.js';
+import { ensureDictionaryCatalog } from '../../src/dictionary/dictionary-catalog-loader.js';
 
 export const dictionaryViewState = {
   search: '',
@@ -264,7 +261,7 @@ export function renderDictionaryLessons(
 
   const { search = '', partOfSpeech = 'all', topic = 'all', adjectiveClass = 'all' } = viewState;
 
-  const { LESSONS, toast } = dependencies;
+  const { LESSONS, toast, ensureLesson } = dependencies;
 
   const container = $('#dict-lessons-container');
   if (!container) return;
@@ -450,6 +447,9 @@ export function renderDictionaryLessons(
         toast(`🔒 Начните Главу ${lessonId}, чтобы разблокировать этот урок`);
         return;
       }
+      if (typeof ensureLesson === 'function') {
+        ensureLesson(lessonId).catch(() => null);
+      }
       const isExpanded = lessonEl.classList.contains('is-expanded');
       if (isExpanded) {
         lessonEl.classList.remove('is-expanded');
@@ -504,18 +504,10 @@ export function renderDictionaryLessons(
 }
 
 export async function renderDictionary(state, dependencies, options = {}, context = {}) {
-  const { CONTENT_INDEX, ensureLesson } = dependencies;
+  const { CONTENT_INDEX } = dependencies;
 
   const content = $('#srs-body');
   if (!content) return;
-
-  ExamplesDB.registerCuratedParticleSentences(CURATED_PARTICLE_SENTENCES);
-  ExamplesDB.rebuildIndex();
-  if (CONTENT_INDEX && ensureLesson) {
-    await Promise.all(CONTENT_INDEX.map((ch) => ensureLesson(ch.id).catch(() => null)));
-  }
-
-  if (context?.signal?.aborted) return;
 
   const presentTopics = new Set();
   if (dependencies.LESSONS) {
@@ -581,8 +573,23 @@ export async function renderDictionary(state, dependencies, options = {}, contex
         </div>
       </div>
     </div>
-    <div id="dict-lessons-container"></div>
+    <div id="dict-lessons-container">
+      <div class="dictionary-skeleton" style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+        <div class="skeleton-bar" style="height: 24px; width: 60%; background: var(--border, #e0e0e0); border-radius: 6px; opacity: 0.6;"></div>
+        <div class="skeleton-bar" style="height: 16px; width: 40%; background: var(--border, #e0e0e0); border-radius: 6px; opacity: 0.4;"></div>
+        <div class="skeleton-bar" style="height: 48px; width: 100%; background: var(--border, #e0e0e0); border-radius: 8px; opacity: 0.3;"></div>
+      </div>
+    </div>
   `;
+
+  await ensureDictionaryCatalog({
+    courseId: state?.currentCourseId || 'genki-1',
+    contentIndex: CONTENT_INDEX || [],
+    loadedLessons: dependencies.LESSONS || [],
+    signal: context?.signal,
+  }).catch(() => null);
+
+  if (context?.signal?.aborted) return;
 
   renderDictionaryLessons(state, dependencies, dictionaryViewState);
 

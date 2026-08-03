@@ -117,7 +117,8 @@ export async function navigateToScreen(page, screenId) {
     }
   }, screenId);
 
-  await expect(page.locator(`#screen-${screenId}`)).toBeVisible({ timeout: 10000 });
+  const targetScreenId = screenId === 'dictionary' ? 'srs' : screenId;
+  await expect(page.locator(`#screen-${targetScreenId}`)).toBeVisible({ timeout: 10000 });
 }
 
 /**

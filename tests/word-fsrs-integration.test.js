@@ -77,6 +77,8 @@ const fakeSrs = {
 // Tests
 // ---------------------------------------------------------------------------
 
+import { localDateKey } from '../src/local-date.js';
+
 describe('getDictionaryFSRS — read-only invariants', () => {
   it('returns hasFSRS=false when no cards exist', () => {
     const state = { srsRecords: {}, reviewEvents: [], chapters: {} };
@@ -178,7 +180,7 @@ describe('getDictionaryFSRS — read-only invariants', () => {
       chapters: {},
     };
     const result = getDictionaryFSRS({ dictionaryId: taberu.id, state, srs: fakeSrs });
-    expect(result.nextReviewDate).toBe(new Date(tomorrowMs).toISOString().split('T')[0]);
+    expect(result.nextReviewDate).toBe(localDateKey(tomorrowMs));
   });
 
   it('handles missing srs gracefully', () => {
