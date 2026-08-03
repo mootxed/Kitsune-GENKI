@@ -25,7 +25,8 @@
     "grammarIndex": "./grammar/index.json",
     "exercises": "./exercises/supplemental-practice.json",
     "orthography": "./relations/kanji-availability.json",
-    "vocabularyAliases": "./migrations/vocabulary-aliases.json"
+    "vocabularyAliases": "./migrations/vocabulary-aliases.json",
+    "vocabularyIndex": "./vocabulary-index.json"
   },
   "features": [
     {

@@ -12,7 +12,6 @@ import {
   createUserDictionaryModel,
   UserDictionaryRepository,
 } from '../user-dictionaries/repository.js';
-import { clearDictionaryCatalogCache } from './dictionary-catalog-loader.js';
 
 export const PERSONAL_DICTIONARY_ID = 'user-dict:personal';
 
@@ -138,7 +137,6 @@ export class DictionaryStore {
       }
     }
     this.userRevision++;
-    clearDictionaryCatalogCache();
   }
 
   getDictionaryEntry(id) {
@@ -359,7 +357,6 @@ export class DictionaryStore {
     }
     this.userEntries.set(id, entry);
     this.userRevision++;
-    clearDictionaryCatalogCache();
     return { entry, created: !current, conflict: null };
   }
 }

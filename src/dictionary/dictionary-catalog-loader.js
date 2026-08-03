@@ -66,10 +66,14 @@ export async function ensureDictionaryCatalog(options = {}) {
   const {
     signal,
     courseId = 'genki-1',
+    activeCourse = null,
+    vocabularyIndex = null,
     contentIndex = [],
     loadedLessons = [],
-    contentVersion = String(contentIndex.length || '1.0'),
-    dictionaryVersion = '1.0',
+    contentVersion = activeCourse?.manifest?.contentVersion || options.contentVersion || '1.0.0',
+    dictionaryVersion = dictionaryStore?.manifest?.contentVersion ||
+      options.dictionaryVersion ||
+      '1.0.0',
     userDictionaryRevision = String(
       options.userDictionaryRevision ??
         dictionaryStore?.userRevision ??
@@ -79,18 +83,18 @@ export async function ensureDictionaryCatalog(options = {}) {
   } = options;
 
   if (signal?.aborted) {
-    const err = new Error('Aborted');
+    const err = new Error('AbortError');
     err.name = 'AbortError';
     throw err;
   }
 
-  // Calculate stable revision hash/key including detailed word properties
   const wordSig = (w) =>
-    `${w.id || ''}:${w.writing || w.writtenForm || w.kanji || ''}:${w.reading || ''}:${
+    `${w.id || w.lexemeId || ''}:${w.writing || w.writtenForm || w.kanji || ''}:${w.reading || ''}:${
       w.translation || w.meaning || ''
     }:${w.topic || ''}:${w.partOfSpeech || ''}:${w.adjectiveClass || ''}`;
-  const lessonHash = loadedLessons
-    .map((l) => `${l.id}:${(l.words || l.vocabulary || []).map(wordSig).join('-')}`)
+
+  const runtimeSignature = (loadedLessons || [])
+    .map((l) => `${l.id || l.lessonId}:${(l.words || l.vocabulary || []).map(wordSig).join(',')}`)
     .join(';');
 
   const cacheKey = [
@@ -98,7 +102,7 @@ export async function ensureDictionaryCatalog(options = {}) {
     contentVersion,
     dictionaryVersion,
     userDictionaryRevision,
-    lessonHash,
+    runtimeSignature,
   ].join(':');
 
   if (catalogCache.has(cacheKey)) {
@@ -108,105 +112,176 @@ export async function ensureDictionaryCatalog(options = {}) {
 
   const lessonsMap = new Map();
 
-  // 1. Initialize from contentIndex if provided
+  // 1. Initialize lessonsMap from contentIndex if provided
   if (Array.isArray(contentIndex) && contentIndex.length > 0) {
-    for (const item of contentIndex) {
-      lessonsMap.set(item.id, {
-        id: item.id,
-        title: item.title || `Урок ${item.id}`,
+    for (let i = 0; i < contentIndex.length; i++) {
+      const item = contentIndex[i];
+      const id = item.id ?? item.lessonId ?? i + 1;
+      lessonsMap.set(id, {
+        id,
+        title: item.title || `Урок ${id}`,
+        order: item.order ?? i,
         words: [],
       });
     }
   }
 
-  // 2. Add or update from loadedLessons
-  if (Array.isArray(loadedLessons)) {
-    for (const lesson of loadedLessons) {
-      const existing = lessonsMap.get(lesson.id) || {
-        id: lesson.id,
-        title: lesson.title || `Урок ${lesson.id}`,
-        words: [],
-      };
-      if (lesson.title) existing.title = lesson.title;
-      const wordList = lesson.words || lesson.vocabulary || [];
-      const wordMap = new Map(existing.words.map((w) => [w.id, w]));
-      for (const w of wordList) {
-        if (w && w.id && !wordMap.has(w.id)) {
-          const norm = normalizeCatalogWord(w, lesson.id);
-          wordMap.set(w.id, norm);
+  // 2. Obtain vocabulary index from activeCourse, options, or dictionaryStore course references
+  let courseVocabLessons = null;
+
+  if (activeCourse && typeof activeCourse.getVocabularyIndex === 'function') {
+    const idx = activeCourse.getVocabularyIndex();
+    if (idx && Array.isArray(idx.lessons)) {
+      courseVocabLessons = idx.lessons;
+    }
+  } else if (vocabularyIndex && Array.isArray(vocabularyIndex.lessons)) {
+    courseVocabLessons = vocabularyIndex.lessons;
+  }
+
+  if (courseVocabLessons) {
+    for (const vLesson of courseVocabLessons) {
+      const lid = vLesson.id || vLesson.lessonId;
+      let lessonObj = lessonsMap.get(lid);
+      if (!lessonObj) {
+        lessonObj = {
+          id: lid,
+          title: vLesson.title || `Урок ${lid}`,
+          order: vLesson.order ?? 999,
+          words: [],
+        };
+        lessonsMap.set(lid, lessonObj);
+      }
+      const rawWords = vLesson.words || [];
+      for (const w of rawWords) {
+        if (!w) continue;
+        let resolved = w;
+        if (w.dictionaryId && dictionaryStore) {
+          try {
+            resolved = dictionaryStore.resolveCourseVocabularyReference(w);
+          } catch {
+            resolved = w;
+          }
+        }
+        const norm = normalizeCatalogWord(resolved, lid);
+        if (norm && norm.id) {
+          const exists = lessonObj.words.some(
+            (existing) =>
+              existing.id === norm.id ||
+              (existing.lexemeId && norm.lexemeId && existing.lexemeId === norm.lexemeId)
+          );
+          if (!exists) {
+            lessonObj.words.push(norm);
+          }
         }
       }
-      existing.words = Array.from(wordMap.values());
-      lessonsMap.set(lesson.id, existing);
     }
-  }
-
-  // 3. Process all catalog words (from loaded lessons + dictionaryStore)
-  const words = [];
-  const processedIds = new Set();
-
-  for (const lesson of loadedLessons) {
-    if (signal?.aborted) {
-      const err = new Error('Aborted');
-      err.name = 'AbortError';
-      throw err;
-    }
-    const wordList = lesson.words || lesson.vocabulary || [];
-    for (const w of wordList) {
-      if (w && w.id && !processedIds.has(w.id)) {
-        processedIds.add(w.id);
-        const norm = normalizeCatalogWord(w, lesson.id);
-        words.push(norm);
-      }
-    }
-  }
-
-  if (dictionaryStore) {
-    const entries = dictionaryStore.getAllDictionaryEntries();
-    for (const entry of entries) {
-      if (entry && entry.id && !processedIds.has(entry.id)) {
-        processedIds.add(entry.id);
-        const norm = normalizeCatalogWord(entry);
-        words.push(norm);
-      }
-    }
-  }
-
-  // 4. Distribute catalog words into lessonsMap
-  for (const word of words) {
-    const targetLessonIds =
-      word.lessonIds && word.lessonIds.length > 0
-        ? word.lessonIds
-        : word.lessonId != null
-          ? [word.lessonId]
-          : [];
-
-    for (const lid of targetLessonIds) {
+  } else if (dictionaryStore) {
+    // Fallback: populate from course references registered in dictionaryStore for courseId
+    const refs = [...(dictionaryStore.courseReferences?.values() || [])].filter(
+      (r) => r.courseId === courseId
+    );
+    for (const ref of refs) {
+      const lid = ref.introducedIn || ref.lessonId || ref.chapterId;
+      if (!lid) continue;
       let lessonObj = lessonsMap.get(lid);
       if (!lessonObj) {
         lessonObj = {
           id: lid,
           title: `Урок ${lid}`,
+          order: 999,
           words: [],
         };
         lessonsMap.set(lid, lessonObj);
       }
-      const isAlreadyInLesson = lessonObj.words.some(
-        (w) => w.id === word.id || (w.lexemeId && word.lexemeId && w.lexemeId === word.lexemeId)
-      );
-      if (!isAlreadyInLesson) {
-        lessonObj.words.push(word);
+      try {
+        const resolved = dictionaryStore.resolveCourseVocabularyReference(ref);
+        const norm = normalizeCatalogWord(resolved, lid);
+        if (norm && norm.id) {
+          const exists = lessonObj.words.some(
+            (existing) =>
+              existing.id === norm.id ||
+              (existing.lexemeId && norm.lexemeId && existing.lexemeId === norm.lexemeId)
+          );
+          if (!exists) {
+            lessonObj.words.push(norm);
+          }
+        }
+      } catch {
+        // ignore broken refs
       }
     }
   }
 
-  const lessonsResult = Array.from(lessonsMap.values()).sort((a, b) => {
-    const idA = typeof a.id === 'number' ? a.id : parseInt(a.id, 10) || 999;
-    const idB = typeof b.id === 'number' ? b.id : parseInt(b.id, 10) || 999;
+  // 3. Override / augment with loaded runtime lessons
+  if (Array.isArray(loadedLessons)) {
+    for (const lesson of loadedLessons) {
+      if (signal?.aborted) {
+        const err = new Error('AbortError');
+        err.name = 'AbortError';
+        throw err;
+      }
+      let lessonObj = lessonsMap.get(lesson.id);
+      if (!lessonObj) {
+        lessonObj = {
+          id: lesson.id,
+          title: lesson.title || `Урок ${lesson.id}`,
+          order: lesson.order ?? 999,
+          words: [],
+        };
+        lessonsMap.set(lesson.id, lessonObj);
+      }
+      if (lesson.title) lessonObj.title = lesson.title;
+
+      const wordList = lesson.words || lesson.vocabulary || [];
+      for (const w of wordList) {
+        if (!w) continue;
+        const norm = normalizeCatalogWord(w, lesson.id);
+        if (!norm || !norm.id) continue;
+
+        // Check if word already exists in this lesson (replace runtime override or append)
+        const existingIdx = lessonObj.words.findIndex(
+          (existing) =>
+            existing.id === norm.id ||
+            (existing.lexemeId && norm.lexemeId && existing.lexemeId === norm.lexemeId)
+        );
+
+        if (existingIdx >= 0) {
+          lessonObj.words[existingIdx] = norm;
+        } else {
+          lessonObj.words.push(norm);
+        }
+      }
+    }
+  }
+
+  // Collect all catalog words across lessons
+  const allCatalogWords = [];
+  const catalogWordIds = new Set();
+  for (const lessonObj of lessonsMap.values()) {
+    for (const word of lessonObj.words) {
+      if (!catalogWordIds.has(word.id)) {
+        catalogWordIds.add(word.id);
+        allCatalogWords.push(word);
+      }
+    }
+  }
+
+  const sortedLessons = Array.from(lessonsMap.values()).sort((a, b) => {
+    const idA =
+      typeof a.id === 'number' ? a.id : parseInt(String(a.id).replace(/\D/g, ''), 10) || 999;
+    const idB =
+      typeof b.id === 'number' ? b.id : parseInt(String(b.id).replace(/\D/g, ''), 10) || 999;
     return idA - idB;
   });
 
-  const resultObj = { catalog: words, lessons: lessonsResult, cached: false };
+  const resultObj = {
+    courseId,
+    contentVersion,
+    lessons: sortedLessons,
+    catalog: allCatalogWords,
+    cached: false,
+  };
+
   catalogCache.set(cacheKey, resultObj);
   return resultObj;
 }

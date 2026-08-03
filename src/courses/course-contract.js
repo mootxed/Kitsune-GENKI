@@ -81,6 +81,7 @@ export const CourseManifestSchema = z
         relations: ResourceDescriptorSchema.optional(),
         orthography: ResourceDescriptorSchema.optional(),
         vocabularyAliases: ResourceDescriptorSchema.optional(),
+        vocabularyIndex: ResourceDescriptorSchema.optional(),
       })
       .strict(),
     features: z.array(CourseFeatureSchema).default([]),

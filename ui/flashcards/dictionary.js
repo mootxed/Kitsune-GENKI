@@ -376,12 +376,15 @@ export function renderDictionaryLessons(
 
       totalVisible += filteredWords.length;
 
+      const safeLessonTitle = escapeHtml(String(lesson.title || `Урок ${lesson.id}`));
+      const safeLessonId = escapeHtml(String(lesson.id));
+
       if (!isLessonUnlocked) {
         return `
-        <div class="dict-lesson is-locked" data-lesson-id="${lesson.id}">
-          <div class="dict-lesson-header" role="button" tabindex="0" aria-label="Урок ${lesson.id}: ${lesson.title}. Закрыто">
+        <div class="dict-lesson is-locked" data-lesson-id="${safeLessonId}">
+          <div class="dict-lesson-header" role="button" tabindex="0" aria-label="Урок ${safeLessonId}: ${safeLessonTitle}. Закрыто">
             <span class="dict-lesson-toggle-icon">🔒</span>
-            <h3 class="dict-lesson-title">Урок ${lesson.id}: ${lesson.title}</h3>
+            <h3 class="dict-lesson-title">Урок ${safeLessonId}: ${safeLessonTitle}</h3>
             <span class="dict-lesson-count">${words.length} слов</span>
           </div>
         </div>
@@ -395,36 +398,40 @@ export function renderDictionaryLessons(
           const status = getWordStatus(word, state);
 
           const safeWrittenForm = displayWordForm(word, state);
-          const reading = word.reading || word.writing;
+          const reading = word.reading || word.writing || '';
           const hasSeparateReading = safeWrittenForm && safeWrittenForm !== reading;
           const readingHtml = hasSeparateReading
-            ? `<div class="dict-word-reading">${reading}</div>`
+            ? `<div class="dict-word-reading">${escapeHtml(reading)}</div>`
             : '';
 
           const displayKanji = isUnlocked ? safeWrittenForm : '???';
           const displayReadingHtml = isUnlocked ? readingHtml : '・・・';
           const displayTranslation = isUnlocked
-            ? word.translation
+            ? word.translation || word.meaning || ''
             : `Откроется в Главе ${chapterId}`;
 
           const lessonIds = word.lessonIds || [lesson.id];
           const lessonsBadge =
             isUnlocked && lessonIds.length > 1
-              ? `<span class="dict-word-lessons-badge">Уроки ${lessonIds.join(', ')}</span>`
+              ? `<span class="dict-word-lessons-badge">Уроки ${escapeHtml(lessonIds.join(', '))}</span>`
               : '';
 
+          const safeWordId = escapeHtml(String(word.id || ''));
+          const safeChapterId = escapeHtml(String(chapterId || ''));
+          const safeLexemeId = escapeHtml(String(word.lexemeId || ''));
+
           return `
-          <div class="dict-word-card ${!isUnlocked ? 'word-locked' : ''}" data-word-id="${word.id}" data-chapter-id="${chapterId}" data-lexeme-id="${word.lexemeId || ''}">
+          <div class="dict-word-card ${!isUnlocked ? 'word-locked' : ''}" data-word-id="${safeWordId}" data-chapter-id="${safeChapterId}" data-lexeme-id="${safeLexemeId}">
             <div class="dict-word-main">
-              <div class="dict-word-kanji">${displayKanji}</div>
+              <div class="dict-word-kanji">${escapeHtml(displayKanji)}</div>
               <div class="dict-word-info">
                 ${displayReadingHtml}
-                <div class="dict-word-translation">${displayTranslation} ${lessonsBadge}</div>
+                <div class="dict-word-translation">${escapeHtml(displayTranslation)} ${lessonsBadge}</div>
               </div>
             </div>
             <div class="dict-word-status">
-              <span class="dict-status-indicator status-${status.status}" tabindex="0" title="${status.title}" aria-label="${status.title}">
-                <span class="dict-status-icon">${status.symbol}</span>
+              <span class="dict-status-indicator status-${escapeHtml(status.status)}" tabindex="0" title="${escapeHtml(status.title)}" aria-label="${escapeHtml(status.title)}">
+                <span class="dict-status-icon">${escapeHtml(status.symbol)}</span>
               </span>
             </div>
           </div>
@@ -433,13 +440,17 @@ export function renderDictionaryLessons(
         .join('');
 
       const isExpanded =
-        query || filterQuery !== 'all' ? filteredWords.length > 0 : lesson.id === activeLessonId;
+        dictionaryViewState.expandedLessons?.has(lesson.id) ||
+        Boolean(query) ||
+        filterQuery !== 'all'
+          ? filteredWords.length > 0
+          : lesson.id === activeLessonId;
 
       return `
-      <div class="dict-lesson is-unlocked ${isExpanded ? 'is-expanded' : 'is-collapsed'}" data-lesson-id="${lesson.id}">
-        <div class="dict-lesson-header" role="button" tabindex="0" aria-label="Урок ${lesson.id}: ${lesson.title}. Нажмите для раскрытия">
+      <div class="dict-lesson is-unlocked ${isExpanded ? 'is-expanded' : 'is-collapsed'}" data-lesson-id="${safeLessonId}">
+        <div class="dict-lesson-header" role="button" tabindex="0" aria-label="Урок ${safeLessonId}: ${safeLessonTitle}. Нажмите для раскрытия">
           <span class="dict-lesson-toggle-icon">${isExpanded ? '▼' : '▶'}</span>
-          <h3 class="dict-lesson-title">Урок ${lesson.id}: ${lesson.title}</h3>
+          <h3 class="dict-lesson-title">Урок ${safeLessonId}: ${safeLessonTitle}</h3>
           <span class="dict-lesson-count">${filteredWords.length} слов</span>
         </div>
         <div class="dict-words-list">
@@ -467,18 +478,18 @@ export function renderDictionaryLessons(
         toast(`🔒 Начните Главу ${lessonId}, чтобы разблокировать этот урок`);
         return;
       }
-      if (typeof ensureLesson === 'function') {
-        ensureLesson(lessonId).catch(() => null);
-      }
+
       const isExpanded = lessonEl.classList.contains('is-expanded');
       if (isExpanded) {
         lessonEl.classList.remove('is-expanded');
         lessonEl.classList.add('is-collapsed');
+        dictionaryViewState.expandedLessons?.delete(lessonId);
         const icon = lessonEl.querySelector('.dict-lesson-toggle-icon');
         if (icon) icon.textContent = '▶';
       } else {
         lessonEl.classList.remove('is-collapsed');
         lessonEl.classList.add('is-expanded');
+        dictionaryViewState.expandedLessons?.add(lessonId);
         const icon = lessonEl.querySelector('.dict-lesson-toggle-icon');
         if (icon) icon.textContent = '▼';
       }
@@ -492,7 +503,7 @@ export function renderDictionaryLessons(
   });
 
   $$('.dict-word-card').forEach((card) => {
-    card.onclick = () => {
+    card.onclick = async () => {
       const wordId = card.dataset.wordId;
 
       if (card.classList.contains('word-locked')) {
@@ -502,7 +513,37 @@ export function renderDictionaryLessons(
       }
 
       const word = wordById(wordId, lessonsToRender);
-      if (word) openDictionaryModal(word, state, dependencies);
+      if (word) {
+        const lessonId = word.lessonId || word.introducedIn;
+        if (lessonId && typeof ensureLesson === 'function') {
+          ensureLesson(lessonId)
+            .then(async (loadedLesson) => {
+              if (loadedLesson && $('#dict-lessons-container')) {
+                // Re-evaluate catalog with runtime lesson override
+                const updatedResult = await ensureDictionaryCatalog({
+                  courseId: state?.activeCourseId || 'genki-1',
+                  activeCourse:
+                    dependencies.activeCourse || dependencies.course || state?.activeCourse,
+                  contentIndex: dependencies.CONTENT_INDEX || [],
+                  loadedLessons: dependencies.LESSONS || [],
+                });
+                if ($('#dict-lessons-container')) {
+                  renderDictionaryLessons(
+                    state,
+                    dependencies,
+                    dictionaryViewState,
+                    'all',
+                    'all',
+                    'all',
+                    updatedResult.lessons
+                  );
+                }
+              }
+            })
+            .catch(() => null);
+        }
+        openDictionaryModal(word, state, dependencies);
+      }
     };
   });
 
@@ -528,25 +569,6 @@ export async function renderDictionary(state, dependencies, options = {}, contex
 
   const content = $('#srs-body');
   if (!content) return;
-
-  const presentTopics = new Set();
-  if (dependencies.LESSONS) {
-    dependencies.LESSONS.forEach((l) => {
-      if (l.words) {
-        l.words.forEach((w) => {
-          if (w.topic) presentTopics.add(w.topic);
-        });
-      }
-    });
-  }
-
-  const topicOptionsHtml = Array.from(presentTopics)
-    .sort()
-    .map(
-      (t) =>
-        `<option value="${t}" ${dictionaryViewState.topic === t ? 'selected' : ''}>${getTopicLabel(t)}</option>`
-    )
-    .join('');
 
   const isAdjActive = dictionaryViewState.partOfSpeech === 'adjective';
 
@@ -574,18 +596,7 @@ export async function renderDictionary(state, dependencies, options = {}, contex
         <button class="dict-adj-class-btn ${dictionaryViewState.adjectiveClass === 'i' ? 'active' : ''}" data-adj-class="i">い-прилаг.</button>
         <button class="dict-adj-class-btn ${dictionaryViewState.adjectiveClass === 'na' ? 'active' : ''}" data-adj-class="na">な-прилаг.</button>
       </div>
-      ${
-        presentTopics.size > 0
-          ? `
-      <div class="dict-topic-filter-wrap" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-        <label for="dict-topic-select" style="font-size: 14px; font-weight: 600; color: var(--text-muted);">Тема:</label>
-        <select id="dict-topic-select" style="padding: 6px 12px; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 14px; outline: none; flex: 1;">
-          <option value="all">Все темы</option>
-          ${topicOptionsHtml}
-        </select>
-      </div>`
-          : ''
-      }
+      <div id="dict-topic-filter-container"></div>
       <div class="dict-overall-mastery">
         <div class="dict-overall-label">Общий прогресс словаря: <span id="dict-overall-percent">0%</span></div>
         <div class="dict-overall-bar">
@@ -606,6 +617,7 @@ export async function renderDictionary(state, dependencies, options = {}, contex
   try {
     catalogResult = await ensureDictionaryCatalog({
       courseId: state?.activeCourseId || 'genki-1',
+      activeCourse: dependencies.activeCourse || dependencies.course || state?.activeCourse,
       contentIndex: CONTENT_INDEX || [],
       loadedLessons: dependencies.LESSONS || [],
       signal: context?.signal,
@@ -619,6 +631,60 @@ export async function renderDictionary(state, dependencies, options = {}, contex
   if (context?.signal?.aborted) return;
 
   const catalogLessons = catalogResult?.lessons || dependencies.LESSONS || [];
+
+  // Build topics dynamically from catalogResult.lessons
+  const presentTopics = new Set();
+  catalogLessons.forEach((l) => {
+    (l.words || []).forEach((w) => {
+      if (w.topic) presentTopics.add(w.topic);
+    });
+  });
+
+  if (dictionaryViewState.topic !== 'all' && !presentTopics.has(dictionaryViewState.topic)) {
+    dictionaryViewState.topic = 'all';
+  }
+
+  const topicContainer = $('#dict-topic-filter-container');
+  if (topicContainer) {
+    if (presentTopics.size > 0) {
+      const topicOptionsHtml = Array.from(presentTopics)
+        .sort()
+        .map(
+          (t) =>
+            `<option value="${escapeHtml(t)}" ${dictionaryViewState.topic === t ? 'selected' : ''}>${escapeHtml(getTopicLabel(t))}</option>`
+        )
+        .join('');
+
+      topicContainer.innerHTML = `
+        <div class="dict-topic-filter-wrap" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <label for="dict-topic-select" style="font-size: 14px; font-weight: 600; color: var(--text-muted);">Тема:</label>
+          <select id="dict-topic-select" style="padding: 6px 12px; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 14px; outline: none; flex: 1;">
+            <option value="all">Все темы</option>
+            ${topicOptionsHtml}
+          </select>
+        </div>
+      `;
+
+      const topicSelect = $('#dict-topic-select');
+      if (topicSelect) {
+        topicSelect.onchange = (e) => {
+          dictionaryViewState.topic = e.target.value;
+          renderDictionaryLessons(
+            state,
+            dependencies,
+            dictionaryViewState,
+            'all',
+            'all',
+            'all',
+            catalogLessons
+          );
+        };
+      }
+    } else {
+      topicContainer.innerHTML = '';
+    }
+  }
+
   renderDictionaryLessons(
     state,
     dependencies,
@@ -693,20 +759,4 @@ export async function renderDictionary(state, dependencies, options = {}, contex
       );
     };
   });
-
-  const topicSelect = $('#dict-topic-select');
-  if (topicSelect) {
-    topicSelect.onchange = (e) => {
-      dictionaryViewState.topic = e.target.value;
-      renderDictionaryLessons(
-        state,
-        dependencies,
-        dictionaryViewState,
-        'all',
-        'all',
-        'all',
-        catalogLessons
-      );
-    };
-  }
 }

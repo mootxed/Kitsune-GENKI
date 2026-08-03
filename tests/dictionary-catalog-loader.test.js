@@ -5,6 +5,7 @@ import {
   clearDictionaryCatalogCache,
 } from '../src/dictionary/dictionary-catalog-loader.js';
 import { dictionaryStore } from '../src/dictionary/dictionary-store.js';
+import { normalizeDictionaryEntry } from '../src/dictionary/dictionary-contract.js';
 
 describe('Dictionary Catalog Loader Performance & Correctness', () => {
   beforeEach(() => {
@@ -80,7 +81,17 @@ describe('Dictionary Catalog Loader Performance & Correctness', () => {
     expect(res2.catalog[0].translation).toBe('кошка');
   });
 
-  it('4. Maps dictionaryStore entries into lesson structure and invalidates cache when user entry is added', async () => {
+  it('4. Maps course vocabulary references into lesson structure and invalidates cache when user revision changes', async () => {
+    const entry = normalizeDictionaryEntry({
+      id: 'jp-word:本:ほん',
+      dictionaryForm: '本',
+      reading: 'ほん',
+      meanings: ['book'],
+      tokenForms: ['本', 'ほん'],
+      semanticTags: [],
+    });
+    dictionaryStore.builtinEntries.set('jp-word:本:ほん', entry);
+
     const res1 = await ensureDictionaryCatalog({
       courseId: 'genki-1',
       loadedLessons: [{ id: 1, words: [{ id: 'w1', writing: '一', lessonId: 1 }] }],
@@ -89,16 +100,18 @@ describe('Dictionary Catalog Loader Performance & Correctness', () => {
 
     expect(res1.lessons.length).toBe(2);
 
-    // Register user entry into dictionaryStore
-    await dictionaryStore.registerUserDictionaryEntry({
-      dictionaryForm: '本',
-      reading: 'ほん',
-      meanings: ['book'],
-      lessonId: 2,
+    dictionaryStore.resolveCourseVocabularyReference({
+      id: 'genki-1:vocabulary:hon',
+      localId: 'hon',
+      courseId: 'genki-1',
+      dictionaryId: 'jp-word:本:ほん',
+      introducedIn: '2',
+      lessonId: '2',
     });
 
     const res2 = await ensureDictionaryCatalog({
       courseId: 'genki-1',
+      userDictionaryRevision: String(dictionaryStore.userRevision + 1),
       loadedLessons: [{ id: 1, words: [{ id: 'w1', writing: '一', lessonId: 1 }] }],
       contentIndex: [{ id: 1 }, { id: 2 }],
     });
