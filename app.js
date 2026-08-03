@@ -1,7 +1,5 @@
 /* app.js — Kitsune Genki main controller */
 
-import './styles.css';
-
 // ===== ИМПОРТЫ МОДУЛЕЙ =====
 
 // Базовые модули
@@ -674,6 +672,10 @@ function setupRouter() {
     if (srsHeader) {
       srsHeader.style.display = 'flex';
     }
+    const srsTitle = document.querySelector('#screen-srs .app-title');
+    const srsSubtitle = document.querySelector('#screen-srs .app-subtitle');
+    if (srsTitle) srsTitle.textContent = 'Повторение';
+    if (srsSubtitle) srsSubtitle.textContent = 'Очередь FSRS и короткие сессии';
 
     const tabbar = document.querySelector('.tabbar');
     if (tabbar) tabbar.style.display = '';
@@ -690,10 +692,7 @@ function setupRouter() {
       tab.classList.toggle('active', tab.dataset.tab === 'repetition');
       tab.onclick = () => {
         if (tab.dataset.tab === 'dictionary') {
-          $$('#srs-tabs-container .lib-tab').forEach((t) =>
-            t.classList.toggle('active', t === tab)
-          );
-          renderDictionary(state, dependencies, {}, context);
+          router.navigate('dictionary');
         } else if (tab.dataset.tab === 'particles') {
           $$('#srs-tabs-container .lib-tab').forEach((t) =>
             t.classList.toggle('active', t === tab)
@@ -785,6 +784,32 @@ function setupRouter() {
     }
   };
 
+  const renderDictionaryRoute = async (options = {}, context = {}) => {
+    const srsScreen = document.getElementById('screen-srs');
+    if (srsScreen) srsScreen.classList.remove('srs-session-active');
+    document.body.classList.remove('srs-session-active');
+
+    const srsHeader = document.querySelector('#screen-srs .app-header');
+    if (srsHeader) srsHeader.style.display = 'flex';
+    const srsTitle = document.querySelector('#screen-srs .app-title');
+    const srsSubtitle = document.querySelector('#screen-srs .app-subtitle');
+    if (srsTitle) srsTitle.textContent = 'Словарь';
+    if (srsSubtitle) srsSubtitle.textContent = 'Слова, главы, мастерство и статусы SRS';
+
+    const tabsContainer = document.getElementById('srs-tabs-container');
+    if (tabsContainer) {
+      tabsContainer.classList.remove('hidden');
+      tabsContainer.style.display = '';
+    }
+    $$('#srs-tabs-container .lib-tab').forEach((tab) => {
+      tab.classList.toggle('active', tab.dataset.tab === 'dictionary');
+    });
+
+    await ensureLessonsForSrs();
+    if (context?.signal?.aborted) return;
+    renderDictionary(state, dependencies, options, context);
+  };
+
   router = initRouter({
     home: (options, context) => renderHome(state, dependencies, options, context),
     course: (options, context) => renderCourse(state, dependencies, options, context),
@@ -803,6 +828,7 @@ function setupRouter() {
       );
     },
     srs: (options, context) => renderSrsDashboard(options, context),
+    dictionary: (options, context) => renderDictionaryRoute(options, context),
     profile: (options, context) => renderProfile(state, dependencies, options, context),
     shop: (options, context) => renderShop(state, dependencies, options, context),
     library: (options, context) => renderStories(state, dependencies, options, context),

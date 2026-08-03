@@ -4,6 +4,7 @@ import { Router } from '../router.js';
 
 describe('ui/router.js initRouter integration', () => {
   let userDictHandler;
+  let dictionaryHandler;
 
   beforeEach(() => {
     document.body.innerHTML = `
@@ -17,6 +18,7 @@ describe('ui/router.js initRouter integration', () => {
     `;
 
     userDictHandler = vi.fn();
+    dictionaryHandler = vi.fn();
   });
 
   it('initRouter() returns a Router instance', () => {
@@ -59,5 +61,20 @@ describe('ui/router.js initRouter integration', () => {
     nav('user-dictionaries');
     expect(userDictHandler).toHaveBeenCalledTimes(1);
     expect(getCurrentRoute()).toBe('user-dictionaries');
+  });
+
+  it('nav("dictionary") reuses screen-srs while preserving the dictionary route', () => {
+    initRouter({
+      home: vi.fn(),
+      srs: vi.fn(),
+      dictionary: dictionaryHandler,
+      'user-dictionaries': userDictHandler,
+    });
+
+    nav('dictionary');
+
+    expect(dictionaryHandler).toHaveBeenCalledTimes(1);
+    expect(getCurrentRoute()).toBe('dictionary');
+    expect(document.getElementById('screen-srs').classList.contains('hidden')).toBe(false);
   });
 });

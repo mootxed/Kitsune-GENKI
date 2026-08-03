@@ -15,6 +15,7 @@ const SCREEN_TITLES = {
   profile: 'Профиль',
   chapter: 'Глава',
   srs: 'Карточки',
+  dictionary: 'Словарь',
   sensei: 'Инструменты',
   library: 'Учебник',
   settings: 'Настройки',
@@ -38,6 +39,7 @@ export class Router {
       'profile',
       'chapter',
       'srs',
+      'dictionary',
       'sensei',
       'library',
       'settings',
@@ -73,7 +75,8 @@ export class Router {
    * @returns {Promise<void>}
    */
   async navigate(name, opt, skipHistory = false) {
-    const targetId = `screen-${name}`;
+    const targetName = name === 'dictionary' ? 'srs' : name;
+    const targetId = `screen-${targetName}`;
     const targetScreen = document.getElementById(targetId);
     if (!targetScreen) {
       console.error(`[Router] Unknown screen: ${name}`);

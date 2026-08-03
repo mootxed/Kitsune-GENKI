@@ -17,6 +17,65 @@
     <link rel="apple-touch-icon" href="icon.svg" />
   </head>
   <body>
+    <svg class="app-icon-sprite" aria-hidden="true">
+      <symbol id="i-fox-mark" viewBox="0 0 40 40">
+        <path d="M5 16 7 3l11 8M35 16 33 3l-11 8" class="fox-mark-ears" />
+        <path
+          d="M7 16c0-7 5-11 13-11s13 4 13 11v7c0 8-6 13-13 13S7 31 7 23Z"
+          class="fox-mark-head"
+        />
+        <path
+          d="M9 22c3 0 5 1 7 4 1-2 3-3 4-3s3 1 4 3c2-3 4-4 7-4-1 8-5 11-11 11S10 30 9 22Z"
+          class="fox-mark-muzzle"
+        />
+        <circle cx="15" cy="19" r="2" class="fox-mark-detail" />
+        <circle cx="25" cy="19" r="2" class="fox-mark-detail" />
+        <path d="M18 25h4l-2 2Z" class="fox-mark-detail" />
+      </symbol>
+      <symbol id="i-home" viewBox="0 0 24 24">
+        <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+      </symbol>
+      <symbol id="i-plan" viewBox="0 0 24 24">
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M8 3v4m8-4v4M3 10h18M8 14h3m2 0h3m-8 4h3" />
+      </symbol>
+      <symbol id="i-book" viewBox="0 0 24 24">
+        <path
+          d="M4 4.5A2.5 2.5 0 0 1 6.5 2H11v18H6.5A2.5 2.5 0 0 0 4 22zM20 4.5A2.5 2.5 0 0 0 17.5 2H13v18h4.5A2.5 2.5 0 0 1 20 22z"
+        />
+      </symbol>
+      <symbol id="i-repeat" viewBox="0 0 24 24">
+        <path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3" />
+      </symbol>
+      <symbol id="i-search" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-4-4" />
+      </symbol>
+      <symbol id="i-story" viewBox="0 0 24 24">
+        <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" />
+        <path d="M8 20a3 3 0 0 1 0-6h11M9 8h6" />
+      </symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24">
+        <path d="M21 12a8 8 0 0 1-8 8H5l-3 2 1-5a9 9 0 1 1 18-5z" />
+        <path d="M8 12h.01M12 12h.01M16 12h.01" />
+      </symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10m6 10V4m6 16v-7m5 7H2" /></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6V3h4v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"
+        />
+      </symbol>
+      <symbol id="i-theme" viewBox="0 0 24 24">
+        <path d="M20 15.2A8 8 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2z" />
+      </symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z" /></symbol>
+      <symbol id="i-more" viewBox="0 0 24 24">
+        <circle cx="5" cy="12" r="1" />
+        <circle cx="12" cy="12" r="1" />
+        <circle cx="19" cy="12" r="1" />
+      </symbol>
+    </svg>
     <div id="app">
       <!-- Grid Background -->
       <div class="grid-background"></div>
@@ -41,21 +100,26 @@
       <section class="screen hidden" id="screen-home" data-testid="screen-home">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox brand-fox-mark" aria-hidden="true">🦊</span>
+            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
             <div>
               <h1 class="app-title" id="home-greeting-title">Добро пожаловать</h1>
               <p class="app-subtitle" id="home-greeting-subtitle">План на сегодня готов</p>
             </div>
           </div>
           <div class="app-header-right">
-            <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
+            <span class="offline-chip"><span></span>Доступно без сети</span>
             <button
-              class="icon-btn"
+              class="icon-btn theme-shortcut"
               data-nav="settings"
-              data-testid="header-settings-btn"
-              aria-label="Настройки"
+              aria-label="Открыть настройки темы"
             >
-              ⚙️
+              <svg class="ui-icon"><use href="#i-theme" /></svg>
+              <span class="sr-only">Открыть настройки темы</span>
+            </button>
+            <button class="icon-btn home-avatar" data-nav="profile" aria-label="Открыть профиль">
+              КГ
             </button>
           </div>
         </header>
@@ -107,7 +171,15 @@
                   <strong id="continue-learning-title">Продолжить обучение</strong>
                   <small id="continue-learning-context">Определяем следующий шаг…</small>
                 </span>
-                <span class="continue-arrow" aria-hidden="true">Начать <b>→</b></span>
+                <span class="home-task-meta" aria-hidden="true">
+                  <span class="home-meta-chip" id="home-action-count">Текущая задача</span>
+                  <span class="home-meta-chip" id="home-action-duration">≈ 5 минут</span>
+                  <span class="home-meta-chip info" id="home-action-source">План · сегодня</span>
+                </span>
+                <span class="continue-arrow" aria-hidden="true">
+                  <svg class="ui-icon"><use href="#i-play" /></svg>
+                  <span id="continue-action-label">Начать</span>
+                </span>
               </button>
             </div>
             <figure class="home-mascot" aria-hidden="true">
@@ -123,12 +195,44 @@
             </figure>
           </section>
 
-          <section
-            class="home-today-card"
-            id="home-plan-today"
-            data-testid="home-plan-today"
-            aria-live="polite"
-          ></section>
+          <div class="home-today-panel">
+            <section
+              class="home-today-card"
+              id="home-plan-today"
+              data-testid="home-plan-today"
+              aria-live="polite"
+            ></section>
+
+            <article class="home-plan-progress-card" id="home-plan-progress-card">
+              <div class="home-plan-progress-head">
+                <div>
+                  <span class="today-eyebrow">ПЛАН</span>
+                  <h2 id="home-plan-pace-title">Вы идёте в темпе</h2>
+                </div>
+                <span class="home-plan-reserve" id="home-plan-reserve">12 глав</span>
+              </div>
+              <div class="home-course-glance">
+                <div>
+                  <strong id="home-course-progress-label">GENKI I · глава 1</strong
+                  ><span id="home-course-progress-percent">0%</span>
+                </div>
+                <div class="home-progress-track"><span id="home-course-progress-bar"></span></div>
+                <p id="home-plan-deadline">
+                  План рассчитывает дату завершения по реальному прогрессу.
+                </p>
+              </div>
+            </article>
+          </div>
+
+          <aside class="home-reason-strip">
+            <svg class="ui-icon" aria-hidden="true"><use href="#i-repeat" /></svg>
+            <div>
+              <strong>Почему именно этот шаг?</strong>
+              <p id="home-reason-copy">
+                План выбрал следующую задачу по текущему прогрессу и расписанию.
+              </p>
+            </div>
+          </aside>
 
           <button class="course-entry-card" id="home-course-link" data-testid="course-entry-btn">
             <span>Все главы курса</span>
@@ -707,37 +811,42 @@
       <!-- ===== BOTTOM NAV ===== -->
       <nav class="tabbar" data-testid="tabbar">
         <div class="sidebar-brand" aria-hidden="true">
-          <span class="sidebar-brand-mark">🦊</span>
+          <span class="sidebar-brand-mark"
+            ><svg class="fox-mark"><use href="#i-fox-mark" /></svg
+          ></span>
           <strong>KotoKitsu</strong>
         </div>
         <div class="tab-indicator"></div>
-        <button class="tab active" data-nav="home" data-testid="tab-home">
-          <span class="tab-ic" aria-hidden="true">⌂</span><span>Главная</span>
+        <button class="tab active mobile-primary-tab" data-nav="home" data-testid="tab-home">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-home" /></svg><span>Главная</span>
         </button>
-        <button class="tab desktop-only-tab" data-nav="plan">
-          <span class="tab-ic" aria-hidden="true">▣</span><span>План</span>
+        <button class="tab mobile-primary-tab" data-nav="plan">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-plan" /></svg><span>План</span>
         </button>
-        <button class="tab desktop-only-tab" data-nav="course">
-          <span class="tab-ic" aria-hidden="true">▥</span><span>Курс</span>
+        <button class="tab mobile-primary-tab" data-nav="course">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-book" /></svg><span>Курс</span>
         </button>
-        <button class="tab" data-nav="srs" data-testid="tab-srs">
-          <span class="tab-ic" aria-hidden="true">↔</span
-          ><span class="tab-badge hidden" id="tab-srs-badge">0</span><span>SRS</span>
+        <button class="tab desktop-nav-tab" data-nav="srs" data-testid="tab-srs">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-repeat" /></svg
+          ><span class="tab-badge hidden" id="tab-srs-badge">0</span><span>Повторение</span>
         </button>
-        <button class="tab" data-nav="sensei" data-testid="tab-sensei">
-          <span class="tab-ic" aria-hidden="true">◇</span><span>Инструменты</span>
+        <button class="tab mobile-primary-tab" data-nav="dictionary">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-search" /></svg><span>Словарь</span>
         </button>
-        <button class="tab" data-nav="library" data-testid="tab-library">
-          <span class="tab-ic" aria-hidden="true">▤</span><span>Учебник</span>
+        <button class="tab desktop-nav-tab" data-nav="library" data-testid="tab-library">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-story" /></svg><span>Истории</span>
         </button>
-        <button class="tab" data-nav="profile" data-testid="tab-profile">
-          <span class="tab-ic" aria-hidden="true">◎</span><span>Профиль</span>
+        <button class="tab desktop-nav-tab" data-nav="sensei" data-testid="tab-sensei">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-chat" /></svg><span>Sensei</span>
         </button>
-        <button class="tab desktop-only-tab" data-nav="statistics">
-          <span class="tab-ic" aria-hidden="true">⌁</span><span>Статистика</span>
+        <button class="tab desktop-nav-tab" data-nav="statistics">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-chart" /></svg
+          ><span>Статистика</span>
         </button>
-        <button class="tab desktop-only-tab sidebar-settings-tab" data-nav="settings">
-          <span class="tab-ic" aria-hidden="true">⚙</span><span>Настройки</span>
+        <button class="tab mobile-primary-tab sidebar-settings-tab" data-nav="settings">
+          <svg class="ui-icon settings-icon" aria-hidden="true"><use href="#i-settings" /></svg>
+          <svg class="ui-icon more-icon" aria-hidden="true"><use href="#i-more" /></svg>
+          <span class="desktop-label">Настройки</span><span class="mobile-label">Ещё</span>
         </button>
         <div class="sidebar-storage-status" aria-hidden="true">
           <span></span>
