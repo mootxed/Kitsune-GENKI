@@ -439,12 +439,12 @@ export function renderDictionaryLessons(
         })
         .join('');
 
+      const hasActiveFilters =
+        Boolean(query) || partOfSpeech !== 'all' || topic !== 'all' || adjectiveClass !== 'all';
+
       const isExpanded =
         dictionaryViewState.expandedLessons?.has(lesson.id) ||
-        Boolean(query) ||
-        filterQuery !== 'all'
-          ? filteredWords.length > 0
-          : lesson.id === activeLessonId;
+        (hasActiveFilters ? filteredWords.length > 0 : lesson.id === activeLessonId);
 
       return `
       <div class="dict-lesson is-unlocked ${isExpanded ? 'is-expanded' : 'is-collapsed'}" data-lesson-id="${safeLessonId}">
@@ -461,7 +461,10 @@ export function renderDictionaryLessons(
     })
     .join('');
 
-  if ((query || partOfSpeech !== 'all' || topic !== 'all') && totalVisible === 0) {
+  if (
+    (Boolean(query) || partOfSpeech !== 'all' || topic !== 'all' || adjectiveClass !== 'all') &&
+    totalVisible === 0
+  ) {
     container.innerHTML = emptyState(
       '🔍',
       'Ничего не найдено',
@@ -516,33 +519,43 @@ export function renderDictionaryLessons(
       if (word) {
         const lessonId = word.lessonId || word.introducedIn;
         if (lessonId && typeof ensureLesson === 'function') {
-          ensureLesson(lessonId)
-            .then(async (loadedLesson) => {
-              if (loadedLesson && $('#dict-lessons-container')) {
-                // Re-evaluate catalog with runtime lesson override
-                const updatedResult = await ensureDictionaryCatalog({
-                  courseId: state?.activeCourseId || 'genki-1',
-                  activeCourse:
-                    dependencies.activeCourse || dependencies.course || state?.activeCourse,
-                  contentIndex: dependencies.CONTENT_INDEX || [],
-                  loadedLessons: dependencies.LESSONS || [],
-                });
-                if ($('#dict-lessons-container')) {
-                  renderDictionaryLessons(
-                    state,
-                    dependencies,
-                    dictionaryViewState,
-                    'all',
-                    'all',
-                    'all',
-                    updatedResult.lessons
-                  );
-                }
+          card.classList.add('is-loading');
+          try {
+            const loadedLesson = await ensureLesson(lessonId);
+            if (loadedLesson && $('#dict-lessons-container')) {
+              // Re-evaluate catalog with runtime lesson override
+              const activeCourse =
+                dependencies.getActiveCourse?.() ||
+                dependencies.activeCourse ||
+                dependencies.course ||
+                state?.activeCourse;
+              const updatedResult = await ensureDictionaryCatalog({
+                courseId: state?.activeCourseId || 'genki-1',
+                activeCourse,
+                contentIndex: dependencies.CONTENT_INDEX || [],
+                loadedLessons: dependencies.LESSONS || [],
+              });
+              if ($('#dict-lessons-container')) {
+                renderDictionaryLessons(
+                  state,
+                  dependencies,
+                  dictionaryViewState,
+                  'all',
+                  'all',
+                  'all',
+                  updatedResult.lessons
+                );
               }
-            })
-            .catch(() => null);
+            }
+          } catch {
+            // silent catch
+          } finally {
+            card.classList.remove('is-loading');
+          }
         }
-        openDictionaryModal(word, state, dependencies);
+        const runtimeWord =
+          wordById(wordId, dependencies.LESSONS) || wordById(wordId, lessonsToRender);
+        openDictionaryModal(runtimeWord || word, state, dependencies);
       }
     };
   });
@@ -615,9 +628,14 @@ export async function renderDictionary(state, dependencies, options = {}, contex
 
   let catalogResult = null;
   try {
+    const activeCourse =
+      dependencies.getActiveCourse?.() ||
+      dependencies.activeCourse ||
+      dependencies.course ||
+      state?.activeCourse;
     catalogResult = await ensureDictionaryCatalog({
       courseId: state?.activeCourseId || 'genki-1',
-      activeCourse: dependencies.activeCourse || dependencies.course || state?.activeCourse,
+      activeCourse,
       contentIndex: CONTENT_INDEX || [],
       loadedLessons: dependencies.LESSONS || [],
       signal: context?.signal,

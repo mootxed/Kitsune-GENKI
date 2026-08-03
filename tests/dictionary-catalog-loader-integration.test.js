@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderDictionary } from '../ui/flashcards/dictionary.js';
 import {
@@ -5,12 +8,88 @@ import {
   clearDictionaryCatalogCache,
 } from '../src/dictionary/dictionary-catalog-loader.js';
 import { dictionaryStore } from '../src/dictionary/dictionary-store.js';
+import {
+  clearActiveCourse,
+  ensureActiveCourse,
+  getActiveCourse,
+} from '../src/courses/course-context.js';
+import { clearCourseRegistryCache } from '../src/courses/course-registry.js';
+
+const root = process.cwd();
+
+function fileFetch(rootDirectory) {
+  return async (input) => {
+    const url = new URL(String(input));
+    let relativePath = url.pathname.replace(/^\/+/u, '');
+    try {
+      let fullPath = path.join(rootDirectory, 'public', relativePath);
+      if (!fs.existsSync(fullPath)) {
+        fullPath = path.join(rootDirectory, relativePath);
+      }
+      const raw = await readFile(fullPath, 'utf8');
+      return { ok: true, status: 200, json: async () => JSON.parse(raw) };
+    } catch {
+      return { ok: false, status: 404, json: async () => null };
+    }
+  };
+}
 
 describe('Dictionary catalog loader integration and cache tests', () => {
   beforeEach(async () => {
     clearDictionaryCatalogCache();
+    clearActiveCourse();
+    clearCourseRegistryCache();
     await dictionaryStore.ensureLoaded();
     document.body.innerHTML = '<div id="srs-body"></div>';
+  });
+
+  it('realistic production flow: loads real Course runtime via CourseLoader, calls renderDictionary without pre-warming catalog, and finds words from chapter 10 without loading full lessons or stories', async () => {
+    const customFetch = vi.fn(fileFetch(root));
+    await ensureActiveCourse('genki-1', { fetchImpl: customFetch });
+
+    const mockEnsureLesson = vi.fn().mockResolvedValue({});
+
+    // Load course first to get the real contentIndex (uses namespaced IDs like 'genki-1:lesson-10')
+    const course = getActiveCourse();
+    const realContentIndex = course.contentIndex.lessons || course.contentIndex.chapters || [];
+
+    // Mark chapters 1 and 10 as started so their words are rendered (not hidden behind locked state)
+    const chaptersState = {};
+    chaptersState['genki-1:lesson-1'] = { started: true };
+    chaptersState['genki-1:lesson-10'] = { started: true };
+
+    const state = {
+      activeCourseId: 'genki-1',
+      activeChapterId: 'genki-1:lesson-1',
+      chapters: chaptersState,
+    };
+    const dependencies = {
+      getActiveCourse: () => getActiveCourse(),
+      LESSONS: [],
+      CONTENT_INDEX: realContentIndex,
+      ensureLesson: mockEnsureLesson,
+      toast: vi.fn(),
+    };
+
+    // Call ONLY renderDictionary without pre-warming catalog beforehand
+    await renderDictionary(state, dependencies, {}, {});
+
+    const container = document.getElementById('dict-lessons-container');
+    expect(container).not.toBeNull();
+    // Words from chapter 10 (e.g. 季節 — "season") should be visible (chapter is unlocked)
+    expect(container.innerHTML).toContain('季節');
+    // Chapter 12 section should appear (even if locked it renders its header)
+    expect(container.innerHTML).toContain('genki-1:lesson-12');
+
+    // Confirm full lessons (ensureLesson) were NOT loaded for future chapters
+    expect(mockEnsureLesson).not.toHaveBeenCalled();
+
+    // Confirm fetch was NOT called for individual lesson JSON files or stories
+    const fetchedUrls = customFetch.mock.calls.map((c) => String(c[0]));
+    const fetchedFullLessons = fetchedUrls.filter(
+      (url) => url.includes('lesson-10') || url.includes('lesson-12') || url.includes('story')
+    );
+    expect(fetchedFullLessons.length).toBe(0);
   });
 
   it('renders dictionary shell with skeleton and calls ensureDictionaryCatalog without mass ensureLesson', async () => {

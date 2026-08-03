@@ -33,7 +33,7 @@ import { initTabSync } from './src/tab-sync.js';
 
 // Утилиты
 import { $, $$, todayStr, formatTimeUntilReset } from './src/utils.js';
-import { canonicalLessonId } from './src/courses/course-context.js';
+import { canonicalLessonId, getActiveCourse } from './src/courses/course-context.js';
 import {
   XP_PER_LEVEL,
   XP_CARD,
@@ -230,6 +230,9 @@ function createDependencies() {
     cardChapter,
     wordById,
     isWordUnlocked,
+
+    // Course context
+    getActiveCourse,
 
     // Global objects
     SRS,
