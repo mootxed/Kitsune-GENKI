@@ -70,6 +70,11 @@ async function dispatchPomodoroNotification(transition, settings) {
     body = 'Можно вернуться к изучению японского.';
   }
 
+  const iconUrl =
+    typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL
+      ? `${import.meta.env.BASE_URL}icon.svg`
+      : '/icon.svg';
+
   try {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'granted') {
@@ -78,14 +83,14 @@ async function dispatchPomodoroNotification(transition, settings) {
           if (registration && registration.showNotification) {
             await registration.showNotification(title, {
               body,
-              icon: '/icon.svg',
+              icon: iconUrl,
               tag: 'pomodoro-notification',
               renotify: true,
             });
             return;
           }
         }
-        new Notification(title, { body, icon: '/icon.svg' });
+        new Notification(title, { body, icon: iconUrl });
         return;
       }
     }
@@ -177,8 +182,16 @@ function stopTickLoop() {
 /**
  * Initializes the Pomodoro widget subsystem
  */
+let pomodoroLifecycleController = null;
+
 export function initPomodoro(dependencies) {
   appDependencies = dependencies;
+
+  if (pomodoroLifecycleController) {
+    pomodoroLifecycleController.abort();
+  }
+  pomodoroLifecycleController = new AbortController();
+  const { signal } = pomodoroLifecycleController;
 
   // Normalize initial pomodoro state
   const state = dependencies.state;
@@ -196,20 +209,28 @@ export function initPomodoro(dependencies) {
   }
 
   setupDOM();
-  bindEvents();
+  bindEvents(signal);
   renderPomodoroWidget();
   startTickLoop();
 
   // Listen to global store changes
   if (typeof window !== 'undefined') {
-    window.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
+    window.addEventListener(
+      'visibilitychange',
+      () => {
+        if (document.visibilityState === 'visible') {
+          reconcilePomodoroOnResume();
+        }
+      },
+      { signal }
+    );
+    window.addEventListener(
+      'pageshow',
+      () => {
         reconcilePomodoroOnResume();
-      }
-    });
-    window.addEventListener('pageshow', () => {
-      reconcilePomodoroOnResume();
-    });
+      },
+      { signal }
+    );
   }
 }
 
@@ -338,7 +359,7 @@ function setupDOM() {
 /**
  * Event Bindings
  */
-function bindEvents() {
+function bindEvents(signal = null) {
   const floatingBtn = document.getElementById('pomodoro-floating-btn');
   const panelBackdrop = document.getElementById('pomodoro-panel-backdrop');
   const closeBtn = document.getElementById('pomodoro-panel-close-btn');
@@ -385,11 +406,16 @@ function bindEvents() {
 
   // Keyboard Escape listener
   if (typeof window !== 'undefined') {
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && panelIsOpen) {
-        closePanel();
-      }
-    });
+    const listenerOptions = signal ? { signal } : {};
+    window.addEventListener(
+      'keydown',
+      (e) => {
+        if (e.key === 'Escape' && panelIsOpen) {
+          closePanel();
+        }
+      },
+      listenerOptions
+    );
   }
 
   // Form input listeners for settings

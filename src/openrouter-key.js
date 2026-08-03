@@ -1,6 +1,7 @@
 /* src/openrouter-key.js — Isolated OpenRouter API key management (BYOK) */
 
 import { db, STORES } from './db.js';
+import { safeStorage } from './safe-storage.js';
 
 const LS_KEY = 'kitsune_openrouter_key';
 const DB_PREF_KEY = 'openrouter_api_key';
@@ -15,12 +16,10 @@ export function getOpenRouterKey() {
   if (cachedApiKey !== null) {
     return cachedApiKey;
   }
-  if (typeof localStorage !== 'undefined') {
-    const lsVal = localStorage.getItem(LS_KEY);
-    if (lsVal) {
-      cachedApiKey = lsVal.trim();
-      return cachedApiKey;
-    }
+  const lsVal = safeStorage.getItem(LS_KEY);
+  if (lsVal) {
+    cachedApiKey = lsVal.trim();
+    return cachedApiKey;
   }
   return '';
 }
@@ -35,9 +34,7 @@ export async function loadOpenRouterKeyFromDB() {
       const dbVal = await db.get(STORES.UI_PREFERENCES, DB_PREF_KEY);
       if (typeof dbVal === 'string' && dbVal.trim()) {
         cachedApiKey = dbVal.trim();
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(LS_KEY, cachedApiKey);
-        }
+        safeStorage.setItem(LS_KEY, cachedApiKey);
         return cachedApiKey;
       }
     }
@@ -56,12 +53,10 @@ export async function setOpenRouterKey(key) {
   const trimmed = (key || '').trim();
   cachedApiKey = trimmed;
 
-  if (typeof localStorage !== 'undefined') {
-    if (trimmed) {
-      localStorage.setItem(LS_KEY, trimmed);
-    } else {
-      localStorage.removeItem(LS_KEY);
-    }
+  if (trimmed) {
+    safeStorage.setItem(LS_KEY, trimmed);
+  } else {
+    safeStorage.removeItem(LS_KEY);
   }
 
   try {

@@ -38,7 +38,7 @@ export function renderDevTools(state, dependencies = {}) {
         <button class="btn-ghost dev-filter-btn ${currentFilter === 'ERROR' ? 'active-filter' : ''}" data-filter="ERROR" style="color: var(--danger, #ef4444);">ERROR</button>
         <button class="btn-ghost dev-filter-btn ${currentFilter === 'LOG' ? 'active-filter' : ''}" data-filter="LOG">LOG</button>
       </div>
-      <input type="text" id="dev-search-input" value="${currentSearch}" placeholder="🔍 Поиск по логам..." style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border, #ccc); background: var(--bg-card, #fff); color: var(--text-color, #333);" />
+      <input type="text" id="dev-search-input" value="${escapeHtml(currentSearch)}" placeholder="🔍 Поиск по логам..." style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border, #ccc); background: var(--bg-card, #fff); color: var(--text-color, #333);" />
     </div>
 
     <div class="set-group" style="margin-bottom: 16px;">

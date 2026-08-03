@@ -6,14 +6,10 @@ import { appendReviewLog, clearReviewLogs } from '../src/review-log.js';
 import { acknowledgeReviewLogs, compactReviewJournal } from '../src/review-journal.js';
 import { normalizeVocabularyLockState } from '../src/vocabulary-unlock-plan.js';
 import { hasMeaningfulUserProgress } from '../src/onboarding-state.js';
-import { isPrimaryTab, broadcastStateUpdated } from '../src/tab-sync.js';
+import { isPrimaryTab, broadcastStateUpdated, getTabId } from '../src/tab-sync.js';
+import { safeStorage } from '../src/safe-storage.js';
 import { normalizeChatHistory } from '../src/ai/chat-history.js';
-import {
-  migrateLegacyOpenRouterKey,
-  getOpenRouterKey,
-  setOpenRouterKey,
-  clearOpenRouterKey,
-} from '../src/openrouter-key.js';
+import { migrateLegacyOpenRouterKey, clearOpenRouterKey } from '../src/openrouter-key.js';
 import { migrateGenkiVocabularyState } from '../src/courses/genki-1/migrations/vocabulary-state.js';
 import { DEFAULT_COURSE_ID } from '../src/courses/course-registry.js';
 import {
@@ -869,18 +865,15 @@ function performSave() {
   if (state) {
     state.revision = (Number(state.revision) || 0) + 1;
     state.updatedAt = Date.now();
+    state.writerId = getTabId();
   }
   compactReviewJournal(state);
   // Снимок делается до первого await, а записи выполняются строго по порядку.
   // Поэтому поздний review/Undo не может быть перезаписан более старым save.
   const snapshot = createPersistableState(state);
 
-  // Синхронный бэкап в localStorage на случай быстрого закрытия вкладки/PWA
-  try {
-    localStorage.setItem(LS_STATE, JSON.stringify(snapshot));
-  } catch (e) {
-    console.warn('[Store] Ошибка синхронного бэкапа в localStorage:', e);
-  }
+  // Синхронный бэкап в safeStorage на случай быстрого закрытия вкладки/PWA
+  safeStorage.setItem(LS_STATE, JSON.stringify(snapshot));
 
   const generation = persistenceGeneration;
   saveQueue = saveQueue.catch(() => undefined).then(() => persistSnapshot(snapshot, generation));
@@ -900,15 +893,23 @@ async function persistSnapshot(snapshot, generation) {
   let primaryStatePersisted = false;
   try {
     const existing = await db.get(STORES.APP_STATE, 'state');
-    if (existing && existing.revision && existing.revision > snapshot.revision) {
-      console.warn(
-        `[Store] Ошибка оптимистичной блокировки: ревизия в БД (${existing.revision}) новее снимка (${snapshot.revision}). Перезапись заблокирована.`
-      );
-      recordDiagnosticError({
-        type: 'CONCURRENCY_CONFLICT',
-        message: `Отклонено сохранение: в БД запись с ревизией ${existing.revision} (текущая: ${snapshot.revision})`,
-      });
-      return;
+    if (existing && existing.revision != null) {
+      const isConflict =
+        existing.revision > snapshot.revision ||
+        (existing.revision === snapshot.revision &&
+          existing.writerId &&
+          existing.writerId !== snapshot.writerId);
+
+      if (isConflict) {
+        console.warn(
+          `[Store] Ошибка оптимистичной блокировки: ревизия в БД (${existing.revision}, writer: ${existing.writerId}) конфликтовала со снимком (${snapshot.revision}, writer: ${snapshot.writerId}). Перезапись заблокирована.`
+        );
+        recordDiagnosticError({
+          type: 'CONCURRENCY_CONFLICT',
+          message: `Отклонено сохранение: в БД запись с ревизией ${existing.revision} (текущая: ${snapshot.revision})`,
+        });
+        return;
+      }
     }
 
     if (globalThis.__DEV__) {
@@ -958,24 +959,16 @@ async function persistSnapshot(snapshot, generation) {
         await db.set(STORES.APP_STATE, 'state', minimal);
         if (window.toast) window.toast('⚠️ Данные сокращены — слишком много заметок');
       } catch (err2) {
-        // Последний фоллбек: emergency state в localStorage
-        console.error('[Store] Критическая ошибка сохранения, используем localStorage:', err2);
+        // Последний фоллбек: emergency state в safeStorage
+        console.error('[Store] Критическая ошибка сохранения, используем safeStorage:', err2);
         const emergency = { ...snapshot, savedNotes: [] };
-        try {
-          localStorage.setItem(LS_STATE, JSON.stringify(emergency));
-          if (window.toast) window.toast('⚠️ Заметки удалены — не хватило места в хранилище');
-        } catch {
-          console.error('[Store] Не удалось сохранить даже в localStorage');
-        }
+        safeStorage.setItem(LS_STATE, JSON.stringify(emergency));
+        if (window.toast) window.toast('⚠️ Заметки удалены — не хватило места в хранилище');
       }
     } else {
-      // Для других ошибок — фоллбек в localStorage
-      try {
-        localStorage.setItem(LS_STATE, JSON.stringify(snapshot));
-        console.warn('[Store] Использован localStorage после ошибки IndexedDB');
-      } catch {
-        console.error('[Store] Полный отказ сохранения');
-      }
+      // Для других ошибок — фоллбек в safeStorage
+      safeStorage.setItem(LS_STATE, JSON.stringify(snapshot));
+      console.warn('[Store] Использован safeStorage после ошибки IndexedDB');
     }
   } finally {
     // Subscribers observe the in-memory state even when persistence used a

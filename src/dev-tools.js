@@ -2,6 +2,10 @@
 
 import { state, CURRENT_VERSION, isStoragePersisted, isStorageDegraded } from '../state/store.js';
 import { DB_VERSION } from './db.js';
+import { safeStorage } from './safe-storage.js';
+
+export const APP_VERSION = '0.1.0-alpha';
+export const BUILD_DATE = '2026-08-03';
 
 const LS_DEV_MODE = 'kitsune_dev_mode';
 const MAX_LOGS = 500;
@@ -174,17 +178,14 @@ export function clearLogs() {
  * Developer Mode status check.
  */
 export function isDevModeEnabled() {
-  if (typeof localStorage === 'undefined') return false;
-  return localStorage.getItem(LS_DEV_MODE) === 'true';
+  return safeStorage.getItem(LS_DEV_MODE) === 'true';
 }
 
 /**
  * Enables or disables developer mode.
  */
 export function setDevModeEnabled(enabled) {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(LS_DEV_MODE, enabled ? 'true' : 'false');
-  }
+  safeStorage.setItem(LS_DEV_MODE, enabled ? 'true' : 'false');
   return enabled;
 }
 
@@ -320,13 +321,17 @@ export function generateDiagnosticReport(appState = state) {
 
   const logsText = formatLogsText();
 
+  const displayVersion =
+    appState?.appVersion ||
+    (typeof appState?.version === 'string' ? appState.version : APP_VERSION);
+
   const reportText = `=== KotoKitsu Diagnostic Report ===
 
 App Version:
-${appState?.version || CURRENT_VERSION || '0.1.0-alpha'}
+${displayVersion} (Schema v${appState?.version || CURRENT_VERSION})
 
 Build Date:
-${new Date().toISOString().slice(0, 10)}
+${BUILD_DATE}
 
 Database:
 Version ${DB_VERSION}

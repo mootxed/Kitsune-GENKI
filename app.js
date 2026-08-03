@@ -356,13 +356,14 @@ function showNotification(title, body, options = {}) {
     return false;
   }
 
+  const iconUrl = `${import.meta.env.BASE_URL}icon.svg`;
   if (Notification.permission === 'granted') {
-    new Notification(title, { body, icon: '/icon.svg' });
+    new Notification(title, { body, icon: iconUrl });
     return true;
   } else if (Notification.permission !== 'denied' && options.requestPermission !== false) {
     Notification.requestPermission().then((permission) => {
       if (permission === 'granted') {
-        new Notification(title, { body, icon: '/icon.svg' });
+        new Notification(title, { body, icon: iconUrl });
       }
     });
   }
@@ -465,7 +466,7 @@ function triggerScheduledNotification() {
     notifBody += ` До цели осталось ${digest.cardsToDailyGoal} карточки.`;
   }
 
-  const sent = showNotification('Kitsune Genki 🦊', notifBody, { requestPermission: false });
+  const sent = showNotification('KotoKitsu 🦊', notifBody, { requestPermission: false });
   if (sent) {
     s.notificationState = {
       lastDailyDigestDate: todayKey,
@@ -490,7 +491,7 @@ function scheduleOneHourReminder() {
     const body = digest.isComplete
       ? 'На сегодня всё выполнено 🎉'
       : `${digest.summaryText} — ${digest.durationText}.`;
-    showNotification('Kitsune Genki 🦊', `Напоминание: ${body}`);
+    showNotification('KotoKitsu 🦊', `Напоминание: ${body}`);
   }, ONE_HOUR_MS);
 
   toast('⏰ Напоминание установлено через 1 час');

@@ -52,6 +52,16 @@ export function wasReloadedAfterUpdate() {
   return false;
 }
 
+let activationRequested = false;
+
+/**
+ * Sets whether update activation was requested by user action.
+ * @param {boolean} [requested=true]
+ */
+export function setActivationRequested(requested = true) {
+  activationRequested = requested;
+}
+
 /**
  * Sends SKIP_WAITING to the waiting service worker.
  * @param {ServiceWorker} waitingWorker
@@ -61,6 +71,7 @@ export function activateWaitingWorker(waitingWorker) {
     console.warn('[SWUpdateManager] activateWaitingWorker called with no worker');
     return;
   }
+  setActivationRequested(true);
   waitingWorker.postMessage({ type: 'SKIP_WAITING' });
 }
 
@@ -127,12 +138,11 @@ export async function registerAndManageSW(swUrl, callbacks) {
   navigator.serviceWorker.addEventListener(
     'controllerchange',
     async () => {
-      callbacks.onStatusChange?.('updated');
-      try {
-        await callbacks.onUpdateActivated?.();
-      } catch (err) {
-        console.warn('[SWUpdateManager] onUpdateActivated callback error:', err);
+      if (!activationRequested) {
+        console.log('[SWUpdateManager] controllerchange ignored (not requested by user)');
+        return;
       }
+      callbacks.onStatusChange?.('updated');
       await performControlledReload(callbacks.onUpdateActivated);
     },
     { once: true }

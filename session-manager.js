@@ -372,7 +372,10 @@ class SessionManager {
     const item = this.queue.find((entry) => entry.card.id === cardId && !entry.completed);
     if (!item) return false;
     item.completed = true;
+    item.skipped = true;
     item.isFirstAttempt = false;
+    this.stats.reviewed++;
+    this.stats.skipped = (this.stats.skipped || 0) + 1;
     this.stats.remaining = Math.max(0, this.stats.remaining - 1);
     return true;
   }
@@ -477,7 +480,7 @@ class SessionManager {
    */
   getProgress() {
     if (this.stats.total === 0) return 100;
-    return Math.round((this.stats.reviewed / this.stats.total) * 100);
+    return Math.round(((this.stats.total - this.stats.remaining) / this.stats.total) * 100);
   }
 
   toSerializableState() {
@@ -489,6 +492,7 @@ class SessionManager {
         sessionLapses: item.sessionLapses,
         isFirstAttempt: item.isFirstAttempt,
         completed: item.completed,
+        skipped: item.skipped === true,
       })),
       stats: { ...this.stats },
       currentIndex: this.currentIndex,
@@ -540,6 +544,7 @@ class SessionManager {
         sessionLapses: savedItem.sessionLapses || 0,
         isFirstAttempt: savedItem.isFirstAttempt !== false,
         completed: savedItem.completed === true,
+        skipped: savedItem.skipped === true,
       });
     }
 
@@ -552,16 +557,18 @@ class SessionManager {
 
     const total = restoredQueue.length;
     const reviewed = restoredQueue.filter((item) => item.completed).length;
+    const skipped = restoredQueue.filter((item) => item.skipped).length;
     const remaining = total - reviewed;
     const relearned = restoredQueue.filter((item) => item.sessionLapses > 0).length;
     const perfect = restoredQueue.filter(
-      (item) => item.completed && item.sessionLapses === 0
+      (item) => item.completed && item.sessionLapses === 0 && !item.skipped
     ).length;
     const attempted = restoredQueue.filter((item) => !item.isFirstAttempt).length;
 
     this.stats = {
       total,
       reviewed,
+      skipped,
       attempted: Math.max(attempted, perfect + relearned),
       perfect,
       relearned,

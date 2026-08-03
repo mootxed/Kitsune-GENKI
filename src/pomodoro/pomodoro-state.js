@@ -247,7 +247,7 @@ export function resetTimer(state, settings) {
  * Updates timer settings and adjusts remaining time if idle
  */
 export function applySettingsChange(state, oldSettings, newSettings) {
-  const normOldSettings = normalizePomodoroSettings(oldSettings);
+  normalizePomodoroSettings(oldSettings);
   const normNewSettings = normalizePomodoroSettings(newSettings);
   let nextState = normalizePomodoroState(state, normNewSettings);
 
@@ -323,8 +323,55 @@ export function updateTimerState(state, settings, nowMs = Date.now()) {
   let completedIntervals = currentState.completedFocusIntervalsInCycle;
   let serial = currentState.transitionSerial;
 
-  const MAX_ITERATIONS = 20;
+  const MAX_ITERATIONS = 50;
   let iterations = 0;
+
+  // Fast-forward full cycles if auto-start is enabled and gap is large
+  if (normSettings.autoStartNextPhase) {
+    const N = normSettings.focusIntervalsBeforeLongBreak;
+    const focusMs = getPhaseDurationMs(POMODORO_PHASES.FOCUS, normSettings);
+    const shortMs = getPhaseDurationMs(POMODORO_PHASES.SHORT_BREAK, normSettings);
+    const longMs = getPhaseDurationMs(POMODORO_PHASES.LONG_BREAK, normSettings);
+    const cycleMs = N * focusMs + Math.max(0, N - 1) * shortMs + longMs;
+    const transitionsPerCycle = 2 * N;
+
+    if (cycleMs > 0 && nowMs - currentEndsAt > cycleMs) {
+      // Step to start of a fresh cycle first
+      while (
+        currentEndsAt <= nowMs &&
+        (currentPhase !== POMODORO_PHASES.FOCUS || completedIntervals !== 0) &&
+        iterations < transitionsPerCycle
+      ) {
+        iterations++;
+        serial++;
+        const { nextPhase, nextCompletedCount } = getNextPhaseInfo(
+          currentPhase,
+          completedIntervals,
+          normSettings
+        );
+        transitions.push({
+          completedPhase: currentPhase,
+          nextPhase,
+          serial,
+          timestamp: currentEndsAt,
+        });
+        completedIntervals = nextCompletedCount;
+        const nextDuration = getPhaseDurationMs(nextPhase, normSettings);
+        currentPhase = nextPhase;
+        currentEndsAt += nextDuration;
+      }
+
+      // Fast-forward full remaining cycles
+      if (currentPhase === POMODORO_PHASES.FOCUS && completedIntervals === 0) {
+        const remainingMsToCatchUp = nowMs - currentEndsAt;
+        const skippedCycles = Math.floor(remainingMsToCatchUp / cycleMs);
+        if (skippedCycles > 0) {
+          currentEndsAt += skippedCycles * cycleMs;
+          serial += skippedCycles * transitionsPerCycle;
+        }
+      }
+    }
+  }
 
   while (currentEndsAt <= nowMs && iterations < MAX_ITERATIONS) {
     iterations++;
