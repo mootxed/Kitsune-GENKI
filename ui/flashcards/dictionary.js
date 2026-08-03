@@ -25,6 +25,20 @@ export function emptyState(icon, title, desc) {
   `;
 }
 
+export function renderDictionaryError(error) {
+  const container = $('#dict-lessons-container');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="empty-state dict-error-state" style="padding: 32px 16px; text-align: center;">
+      <div class="empty-state-icon" style="font-size: 32px; margin-bottom: 8px;">⚠️</div>
+      <h3 class="empty-state-title" style="margin-bottom: 8px;">Ошибка загрузки словаря</h3>
+      <p class="empty-state-desc" style="color: var(--text-muted, #888); font-size: 14px;">
+        ${escapeHtml(error?.message || 'Не удалось загрузить данные словаря')}
+      </p>
+    </div>
+  `;
+}
+
 export function getWordStatus(word, state) {
   const isUnlocked = isWordUnlocked(word, state.chapters);
   const chapterId = cardChapter(word);
@@ -244,7 +258,8 @@ export function renderDictionaryLessons(
   arg3 = dictionaryViewState,
   filterQuery = 'all',
   topicQuery = 'all',
-  adjectiveClassQuery = 'all'
+  adjectiveClassQuery = 'all',
+  dictionaryLessons = null
 ) {
   let viewState = dictionaryViewState;
   if (typeof arg3 === 'object' && arg3 !== null) {
@@ -262,6 +277,7 @@ export function renderDictionaryLessons(
   const { search = '', partOfSpeech = 'all', topic = 'all', adjectiveClass = 'all' } = viewState;
 
   const { LESSONS, toast, ensureLesson } = dependencies;
+  const lessonsToRender = dictionaryLessons || dependencies.dictionaryLessons || LESSONS || [];
 
   const container = $('#dict-lessons-container');
   if (!container) return;
@@ -275,7 +291,7 @@ export function renderDictionaryLessons(
   let totalWordsCount = 0;
   const processedLexemes = new Set();
 
-  LESSONS.forEach((lesson) => {
+  lessonsToRender.forEach((lesson) => {
     const words = lesson.words || [];
     words.forEach((word) => {
       if (!word.lexemeId || processedLexemes.has(word.lexemeId)) return;
@@ -310,57 +326,58 @@ export function renderDictionaryLessons(
 
   let totalVisible = 0;
 
-  container.innerHTML = LESSONS.map((lesson) => {
-    const words = lesson.words || [];
-    const isLessonUnlocked = state.chapters?.[lesson.id]?.started === true || lesson.id === 1;
+  container.innerHTML = lessonsToRender
+    .map((lesson) => {
+      const words = lesson.words || [];
+      const isLessonUnlocked = state.chapters?.[lesson.id]?.started === true || lesson.id === 1;
 
-    const filteredWords = words.filter((word) => {
-      const topicLabel = word.topic ? getTopicLabel(word.topic).toLowerCase() : '';
-      const topicCode = word.topic ? word.topic.toLowerCase() : '';
-      const matchesSearch =
-        !query ||
-        (word.writtenForm && word.writtenForm.toLowerCase().includes(query)) ||
-        (word.reading && word.reading.toLowerCase().includes(query)) ||
-        (word.meaning && word.meaning.toLowerCase().includes(query)) ||
-        (word.kanji && word.kanji.toLowerCase().includes(query)) ||
-        (word.writing && word.writing.toLowerCase().includes(query)) ||
-        (word.romaji && word.romaji.toLowerCase().includes(query)) ||
-        (word.translation && word.translation.toLowerCase().includes(query)) ||
-        topicCode.includes(query) ||
-        topicLabel.includes(query);
+      const filteredWords = words.filter((word) => {
+        const topicLabel = word.topic ? getTopicLabel(word.topic).toLowerCase() : '';
+        const topicCode = word.topic ? word.topic.toLowerCase() : '';
+        const matchesSearch =
+          !query ||
+          (word.writtenForm && word.writtenForm.toLowerCase().includes(query)) ||
+          (word.reading && word.reading.toLowerCase().includes(query)) ||
+          (word.meaning && word.meaning.toLowerCase().includes(query)) ||
+          (word.kanji && word.kanji.toLowerCase().includes(query)) ||
+          (word.writing && word.writing.toLowerCase().includes(query)) ||
+          (word.romaji && word.romaji.toLowerCase().includes(query)) ||
+          (word.translation && word.translation.toLowerCase().includes(query)) ||
+          topicCode.includes(query) ||
+          topicLabel.includes(query);
 
-      let matchesFilter = true;
-      if (partOfSpeech === 'verb') {
-        matchesFilter = word.partOfSpeech === 'verb';
-      } else if (partOfSpeech === 'noun') {
-        matchesFilter = word.partOfSpeech === 'noun';
-      } else if (partOfSpeech === 'adjective') {
-        matchesFilter = word.partOfSpeech === 'adjective';
-      } else if (partOfSpeech === 'other') {
-        matchesFilter = !['verb', 'noun', 'adjective'].includes(word.partOfSpeech);
+        let matchesFilter = true;
+        if (partOfSpeech === 'verb') {
+          matchesFilter = word.partOfSpeech === 'verb';
+        } else if (partOfSpeech === 'noun') {
+          matchesFilter = word.partOfSpeech === 'noun';
+        } else if (partOfSpeech === 'adjective') {
+          matchesFilter = word.partOfSpeech === 'adjective';
+        } else if (partOfSpeech === 'other') {
+          matchesFilter = !['verb', 'noun', 'adjective'].includes(word.partOfSpeech);
+        }
+
+        let matchesAdjectiveClass = true;
+        if (partOfSpeech === 'adjective' && adjectiveClass !== 'all') {
+          matchesAdjectiveClass = word.adjectiveClass === adjectiveClass;
+        }
+
+        let matchesTopic = true;
+        if (topic !== 'all') {
+          matchesTopic = word.topic === topic;
+        }
+
+        return matchesSearch && matchesFilter && matchesAdjectiveClass && matchesTopic;
+      });
+
+      if (filteredWords.length === 0 && (query || partOfSpeech !== 'all' || topic !== 'all')) {
+        return '';
       }
 
-      let matchesAdjectiveClass = true;
-      if (partOfSpeech === 'adjective' && adjectiveClass !== 'all') {
-        matchesAdjectiveClass = word.adjectiveClass === adjectiveClass;
-      }
+      totalVisible += filteredWords.length;
 
-      let matchesTopic = true;
-      if (topic !== 'all') {
-        matchesTopic = word.topic === topic;
-      }
-
-      return matchesSearch && matchesFilter && matchesAdjectiveClass && matchesTopic;
-    });
-
-    if (filteredWords.length === 0 && (query || partOfSpeech !== 'all' || topic !== 'all')) {
-      return '';
-    }
-
-    totalVisible += filteredWords.length;
-
-    if (!isLessonUnlocked) {
-      return `
+      if (!isLessonUnlocked) {
+        return `
         <div class="dict-lesson is-locked" data-lesson-id="${lesson.id}">
           <div class="dict-lesson-header" role="button" tabindex="0" aria-label="Урок ${lesson.id}: ${lesson.title}. Закрыто">
             <span class="dict-lesson-toggle-icon">🔒</span>
@@ -369,32 +386,34 @@ export function renderDictionaryLessons(
           </div>
         </div>
       `;
-    }
+      }
 
-    const wordsHtml = filteredWords
-      .map((word) => {
-        const isUnlocked = isWordUnlocked(word, state.chapters);
-        const chapterId = cardChapter(word);
-        const status = getWordStatus(word, state);
+      const wordsHtml = filteredWords
+        .map((word) => {
+          const isUnlocked = isWordUnlocked(word, state.chapters);
+          const chapterId = cardChapter(word);
+          const status = getWordStatus(word, state);
 
-        const safeWrittenForm = displayWordForm(word, state);
-        const reading = word.reading || word.writing;
-        const hasSeparateReading = safeWrittenForm && safeWrittenForm !== reading;
-        const readingHtml = hasSeparateReading
-          ? `<div class="dict-word-reading">${reading}</div>`
-          : '';
-
-        const displayKanji = isUnlocked ? safeWrittenForm : '???';
-        const displayReadingHtml = isUnlocked ? readingHtml : '・・・';
-        const displayTranslation = isUnlocked ? word.translation : `Откроется в Главе ${chapterId}`;
-
-        const lessonIds = word.lessonIds || [lesson.id];
-        const lessonsBadge =
-          isUnlocked && lessonIds.length > 1
-            ? `<span class="dict-word-lessons-badge">Уроки ${lessonIds.join(', ')}</span>`
+          const safeWrittenForm = displayWordForm(word, state);
+          const reading = word.reading || word.writing;
+          const hasSeparateReading = safeWrittenForm && safeWrittenForm !== reading;
+          const readingHtml = hasSeparateReading
+            ? `<div class="dict-word-reading">${reading}</div>`
             : '';
 
-        return `
+          const displayKanji = isUnlocked ? safeWrittenForm : '???';
+          const displayReadingHtml = isUnlocked ? readingHtml : '・・・';
+          const displayTranslation = isUnlocked
+            ? word.translation
+            : `Откроется в Главе ${chapterId}`;
+
+          const lessonIds = word.lessonIds || [lesson.id];
+          const lessonsBadge =
+            isUnlocked && lessonIds.length > 1
+              ? `<span class="dict-word-lessons-badge">Уроки ${lessonIds.join(', ')}</span>`
+              : '';
+
+          return `
           <div class="dict-word-card ${!isUnlocked ? 'word-locked' : ''}" data-word-id="${word.id}" data-chapter-id="${chapterId}" data-lexeme-id="${word.lexemeId || ''}">
             <div class="dict-word-main">
               <div class="dict-word-kanji">${displayKanji}</div>
@@ -410,13 +429,13 @@ export function renderDictionaryLessons(
             </div>
           </div>
         `;
-      })
-      .join('');
+        })
+        .join('');
 
-    const isExpanded =
-      query || filterQuery !== 'all' ? filteredWords.length > 0 : lesson.id === activeLessonId;
+      const isExpanded =
+        query || filterQuery !== 'all' ? filteredWords.length > 0 : lesson.id === activeLessonId;
 
-    return `
+      return `
       <div class="dict-lesson is-unlocked ${isExpanded ? 'is-expanded' : 'is-collapsed'}" data-lesson-id="${lesson.id}">
         <div class="dict-lesson-header" role="button" tabindex="0" aria-label="Урок ${lesson.id}: ${lesson.title}. Нажмите для раскрытия">
           <span class="dict-lesson-toggle-icon">${isExpanded ? '▼' : '▶'}</span>
@@ -428,7 +447,8 @@ export function renderDictionaryLessons(
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   if ((query || partOfSpeech !== 'all' || topic !== 'all') && totalVisible === 0) {
     container.innerHTML = emptyState(
@@ -481,7 +501,7 @@ export function renderDictionaryLessons(
         return;
       }
 
-      const word = wordById(wordId, LESSONS);
+      const word = wordById(wordId, lessonsToRender);
       if (word) openDictionaryModal(word, state, dependencies);
     };
   });
@@ -582,16 +602,32 @@ export async function renderDictionary(state, dependencies, options = {}, contex
     </div>
   `;
 
-  await ensureDictionaryCatalog({
-    courseId: state?.currentCourseId || 'genki-1',
-    contentIndex: CONTENT_INDEX || [],
-    loadedLessons: dependencies.LESSONS || [],
-    signal: context?.signal,
-  }).catch(() => null);
+  let catalogResult = null;
+  try {
+    catalogResult = await ensureDictionaryCatalog({
+      courseId: state?.activeCourseId || 'genki-1',
+      contentIndex: CONTENT_INDEX || [],
+      loadedLessons: dependencies.LESSONS || [],
+      signal: context?.signal,
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') return;
+    renderDictionaryError(error);
+    return;
+  }
 
   if (context?.signal?.aborted) return;
 
-  renderDictionaryLessons(state, dependencies, dictionaryViewState);
+  const catalogLessons = catalogResult?.lessons || dependencies.LESSONS || [];
+  renderDictionaryLessons(
+    state,
+    dependencies,
+    dictionaryViewState,
+    'all',
+    'all',
+    'all',
+    catalogLessons
+  );
 
   const searchInput = $('#dict-search');
   let searchTimeout;
@@ -600,7 +636,15 @@ export async function renderDictionary(state, dependencies, options = {}, contex
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
         dictionaryViewState.search = e.target.value;
-        renderDictionaryLessons(state, dependencies, dictionaryViewState);
+        renderDictionaryLessons(
+          state,
+          dependencies,
+          dictionaryViewState,
+          'all',
+          'all',
+          'all',
+          catalogLessons
+        );
       }, 300);
     });
   }
@@ -621,7 +665,15 @@ export async function renderDictionary(state, dependencies, options = {}, contex
         }
       }
 
-      renderDictionaryLessons(state, dependencies, dictionaryViewState);
+      renderDictionaryLessons(
+        state,
+        dependencies,
+        dictionaryViewState,
+        'all',
+        'all',
+        'all',
+        catalogLessons
+      );
     };
   });
 
@@ -630,7 +682,15 @@ export async function renderDictionary(state, dependencies, options = {}, contex
       $$('.dict-adj-class-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       dictionaryViewState.adjectiveClass = btn.dataset.adjClass;
-      renderDictionaryLessons(state, dependencies, dictionaryViewState);
+      renderDictionaryLessons(
+        state,
+        dependencies,
+        dictionaryViewState,
+        'all',
+        'all',
+        'all',
+        catalogLessons
+      );
     };
   });
 
@@ -638,7 +698,15 @@ export async function renderDictionary(state, dependencies, options = {}, contex
   if (topicSelect) {
     topicSelect.onchange = (e) => {
       dictionaryViewState.topic = e.target.value;
-      renderDictionaryLessons(state, dependencies, dictionaryViewState);
+      renderDictionaryLessons(
+        state,
+        dependencies,
+        dictionaryViewState,
+        'all',
+        'all',
+        'all',
+        catalogLessons
+      );
     };
   }
 }

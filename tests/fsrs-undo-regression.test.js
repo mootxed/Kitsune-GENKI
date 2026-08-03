@@ -190,4 +190,32 @@ describe('FSRS Undo Regression & UI Refresh', () => {
     expect(sm.getStats().remaining).toBeGreaterThan(0);
     expect(sm.getStats().reviewed).toBe(3);
   });
+
+  it('3. Disallows Undo after session restoration when reviewUndoStack is empty', async () => {
+    const rev1 = {
+      eventId: 'rev-restored',
+      cardId: 'word:1',
+      itemId: 'word:1',
+      reviewedAt: Date.now(),
+      rawRating: 3,
+      effectiveRating: 3,
+      previousCard: { ...appState.srs['word:1'] },
+      nextCard: { ...appState.srs['word:1'] },
+    };
+    appState.reviewEvents.push(rev1);
+
+    // reviewUndoStack is empty (e.g. after reload / session restoration)
+    expect(reviewUndoStack.canUndo).toBe(false);
+
+    const deps = {
+      save: vi.fn().mockResolvedValue(true),
+      toast: vi.fn(),
+      updateSrsBadge: vi.fn(),
+      renderFlash: vi.fn(),
+    };
+
+    const result = await undoLastReview(appState, deps, deps.renderFlash);
+    expect(result).toBe(false);
+    expect(rev1.undoneAt).toBeUndefined();
+  });
 });

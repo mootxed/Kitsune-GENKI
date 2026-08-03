@@ -12,6 +12,7 @@ import {
   createUserDictionaryModel,
   UserDictionaryRepository,
 } from '../user-dictionaries/repository.js';
+import { clearDictionaryCatalogCache } from './dictionary-catalog-loader.js';
 
 export const PERSONAL_DICTIONARY_ID = 'user-dict:personal';
 
@@ -77,6 +78,7 @@ export class DictionaryStore {
     this.courseAliases = new Map(); // courseId -> Map(localId -> dictionaryId)
     this.courseReferences = new Map();
     this.referencesByDictionaryId = new Map();
+    this.userRevision = 0;
   }
 
   async ensureLoaded() {
@@ -135,6 +137,8 @@ export class DictionaryStore {
         }
       }
     }
+    this.userRevision++;
+    clearDictionaryCatalogCache();
   }
 
   getDictionaryEntry(id) {
@@ -354,6 +358,8 @@ export class DictionaryStore {
       this.aliases.set(saved.id, id);
     }
     this.userEntries.set(id, entry);
+    this.userRevision++;
+    clearDictionaryCatalogCache();
     return { entry, created: !current, conflict: null };
   }
 }

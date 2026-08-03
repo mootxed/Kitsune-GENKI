@@ -105,6 +105,17 @@ export class Router {
     this.renderHandlers = {};
     this.navigationId = 0;
     this.currentAbortController = null;
+    this.currentScreen = null;
+    this.currentOpt = null;
+
+    if (typeof window !== 'undefined') {
+      const handleResize = () => this.updateActiveTab();
+      window.addEventListener('resize', handleResize);
+      if (window.matchMedia) {
+        const mql = window.matchMedia('(max-width: 768px)');
+        mql?.addEventListener?.('change', handleResize);
+      }
+    }
   }
 
   /**
@@ -171,6 +182,7 @@ export class Router {
     }
 
     this.currentScreen = name;
+    this.currentOpt = opt;
 
     // Шаг 2: скрыть старые экраны и поставить inert
     document.querySelectorAll('.screen').forEach((screen) => {
@@ -189,17 +201,7 @@ export class Router {
     }
 
     // Управление активными табами: ровно ОДИН активный видимый таб
-    const activeTab = resolveActiveNavigationTab(
-      name,
-      typeof opt === 'object' ? opt?.origin : null
-    );
-    const tabs = document.querySelectorAll('.tab');
-    tabs.forEach((t) => {
-      t.classList.toggle('active', t === activeTab);
-    });
-
-    // Обновление индикатора табов
-    this.updateTabIndicator();
+    this.updateActiveTab();
 
     // Добавление в историю браузера (кроме случаев, когда skipHistory=true)
     if (!skipHistory) {
@@ -279,6 +281,22 @@ export class Router {
         this.navigate(targetScreen);
       }
     });
+  }
+
+  /**
+   * Обновление активной вкладки навигации на основе текущего экрана и видимых элементов
+   */
+  updateActiveTab() {
+    if (!this.currentScreen) return;
+    const activeTab = resolveActiveNavigationTab(
+      this.currentScreen,
+      typeof this.currentOpt === 'object' ? this.currentOpt?.origin : null
+    );
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach((t) => {
+      t.classList.toggle('active', t === activeTab);
+    });
+    this.updateTabIndicator();
   }
 
   /**
