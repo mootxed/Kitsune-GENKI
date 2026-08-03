@@ -155,4 +155,26 @@ if (typeof global !== 'undefined') {
   global.fetch = mockFetch;
 }
 
+// ===== Web Locks Mock =====
+if (typeof navigator !== 'undefined' && !navigator.locks) {
+  navigator.locks = {
+    request: vi.fn(async (name, options, callback) => {
+      const cb = typeof options === 'function' ? options : callback;
+      if (typeof cb === 'function') {
+        return cb();
+      }
+    }),
+  };
+}
+
+// ===== Tab Sync Mock =====
+// By default in unit tests, tab-sync is mocked as primary tab so store/command tests run normally
+vi.mock('../src/tab-sync.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    isPrimaryTab: vi.fn(() => true),
+  };
+});
+
 console.log('✅ Global mocks initialized for test environment');

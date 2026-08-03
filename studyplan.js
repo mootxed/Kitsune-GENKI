@@ -824,22 +824,26 @@ export function mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, options
   }
 
   // Классифицируем существующие сегменты:
-  // - fully-past: все даты в прошлом (строго < today) или статус completed → берём как есть
+  // - fully-past COMPLETED: status === 'completed' → берём как есть, больше не пересчитываем
+  // - overdue INCOMPLETE: все даты в прошлом, но не завершена → active (получит новые даты)
   // - active: хотя бы одна дата >= today → объединяем с новым сегментом по chapterId
   const fullyPastSegments = (existingPlan.segments || []).filter((seg) => {
-    if (seg.status === 'completed') return true;
-    const dates = seg.assignedDates || [];
-    return dates.length > 0 && dates.every(isHistoricalDate);
+    // Только явно завершённые — они не должны получать новые даты.
+    // Незавершённые просроченные сегменты переходят в activeExistingSegments — там они
+    // объединятся с новыми будущими датами, сохраняя прошлые.
+    return seg.status === 'completed';
   });
 
   const activeExistingSegments = (existingPlan.segments || []).filter((seg) => {
     if (seg.status === 'completed') return false;
     const dates = seg.assignedDates || [];
-    // Сегмент активен, если у него осталась хотя бы одна перестраиваемая дата.
-    // (начался в прошлом, но продолжается сегодня или в будущем)
-    return dates.length > 0 && dates.some(isFutureDate);
+    // Сегмент активен, если:
+    // - у него есть будущие даты (normal active), ИЛИ
+    // - все даты в прошлом (просрочен и не завершён) — overdue incomplete
+    return dates.length > 0;
   });
 
+  // fullyPastChapterIds — только завершённые главы, блокируем новую генерацию только для них
   const fullyPastChapterIds = new Set(
     fullyPastSegments.filter((s) => s.type === 'chapter').map((s) => s.chapterId)
   );

@@ -913,4 +913,136 @@ describe('StudyPlan', () => {
       expect(status).toBe('completed');
     });
   });
+
+  // =====================================================================
+  // T5–T6: Regression tests for P1/P2 — overdue incomplete chapter bug
+  // =====================================================================
+  describe('mergeUpdatedPlanWithHistory — T5/T6: overdue incomplete chapter', () => {
+    it('T5: incomplete chapter with all past dates gets new future dates after plan re-edit', () => {
+      // Scenario: chapter was assigned to last week, user did not finish it,
+      // then opens plan editor and saves. The chapter MUST receive future dates.
+      const today = '2026-07-28';
+
+      const existingPlan = {
+        startDate: '2026-07-20',
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 5,
+            // All dates in the past — overdue and INCOMPLETE (no status: 'completed')
+            assignedDates: ['2026-07-21', '2026-07-22', '2026-07-23'],
+            startDate: '2026-07-21',
+            endDate: '2026-07-23',
+            days: 3,
+            dateStatuses: {
+              '2026-07-21': 'skipped',
+              '2026-07-22': 'skipped',
+              '2026-07-23': 'skipped',
+            },
+            vocabularySchedule: {},
+          },
+        ],
+        history: [],
+        completedChapters: [],
+        dateStatuses: {},
+        vocabularySchedule: {},
+      };
+
+      // Regenerated plan assigns new future dates for the same chapter
+      const generatedPlan = {
+        startDate: '2026-07-28',
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 5,
+            assignedDates: ['2026-07-28', '2026-07-29', '2026-07-30'],
+            startDate: '2026-07-28',
+            endDate: '2026-07-30',
+            days: 3,
+            dateStatuses: {},
+            vocabularySchedule: {},
+          },
+        ],
+        history: [],
+        completedChapters: [],
+        dateStatuses: {},
+        vocabularySchedule: {},
+      };
+
+      const merged = StudyPlan.mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, { today });
+
+      const seg = merged.segments.find((s) => s.chapterId === 5);
+      expect(seg).toBeDefined();
+
+      // Past dates must be preserved (they are the historical record)
+      expect(seg.assignedDates).toContain('2026-07-21');
+      expect(seg.assignedDates).toContain('2026-07-22');
+      expect(seg.assignedDates).toContain('2026-07-23');
+
+      // Future dates MUST be added — this is the bug fix
+      expect(seg.assignedDates).toContain('2026-07-28');
+      expect(seg.assignedDates).toContain('2026-07-29');
+      expect(seg.assignedDates).toContain('2026-07-30');
+    });
+
+    it('T6: completed chapter with all past dates does NOT get new future dates', () => {
+      const today = '2026-07-28';
+
+      const existingPlan = {
+        startDate: '2026-07-20',
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 6,
+            status: 'completed', // Explicitly completed
+            assignedDates: ['2026-07-21', '2026-07-22'],
+            startDate: '2026-07-21',
+            endDate: '2026-07-22',
+            days: 2,
+            dateStatuses: {
+              '2026-07-21': 'completed',
+              '2026-07-22': 'completed',
+            },
+            vocabularySchedule: {},
+          },
+        ],
+        history: [],
+        completedChapters: ['6'],
+        dateStatuses: {},
+        vocabularySchedule: {},
+      };
+
+      // Regenerated plan mistakenly includes this chapter again
+      const generatedPlan = {
+        startDate: '2026-07-28',
+        segments: [
+          {
+            type: 'chapter',
+            chapterId: 6,
+            assignedDates: ['2026-07-28', '2026-07-29'],
+            startDate: '2026-07-28',
+            endDate: '2026-07-29',
+            days: 2,
+            dateStatuses: {},
+            vocabularySchedule: {},
+          },
+        ],
+        history: [],
+        completedChapters: ['6'],
+        dateStatuses: {},
+        vocabularySchedule: {},
+      };
+
+      const merged = StudyPlan.mergeUpdatedPlanWithHistory(existingPlan, generatedPlan, { today });
+
+      // Completed chapter segment should exist (from fullyPastSegments)
+      const seg = merged.segments.find((s) => s.chapterId === 6);
+      expect(seg).toBeDefined();
+      expect(seg.status).toBe('completed');
+
+      // Must NOT contain future dates
+      expect(seg.assignedDates).not.toContain('2026-07-28');
+      expect(seg.assignedDates).not.toContain('2026-07-29');
+    });
+  });
 });

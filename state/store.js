@@ -6,7 +6,7 @@ import { appendReviewLog, clearReviewLogs } from '../src/review-log.js';
 import { acknowledgeReviewLogs, compactReviewJournal } from '../src/review-journal.js';
 import { normalizeVocabularyLockState } from '../src/vocabulary-unlock-plan.js';
 import { hasMeaningfulUserProgress } from '../src/onboarding-state.js';
-import { isPrimaryTab, broadcastStateUpdated, getTabId } from '../src/tab-sync.js';
+import { isPrimaryTab, broadcastStateUpdated, getTabId, yieldLeadership } from '../src/tab-sync.js';
 import { safeStorage } from '../src/safe-storage.js';
 import { normalizeChatHistory } from '../src/ai/chat-history.js';
 import { migrateLegacyOpenRouterKey, clearOpenRouterKey } from '../src/openrouter-key.js';
@@ -780,13 +780,23 @@ export async function loadState() {
     const idbTime = Number(idbState.updatedAt) || 0;
     const lsTime = Number(lsState.updatedAt) || 0;
 
-    if (lsTime > idbTime) {
+    // lsState может быть записан конфликтующей вкладкой до того, как IDB отклонил её
+    // запись. Доверяем ls только если writerId совпадает с idb или idb-запись отсутствует.
+    const writerMismatch =
+      idbState.writerId && lsState.writerId && idbState.writerId !== lsState.writerId;
+
+    if (!writerMismatch && lsTime > idbTime) {
       console.warn(
         `[Store] Данные в localStorage новее (${lsTime} > ${idbTime}). Восстанавливаем из localStorage.`
       );
       state = lsState;
       performSave();
     } else {
+      if (writerMismatch) {
+        console.warn(
+          `[Store] localStorage writerId (${lsState.writerId}) отличается от IDB (${idbState.writerId}). Используем IDB.`
+        );
+      }
       state = idbState;
     }
   } else if (idbState) {
@@ -872,7 +882,9 @@ function performSave() {
   // Поэтому поздний review/Undo не может быть перезаписан более старым save.
   const snapshot = createPersistableState(state);
 
-  // Синхронный бэкап в safeStorage на случай быстрого закрытия вкладки/PWA
+  // Синхронный бэкап в safeStorage только если мы primary.
+  // Не-primary вкладка не должна писать резервную копию — иначе при следующем
+  // запуске более свежий, но конфликтующий backup перезапишет корректное IDB-состояние.
   safeStorage.setItem(LS_STATE, JSON.stringify(snapshot));
 
   const generation = persistenceGeneration;
@@ -902,12 +914,24 @@ async function persistSnapshot(snapshot, generation) {
 
       if (isConflict) {
         console.warn(
-          `[Store] Ошибка оптимистичной блокировки: ревизия в БД (${existing.revision}, writer: ${existing.writerId}) конфликтовала со снимком (${snapshot.revision}, writer: ${snapshot.writerId}). Перезапись заблокирована.`
+          `[Store] CONCURRENCY_CONFLICT: БД (rev ${existing.revision}, writer: ${existing.writerId}) vs снимок (rev ${snapshot.revision}, writer: ${snapshot.writerId}). Демотируем вкладку и перечитываем состояние.`
         );
         recordDiagnosticError({
           type: 'CONCURRENCY_CONFLICT',
           message: `Отклонено сохранение: в БД запись с ревизией ${existing.revision} (текущая: ${snapshot.revision})`,
         });
+        // Демотируем: эта вкладка не является writer-ом
+        yieldLeadership();
+        // Синхронизируем in-memory state с актуальным IDB-состоянием
+        try {
+          const fresh = await db.get(STORES.APP_STATE, 'state');
+          if (fresh) {
+            state = normalizeRuntimeShape(runMigrations(fresh));
+            notify();
+          }
+        } catch (reloadErr) {
+          console.warn('[Store] Не удалось перечитать state после конфликта:', reloadErr);
+        }
         return;
       }
     }

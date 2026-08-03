@@ -133,20 +133,20 @@ export async function registerAndManageSW(swUrl, callbacks) {
     }
   }
 
-  // Listen for controllerchange — fires when the new SW takes over
-  // We attach this BEFORE registering so we don't miss the event
-  navigator.serviceWorker.addEventListener(
-    'controllerchange',
-    async () => {
-      if (!activationRequested) {
-        console.log('[SWUpdateManager] controllerchange ignored (not requested by user)');
-        return;
-      }
-      callbacks.onStatusChange?.('updated');
-      await performControlledReload(callbacks.onUpdateActivated);
-    },
-    { once: true }
-  );
+  // Listen for controllerchange — fires when the new SW takes over.
+  // IMPORTANT: do NOT use { once: true } — the listener must persist so that
+  // future updates (after a first install) can also trigger a reload.
+  navigator.serviceWorker.addEventListener('controllerchange', async () => {
+    if (!activationRequested) {
+      console.log('[SWUpdateManager] controllerchange ignored (not requested by user)');
+      return;
+    }
+    // Reset flag before reload so that if reload somehow fails the listener
+    // doesn't retrigger on a later, unrelated controllerchange.
+    activationRequested = false;
+    callbacks.onStatusChange?.('updated');
+    await performControlledReload(callbacks.onUpdateActivated);
+  });
 
   let registration = null;
   try {

@@ -2,7 +2,7 @@
 
 import { safeStorage } from './safe-storage.js';
 
-let isPrimary = true;
+let isPrimary = false;
 let tabChannel = null;
 let activeSessionLock = null;
 let secondaryTabCallback = null;
@@ -58,13 +58,18 @@ function startHeartbeatFallback() {
       }
 
       if (isPrimary) {
-        // Refresh our own lease
-        safeStorage.setItem(
-          LEASE_KEY,
-          JSON.stringify({ tabId: TAB_ID, expiresAt: now + LEASE_TTL_MS })
-        );
+        // We already own the lease — just refresh it
+        if (!lease || lease.tabId === TAB_ID) {
+          safeStorage.setItem(
+            LEASE_KEY,
+            JSON.stringify({ tabId: TAB_ID, expiresAt: now + LEASE_TTL_MS })
+          );
+        } else {
+          // Another tab stole the lease — demote ourselves
+          setPrimaryState(false);
+        }
       } else if (!lease || !lease.expiresAt || lease.expiresAt < now) {
-        // Lease expired or missing; claim leadership
+        // Lease expired or missing — safe to claim leadership
         safeStorage.setItem(
           LEASE_KEY,
           JSON.stringify({ tabId: TAB_ID, expiresAt: now + LEASE_TTL_MS })
@@ -78,6 +83,7 @@ function startHeartbeatFallback() {
           }
         }
       }
+      // else: another tab holds a valid lease — stay secondary, do nothing
     } catch {
       /* ignore */
     }

@@ -58,6 +58,7 @@ import {
 import { speakJapanese, stopSpeaking } from './src/audio-helper.js';
 import { registerAndManageSW, activateWaitingWorker } from './src/sw-update-manager.js';
 import { announce } from './src/a11y-helpers.js';
+import { safeStorage } from './src/safe-storage.js';
 
 // State модуль
 import {
@@ -339,8 +340,8 @@ function applyTheme() {
     document.documentElement.setAttribute('data-theme', mode);
   }
 
-  // Сохраняем выбор в localStorage
-  localStorage.setItem(LS_THEME, mode);
+  // Сохраняем выбор через safeStorage (защищает от SecurityError в режиме запрещённого хранилища)
+  safeStorage.setItem(LS_THEME, mode);
 }
 
 // ===== УВЕДОМЛЕНИЯ =====
