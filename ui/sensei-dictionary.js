@@ -20,8 +20,13 @@ function labeled(labelText, control) {
   return label;
 }
 
-function input(value = '') {
+function input(value = '', options = {}) {
+  const opts = typeof options === 'string' ? { name: options } : options;
   const control = node('input');
+  control.type = opts.type || 'text';
+  if (opts.name) control.name = opts.name;
+  control.setAttribute('autocomplete', opts.autocomplete || 'off');
+  if (opts.placeholder) control.placeholder = opts.placeholder;
   control.value = value;
   return control;
 }
@@ -70,9 +75,14 @@ export async function openSenseiDictionaryDialog({
   const form = node('form');
   form.method = 'dialog';
   form.className = 'sensei-dictionary-form';
+  form.name = 'sensei-dictionary-form';
+  form.setAttribute('autocomplete', 'off');
+  form.setAttribute('data-autofill', 'false');
   form.append(node('h2', 'Добавить в словарь'));
 
   const dictionary = node('select');
+  dictionary.name = 'dict_target_id';
+  dictionary.setAttribute('autocomplete', 'off');
   dictionaries.forEach((item) => {
     const option = node('option', item.name);
     option.value = item.id;
@@ -82,20 +92,30 @@ export async function openSenseiDictionaryDialog({
   const createOption = node('option', '＋ Создать новый словарь');
   createOption.value = '__new__';
   dictionary.append(createOption);
-  const newDictionaryName = input('');
-  newDictionaryName.placeholder = 'Название нового словаря';
+  const newDictionaryName = input('', {
+    name: 'dict_new_name',
+    placeholder: 'Название нового словаря',
+    autocomplete: 'off',
+  });
   newDictionaryName.hidden = true;
   dictionary.addEventListener('change', () => {
     newDictionaryName.hidden = dictionary.value !== '__new__';
   });
 
-  const writing = input(draft.writing);
-  const reading = input(draft.reading);
+  const writing = input(draft.writing, { name: 'dict_writing', autocomplete: 'off' });
+  const reading = input(draft.reading, { name: 'dict_reading', autocomplete: 'off' });
   const meanings = node('textarea');
+  meanings.name = 'dict_meanings';
+  meanings.setAttribute('autocomplete', 'off');
   meanings.value = draft.meanings.join('\n');
-  const partOfSpeech = input(draft.partOfSpeech.join(', '));
-  const tags = input(draft.tags.join(', '));
+  const partOfSpeech = input(draft.partOfSpeech.join(', '), {
+    name: 'dict_part_of_speech',
+    autocomplete: 'off',
+  });
+  const tags = input(draft.tags.join(', '), { name: 'dict_tags', autocomplete: 'off' });
   const notes = node('textarea');
+  notes.name = 'dict_notes';
+  notes.setAttribute('autocomplete', 'off');
   notes.value = draft.notes;
   const context = node(
     'p',
@@ -122,11 +142,14 @@ export async function openSenseiDictionaryDialog({
   actions.className = 'sensei-dictionary-actions';
   const cancel = node('button', 'Отмена');
   cancel.type = 'button';
+  cancel.name = 'dict_cancel';
   cancel.addEventListener('click', () => closeDialog(dialog, opener));
   const submit = node('button', 'Проверить и сохранить');
   submit.type = 'submit';
+  submit.name = 'dict_save';
   submit.className = 'btn-primary';
   actions.append(cancel, submit);
+  form.append(actions);
   form.append(actions);
 
   const buildDraft = async () => {
@@ -193,15 +216,19 @@ export async function openSenseiDictionaryDialog({
       const existing = result.duplicates[0];
       const open = node('button', 'Открыть существующее');
       open.type = 'button';
+      open.name = 'dict_duplicate_open';
       open.addEventListener('click', () => save(candidate, 'open', existing));
       const merge = node('button', 'Объединить данные');
       merge.type = 'button';
+      merge.name = 'dict_duplicate_merge';
       merge.addEventListener('click', () => save(candidate, 'merge', existing));
       const separate = node('button', 'Добавить отдельно');
       separate.type = 'button';
+      separate.name = 'dict_duplicate_separate';
       separate.addEventListener('click', () => save(candidate, 'separate', existing));
       const abort = node('button', 'Отмена');
       abort.type = 'button';
+      abort.name = 'dict_duplicate_abort';
       abort.addEventListener('click', () => closeDialog(dialog, opener));
       actions.append(notice, open, merge, separate, abort);
     }

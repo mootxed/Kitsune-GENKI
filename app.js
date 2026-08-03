@@ -12,13 +12,10 @@ import { API } from './services.js';
 import { SRS } from './srs.js';
 import { SessionManager } from './session-manager.js';
 
-import {
-  saveSessionToDB,
-  loadSessionFromDB,
-  clearSessionFromDB,
-  validateSessionRecord,
-} from './session-manager.js';
+import { loadSessionFromDB, clearSessionFromDB, validateSessionRecord } from './session-manager.js';
 import { loadOpenRouterKeyFromDB } from './src/openrouter-key.js';
+import { shouldShowOnboarding } from './src/onboarding-state.js';
+import { refreshUserDictionaryLesson } from './src/user-dictionaries/runtime.js';
 import {
   saveActiveSessionState,
   restoreActiveSessionRecord,
@@ -127,9 +124,12 @@ import { renderOnboarding } from './ui/onboarding.js';
 import { renderStatistics } from './ui/statistics.js';
 import { renderUserDictionaries } from './ui/user-dictionaries.js';
 import { renderWordDetails } from './ui/word-details.js';
-import { refreshUserDictionaryLesson } from './src/user-dictionaries/runtime.js';
-import { shouldShowOnboarding } from './src/onboarding-state.js';
 import { initPomodoro } from './ui/pomodoro.js';
+import { initDevTools } from './src/dev-tools.js';
+import { renderDevTools } from './ui/dev-tools.js';
+
+// Инициализируем перехват логов и обработчиков ошибок при загрузке приложения
+initDevTools();
 
 // ===== ГЛОБАЛЬНЫЕ ЭКСПОРТЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ =====
 window.SRS = SRS;
@@ -807,6 +807,7 @@ function setupRouter() {
     story: (options, context) => renderStoryRoute(state, dependencies, options, context),
     sensei: (options, context) => renderSensei(state, dependencies, options, context),
     settings: (options, context) => renderSettings(state, dependencies, options, context),
+    'dev-tools': (options, context) => renderDevTools(state, dependencies, options, context),
     plan: (options, context) => renderPlan(state, dependencies, options, context),
     quests: (options, context) => renderQuests(state, dependencies, options, context),
     'ai-story': (options, context) => renderAIStory(state, dependencies, options, context),

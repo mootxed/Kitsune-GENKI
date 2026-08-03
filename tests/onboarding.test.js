@@ -1,11 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { defaultState } from '../state/store.js';
+import { getTodayDateKey } from '../src/local-date.js';
 import {
   shouldShowOnboarding,
   hasMeaningfulUserProgress,
   updateOnboardingDraft,
-  completeOnboarding,
-  resetOnboarding,
 } from '../src/onboarding-state.js';
 import {
   buildStudyPlanContentCatalog,
@@ -55,7 +54,7 @@ describe('Onboarding & First Launch Flow', () => {
 
   it('reload between preview and commit does not create real studyPlan', () => {
     const preferences = {
-      startDate: '2026-08-01',
+      startDate: getTodayDateKey(),
       studyDays: [1, 3, 5],
       dailyCapacityMinutes: 30,
       workbookSettings: { enabled: true, includeReadingWriting: true },
@@ -78,7 +77,7 @@ describe('Onboarding & First Launch Flow', () => {
 
   it('successful plan commit marks onboarding completed', () => {
     const preferences = {
-      startDate: '2026-08-01',
+      startDate: getTodayDateKey(),
       studyDays: [1, 2, 3, 4, 5],
       dailyCapacityMinutes: 30,
       priorKnowledgeChapterIds: [1],

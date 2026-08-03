@@ -5,6 +5,7 @@ import { renderOnboarding } from '../ui/onboarding.js';
 import { renderChapter } from '../ui/chapter.js';
 import { renderSettings } from '../ui/settings.js';
 import { shouldShowOnboarding } from '../src/onboarding-state.js';
+import { getTodayDateKey } from '../src/local-date.js';
 import {
   buildStudyPlanContentCatalog,
   previewStudyPlanFromPreferences,
@@ -44,7 +45,7 @@ describe('Browser DOM Integration Flow', () => {
       },
     ]);
     const preferences = {
-      startDate: '2026-08-01',
+      startDate: getTodayDateKey(),
       studyDays: [1, 2, 3, 4, 5, 6, 0],
       dailyCapacityMinutes: 30,
     };

@@ -147,7 +147,9 @@ function textInput(value = '', options = {}) {
   return node(options.multiline ? 'textarea' : 'input', {
     value,
     type: options.multiline ? undefined : options.type || 'text',
+    name: options.name,
     attrs: {
+      autocomplete: options.autocomplete || 'off',
       ...(options.required ? { required: 'required' } : {}),
       ...(options.placeholder ? { placeholder: options.placeholder } : {}),
       ...(options.maxLength ? { maxlength: options.maxLength } : {}),
@@ -493,15 +495,20 @@ function openDictionaryForm(opener, repository, state, dependencies) {
     opener,
     onRequestClose: () => !dirty || window.confirm('Закрыть без сохранения?'),
   });
-  const name = textInput('', { required: true, maxLength: 120 });
-  const description = textInput('', { multiline: true, maxLength: 2000 });
-  const form = node('form', { className: 'user-dict-form' });
+  const name = textInput('', { name: 'dict_name', required: true, maxLength: 120 });
+  const description = textInput('', { name: 'dict_description', multiline: true, maxLength: 2000 });
+  const form = node('form', {
+    className: 'user-dict-form',
+    name: 'user-dictionary-form',
+    attrs: { autocomplete: 'off', 'data-autofill': 'false' },
+  });
   form.append(
     labeledControl('Название *', name),
     labeledControl('Описание', description),
     button('Создать', () => {}, { className: 'btn-primary', testId: 'save-user-dictionary' })
   );
   form.querySelector('button').type = 'submit';
+  form.querySelector('button').name = 'dict_create_button';
   form.addEventListener('input', () => {
     dirty = true;
   });
@@ -532,23 +539,30 @@ function openEntryForm(opener, repository, dictionary, entry, state, dependencie
     opener,
     onRequestClose: () => !dirty || window.confirm('Закрыть без сохранения?'),
   });
-  const writing = textInput(entry?.writing, { maxLength: 200 });
-  const reading = textInput(entry?.reading, { maxLength: 200 });
+  const writing = textInput(entry?.writing, { name: 'dict_writing', maxLength: 200 });
+  const reading = textInput(entry?.reading, { name: 'dict_reading', maxLength: 200 });
   const meanings = textInput(entry?.meanings.join('\n'), {
+    name: 'dict_meanings',
     multiline: true,
     required: true,
     maxLength: 50_000,
   });
-  const alternatives = textInput(entry?.alternativeWritings.join('; '));
-  const partOfSpeech = textInput(entry?.partOfSpeech.join(', '));
-  const tags = textInput(entry?.tags.join(', '));
+  const alternatives = textInput(entry?.alternativeWritings.join('; '), {
+    name: 'dict_alternatives',
+  });
+  const partOfSpeech = textInput(entry?.partOfSpeech.join(', '), { name: 'dict_part_of_speech' });
+  const tags = textInput(entry?.tags.join(', '), { name: 'dict_tags' });
   const examples = textInput(
     entry?.examples.map((example) => `${example.japanese}\t${example.translation}`).join('\n'),
-    { multiline: true }
+    { name: 'dict_examples', multiline: true }
   );
-  const notes = textInput(entry?.notes, { multiline: true, maxLength: 10_000 });
-  const source = textInput(entry?.source.label);
-  const form = node('form', { className: 'user-dict-form' });
+  const notes = textInput(entry?.notes, { name: 'dict_notes', multiline: true, maxLength: 10_000 });
+  const source = textInput(entry?.source.label, { name: 'dict_source' });
+  const form = node('form', {
+    className: 'user-dict-form',
+    name: 'user-dictionary-entry-form',
+    attrs: { autocomplete: 'off', 'data-autofill': 'false' },
+  });
   form.append(
     labeledControl('Написание', writing),
     labeledControl('Чтение', reading),
@@ -569,6 +583,7 @@ function openEntryForm(opener, repository, dictionary, entry, state, dependencie
     testId: 'save-user-word',
   });
   submit.type = 'submit';
+  submit.name = 'dict_save_word_button';
   form.append(submit);
   form.addEventListener('input', () => {
     dirty = true;

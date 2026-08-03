@@ -14,6 +14,7 @@ import { resetApplicationData, commitState } from '../state/store.js';
 import { updateThemeCommand } from '../src/domain-commands.js';
 import { getOpenRouterKey, setOpenRouterKey } from '../src/openrouter-key.js';
 import { openPanel as openPomodoroPanel } from './pomodoro.js';
+import { isDevModeEnabled, recordDevTap } from '../src/dev-tools.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -136,6 +137,21 @@ export function renderSettings(state, dependencies) {
       </div>
     </div>
 
+    ${
+      isDevModeEnabled()
+        ? `
+    <div class="set-group" id="set-group-dev-tools" data-testid="set-group-dev-tools">
+      <div class="set-item settings-destination">
+        <div>
+          <label>🛠️ Инструменты разработчика</label>
+          <div class="set-hint">Просмотр логов, диагностика системы и экспорт отчётов.</div>
+        </div>
+        <button class="btn-ghost" id="btn-dev-tools" data-testid="settings-dev-tools-btn">Открыть</button>
+      </div>
+    </div>`
+        : ''
+    }
+
     <div class="set-group">
       <div class="set-item settings-destination">
         <div>
@@ -148,6 +164,10 @@ export function renderSettings(state, dependencies) {
 
     <div class="set-group">
       <div class="set-item"><button class="btn-ghost" id="btn-reset" style="color:var(--danger)" data-testid="reset-btn">Сбросить весь прогресс</button></div>
+    </div>
+
+    <div style="text-align: center; margin-top: 16px; margin-bottom: 8px;">
+      <span id="app-version-trigger" style="font-size: 12px; color: var(--text-secondary, #888); cursor: pointer; user-select: none;" data-testid="app-version-trigger">KotoKitsu v0.1.0-alpha</span>
     </div>
     <div class="bottom-pad"></div>`;
 
@@ -228,7 +248,15 @@ export function renderSettings(state, dependencies) {
   bindEvent('#btn-study-plan', 'click', () => nav('plan'));
   bindEvent('#btn-course', 'click', () => nav('course'));
   bindEvent('#btn-pomodoro-panel', 'click', () => openPomodoroPanel());
+  bindEvent('#btn-dev-tools', 'click', () => nav('dev-tools'));
   bindEvent('#btn-legal-info', 'click', () => showLegalInfoModal());
+  bindEvent('#app-version-trigger', 'click', () => {
+    const res = recordDevTap();
+    if (res.triggered) {
+      toast(res.enabled ? '🛠️ Режим разработчика включён!' : '🛠️ Режим разработчика отключён');
+      renderSettings(state, dependencies);
+    }
+  });
   bindEvent('#set-hide-romaji', 'change', (e) => {
     s.hideRomaji = e.target.checked;
     save();

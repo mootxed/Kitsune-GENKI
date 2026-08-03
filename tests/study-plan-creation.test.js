@@ -6,6 +6,7 @@ import {
   commitStudyPlanFromPreferences,
 } from '../src/study-plan-creation.js';
 import { StudyPlan } from '../studyplan.js';
+import { getTodayDateKey } from '../src/local-date.js';
 
 describe('Unified Study Plan Creation & Catalog Service', () => {
   let state;
@@ -57,7 +58,7 @@ describe('Unified Study Plan Creation & Catalog Service', () => {
 
   it('previewStudyPlanFromPreferences does not mutate in-memory state', () => {
     const preferences = {
-      startDate: '2026-08-01',
+      startDate: getTodayDateKey(),
       studyDays: [1, 2, 3, 4, 5],
       dailyCapacityMinutes: 30,
       workbookSettings: { enabled: true },
@@ -80,7 +81,7 @@ describe('Unified Study Plan Creation & Catalog Service', () => {
     ];
     const catalog = buildStudyPlanContentCatalog(contentIndex, null, { enabled: true });
     const preferences = {
-      startDate: '2026-08-01',
+      startDate: getTodayDateKey(),
       studyDays: [1, 3, 5],
       dailyCapacityMinutes: 30,
     };
@@ -88,7 +89,7 @@ describe('Unified Study Plan Creation & Catalog Service', () => {
     commitStudyPlanFromPreferences(state, preferences, preview);
 
     const recalced = StudyPlan.recalculateFuturePlan(state.studyPlan, catalog.chapters, [1], {
-      today: '2026-08-05',
+      today: getTodayDateKey(),
     });
 
     expect(recalced).not.toBeNull();
@@ -101,10 +102,10 @@ describe('Unified Study Plan Creation & Catalog Service', () => {
     ]);
     const preview = previewStudyPlanFromPreferences(
       {
-        startDate: '2026-08-01',
+        startDate: getTodayDateKey(),
         studyDays: [0, 1, 2, 3, 4, 5, 6],
-        targetType: 'deadline',
-        targetValue: '2026-08-10',
+        targetType: 'days',
+        targetValue: 10,
         dailyCapacityMinutes: 30,
       },
       catalog
@@ -115,7 +116,7 @@ describe('Unified Study Plan Creation & Catalog Service', () => {
   });
 
   it('caps adaptive FSRS reserve at 60% and warns about queue conflict', () => {
-    const now = new Date(2026, 6, 27, 12).getTime();
+    const now = Date.now();
     state.srs = Object.fromEntries(
       Array.from({ length: 100 }, (_, index) => [
         `L1_V${index}:recognition`,
@@ -135,7 +136,7 @@ describe('Unified Study Plan Creation & Catalog Service', () => {
 
     const preview = previewStudyPlanFromPreferences(
       {
-        startDate: '2026-08-01',
+        startDate: getTodayDateKey(),
         studyDays: [0, 1, 2, 3, 4, 5, 6],
         targetType: 'days',
         targetValue: 30,

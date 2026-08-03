@@ -5,6 +5,7 @@ import {
 } from '../src/study-plan-creation.js';
 import { StudyPlan, calculateChapterWeight } from '../studyplan.js';
 import { sameLessonId } from '../src/courses/course-context.js';
+import { getTodayDateKey } from '../src/local-date.js';
 
 describe('Chapter Weight Proportions & Primary Generation vs Recalculation', () => {
   test('calculateChapterWeight uses requiredTotalMinutes when present', () => {
@@ -43,7 +44,7 @@ describe('Chapter Weight Proportions & Primary Generation vs Recalculation', () 
 
     const catalog = buildStudyPlanContentCatalog(rawChapters, null, { enabled: true });
     const prefs = {
-      startDate: '2026-08-01',
+      startDate: getTodayDateKey(),
       studyDays: [1, 2, 3, 4, 5, 6, 0],
       dailyCapacityMinutes: 30,
       targetType: 'days',

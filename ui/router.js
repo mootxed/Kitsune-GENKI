@@ -23,6 +23,7 @@ export function initRouter(handlers) {
   router.registerRenderHandler('sensei', handlers.sensei);
   router.registerRenderHandler('library', handlers.library);
   router.registerRenderHandler('settings', handlers.settings);
+  router.registerRenderHandler('dev-tools', handlers['dev-tools'] || (() => {}));
   router.registerRenderHandler('plan', handlers.plan);
   router.registerRenderHandler('story', handlers.story || (() => {}));
   router.registerRenderHandler('quests', handlers.quests);
