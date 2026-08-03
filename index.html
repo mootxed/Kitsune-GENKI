@@ -75,6 +75,10 @@
         <circle cx="12" cy="12" r="1" />
         <circle cx="19" cy="12" r="1" />
       </symbol>
+      <symbol id="i-user" viewBox="0 0 24 24">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </symbol>
     </svg>
     <div id="app">
       <!-- Grid Background -->
@@ -820,33 +824,34 @@
         <button class="tab active mobile-primary-tab" data-nav="home" data-testid="tab-home">
           <svg class="ui-icon" aria-hidden="true"><use href="#i-home" /></svg><span>Главная</span>
         </button>
-        <button class="tab mobile-primary-tab" data-nav="plan">
+        <button class="tab mobile-primary-tab" data-nav="srs" data-testid="tab-srs">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-repeat" /></svg
+          ><span class="tab-badge hidden" id="tab-srs-badge">0</span><span>SRS</span>
+        </button>
+        <button class="tab mobile-primary-tab" data-nav="sensei" data-testid="tab-sensei">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-chat" /></svg><span>Инструменты</span>
+        </button>
+        <button class="tab mobile-primary-tab" data-nav="library" data-testid="tab-library">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-story" /></svg><span>Учебник</span>
+        </button>
+        <button class="tab mobile-primary-tab" data-nav="profile" data-testid="tab-profile">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-user" /></svg><span>Профиль</span>
+        </button>
+        <button class="tab desktop-nav-tab" data-nav="plan" data-testid="tab-plan">
           <svg class="ui-icon" aria-hidden="true"><use href="#i-plan" /></svg><span>План</span>
         </button>
-        <button class="tab mobile-primary-tab" data-nav="course">
+        <button class="tab desktop-nav-tab" data-nav="course" data-testid="tab-course">
           <svg class="ui-icon" aria-hidden="true"><use href="#i-book" /></svg><span>Курс</span>
         </button>
-        <button class="tab desktop-nav-tab" data-nav="srs" data-testid="tab-srs">
-          <svg class="ui-icon" aria-hidden="true"><use href="#i-repeat" /></svg
-          ><span class="tab-badge hidden" id="tab-srs-badge">0</span><span>Повторение</span>
-        </button>
-        <button class="tab mobile-primary-tab" data-nav="dictionary">
+        <button class="tab desktop-nav-tab" data-nav="dictionary" data-testid="tab-dictionary">
           <svg class="ui-icon" aria-hidden="true"><use href="#i-search" /></svg><span>Словарь</span>
         </button>
-        <button class="tab desktop-nav-tab" data-nav="library" data-testid="tab-library">
-          <svg class="ui-icon" aria-hidden="true"><use href="#i-story" /></svg><span>Истории</span>
-        </button>
-        <button class="tab desktop-nav-tab" data-nav="sensei" data-testid="tab-sensei">
-          <svg class="ui-icon" aria-hidden="true"><use href="#i-chat" /></svg><span>Sensei</span>
-        </button>
-        <button class="tab desktop-nav-tab" data-nav="statistics">
+        <button class="tab desktop-nav-tab" data-nav="statistics" data-testid="tab-statistics">
           <svg class="ui-icon" aria-hidden="true"><use href="#i-chart" /></svg
           ><span>Статистика</span>
         </button>
-        <button class="tab mobile-primary-tab sidebar-settings-tab" data-nav="settings">
-          <svg class="ui-icon settings-icon" aria-hidden="true"><use href="#i-settings" /></svg>
-          <svg class="ui-icon more-icon" aria-hidden="true"><use href="#i-more" /></svg>
-          <span class="desktop-label">Настройки</span><span class="mobile-label">Ещё</span>
+        <button class="tab desktop-nav-tab sidebar-settings-tab" data-nav="settings" data-testid="tab-settings">
+          <svg class="ui-icon settings-icon" aria-hidden="true"><use href="#i-settings" /></svg><span>Настройки</span>
         </button>
         <div class="sidebar-storage-status" aria-hidden="true">
           <span></span>

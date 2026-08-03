@@ -30,6 +30,23 @@ const SCREEN_TITLES = {
   'word-details': 'Детали слова',
 };
 
+const PARENT_TAB_MAP = {
+  dictionary: 'srs',
+  'user-dictionaries': 'srs',
+  'ai-story': 'sensei',
+  crossword: 'sensei',
+  'word-search': 'sensei',
+  story: 'library',
+  quests: 'profile',
+  statistics: 'profile',
+  settings: 'profile',
+  shop: 'profile',
+};
+
+export function getParentTab(screenName) {
+  return PARENT_TAB_MAP[screenName] || screenName;
+}
+
 export class Router {
   constructor() {
     this.screens = [
@@ -140,9 +157,12 @@ export class Router {
     }
 
     // Управление активными табами
+    const activeTabName = getParentTab(name);
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach((t) => {
-      t.classList.toggle('active', t.dataset.nav === name);
+      const isDirect = t.dataset.nav === name;
+      const isParent = t.dataset.nav === activeTabName;
+      t.classList.toggle('active', isDirect || isParent);
     });
 
     // Обновление индикатора табов

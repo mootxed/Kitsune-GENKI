@@ -761,7 +761,7 @@ function renderActivityChart(state) {
  * Синхронизирует аватары на всех логотипах
  */
 function syncAvatars(state) {
-  const all = document.querySelectorAll('.logo-fox');
+  const all = document.querySelectorAll('.user-avatar');
   all.forEach((el) => {
     el.textContent = state.currentAvatar || '🦊';
   });

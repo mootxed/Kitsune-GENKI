@@ -805,7 +805,6 @@ function setupRouter() {
       tab.classList.toggle('active', tab.dataset.tab === 'dictionary');
     });
 
-    await ensureLessonsForSrs();
     if (context?.signal?.aborted) return;
     renderDictionary(state, dependencies, options, context);
   };

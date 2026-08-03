@@ -529,6 +529,7 @@ function getDailyPlanInputRevision(state, options) {
   const lastLearningEvent = state?.learningEvents?.at?.(-1);
   const lastReviewEvent = state?.reviewEvents?.at?.(-1);
   const chapterMeta = options.chapterMeta;
+  const srsDueCount = state?.srs ? dueCards(state.srs).length : 0;
   return JSON.stringify([
     state?.updatedAt || 0,
     state?.activeChapterId || null,
@@ -538,6 +539,7 @@ function getDailyPlanInputRevision(state, options) {
     lastLearningEvent?.eventId || lastLearningEvent?.occurredAt || null,
     state?.reviewEvents?.length || 0,
     lastReviewEvent?.eventId || lastReviewEvent?.reviewedAt || null,
+    srsDueCount,
     Object.keys(state?.vocabularyUnlocks?.[state?.activeChapterId] || {}).length,
     chapterMeta?.id || chapterMeta?.lesson_id || null,
     chapterMeta?.words?.length || 0,

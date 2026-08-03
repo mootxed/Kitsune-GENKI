@@ -26,27 +26,27 @@ export function cardChapter(cardOrId) {
 }
 
 export function wordById(wordId, lessons) {
+  if (!wordId) return null;
   const itemId = canonicalizeKnowledgeItemId(parseCardIdentity(wordId).itemId);
-  if (!lessons || lessons.length === 0) {
-    console.warn(`[wordById] lessons array is empty or null for wordId: ${wordId}`);
-    return null;
-  }
-
-  for (const l of lessons) {
-    // Поддерживаем оба формата: words и vocabulary
-    const wordList = l.words || l.vocabulary || [];
-    const w = wordList.find(
-      (x) =>
-        canonicalizeKnowledgeItemId(x.id) === itemId ||
-        canonicalizeKnowledgeItemId(x.dictionaryId || x.knowledgeItemId) === itemId
-    );
-    if (w) return w;
-  }
 
   const dictionaryEntry = getDictionaryEntry(itemId);
   if (dictionaryEntry) return dictionaryEntry;
 
-  console.warn(`[wordById] Word not found: ${wordId}. Lessons count: ${lessons.length}`);
+  if (Array.isArray(lessons) && lessons.length > 0) {
+    for (const l of lessons) {
+      const wordList = l.words || l.vocabulary || [];
+      const w = wordList.find(
+        (x) =>
+          canonicalizeKnowledgeItemId(x.id) === itemId ||
+          canonicalizeKnowledgeItemId(x.dictionaryId || x.knowledgeItemId) === itemId
+      );
+      if (w) return w;
+    }
+  }
+
+  if (typeof window !== 'undefined' && (window.__DEV_MODE__ || window.devMode)) {
+    console.warn(`[wordById] Word not found: ${wordId}`);
+  }
   return null;
 }
 

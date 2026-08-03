@@ -74,7 +74,7 @@ test.describe('KotoKitsu redesign shell', () => {
         expect(chrome.widgetRect.bottom).toBeLessThanOrEqual(chrome.navRect.top);
         if (viewport.width <= 430) expect(chrome.heroHeight).toBeGreaterThan(360);
       } else {
-        expect(chrome.visibleTabs).toBe(9);
+        expect(chrome.visibleTabs).toBe(10);
         expect(chrome.navRect.top).toBe(0);
         expect(chrome.navRect.bottom).toBe(viewport.height);
       }
