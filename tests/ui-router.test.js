@@ -33,7 +33,7 @@ describe('ui/router.js initRouter integration', () => {
     expect(window.router).toBe(instance);
   });
 
-  it('click on user-dictionaries tab calls router.navigate and opens screen-user-dictionaries without exception', () => {
+  it('click on user-dictionaries tab calls router.navigate and opens screen-srs without exception', () => {
     const routerInstance = initRouter({
       home: vi.fn(),
       srs: vi.fn(),
@@ -47,8 +47,11 @@ describe('ui/router.js initRouter integration', () => {
     expect(userDictHandler).toHaveBeenCalledTimes(1);
     expect(getCurrentRoute()).toBe('user-dictionaries');
 
-    const screen = document.getElementById('screen-user-dictionaries');
-    expect(screen.classList.contains('hidden')).toBe(false);
+    const srsScreen = document.getElementById('screen-srs');
+    expect(srsScreen.classList.contains('hidden')).toBe(false);
+
+    const userDictScreen = document.getElementById('screen-user-dictionaries');
+    expect(userDictScreen.classList.contains('hidden')).toBe(true);
   });
 
   it('nav("user-dictionaries") function works correctly', () => {

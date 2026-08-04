@@ -159,8 +159,13 @@ function textInput(value = '', options = {}) {
   });
 }
 
-async function renderDictionaryList(body, repository, state, dependencies) {
+async function renderDictionaryList(body, repository, state, dependencies, context = {}) {
+  const isAborted = () =>
+    Boolean(context?.signal?.aborted || (body && !document.body.contains(body)));
+
   const dictionaries = await repository.listDictionaries();
+  if (isAborted()) return;
+
   const entriesByDictionary = new Map(
     await Promise.all(
       dictionaries.map(async (dictionary) => [
@@ -169,6 +174,8 @@ async function renderDictionaryList(body, repository, state, dependencies) {
       ])
     )
   );
+  if (isAborted()) return;
+
   const actions = node('div', { className: 'user-dict-actions' });
   actions.append(
     button(
@@ -182,8 +189,12 @@ async function renderDictionaryList(body, repository, state, dependencies) {
       { testId: 'import-user-dictionary' }
     )
   );
+
+  if (isAborted()) return;
   body.replaceChildren(actions);
+
   if (!dictionaries.length) {
+    if (isAborted()) return;
     body.append(
       node('div', { className: 'empty-state' }, [
         node('h2', { text: 'В словарях пока нет слов' }),
@@ -216,7 +227,7 @@ async function renderDictionaryList(body, repository, state, dependencies) {
         view.dictionaryId = dictionary.id;
         view.page = 1;
         view.selected.clear();
-        renderUserDictionaries(state, dependencies);
+        renderUserDictionaries(state, dependencies, {}, context);
       }),
       button('JSON', () => {
         download(
@@ -249,7 +260,7 @@ async function renderDictionaryList(body, repository, state, dependencies) {
           Object.assign(state, result.state);
           await dependencies.save?.(true);
           await dependencies.refreshRuntime?.();
-          renderUserDictionaries(state, dependencies);
+          renderUserDictionaries(state, dependencies, {}, context);
         },
         { className: 'btn-danger' }
       )
@@ -257,6 +268,7 @@ async function renderDictionaryList(body, repository, state, dependencies) {
     card.append(cardActions);
     list.append(card);
   }
+  if (isAborted()) return;
   body.append(list);
 }
 
@@ -278,14 +290,26 @@ function sortEntries(entries) {
   });
 }
 
-async function renderDictionaryEntries(body, repository, dictionary, state, dependencies) {
+async function renderDictionaryEntries(
+  body,
+  repository,
+  dictionary,
+  state,
+  dependencies,
+  context = {}
+) {
+  const isAborted = () =>
+    Boolean(context?.signal?.aborted || (body && !document.body.contains(body)));
+
   const allEntries = await repository.listEntries(dictionary.id);
+  if (isAborted()) return;
+
   const toolbar = node('div', { className: 'user-dict-toolbar' });
   toolbar.append(
     button('← Все словари', () => {
       view.dictionaryId = null;
       view.selected.clear();
-      renderUserDictionaries(state, dependencies);
+      renderUserDictionaries(state, dependencies, {}, context);
     }),
     node('h2', { text: dictionary.name }),
     button(
@@ -305,7 +329,7 @@ async function renderDictionaryEntries(body, repository, dictionary, state, depe
     searchTimer = setTimeout(() => {
       view.search = search.value;
       view.page = 1;
-      renderUserDictionaries(state, dependencies);
+      renderUserDictionaries(state, dependencies, {}, context);
     }, 180);
   });
   const tags = ['all', ...new Set(allEntries.flatMap((entry) => entry.tags))];
@@ -318,7 +342,7 @@ async function renderDictionaryEntries(body, repository, dictionary, state, depe
   tagFilter.addEventListener('change', () => {
     view.tag = tagFilter.value;
     view.page = 1;
-    renderUserDictionaries(state, dependencies);
+    renderUserDictionaries(state, dependencies, {}, context);
   });
   const learningFilter = node('select', { attrs: { 'aria-label': 'Фильтр обучения' } });
   [
@@ -333,7 +357,7 @@ async function renderDictionaryEntries(body, repository, dictionary, state, depe
   learningFilter.addEventListener('change', () => {
     view.learning = learningFilter.value;
     view.page = 1;
-    renderUserDictionaries(state, dependencies);
+    renderUserDictionaries(state, dependencies, {}, context);
   });
   const sort = node('select', { attrs: { 'aria-label': 'Сортировка' } });
   [
@@ -347,7 +371,7 @@ async function renderDictionaryEntries(body, repository, dictionary, state, depe
   });
   sort.addEventListener('change', () => {
     view.sort = sort.value;
-    renderUserDictionaries(state, dependencies);
+    renderUserDictionaries(state, dependencies, {}, context);
   });
   const filters = node('div', { className: 'user-dict-filters' }, [
     search,
@@ -369,21 +393,24 @@ async function renderDictionaryEntries(body, repository, dictionary, state, depe
     await dependencies.save?.(true);
     await dependencies.refreshRuntime?.();
     view.selected.clear();
-    renderUserDictionaries(state, dependencies);
+    renderUserDictionaries(state, dependencies, {}, context);
   };
   bulk.append(
     button('Добавить выбранные в обучение', () => toggleLearning(true)),
     button('Исключить выбранные из обучения', () => toggleLearning(false))
   );
+  if (isAborted()) return;
   body.replaceChildren(toolbar, filters, bulk);
   const filtered = sortEntries(allEntries.filter(entryMatches));
   if (!allEntries.length) {
+    if (isAborted()) return;
     body.append(
       node('div', { className: 'empty-state' }, [node('h3', { text: 'В словаре пока нет слов' })])
     );
     return;
   }
   if (!filtered.length) {
+    if (isAborted()) return;
     body.append(
       node('div', { className: 'empty-state' }, [
         node('h3', { text: 'Не найдено подходящих записей' }),
@@ -429,7 +456,6 @@ async function renderDictionaryEntries(body, repository, dictionary, state, depe
       button(
         'Удалить',
         async () => {
-          // Проверяем фактическое наличие прогресса в SRS, а не только learningEnabled
           const hasProgress =
             entry.learningEnabled ||
             Object.keys(state.srs || {}).some((cardId) => {
@@ -444,8 +470,6 @@ async function renderDictionaryEntries(body, repository, dictionary, state, depe
             )
           )
             return;
-          // Всегда используем deleteUserEntriesWithProgress, чтобы
-          // очистить dangling SRS-ссылки даже для suspended (excluded) записей
           const result = await deleteUserEntriesWithProgress({
             repository,
             entries: [entry],
@@ -454,7 +478,7 @@ async function renderDictionaryEntries(body, repository, dictionary, state, depe
           Object.assign(state, result.state);
           await dependencies.save?.(true);
           await dependencies.refreshRuntime?.();
-          renderUserDictionaries(state, dependencies);
+          renderUserDictionaries(state, dependencies, {}, context);
         },
         { className: 'btn-danger' }
       )
@@ -462,6 +486,7 @@ async function renderDictionaryEntries(body, repository, dictionary, state, depe
     card.append(checkbox, content, actions);
     list.append(card);
   }
+  if (isAborted()) return;
   body.append(list);
   const pagination = node('nav', {
     className: 'user-dict-pagination',
@@ -472,7 +497,7 @@ async function renderDictionaryEntries(body, repository, dictionary, state, depe
       'Назад',
       () => {
         view.page -= 1;
-        renderUserDictionaries(state, dependencies);
+        renderUserDictionaries(state, dependencies, {}, context);
       },
       { disabled: view.page <= 1 }
     ),
@@ -481,11 +506,12 @@ async function renderDictionaryEntries(body, repository, dictionary, state, depe
       'Далее',
       () => {
         view.page += 1;
-        renderUserDictionaries(state, dependencies);
+        renderUserDictionaries(state, dependencies, {}, context);
       },
       { disabled: view.page >= pageCount }
     )
   );
+  if (isAborted()) return;
   body.append(pagination);
 }
 

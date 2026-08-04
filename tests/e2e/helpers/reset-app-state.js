@@ -117,7 +117,16 @@ export async function navigateToScreen(page, screenId) {
     }
   }, screenId);
 
-  const targetScreenId = screenId === 'dictionary' ? 'srs' : screenId;
+  const srsTabs = [
+    'dictionary',
+    'user-dictionaries',
+    'particles',
+    'repetition',
+    'stats',
+    'kanji',
+    'srs',
+  ];
+  const targetScreenId = srsTabs.includes(screenId) ? 'srs' : screenId;
   await expect(page.locator(`#screen-${targetScreenId}`)).toBeVisible({ timeout: 10000 });
 }
 

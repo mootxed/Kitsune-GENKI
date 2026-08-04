@@ -127,9 +127,16 @@
   --safe-b: var(--safe-bottom);
   --grid-line: color-mix(in oklch, var(--border) 48%, transparent);
 
-  --mascot-onboarding: url('assets/mascot/mascot-onboarding-large.webp');
+  --mascot-onboarding: url('assets/mascot/mascot-greeting.webp');
   --mascot-hero: url('assets/mascot/mascot-hero-medium.webp');
-  --mascot-message: url('assets/mascot/mascot-message-compact.webp');
+  --mascot-completion: url('assets/mascot/mascot-celebrating.webp');
+  --mascot-sensei: url('assets/mascot/mascot-explaining.webp');
+  --mascot-loader: url('assets/mascot/mascot-peeking.webp');
+  --mascot-empty: url('assets/mascot/mascot-confused.webp');
+  --mascot-error: url('assets/mascot/mascot-worried.webp');
+  --mascot-grammar: url('assets/mascot/mascot-holding-notebook.webp');
+  --mascot-dictionary: url('assets/mascot/mascot-thinking.webp');
+  --mascot-achievement: url('assets/mascot/mascot-cheering.webp');
 }
 
 [data-theme='dark'] {
@@ -180,13 +187,10 @@
 }
 
 /* ===== Base, type and accessibility ===================================== */
-html {
-  background: var(--bg);
-  color: var(--fg);
-  scrollbar-color: var(--border-strong) transparent;
-}
-
+html,
 body {
+  max-width: 100vw;
+  overflow-x: hidden;
   font-family: var(--font-body);
   font-size: 16px;
   font-weight: 400;
@@ -1032,13 +1036,14 @@ input[type='radio'] {
 
 .home-hero::after {
   position: absolute;
-  top: -80px;
-  right: -70px;
-  width: 240px;
-  height: 240px;
+  top: -50px;
+  right: -30px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
   background: var(--accent-soft);
   content: '';
+  pointer-events: none;
 }
 
 .home-hero-copy {
@@ -1299,7 +1304,10 @@ input[type='radio'] {
   color: var(--muted);
   background: transparent;
   box-shadow: none;
-  transition: color 100ms, background 100ms, box-shadow 100ms;
+  transition:
+    color 100ms,
+    background 100ms,
+    box-shadow 100ms;
   cursor: pointer;
 }
 
@@ -1314,7 +1322,9 @@ input[type='radio'] {
 
 /* Hover — pointer devices only, not touch */
 @media (hover: hover) {
-  :where(.toggle-btn, .lib-tab, .sensei-tab, .shop-tab):not(.active):not([aria-selected='true']):hover {
+  :where(.toggle-btn, .lib-tab, .sensei-tab, .shop-tab):not(.active):not(
+      [aria-selected='true']
+    ):hover {
     color: var(--fg);
     background: color-mix(in oklch, var(--surface) 60%, transparent);
   }
@@ -1719,7 +1729,7 @@ input[type='radio'] {
   margin-inline: auto;
   overflow: hidden;
   color: transparent;
-  background: var(--mascot-message) center / contain no-repeat;
+  background: var(--mascot-completion) center / contain no-repeat;
 }
 
 .completion-title {
@@ -1890,7 +1900,7 @@ input[type='radio'] {
   border: 1px solid var(--border);
   border-radius: 13px;
   color: transparent;
-  background: var(--mascot-message) center 18% / 145% auto no-repeat var(--accent-soft);
+  background: var(--mascot-sensei) center / contain no-repeat var(--accent-soft);
 }
 
 .sensei-tabs {
@@ -2167,7 +2177,7 @@ code {
   height: 132px;
   overflow: hidden;
   color: transparent;
-  background: var(--mascot-message) center / contain no-repeat;
+  background: var(--mascot-loader) center / contain no-repeat;
 }
 
 .loader-spinner {
@@ -2614,8 +2624,26 @@ code {
     z-index: 2;
   }
 
+  .home-hero::after {
+    display: none;
+  }
+
   .continue-learning-card {
-    display: contents;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .continue-learning-card:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: var(--radius-md, 12px);
   }
 
   .continue-mark {
@@ -2623,32 +2651,27 @@ code {
   }
 
   .continue-copy {
-    display: contents;
+    display: flex;
+    flex-direction: column;
   }
 
   .home-hero-eyebrow {
-    grid-column: 1;
-    align-self: end;
-    margin-bottom: 0;
+    margin-bottom: 4px;
   }
 
   .continue-copy strong {
-    grid-column: 1;
     max-width: none;
-    align-self: start;
     font-size: 32px;
     line-height: 1.05;
   }
 
   .continue-copy small {
-    grid-column: 1 / -1;
     max-width: none;
     margin: 8px 0 10px;
     font-size: 14px;
   }
 
   .home-task-meta {
-    grid-column: 1 / -1;
     max-width: none;
     margin-bottom: 10px;
     gap: 5px;
@@ -2661,7 +2684,6 @@ code {
   }
 
   .continue-arrow {
-    grid-column: 1 / -1;
     width: 100%;
     justify-content: center;
     min-height: 44px;

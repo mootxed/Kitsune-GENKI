@@ -246,10 +246,15 @@
       <!-- ===== COURSE ===== -->
       <section class="screen hidden" id="screen-course" data-testid="screen-course">
         <header class="app-header">
-          <button class="icon-btn back-btn" data-nav="home" aria-label="Назад">‹</button>
-          <div>
-            <h1 class="app-title">Курс</h1>
-            <p class="app-subtitle">Все главы, включая завершённые</p>
+          <div class="app-header-left">
+            <button class="icon-btn back-btn" data-nav="home" aria-label="Назад">‹</button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">Курс</h1>
+              <p class="app-subtitle">Все главы, включая завершённые</p>
+            </div>
           </div>
         </header>
         <div class="screen-scroll">
@@ -262,7 +267,7 @@
       <section class="screen hidden" id="screen-profile" data-testid="screen-profile">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+            <span class="brand-fox-mark" aria-hidden="true">
               <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
             </span>
             <div><h1 class="app-title">Профиль</h1></div>
@@ -279,7 +284,7 @@
       <section class="screen hidden" id="screen-quests" data-testid="screen-quests">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+            <span class="brand-fox-mark" aria-hidden="true">
               <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
             </span>
             <div><h1 class="app-title">Квесты</h1></div>
@@ -302,17 +307,22 @@
       <!-- ===== CHAPTER DETAIL ===== -->
       <section class="screen hidden" id="screen-chapter" data-testid="screen-chapter">
         <header class="app-header">
-          <button
-            class="icon-btn back-btn"
-            data-nav="home"
-            data-testid="chapter-back-btn"
-            aria-label="Назад"
-          >
-            ‹
-          </button>
-          <div>
-            <h1 class="app-title" id="chapter-title">Глава</h1>
-            <p class="app-subtitle" id="chapter-jp"></p>
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              data-nav="home"
+              data-testid="chapter-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title" id="chapter-title">Глава</h1>
+              <p class="app-subtitle" id="chapter-jp"></p>
+            </div>
           </div>
         </header>
         <div class="screen-scroll" id="chapter-body"></div>
@@ -330,7 +340,7 @@
             >
               ‹
             </button>
-            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+            <span class="brand-fox-mark" aria-hidden="true">
               <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
             </span>
             <div>
@@ -344,10 +354,46 @@
           </div>
         </header>
         <div class="lib-tabs" id="srs-tabs-container" role="tablist" aria-label="Разделы SRS">
-          <button class="lib-tab active" data-tab="repetition" role="tab" aria-selected="true" aria-controls="srs-body" tabindex="0">Повторение</button>
-          <button class="lib-tab" data-tab="dictionary" role="tab" aria-selected="false" aria-controls="srs-body" tabindex="-1">Словарь</button>
-          <button class="lib-tab" data-tab="particles" role="tab" aria-selected="false" aria-controls="srs-body" tabindex="-1">Частицы</button>
-          <button class="lib-tab" data-tab="user-dictionaries" role="tab" aria-selected="false" aria-controls="srs-body" tabindex="-1">Мои словари</button>
+          <button
+            class="lib-tab active"
+            data-tab="repetition"
+            role="tab"
+            aria-selected="true"
+            aria-controls="srs-body"
+            tabindex="0"
+          >
+            Повторение
+          </button>
+          <button
+            class="lib-tab"
+            data-tab="dictionary"
+            role="tab"
+            aria-selected="false"
+            aria-controls="srs-body"
+            tabindex="-1"
+          >
+            Словарь
+          </button>
+          <button
+            class="lib-tab"
+            data-tab="particles"
+            role="tab"
+            aria-selected="false"
+            aria-controls="srs-body"
+            tabindex="-1"
+          >
+            Частицы
+          </button>
+          <button
+            class="lib-tab"
+            data-tab="user-dictionaries"
+            role="tab"
+            aria-selected="false"
+            aria-controls="srs-body"
+            tabindex="-1"
+          >
+            Мои словари
+          </button>
         </div>
         <div class="screen-scroll" id="srs-body"></div>
       </section>
@@ -377,12 +423,14 @@
         id="screen-sensei"
         data-testid="screen-sensei"
       >
-        <header class="sensei-header">
-          <div class="sensei-header-title">
-            <span class="sensei-avatar" aria-hidden="true">🦊</span>
-            <h1>AI Сенсей</h1>
+        <header class="sensei-header app-header">
+          <div class="sensei-header-title app-header-left">
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <h1 class="app-title">AI Сенсей</h1>
           </div>
-          <div class="sensei-header-actions">
+          <div class="sensei-header-actions app-header-right">
             <button
               class="icon-btn"
               data-nav="settings"
@@ -419,17 +467,22 @@
       <!-- ===== AI STORY GENERATOR ===== -->
       <section class="screen hidden" id="screen-ai-story" data-testid="screen-ai-story">
         <header class="app-header">
-          <button
-            class="icon-btn back-btn"
-            data-nav="sensei"
-            data-testid="ai-story-back-btn"
-            aria-label="Назад"
-          >
-            ‹
-          </button>
-          <div>
-            <h1 class="app-title">AI-история</h1>
-            <p class="app-subtitle">Генератор персонализированных историй</p>
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              data-nav="sensei"
+              data-testid="ai-story-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">AI-история</h1>
+              <p class="app-subtitle">Генератор персонализированных историй</p>
+            </div>
           </div>
         </header>
         <div class="screen-scroll" id="ai-story-body"></div>
@@ -438,17 +491,22 @@
       <!-- ===== CROSSWORD ===== -->
       <section class="screen hidden" id="screen-crossword" data-testid="screen-crossword">
         <header class="app-header">
-          <button
-            class="icon-btn back-btn"
-            data-nav="sensei"
-            data-testid="crossword-back-btn"
-            aria-label="Назад"
-          >
-            ‹
-          </button>
-          <div>
-            <h1 class="app-title">🧩 Кроссворд</h1>
-            <p class="app-subtitle">Закрепление изученных слов</p>
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              data-nav="sensei"
+              data-testid="crossword-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">🧩 Кроссворд</h1>
+              <p class="app-subtitle">Закрепление изученных слов</p>
+            </div>
           </div>
         </header>
         <div class="screen-scroll" id="crossword-body"></div>
@@ -457,17 +515,22 @@
       <!-- ===== WORD SEARCH ===== -->
       <section class="screen hidden" id="screen-word-search" data-testid="screen-word-search">
         <header class="app-header">
-          <button
-            class="icon-btn back-btn"
-            data-nav="sensei"
-            data-testid="word-search-back-btn"
-            aria-label="Назад"
-          >
-            ‹
-          </button>
-          <div>
-            <h1 class="app-title">🔍 Охота на слова</h1>
-            <p class="app-subtitle">Найдите японские слова по русскому переводу</p>
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              data-nav="sensei"
+              data-testid="word-search-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">🔍 Охота на слова</h1>
+              <p class="app-subtitle">Найдите японские слова по русскому переводу</p>
+            </div>
           </div>
         </header>
         <div class="screen-scroll" id="word-search-body"></div>
@@ -477,7 +540,7 @@
       <section class="screen hidden" id="screen-library" data-testid="screen-library">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+            <span class="brand-fox-mark" aria-hidden="true">
               <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
             </span>
             <h1 class="app-title">Мини-учебник</h1>
@@ -502,17 +565,22 @@
       <!-- ===== STORY READING ===== -->
       <section class="screen hidden" id="screen-story" data-testid="screen-story">
         <header class="app-header">
-          <button
-            class="icon-btn back-btn"
-            data-nav="library"
-            data-testid="story-back-btn"
-            aria-label="Назад"
-          >
-            ‹
-          </button>
-          <div>
-            <h1 class="app-title" id="story-title">История</h1>
-            <p class="app-subtitle" id="story-title-jp"></p>
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              data-nav="library"
+              data-testid="story-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title" id="story-title">История</h1>
+              <p class="app-subtitle" id="story-title-jp"></p>
+            </div>
           </div>
         </header>
         <div class="screen-scroll" id="story-body"></div>
@@ -522,7 +590,7 @@
       <section class="screen hidden" id="screen-settings" data-testid="screen-settings">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+            <span class="brand-fox-mark" aria-hidden="true">
               <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
             </span>
             <h1 class="app-title">Настройки</h1>
@@ -534,17 +602,22 @@
       <!-- ===== DEV TOOLS ===== -->
       <section class="screen hidden" id="screen-dev-tools" data-testid="screen-dev-tools">
         <header class="app-header">
-          <button
-            class="icon-btn back-btn"
-            data-nav="settings"
-            data-testid="dev-tools-back-btn"
-            aria-label="Назад"
-          >
-            ‹
-          </button>
-          <div>
-            <h1 class="app-title">🛠️ Инструменты разработчика</h1>
-            <p class="app-subtitle">Журнал логов и диагностика</p>
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              data-nav="settings"
+              data-testid="dev-tools-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">🛠️ Инструменты разработчика</h1>
+              <p class="app-subtitle">Журнал логов и диагностика</p>
+            </div>
           </div>
         </header>
         <div class="screen-scroll" id="dev-tools-body"></div>
@@ -554,7 +627,7 @@
       <section class="screen hidden" id="screen-statistics" data-testid="screen-statistics">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+            <span class="brand-fox-mark" aria-hidden="true">
               <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
             </span>
             <h1 class="app-title">Статистика</h1>
@@ -569,17 +642,22 @@
       <!-- ===== WORD DETAILS ===== -->
       <section class="screen hidden" id="screen-word-details" data-testid="screen-word-details">
         <header class="app-header">
-          <button
-            class="icon-btn back-btn"
-            id="word-details-back-btn"
-            data-testid="word-details-back-btn"
-            aria-label="Назад"
-            onclick="history.back()"
-          >
-            ‹
-          </button>
-          <div>
-            <h1 class="app-title">Слово</h1>
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              id="word-details-back-btn"
+              data-testid="word-details-back-btn"
+              aria-label="Назад"
+              onclick="history.back()"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">Слово</h1>
+            </div>
           </div>
         </header>
         <div class="screen-scroll" id="word-details-body"></div>
@@ -587,12 +665,20 @@
 
       <!-- ===== STUDY PLAN ===== -->
       <section class="screen hidden" id="screen-plan" data-testid="screen-plan">
-        <div class="screen-scroll">
-          <div class="screen-header">
-            <button class="back-btn" data-testid="plan-back-btn">‹</button>
-            <h1>План обучения</h1>
+        <header class="app-header">
+          <div class="app-header-left">
+            <button class="icon-btn back-btn" data-testid="plan-back-btn" aria-label="Назад">
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">План обучения</h1>
+            </div>
           </div>
-
+        </header>
+        <div class="screen-scroll">
           <!-- Уведомления (видны и при форме, и при просмотре) -->
           <div id="plan-warning" class="plan-warning hidden"></div>
 

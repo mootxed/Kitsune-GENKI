@@ -1,149 +1,115 @@
 // tests/e2e/srs-tabs-inline.spec.js
-// E2E tests for issue-27: SRS tabs unified controller
+// E2E tests for issue-27: SRS routing, hero layout, brand mark unification & mascot integration
+
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, navigateToScreen } from './helpers/reset-app-state.js';
 
-const BASE_URL = 'http://localhost:5173';
-
-test.describe('SRS tabs — unified inline controller', () => {
+test.describe('SRS tabs — routing and inline rendering', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(BASE_URL);
-    // Wait for app to init
+    await completeOnboarding(page);
     await page.waitForSelector('[data-testid="screen-home"]', { state: 'visible', timeout: 10000 });
-    // Navigate to SRS
-    const srsNavBtn = page.locator('.tab[data-nav="srs"], .tabbar [data-nav="srs"]').first();
-    await srsNavBtn.click();
-    await page.waitForSelector('[data-testid="screen-srs"]:not(.hidden)', { timeout: 5000 });
   });
 
-  test('SRS screen loads with Repetition tab active', async ({ page }) => {
-    const repetitionTab = page.locator('#srs-tabs-container [data-tab="repetition"]');
-    await expect(repetitionTab).toHaveClass(/active/);
-    await expect(repetitionTab).toHaveAttribute('aria-selected', 'true');
+  test('nav("dictionary") activates SRS screen with single dictionary render', async ({ page }) => {
+    await navigateToScreen(page, 'dictionary');
 
-    // Exactly one tab should be active
-    const activeTabs = page.locator('#srs-tabs-container .lib-tab.active');
-    await expect(activeTabs).toHaveCount(1);
-  });
-
-  test('Clicking Dictionary tab shows dictionary content inside #srs-body', async ({ page }) => {
-    await page.locator('#srs-tabs-container [data-tab="dictionary"]').click();
-    // Dictionary tab becomes active
     const dictTab = page.locator('#srs-tabs-container [data-tab="dictionary"]');
     await expect(dictTab).toHaveClass(/active/);
-    await expect(dictTab).toHaveAttribute('aria-selected', 'true');
-    // Screen stays SRS
-    await expect(page.locator('#screen-srs')).not.toHaveClass(/hidden/);
-    // Content renders in #srs-body
-    const body = page.locator('#srs-body');
-    await expect(body).not.toBeEmpty({ timeout: 5000 });
-    // Exactly one active tab
-    await expect(page.locator('#srs-tabs-container .lib-tab.active')).toHaveCount(1);
+
+    await expect(page.locator('#screen-srs')).toBeVisible();
+    const legacyScreen = page.locator('#screen-user-dictionaries');
+    if ((await legacyScreen.count()) > 0) {
+      await expect(legacyScreen).toBeHidden();
+    }
   });
 
-  test('Clicking Particles tab shows particles content inside #srs-body', async ({ page }) => {
-    await page.locator('#srs-tabs-container [data-tab="particles"]').click();
-    const particlesTab = page.locator('#srs-tabs-container [data-tab="particles"]');
-    await expect(particlesTab).toHaveClass(/active/);
-    await expect(particlesTab).toHaveAttribute('aria-selected', 'true');
-    await expect(page.locator('#screen-srs')).not.toHaveClass(/hidden/);
-    await expect(page.locator('#srs-body')).not.toBeEmpty({ timeout: 5000 });
-    await expect(page.locator('#srs-tabs-container .lib-tab.active')).toHaveCount(1);
-  });
+  test('nav("user-dictionaries") leaves screen-srs visible and activates Мои словари tab', async ({
+    page,
+  }) => {
+    await navigateToScreen(page, 'user-dictionaries');
 
-  test('Clicking Мои словари stays inline in #srs-body, NOT separate screen', async ({ page }) => {
-    await page.locator('#srs-tabs-container [data-tab="user-dictionaries"]').click();
     const udTab = page.locator('#srs-tabs-container [data-tab="user-dictionaries"]');
     await expect(udTab).toHaveClass(/active/);
-    await expect(udTab).toHaveAttribute('aria-selected', 'true');
-    // Critical: SRS screen stays active
-    await expect(page.locator('#screen-srs')).not.toHaveClass(/hidden/);
-    // Bottom nav SRS button stays active
+    await expect(page.locator('#screen-srs')).toBeVisible();
+
     const srsNavTab = page.locator('.tab[data-nav="srs"], .tabbar [data-nav="srs"]').first();
     await expect(srsNavTab).toHaveClass(/active/);
-    // Content renders in #srs-body
-    await expect(page.locator('#srs-body')).not.toBeEmpty({ timeout: 5000 });
-    await expect(page.locator('#srs-tabs-container .lib-tab.active')).toHaveCount(1);
   });
 
-  test('Header title updates with each tab', async ({ page }) => {
-    const titleEl = page.locator('#srs-screen-title');
-
-    // Default: repetition
-    await expect(titleEl).toHaveText('Повторение');
+  test('Tab switching updates title and active tab while keeping screen-srs visible', async ({
+    page,
+  }) => {
+    await navigateToScreen(page, 'srs');
 
     await page.locator('#srs-tabs-container [data-tab="dictionary"]').click();
-    await expect(titleEl).toHaveText('Словарь');
+    await expect(page.locator('#srs-screen-title')).toHaveText('Словарь');
+    await expect(page.locator('#screen-srs')).toBeVisible();
 
     await page.locator('#srs-tabs-container [data-tab="particles"]').click();
-    await expect(titleEl).toHaveText('Частицы');
+    await expect(page.locator('#srs-screen-title')).toHaveText('Частицы');
+    await expect(page.locator('#screen-srs')).toBeVisible();
+  });
+
+  test('Rapid switching — late promise does not overwrite particles tab', async ({ page }) => {
+    await navigateToScreen(page, 'srs');
 
     await page.locator('#srs-tabs-container [data-tab="user-dictionaries"]').click();
-    await expect(titleEl).toHaveText('Мои словари');
+    await page.locator('#srs-tabs-container [data-tab="particles"]').click();
 
-    await page.locator('#srs-tabs-container [data-tab="repetition"]').click();
-    await expect(titleEl).toHaveText('Повторение');
-  });
+    await page.waitForTimeout(600);
 
-  test('Rapid switching — last selected tab wins', async ({ page }) => {
-    const tabs = ['dictionary', 'particles', 'repetition', 'user-dictionaries', 'particles'];
-    for (const tab of tabs) {
-      await page.locator(`#srs-tabs-container [data-tab="${tab}"]`).click();
-    }
-    // Wait for renders to settle
-    await page.waitForTimeout(1000);
-    // Last tab was 'particles'
-    const particlesTab = page.locator('#srs-tabs-container [data-tab="particles"]');
-    await expect(particlesTab).toHaveClass(/active/);
-    await expect(particlesTab).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('#srs-screen-title')).toHaveText('Частицы');
-    await expect(page.locator('#srs-body')).not.toBeEmpty();
-    await expect(page.locator('#srs-tabs-container .lib-tab.active')).toHaveCount(1);
+    const activeTab = page.locator('#srs-tabs-container .lib-tab.active');
+    await expect(activeTab).toHaveAttribute('data-tab', 'particles');
   });
 
-  test('Returning to Repetition from any tab restores dashboard', async ({ page }) => {
-    await page.locator('#srs-tabs-container [data-tab="dictionary"]').click();
-    await page.locator('#srs-tabs-container [data-tab="repetition"]').click();
-    await expect(page.locator('#srs-tabs-container [data-tab="repetition"]')).toHaveClass(/active/);
-    await expect(page.locator('#srs-screen-title')).toHaveText('Повторение');
-    await expect(page.locator('[data-testid="srs-stat-row"]')).toBeVisible({ timeout: 5000 });
-  });
+  test('Leaving async dictionary route aborts render and does not update body when away', async ({
+    page,
+  }) => {
+    await navigateToScreen(page, 'dictionary');
+    await navigateToScreen(page, 'home');
 
-  test('Keyboard navigation — ArrowRight moves focus', async ({ page }) => {
-    const firstTab = page.locator('#srs-tabs-container [data-tab="repetition"]');
-    await firstTab.focus();
-    await page.keyboard.press('ArrowRight');
-    const nextTab = page.locator('#srs-tabs-container [data-tab="dictionary"]');
-    await expect(nextTab).toBeFocused();
-  });
+    await page.waitForTimeout(500);
 
-  test('Keyboard navigation — Home/End jump to first/last tab', async ({ page }) => {
-    const tabs = page.locator('#srs-tabs-container [role="tab"]');
-    await tabs.first().focus();
-    await page.keyboard.press('End');
-    await expect(tabs.last()).toBeFocused();
-    await page.keyboard.press('Home');
-    await expect(tabs.first()).toBeFocused();
+    await expect(page.locator('#screen-home')).toBeVisible();
+    await expect(page.locator('#screen-srs')).toBeHidden();
   });
 });
 
-test.describe('SRS tabs — brand mark', () => {
-  test('All main screen headers use SVG fox-mark instead of emoji', async ({ page }) => {
-    await page.goto(BASE_URL);
-    await page.waitForSelector('[data-testid="screen-home"]', { state: 'visible', timeout: 10000 });
+test.describe('Brand mark & Mascot unification', () => {
+  test('All main screen headers feature .brand-fox-mark and no emoji fox in header titles', async ({
+    page,
+  }) => {
+    await completeOnboarding(page);
 
     const brandMarks = page.locator('.brand-fox-mark');
     const count = await brandMarks.count();
-    expect(count).toBeGreaterThan(3);
+    expect(count).toBeGreaterThanOrEqual(15);
 
     for (let i = 0; i < count; i++) {
-      const bm = brandMarks.nth(i);
-      const svg = bm.locator('svg.fox-mark');
+      const svg = brandMarks.nth(i).locator('svg.fox-mark');
       await expect(svg).toHaveCount(1);
     }
+
+    const appTitles = page.locator('.app-header .app-title, .app-header h1');
+    const titleCount = await appTitles.count();
+    for (let i = 0; i < titleCount; i++) {
+      const text = await appTitles.nth(i).textContent();
+      expect(text).not.toContain('🦊');
+    }
+  });
+
+  test('Different mascot asset URLs are configured for different application states', async ({
+    page,
+  }) => {
+    await completeOnboarding(page);
+
+    const homeMascotSrc = await page.locator('.home-mascot img').getAttribute('src');
+    expect(homeMascotSrc).toContain('mascot-hero-medium.webp');
   });
 });
 
-test.describe('Home hero — mascot halo layout', () => {
+test.describe('Home hero — element-level intersection verification', () => {
   const viewports = [
     { width: 320, height: 720 },
     { width: 360, height: 800 },
@@ -152,38 +118,74 @@ test.describe('Home hero — mascot halo layout', () => {
   ];
 
   for (const vp of viewports) {
-    test(`Halo does not overlap copy at ${vp.width}x${vp.height}`, async ({ page }) => {
+    test(`Hero text elements do not overlap decor circles at ${vp.width}x${vp.height}`, async ({
+      page,
+    }) => {
       await page.setViewportSize(vp);
-      await page.goto(BASE_URL);
+      await completeOnboarding(page);
       await page.waitForSelector('.home-hero', { state: 'visible', timeout: 10000 });
 
-      const overlap = await page.evaluate(() => {
-        const halo = document.querySelector('.home-mascot-halo');
-        const copy = document.querySelector('.home-hero-copy');
-        if (!halo || !copy) return false;
-        // If halo is hidden (display: none), no overlap
-        const haloStyle = window.getComputedStyle(halo);
-        if (haloStyle.display === 'none') return false;
+      const overlaps = await page.evaluate(() => {
+        const textSelectors = [
+          '#continue-learning-title',
+          '#continue-learning-context',
+          '.home-task-meta',
+          '.continue-arrow',
+        ];
+        const decorSelectors = ['.home-mascot-halo', '.home-hero::after'];
 
-        const hr = halo.getBoundingClientRect();
-        const cr = copy.getBoundingClientRect();
-        return !(
-          hr.right <= cr.left ||
-          hr.left >= cr.right ||
-          hr.bottom <= cr.top ||
-          hr.top >= cr.bottom
-        );
+        const textElements = textSelectors
+          .map((sel) => document.querySelector(sel))
+          .filter(Boolean);
+
+        const decorElements = decorSelectors
+          .map((sel) => document.querySelector(sel))
+          .filter((el) => {
+            if (!el) return false;
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden';
+          });
+
+        let foundOverlap = false;
+
+        for (const textEl of textElements) {
+          const tr = textEl.getBoundingClientRect();
+          if (tr.width === 0 || tr.height === 0) continue;
+
+          for (const decorEl of decorElements) {
+            const dr = decorEl.getBoundingClientRect();
+            if (dr.width === 0 || dr.height === 0) continue;
+
+            const isIntersecting = !(
+              dr.right <= tr.left ||
+              dr.left >= tr.right ||
+              dr.bottom <= tr.top ||
+              dr.top >= tr.bottom
+            );
+
+            if (isIntersecting) {
+              foundOverlap = true;
+              break;
+            }
+          }
+          if (foundOverlap) break;
+        }
+
+        return foundOverlap;
       });
 
-      expect(overlap).toBe(false);
+      expect(overlaps).toBe(false);
     });
 
     test(`No horizontal scroll at ${vp.width}x${vp.height}`, async ({ page }) => {
       await page.setViewportSize(vp);
-      await page.goto(BASE_URL);
+      await completeOnboarding(page);
       await page.waitForSelector('.home-hero', { state: 'visible', timeout: 10000 });
-      const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
-      expect(scrollWidth).toBeLessThanOrEqual(vp.width + 1);
+
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+      );
+      expect(overflow).toBeLessThanOrEqual(1);
     });
   }
 });

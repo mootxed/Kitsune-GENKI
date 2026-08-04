@@ -6,6 +6,12 @@ import {
   closeSenseiPanel,
   clearPostReviewSenseiActions,
 } from './ui/flashcards/sensei-review-panel.js';
+import { abortActiveSrsTabRender } from './ui/srs-tab-controller.js';
+
+const SCREEN_ALIASES = {
+  dictionary: 'srs',
+  'user-dictionaries': 'srs',
+};
 
 // Human-readable screen titles for screen reader announcements
 const SCREEN_TITLES = {
@@ -135,7 +141,7 @@ export class Router {
    * @returns {Promise<void>}
    */
   async navigate(name, opt, skipHistory = false) {
-    const targetName = name === 'dictionary' ? 'srs' : name;
+    const targetName = SCREEN_ALIASES[name] || name;
     const targetId = `screen-${targetName}`;
     const targetScreen = document.getElementById(targetId);
     if (!targetScreen) {
@@ -163,10 +169,11 @@ export class Router {
         window.cleanupCrossword();
       }
     }
-    if (this.currentScreen === 'srs' && name !== 'srs') {
+    if (this.currentScreen === 'srs' && targetName !== 'srs') {
       closeSenseiPanel();
       clearPostReviewSenseiActions();
       clearActiveReviewAIContext();
+      abortActiveSrsTabRender();
     }
 
     // Восстанавливаем tabbar для обычных экранов

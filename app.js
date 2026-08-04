@@ -56,6 +56,7 @@ import { speakJapanese, stopSpeaking } from './src/audio-helper.js';
 import { registerAndManageSW, activateWaitingWorker } from './src/sw-update-manager.js';
 import { announce } from './src/a11y-helpers.js';
 import { safeStorage } from './src/safe-storage.js';
+import { registerSrsTabs, activateSrsTab, initSrsTabsDelegate } from './ui/srs-tab-controller.js';
 
 // State модуль
 import {
@@ -658,138 +659,37 @@ function setupRouter() {
   };
 
   // ── SRS Tab Controller ────────────────────────────────────────────────
-  // Shared abort controller so rapid switching cancels in-flight renders
-  let activeSrsRenderController = null;
-  let srsRenderVersion = 0;
-
-  const SRS_TABS = {
+  registerSrsTabs({
     repetition: {
       title: 'Повторение',
       subtitle: 'Очередь FSRS и короткие сессии',
-      render: (ctx) => renderSrsDashboard({}, ctx),
+      render: (options, ctx) => renderSrsDashboard(options, ctx),
     },
     dictionary: {
       title: 'Словарь',
       subtitle: 'Слова, главы, мастерство и статусы SRS',
-      render: (ctx) => renderDictionary(state, dependencies, {}, ctx),
+      render: (options, ctx) => renderDictionary(state, dependencies, options, ctx),
     },
     particles: {
       title: 'Частицы',
       subtitle: 'Справочник и практика японских частиц',
-      render: () => renderParticlesDictionary(),
+      render: (_options, ctx) => renderParticlesDictionary(ctx),
     },
     'user-dictionaries': {
       title: 'Мои словари',
       subtitle: 'Личные наборы слов и импорт',
-      render: (ctx) =>
+      render: (options, ctx) =>
         renderUserDictionaries(
           state,
           {
             ...dependencies,
             refreshRuntime: () => refreshUserDictionaryLesson(LESSONS, undefined, state),
           },
-          { containerId: 'srs-body' },
+          { containerId: 'srs-body', ...options },
           ctx
         ),
     },
-  };
-
-  function activateSrsTab(tabId) {
-    const tabDef = SRS_TABS[tabId];
-    if (!tabDef) return;
-
-    // Cancel any in-flight async renderer
-    activeSrsRenderController?.abort();
-    activeSrsRenderController = new AbortController();
-    const version = ++srsRenderVersion;
-    const ctx = { signal: activeSrsRenderController.signal };
-
-    // Update tab active/aria state atomically
-    document.querySelectorAll('#srs-tabs-container .lib-tab').forEach((btn) => {
-      const isActive = btn.dataset.tab === tabId;
-      btn.classList.toggle('active', isActive);
-      btn.setAttribute('aria-selected', String(isActive));
-      btn.setAttribute('tabindex', isActive ? '0' : '-1');
-    });
-
-    // Update title BEFORE render to avoid stale header
-    const titleEl = document.getElementById('srs-screen-title');
-    const subtitleEl = document.getElementById('srs-screen-subtitle');
-    if (titleEl) titleEl.textContent = tabDef.title;
-    if (subtitleEl) subtitleEl.textContent = tabDef.subtitle;
-
-    // Clear body and show empty state while loading
-    const body = document.getElementById('srs-body');
-    if (body) body.innerHTML = '';
-
-    // Ensure screen is visible and tabs are shown
-    const tabsContainer = document.getElementById('srs-tabs-container');
-    if (tabsContainer) {
-      tabsContainer.classList.remove('hidden');
-      tabsContainer.style.display = '';
-    }
-    const srsScreen = document.getElementById('screen-srs');
-    if (srsScreen) srsScreen.classList.remove('srs-session-active');
-    document.body.classList.remove('srs-session-active');
-    const srsHeader = document.querySelector('#screen-srs .app-header');
-    if (srsHeader) srsHeader.style.display = 'flex';
-    const tabbar = document.querySelector('.tabbar');
-    if (tabbar) tabbar.style.display = '';
-    document.getElementById('completion-overlay')?.classList.add('hidden');
-
-    // Invoke renderer; guard against stale result
-    let result;
-    try {
-      result = tabDef.render(ctx);
-    } catch (err) {
-      if (!ctx.signal.aborted) {
-        console.error(`[SRS] Tab render error (${tabId}):`, err);
-      }
-      return;
-    }
-    if (result && typeof result.then === 'function') {
-      result.catch((err) => {
-        if (ctx.signal.aborted || version !== srsRenderVersion) return;
-        console.error(`[SRS] Async tab render error (${tabId}):`, err);
-      });
-    }
-  }
-
-  function handleSrsTabKeydown(e) {
-    const tabs = [...document.querySelectorAll('#srs-tabs-container [role="tab"]')];
-    if (!tabs.length) return;
-    const currentIdx = tabs.findIndex((t) => t === document.activeElement);
-    let nextIdx;
-    if (e.key === 'ArrowRight') nextIdx = (currentIdx + 1) % tabs.length;
-    else if (e.key === 'ArrowLeft') nextIdx = (currentIdx - 1 + tabs.length) % tabs.length;
-    else if (e.key === 'Home') nextIdx = 0;
-    else if (e.key === 'End') nextIdx = tabs.length - 1;
-    else return;
-    e.preventDefault();
-    tabs[nextIdx].focus();
-    activateSrsTab(tabs[nextIdx].dataset.tab);
-  }
-
-  function initSrsTabsDelegate() {
-    const container = document.getElementById('srs-tabs-container');
-    if (!container || container.dataset.delegateAttached) return;
-    container.dataset.delegateAttached = 'true';
-    container.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-tab]');
-      if (!btn || !container.contains(btn)) return;
-      const srsScreen = document.getElementById('screen-srs');
-      if (srsScreen?.classList.contains('hidden')) return;
-      if (
-        btn.dataset.tab ===
-        document.querySelector('#srs-tabs-container .lib-tab.active')?.dataset.tab
-      ) {
-        // Repeat click on active tab — no-op
-        return;
-      }
-      activateSrsTab(btn.dataset.tab);
-    });
-    container.addEventListener('keydown', handleSrsTabKeydown);
-  }
+  });
 
   const renderSrsDashboard = async (options = {}, context = {}) => {
     // При явном mode: 'session' ВСЕГДА возвращаемся немедленно!
@@ -914,18 +814,13 @@ function setupRouter() {
   };
 
   // renderDictionaryRoute: now activates dictionary tab within SRS screen
+  // renderDictionaryRoute: activates dictionary tab within SRS screen with single render call
   const renderDictionaryRoute = (options = {}, context = {}) => {
-    // Ensure SRS screen is visible first
-    const srsScreen = document.getElementById('screen-srs');
-    if (srsScreen) {
-      srsScreen.classList.remove('srs-session-active');
-      srsScreen.classList.remove('hidden');
-    }
-    document.body.classList.remove('srs-session-active');
     initSrsTabsDelegate();
-    activateSrsTab('dictionary');
-    if (context?.signal?.aborted) return;
-    renderDictionary(state, dependencies, options, context);
+    return activateSrsTab('dictionary', {
+      renderOptions: options,
+      routeContext: context,
+    });
   };
 
   router = initRouter({
@@ -963,9 +858,12 @@ function setupRouter() {
     onboarding: (options, context) => renderOnboarding(state, dependencies, options, context),
     statistics: (options, context) => renderStatistics(state, options, context),
     // user-dictionaries route is an alias: navigate to SRS and activate inline tab
-    'user-dictionaries': (_options, _context) => {
+    'user-dictionaries': (options, context) => {
       initSrsTabsDelegate();
-      activateSrsTab('user-dictionaries');
+      return activateSrsTab('user-dictionaries', {
+        renderOptions: options,
+        routeContext: context,
+      });
     },
     'word-details': (options, context) => renderWordDetails(state, dependencies, options, context),
   });

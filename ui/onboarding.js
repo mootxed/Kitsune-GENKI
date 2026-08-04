@@ -83,7 +83,7 @@ export async function renderOnboarding(state, dependencies = {}) {
       stepHtml = `
         <div class="onboarding-card card">
           <div class="onboarding-badge">Шаг 1 из 7</div>
-          <h2 class="onboarding-title">Добро пожаловать в KotoKitsu 🦊</h2>
+          <h2 class="onboarding-title">Добро пожаловать в KotoKitsu</h2>
           <p class="onboarding-desc">
             Приложение поможет пройти курс японского языка постепенно и эффективно:
           </p>
