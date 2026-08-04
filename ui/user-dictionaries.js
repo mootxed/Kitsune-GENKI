@@ -46,6 +46,8 @@ const view = {
   sort: 'updated-desc',
   page: 1,
   selected: new Set(),
+  // Tracks the active container element/id so internal re-renders stay in the same place
+  activeBodyId: 'user-dictionaries-body',
 };
 let searchTimer = null;
 
@@ -1059,8 +1061,17 @@ async function openImportWizard(
 }
 
 export async function renderUserDictionaries(state, dependencies = {}, options = {}, context = {}) {
-  const body = document.getElementById('user-dictionaries-body');
+  // Support explicit container injection (for inline SRS tab rendering)
+  // Fall back to the previously active container, then to the standalone screen body
+  const body =
+    options?.container ||
+    document.getElementById(options?.containerId || view.activeBodyId || 'user-dictionaries-body');
   if (!body) return;
+
+  // Persist the active container ID so internal re-renders (open, back, search, etc.) stay here
+  if (options?.containerId) view.activeBodyId = options.containerId;
+  else if (options?.container) view.activeBodyId = options.container.id || 'user-dictionaries-body';
+
   if (options.dictionaryId) view.dictionaryId = options.dictionaryId;
   if (options.search || options.entryId) view.search = options.search || options.entryId || '';
   const repository = dependencies.repository || new UserDictionaryRepository();

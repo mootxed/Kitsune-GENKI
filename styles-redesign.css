@@ -1299,13 +1299,63 @@ input[type='radio'] {
   color: var(--muted);
   background: transparent;
   box-shadow: none;
+  transition: color 100ms, background 100ms, box-shadow 100ms;
+  cursor: pointer;
 }
 
-:where(.toggle-btn, .lib-tab, .sensei-tab, .shop-tab).active {
+/* Active/selected state — exactly ONE tab should match */
+:where(.toggle-btn, .lib-tab, .sensei-tab, .shop-tab).active,
+:where(.toggle-btn, .lib-tab, .sensei-tab, .shop-tab)[aria-selected='true'] {
   border-color: var(--border);
   color: var(--fg);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
+}
+
+/* Hover — pointer devices only, not touch */
+@media (hover: hover) {
+  :where(.toggle-btn, .lib-tab, .sensei-tab, .shop-tab):not(.active):not([aria-selected='true']):hover {
+    color: var(--fg);
+    background: color-mix(in oklch, var(--surface) 60%, transparent);
+  }
+}
+
+/* Focus-visible keyboard ring */
+:where(.toggle-btn, .lib-tab, .sensei-tab, .shop-tab):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Pressed state */
+:where(.toggle-btn, .lib-tab, .sensei-tab, .shop-tab):active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Disabled */
+:where(.toggle-btn, .lib-tab, .sensei-tab, .shop-tab):disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Unified brand mark ─────────────────────────────────────────────────── */
+.brand-mark.brand-fox-mark,
+.logo-fox.brand-fox-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.brand-mark.brand-fox-mark .fox-mark,
+.logo-fox.brand-fox-mark .fox-mark {
+  width: 24px;
+  height: 24px;
 }
 
 .weekday-selector {
@@ -2547,64 +2597,110 @@ code {
     order: -1;
   }
 
+  /* ── home-hero: grid layout keeps halo inside mascot column ── */
   .home-hero {
-    display: block;
-    min-height: 445px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(96px, 28vw, 132px);
+    min-height: 0;
+    padding: 20px;
+    gap: 8px 12px;
+    align-items: start;
   }
 
   .home-hero-copy {
-    padding: 24px;
+    min-width: 0;
+    padding: 0;
+    position: relative;
+    z-index: 2;
   }
 
   .continue-learning-card {
-    grid-template-columns: 1fr;
-    gap: var(--space-3);
+    display: contents;
   }
 
   .continue-mark {
     display: none;
   }
 
+  .continue-copy {
+    display: contents;
+  }
+
+  .home-hero-eyebrow {
+    grid-column: 1;
+    align-self: end;
+    margin-bottom: 0;
+  }
+
   .continue-copy strong {
-    max-width: 9ch;
-    font-size: 38px;
+    grid-column: 1;
+    max-width: none;
+    align-self: start;
+    font-size: 32px;
+    line-height: 1.05;
   }
 
   .continue-copy small {
-    max-width: 66%;
-    font-size: 15px;
+    grid-column: 1 / -1;
+    max-width: none;
+    margin: 8px 0 10px;
+    font-size: 14px;
   }
 
   .home-task-meta {
-    max-width: 68%;
+    grid-column: 1 / -1;
+    max-width: none;
+    margin-bottom: 10px;
+    gap: 5px;
+  }
+
+  .home-meta-chip {
+    font-size: 12px;
+    padding: 4px 8px;
+    min-height: 28px;
   }
 
   .continue-arrow {
-    grid-column: 1;
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: center;
     min-height: 44px;
     padding-inline: var(--space-4);
     font-size: 0.82rem;
   }
 
-  .home-mascot-halo {
-    inset: auto 4% 6%;
-    width: auto;
-    height: 58%;
+  /* Mascot lives in its own column — halo cannot escape into copy area */
+  .home-mascot {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: 100%;
+    height: 130px;
+    overflow: clip;
+    isolation: isolate;
+    align-self: start;
+    pointer-events: none;
   }
 
-  .home-mascot {
+  .home-mascot-halo {
     position: absolute;
-    right: -12px;
-    bottom: 0;
-    width: 190px;
-    height: 260px;
+    inset: auto 4% 6%;
+    width: 82%;
+    height: auto;
+    aspect-ratio: 1;
+    z-index: 0;
   }
 
   .home-mascot img {
+    position: absolute;
     right: 50%;
     bottom: 0;
     width: auto;
-    height: 260px;
+    height: 130px;
+    transform: translateX(50%);
+    z-index: 1;
   }
 
   .home-today-panel {
@@ -2649,14 +2745,29 @@ code {
     grid-template-columns: 1fr !important;
   }
 
+  /* ── SRS tabs: single-row horizontal scroll instead of 2×2 grid ── */
   #screen-srs .lib-tabs {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    overflow: visible;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 4px;
+    margin: 6px 8px;
+    white-space: nowrap;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  #screen-srs .lib-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   #screen-srs .lib-tab {
-    width: 100%;
+    flex: 1 0 auto;
+    min-height: 44px;
+    padding: 8px 12px;
+    white-space: nowrap;
+    scroll-snap-align: start;
   }
 
   .stat-box {
@@ -2781,16 +2892,29 @@ code {
     grid-row: 1 / span 2;
     width: 96px;
     height: 116px;
+    overflow: clip;
+    isolation: isolate;
     align-self: start;
+    pointer-events: none;
   }
 
   #screen-home .home-mascot-halo {
+    position: absolute;
     inset: auto 2% 4%;
-    height: 52%;
+    width: 82%;
+    height: auto;
+    aspect-ratio: 1;
+    z-index: 0;
   }
 
   #screen-home .home-mascot img {
+    position: absolute;
+    right: 50%;
+    bottom: 0;
     height: 116px;
+    width: auto;
+    transform: translateX(50%);
+    z-index: 1;
   }
 }
 
@@ -2804,19 +2928,28 @@ code {
   }
 
   .home-hero {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) 80px;
   }
 
   .home-hero-copy {
-    padding-left: var(--space-4);
+    padding-left: 0;
   }
 
   .continue-copy strong {
     font-size: 1.75rem;
   }
 
+  .home-mascot {
+    height: 110px;
+  }
+
   .home-mascot img {
-    right: 0;
+    height: 110px;
+  }
+
+  /* Hide decorative halo at narrowest to avoid any overflow */
+  .home-mascot-halo {
+    display: none;
   }
 }
 

@@ -6,10 +6,7 @@
     <meta name="theme-color" content="#FF7A1A" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#12121E" media="(prefers-color-scheme: dark)" />
 
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🦊</text></svg>"
-    />
+    <link rel="icon" href="icon.svg" />
     <title>KotoKitsu — Независимый тренажёр японского языка</title>
     <link rel="manifest" href="manifest.json" />
     <link rel="stylesheet" href="styles.css" />
@@ -265,7 +262,9 @@
       <section class="screen hidden" id="screen-profile" data-testid="screen-profile">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox">🦊</span>
+            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
             <div><h1 class="app-title">Профиль</h1></div>
           </div>
           <div class="app-header-right">
@@ -280,7 +279,9 @@
       <section class="screen hidden" id="screen-quests" data-testid="screen-quests">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox">⚡</span>
+            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
             <div><h1 class="app-title">Квесты</h1></div>
           </div>
           <button
@@ -329,10 +330,12 @@
             >
               ‹
             </button>
-            <span class="logo-fox">🦊</span>
+            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
             <div>
-              <h1 class="app-title">KotoKitsu</h1>
-              <p class="app-subtitle">Система интервальных повторений</p>
+              <h1 class="app-title" id="srs-screen-title">Повторение</h1>
+              <p class="app-subtitle" id="srs-screen-subtitle">Очередь FSRS и короткие сессии</p>
             </div>
           </div>
           <div class="app-header-right">
@@ -340,11 +343,11 @@
             <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
           </div>
         </header>
-        <div class="lib-tabs" id="srs-tabs-container">
-          <button class="lib-tab active" data-tab="repetition">Повторение</button>
-          <button class="lib-tab" data-tab="dictionary">Словарь</button>
-          <button class="lib-tab" data-tab="particles">Частицы</button>
-          <button class="lib-tab" data-tab="user-dictionaries">Мои словари</button>
+        <div class="lib-tabs" id="srs-tabs-container" role="tablist" aria-label="Разделы SRS">
+          <button class="lib-tab active" data-tab="repetition" role="tab" aria-selected="true" aria-controls="srs-body" tabindex="0">Повторение</button>
+          <button class="lib-tab" data-tab="dictionary" role="tab" aria-selected="false" aria-controls="srs-body" tabindex="-1">Словарь</button>
+          <button class="lib-tab" data-tab="particles" role="tab" aria-selected="false" aria-controls="srs-body" tabindex="-1">Частицы</button>
+          <button class="lib-tab" data-tab="user-dictionaries" role="tab" aria-selected="false" aria-controls="srs-body" tabindex="-1">Мои словари</button>
         </div>
         <div class="screen-scroll" id="srs-body"></div>
       </section>
@@ -474,7 +477,9 @@
       <section class="screen hidden" id="screen-library" data-testid="screen-library">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox">📚</span>
+            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
             <h1 class="app-title">Мини-учебник</h1>
           </div>
           <div class="app-header-right">
@@ -517,7 +522,9 @@
       <section class="screen hidden" id="screen-settings" data-testid="screen-settings">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox">⚙️</span>
+            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
             <h1 class="app-title">Настройки</h1>
           </div>
         </header>
@@ -547,7 +554,9 @@
       <section class="screen hidden" id="screen-statistics" data-testid="screen-statistics">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox">📊</span>
+            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
             <h1 class="app-title">Статистика</h1>
           </div>
           <div class="app-header-right">
