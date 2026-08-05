@@ -15,7 +15,11 @@ export default defineConfig({
     ? [['line'], ['html', { open: 'never' }]]
     : [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000/',
+    baseURL:
+      process.env.PLAYWRIGHT_BASE_URL ||
+      (process.env.VITE_BASE
+        ? `http://127.0.0.1:3000${process.env.VITE_BASE.replace(/\/$/, '')}/`
+        : 'http://127.0.0.1:3000/'),
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -45,8 +49,13 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run preview -- --host 127.0.0.1 --port 3000',
-    url: 'http://127.0.0.1:3000',
+    url: process.env.VITE_BASE
+      ? `http://127.0.0.1:3000${process.env.VITE_BASE.replace(/\/$/, '')}/`
+      : 'http://127.0.0.1:3000/',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
+    env: {
+      VITE_BASE: process.env.VITE_BASE || '/',
+    },
   },
 });

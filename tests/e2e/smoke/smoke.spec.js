@@ -76,7 +76,7 @@ test.describe('@smoke Cross-browser Smoke Compatibility Suite', () => {
   });
 
   test('4. IndexedDB and localStorage are available in browser environment', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
     await waitForAppReady(page);
 
     const storageSupport = await page.evaluate(async () => {
@@ -112,7 +112,7 @@ test.describe('@smoke Cross-browser Smoke Compatibility Suite', () => {
   });
 
   test('5. Production assets load without broken styles or script errors', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
     await waitForAppReady(page);
 
     // Verify main CSS is computed

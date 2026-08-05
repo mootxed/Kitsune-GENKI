@@ -13,7 +13,7 @@ test.describe('@storage Storage Quota & Exhaustion Failure E2E Suite', () => {
       settings: { darkMode: 'auto' },
     });
 
-    await page.goto('/');
+    await page.goto('./');
     await waitForAppReady(page);
 
     // Fault injection for localStorage QuotaExceededError
@@ -69,7 +69,7 @@ test.describe('@storage Storage Quota & Exhaustion Failure E2E Suite', () => {
       settings: { darkMode: 'auto' },
     });
 
-    await page.goto('/');
+    await page.goto('./');
     await waitForAppReady(page);
 
     const backupFeatureAvailable = await page.evaluate(() => {

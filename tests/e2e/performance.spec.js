@@ -22,7 +22,7 @@ test.describe('@performance Lazy Loading & Performance Budgets E2E Suite', () =>
       settings: { darkMode: 'auto' },
     });
 
-    await page.goto('/');
+    await page.goto('./');
     await waitForAppReady(page);
 
     // Verify no lazy screen chunks were requested during initial startup
@@ -48,7 +48,7 @@ test.describe('@performance Lazy Loading & Performance Budgets E2E Suite', () =>
       onboarding: { completed: true, schemaVersion: 1 },
     });
 
-    await page.goto('/');
+    await page.goto('./');
     await waitForAppReady(page);
 
     const shopChunkPromise = page.waitForRequest((req) => req.url().includes('shop-'));

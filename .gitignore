@@ -24,6 +24,7 @@ npm-debug.log*
 # Build
 dist/
 build/
+.sourcemaps/
 
 # Linter & Formatter Cache
 .eslintcache
@@ -38,4 +39,6 @@ build/
 # Test outputs & reports
 test-results/
 playwright-report/
+coverage/
+reports/
 

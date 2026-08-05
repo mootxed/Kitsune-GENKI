@@ -3,11 +3,15 @@ name: Auto Roadmap Dates
 on:
   issues:
     types: [opened, closed]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Target issue number for manual roadmap date update'
+        required: true
+        type: string
 
 permissions:
   issues: write
-  pull-requests: write
-  projects: write
 
 jobs:
   set-dates:
@@ -17,10 +21,27 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const issue = context.payload.issue;
-            if (!issue) return;
+            let issue = context.payload.issue;
+            let action = context.payload.action || 'opened';
+            const issueNumberInput = context.inputs?.issue_number;
 
-            const action = context.payload.action;
+            if (!issue && issueNumberInput) {
+              const issueNum = parseInt(issueNumberInput, 10);
+              if (!isNaN(issueNum) && issueNum > 0) {
+                const fetched = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNum,
+                });
+                issue = fetched.data;
+              }
+            }
+
+            if (!issue) {
+              console.log('No valid issue provided for roadmap date update.');
+              return;
+            }
+
             const today = new Date().toISOString().split('T')[0];
             const owner = context.repo.owner;
             const repo = context.repo.repo;

@@ -21,7 +21,7 @@ test.describe('@storage IndexedDB Disabled / SecurityError Fallback E2E Suite', 
       });
     });
 
-    await page.goto('/');
+    await page.goto('./');
     await waitForAppReady(page);
 
     const appStateAfterInit = await page.evaluate(() => {

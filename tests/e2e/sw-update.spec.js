@@ -12,7 +12,7 @@ test.describe('@pwa @sw-update Service Worker Update Lifecycle E2E Suite', () =>
       settings: { darkMode: 'auto' },
     });
 
-    await page.goto('/');
+    await page.goto('./');
     await waitForAppReady(page);
 
     // Verify SW update manager helpers in page context
@@ -73,7 +73,7 @@ test.describe('@pwa @sw-update Service Worker Update Lifecycle E2E Suite', () =>
       settings: { darkMode: 'auto' },
     });
 
-    await page.goto('/');
+    await page.goto('./');
     await waitForAppReady(page);
 
     // Trigger mock update notification in DOM if present or test DOM listener

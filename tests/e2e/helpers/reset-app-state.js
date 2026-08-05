@@ -29,7 +29,7 @@ export async function resetAppState(page) {
     }
   });
 
-  await page.goto('/');
+  await page.goto('./');
   await waitForAppReady(page);
 }
 
@@ -63,7 +63,7 @@ export async function seedAppState(page, stateObject) {
     }
   }, seededState);
 
-  await page.goto('/');
+  await page.goto('./');
   await waitForAppReady(page);
 }
 

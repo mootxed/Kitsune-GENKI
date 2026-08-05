@@ -15,7 +15,7 @@ test.describe('@storage localStorage Disabled / SecurityError Fallback E2E Suite
       });
     });
 
-    await page.goto('/');
+    await page.goto('./');
 
     // Check that app does not fatal crash
     const screenVisible = await page

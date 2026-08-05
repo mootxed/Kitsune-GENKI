@@ -15,7 +15,7 @@ test.describe('@pwa PWA Upgrade over Existing Profile E2E Suite', () => {
     };
 
     await seedAppState(page, oldVersionState);
-    await page.goto('/');
+    await page.goto('./');
     await waitForAppReady(page);
 
     const upgradeResults = await page.evaluate(async () => {

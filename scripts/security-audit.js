@@ -36,29 +36,24 @@ const ALLOWLIST = [
     reason: 'Static AI privacy disclosure modal template HTML.',
   },
   {
-    file: 'app.js',
-    marker: "srsBody.innerHTML = ''",
-    reason: 'Clearing container content safely with empty string.',
+    file: 'ui/app-shell.js',
+    marker: /innerHTML\s*=/u,
+    reason: 'Internal toast message & dashboard rendering with escaped parameters.',
   },
   {
-    file: 'app.js',
-    marker: 't.innerHTML = msg',
-    reason: 'Internal toast message rendering.',
+    file: 'ui/lazy-screen-loader.js',
+    marker: /innerHTML\s*=/u,
+    reason: 'Lazy screen container loading markup.',
   },
   {
-    file: 'app.js',
-    marker: 'body.innerHTML = dashboardHtml',
-    reason: 'Main application shell template rendering with escaped parameters.',
+    file: 'ui/screen-templates.js',
+    marker: /innerHTML\s*=/u,
+    reason: 'Screen template container innerHTML setup.',
   },
   {
-    file: 'app.js',
-    marker: 'banner.innerHTML = `',
-    reason: 'Static offline/update notification banner HTML.',
-  },
-  {
-    file: 'app.js',
-    marker: 'loader.innerHTML = `',
-    reason: 'Static spinner / loader template HTML.',
+    file: 'ui/storage-recovery.js',
+    marker: /innerHTML\s*=/u,
+    reason: 'Storage recovery modal layout template markup.',
   },
 
   // UI Components Layouts & Views

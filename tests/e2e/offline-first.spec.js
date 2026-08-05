@@ -19,7 +19,7 @@ test.describe('@pwa @offline Offline-First Execution E2E Suite', () => {
       settings: { darkMode: 'auto' },
     });
 
-    await page.goto('/');
+    await page.goto('./');
     await waitForAppReady(page);
 
     // Wait for Service Worker registration if supported

@@ -9,7 +9,7 @@ import {
 test.describe('P0 Full User Learning & Data Lifecycle Flow', () => {
   test('Complete onboarding flow to home screen', async ({ page }) => {
     await resetAppState(page);
-    await page.goto('/');
+    await page.goto('./');
     await waitForAppReady(page);
 
     const onboardingScreen = page.locator('#screen-onboarding');
