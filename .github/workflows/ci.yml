@@ -131,7 +131,7 @@ jobs:
         run: npm ci
 
       - name: Download verified dist artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: kotokitsu-dist-${{ github.sha }}
           path: dist/
@@ -176,7 +176,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Download verified dist artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: kotokitsu-dist-${{ github.sha }}
           path: dist/
