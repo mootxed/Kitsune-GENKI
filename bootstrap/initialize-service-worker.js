@@ -1,8 +1,6 @@
-import { setSafeHTML } from '../src/security-helpers.js';
 import { registerAndManageSW, activateWaitingWorker } from '../src/sw-update-manager.js';
 import { announce } from '../src/a11y-helpers.js';
-import { $ } from '../src/utils.js';
-import { toast } from '../ui/app-shell.js';
+import { toastRich } from '../ui/app-shell.js';
 
 export async function initializeServiceWorker() {
   if (typeof window === 'undefined') return;
@@ -69,33 +67,27 @@ function showUpdateNotification(waitingWorker) {
     </button>
   `;
 
-  const t = $('#toast');
-  if (t) {
-    setSafeHTML(t, message);
-    t.classList.add('show');
-  }
   announce('Доступна новая версия приложения');
 
-  setTimeout(() => {
-    const updateBtn = document.getElementById('sw-update-btn');
-    const laterBtn = document.getElementById('sw-later-btn');
+  toastRich(message, {
+    duration: 0,
+    onRendered(container) {
+      const updateBtn = container.querySelector('#sw-update-btn');
+      const laterBtn = container.querySelector('#sw-later-btn');
 
-    if (updateBtn) {
-      updateBtn.addEventListener('click', () => {
-        activateWaitingWorker(waitingWorker);
-        const t = $('#toast');
-        if (t) {
-          t.textContent = 'Обновление...';
-        }
-      });
-    }
+      if (updateBtn) {
+        updateBtn.onclick = () => {
+          activateWaitingWorker(waitingWorker);
+          container.textContent = 'Обновление...';
+        };
+      }
 
-    if (laterBtn) {
-      laterBtn.addEventListener('click', () => {
-        const t = $('#toast');
-        if (t) t.classList.remove('show');
-        console.log('[App] SW update deferred by user');
-      });
-    }
-  }, 100);
+      if (laterBtn) {
+        laterBtn.onclick = () => {
+          container.classList.remove('show');
+          console.log('[App] SW update deferred by user');
+        };
+      }
+    },
+  });
 }

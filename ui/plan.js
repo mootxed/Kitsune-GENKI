@@ -317,23 +317,9 @@ function bindFormLiveInputs(state) {
   });
 }
 
-async function updateLivePreview(state) {
-  const container = $('#plan-preview-container');
+export function renderPlanPreview(container, preview, state, preferences = {}) {
   if (!container) return;
-
-  const preferences = collectPlanPreferences(state);
-  if (!preferences) return;
-
-  const workbookData = await loadSupplementalPracticeData();
-  const catalog = buildStudyPlanContentCatalog(
-    CONTENT_INDEX,
-    workbookData,
-    preferences.workbookSettings
-  );
-
-  const preview = previewStudyPlanFromPreferences(preferences, catalog, { state });
-
-  if (!preview.valid) {
+  if (!preview || !preview.valid) {
     container.classList.add('hidden');
     return;
   }
@@ -344,7 +330,7 @@ async function updateLivePreview(state) {
   // P1: Правильная подпись для режима дедлайна (дата) и режима дней (число)
   const targetLabel =
     preferences.targetType === 'deadline'
-      ? `до ${formatPlanDate(preferences.targetValue)} (${preview.availableStudyDays} уч. дн. доступно)`
+      ? `до ${formatPlanDate(preferences.targetValue)} (${preview.availableStudyDays || 0} уч. дн. доступно)`
       : `${preferences.targetValue || 0} учебных дней`;
 
   const summaryDiv = document.createElement('div');
@@ -359,11 +345,11 @@ async function updateLivePreview(state) {
 
   summaryDiv.append(`• Глав для изучения: ${chapterCount}`, document.createElement('br'));
   summaryDiv.append(
-    `• Учебных дней: ${preview.requiredStudyDays} (по ${preferences.dailyCapacityMinutes} мин/день)`,
+    `• Учебных дней: ${preview.requiredStudyDays || 0} (по ${preferences.dailyCapacityMinutes || 30} мин/день)`,
     document.createElement('br')
   );
   summaryDiv.append(
-    `• Общее время нового материала: ~${preview.totalRequiredMinutes} минут`,
+    `• Общее время нового материала: ~${preview.totalRequiredMinutes || 0} минут`,
     document.createElement('br')
   );
 
@@ -383,7 +369,7 @@ async function updateLivePreview(state) {
     warningDiv.append(targetStrong, document.createElement('br'));
 
     warningDiv.append(
-      `• Минимально требуется: ${preview.requiredStudyDays} уч. дней`,
+      `• Минимально требуется: ${preview.requiredStudyDays || 0} уч. дней`,
       document.createElement('br')
     );
 
@@ -415,7 +401,7 @@ async function updateLivePreview(state) {
     checkbox.type = 'checkbox';
     checkbox.id = 'plan-accept-deadline';
     checkbox.dataset.testid = 'plan-accept-deadline';
-    checkbox.checked = isChecked;
+    checkbox.checked = Boolean(isChecked);
     checkbox.addEventListener('change', () => {
       scheduleLivePreview(state);
     });
@@ -433,6 +419,24 @@ async function updateLivePreview(state) {
 
   container.replaceChildren(...childrenToReplace);
   container.classList.remove('hidden');
+}
+
+async function updateLivePreview(state) {
+  const container = $('#plan-preview-container');
+  if (!container) return;
+
+  const preferences = collectPlanPreferences(state);
+  if (!preferences) return;
+
+  const workbookData = await loadSupplementalPracticeData();
+  const catalog = buildStudyPlanContentCatalog(
+    CONTENT_INDEX,
+    workbookData,
+    preferences.workbookSettings
+  );
+
+  const preview = previewStudyPlanFromPreferences(preferences, catalog, { state });
+  renderPlanPreview(container, preview, state, preferences);
 }
 
 function applyRecommendation(dataset, state) {

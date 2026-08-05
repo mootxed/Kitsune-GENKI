@@ -64,6 +64,31 @@ export function toast(msg, options = {}) {
   }
 }
 
+export function toastRich(markup, options = {}) {
+  const t = $('#toast');
+  if (!t) return;
+
+  if (toastTimeout) {
+    clearTimeout(toastTimeout);
+    toastTimeout = null;
+  }
+
+  setSafeHTML(t, markup);
+  t.classList.add('show');
+
+  if (typeof options.onRendered === 'function') {
+    options.onRendered(t);
+  }
+
+  const duration = options.duration !== undefined ? options.duration : 3000;
+  if (duration > 0) {
+    toastTimeout = setTimeout(() => {
+      t.classList.remove('show');
+      toastTimeout = null;
+    }, duration);
+  }
+}
+
 // ===== THEME MANAGMENT =====
 export function applyTheme() {
   const mode = state?.settings?.darkMode || 'auto';
