@@ -1,6 +1,5 @@
-// ui/flashcards/card-modes.js - Рендеринг различных режимов практики карточек
-
 import { selectProductionTask } from '../../src/task-selection.js';
+import { setSafeHTML } from '../../src/security-helpers.js';
 import { evaluateProductionAnswer } from '../../src/production-context.js';
 import { $, $$ } from '../../src/utils.js';
 import { wordById, isWordUnlocked, getUnlockedParticles } from '../../src/srs-helpers.js';
@@ -114,7 +113,7 @@ function finishReviewStep(result, state, dependencies) {
       continueBtn.textContent = 'Продолжить ➔';
       continueBtn.style.marginTop = '12px';
       continueBtn.onclick = () => {
-        container.innerHTML = '';
+        container.replaceChildren();
         clearActiveReviewAIContext();
         if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
         if (typeof updateSrsBadge === 'function') updateSrsBadge();
@@ -383,7 +382,9 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
 
   const keyboardLetters = generateSrsKeyboard(acceptedAnswers);
 
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="flash-wrap">
       <div class="flash-top">
         <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
@@ -420,7 +421,8 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
         </div>
         <div id="typing-hint-message" class="typing-hint hidden" style="color: var(--orange); font-weight: 700; margin-top: 8px;"></div>
       </div>
-    </div>`;
+    </div> `
+  );
 
   const reviewCardId = reviewedCard?.id;
   startReviewTiming(reviewCardId || word.id, typingMode);
@@ -681,7 +683,9 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
 
   const keyboardLetters = generateSrsKeyboard(acceptedAnswers);
 
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="flash-wrap">
       <div class="flash-top">
         <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
@@ -719,7 +723,8 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
         </div>
         <div id="typing-hint-message" class="typing-hint hidden" style="margin-top: 8px;"></div>
       </div>
-    </div>`;
+    </div>`
+  );
 
   const reviewCardId = reviewedCard?.id;
   startReviewTiming(reviewCardId || word.id, CARD_MODES.CONTEXT_PRODUCTION);
@@ -951,7 +956,9 @@ export function renderMultipleChoiceMode(
     isEligible: (candidate) => isWordUnlocked(candidate.id, state.chapters),
   });
 
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="flash-wrap">
       <div class="flash-top">
         <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
@@ -975,7 +982,8 @@ export function renderMultipleChoiceMode(
             .join('')}
         </div>
       </div>
-    </div>`;
+    </div>`
+  );
 
   const reviewCardId = reviewedCard?.id;
   startReviewTiming(reviewCardId || word.id, modeConfig.mode || CARD_MODES.MULTIPLE_CHOICE);
@@ -1248,7 +1256,9 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
     });
   };
 
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="flash-wrap">
       <div class="flash-top">
         <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
@@ -1274,7 +1284,8 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
         
         <div id="sentence-feedback" class="sentence-feedback hidden"></div>
       </div>
-    </div>`;
+    </div>`
+  );
 
   startReviewTiming(particleCard.id, CARD_MODES.SENTENCE_BUILDING);
 
@@ -1343,7 +1354,7 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
         reviewResolved = true;
         lockCurrentReviewUI();
         if (feedback) {
-          feedback.innerHTML = '✅ Правильно!';
+          feedback.textContent = '✅ Правильно!';
           feedback.className = 'sentence-feedback correct';
           feedback.classList.remove('hidden');
         }
@@ -1512,7 +1523,9 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
 
   const { sentence, correctParticle, options, russianHint } = quizData;
 
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="flash-wrap">
       <div class="flash-top">
         <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
@@ -1536,7 +1549,8 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
             .join('')}
         </div>
       </div>
-    </div>`;
+    </div>`
+  );
 
   startReviewTiming(particleCard.id, CARD_MODES.PARTICLE_QUIZ);
 

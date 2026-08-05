@@ -1,4 +1,5 @@
 import { getCorrectOptionIndex } from '../src/ai/schemas.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 
 function el(tag, options = {}, children = []) {
   const node = document.createElement(tag);
@@ -194,7 +195,7 @@ function renderStory(artifact, options) {
 export function renderAssistantArtifact(message, options = {}) {
   const content = el('div', { className: 'msg bot sensei-structured-message' });
   const text = el('div', { className: 'sensei-message-text' });
-  text.innerHTML = options.renderMarkdown(message.text || message.artifact?.message || '');
+  setSafeHTML(text, options.renderMarkdown(message.text || message.artifact?.message || ''));
   content.append(text);
   const artifact = message.artifact;
   if (!artifact || typeof artifact !== 'object') return content;

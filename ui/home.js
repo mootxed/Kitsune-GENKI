@@ -1,5 +1,6 @@
 /* ui/home.js — Home screen */
 import { state, save, chState, loadedChapters } from '../state/store.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 import { refreshStreakDisplay, syncAvatars, updateSrsBadge } from './shared.js';
 import { $, todayStr } from '../src/utils.js';
 import { allCards, cardChapter } from '../src/srs-helpers.js';
@@ -894,7 +895,7 @@ export function renderHome(_appState = state, dependencies = null) {
 
   const todayContainer = $('#home-plan-today');
   if (todayContainer) {
-    todayContainer.innerHTML = renderHomeTodayCard(state, dailyPlan);
+    setSafeHTML(todayContainer, renderHomeTodayCard(state, dailyPlan));
 
     // Bind click events on interactive child elements within today-plan-empty
     todayContainer.querySelector('[data-action="create-plan"]')?.addEventListener('click', () => {
@@ -1112,7 +1113,7 @@ export function renderCourse() {
   const list = $('#course-list');
   if (!list) return;
   ensureActiveChapterId(state, CONTENT_INDEX);
-  list.innerHTML = '';
+  list.replaceChildren();
   CONTENT_INDEX.forEach((chapter) => {
     const displayNumber = lessonOrdinal(chapter.id) + 1;
     const chapterState = chState(chapter.id);
@@ -1123,14 +1124,17 @@ export function renderCourse() {
     element.type = 'button';
     element.className = `chapter-card course-chapter ${completed ? 'completed' : ''} ${available ? '' : 'locked'}`;
     element.dataset.testid = `chapter-card-${displayNumber}`;
-    element.innerHTML = `
+    setSafeHTML(
+      element,
+      `
       <span class="ch-badge">${completed ? '✓' : available ? displayNumber : '🔒'}</span>
       <span class="ch-main">
         <span class="ch-name">${formatLessonLabel(chapter.id)}</span>
         <span class="ch-sub">${completed ? 'Завершено' : `${progress.completedCount} из ${progress.totalCount} разделов`}</span>
         <span class="ch-prog"><i style="width:${Math.round(progress.ratio * 100)}%"></i></span>
       </span>
-      <span class="ch-arrow">›</span>`;
+      <span class="ch-arrow">›</span>`
+    );
     element.onclick = () => {
       if (!available && !completed) {
         window.toast?.('Сначала завершите предыдущую главу');

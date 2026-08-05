@@ -1,6 +1,5 @@
-// ui/flashcards/dictionary-modal.js - Модальное окно деталей слова, пропись HanziWriter, примеры и спряжения
-
 import { $, $$ } from '../../src/utils.js';
+import { setSafeHTML } from '../../src/security-helpers.js';
 import { speakJapanese } from '../../src/audio-helper.js';
 import { SRS } from '../../srs.js';
 import { cardsForItem, vocabularySkills } from '../../src/knowledge-model.js';
@@ -566,7 +565,9 @@ export function openDictionaryModal(word, state, dependencies) {
       `;
     }
 
-    body.innerHTML = `
+    setSafeHTML(
+      body,
+      `
       <div class="dict-modal">
         <div class="dict-modal-header">
           <button class="btn-ghost" id="dict-modal-close">← Назад</button>
@@ -686,7 +687,8 @@ export function openDictionaryModal(word, state, dependencies) {
           </details>
         </div>
       </div>
-    `;
+    `
+    );
 
     const closeBtn = $('#dict-modal-close');
     if (closeBtn) closeBtn.onclick = returnToDict;
@@ -710,13 +712,13 @@ export function openDictionaryModal(word, state, dependencies) {
           e.stopPropagation();
           if (exampleCandidates.length > 1) {
             exampleIndex = (exampleIndex - 1 + exampleCandidates.length) % exampleCandidates.length;
-            examplesBody.innerHTML = buildExampleBlockHtml();
+            setSafeHTML(examplesBody, buildExampleBlockHtml());
           }
         } else if (nextBtn) {
           e.stopPropagation();
           if (exampleCandidates.length > 1) {
             exampleIndex = (exampleIndex + 1) % exampleCandidates.length;
-            examplesBody.innerHTML = buildExampleBlockHtml();
+            setSafeHTML(examplesBody, buildExampleBlockHtml());
           }
         } else if (speakBtn) {
           e.stopPropagation();
@@ -771,7 +773,7 @@ export async function initDictionaryKanjiWriter(kanji, dependencies = {}) {
     return;
   }
 
-  target.innerHTML = '';
+  target.replaceChildren();
   target.style.touchAction = 'none';
 
   const loadKanjiData = (char) => {

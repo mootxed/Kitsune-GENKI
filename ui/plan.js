@@ -1,6 +1,7 @@
 /* ui/plan.js — экран плана обучения */
 
 import { getAllPlanStudyDates, StudyPlan } from '../studyplan.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 import { $ } from '../src/utils.js';
 import { CONTENT_INDEX, ensureLesson, getLesson, renderHomeTodayCard } from './home.js';
 import { nav } from './router.js';
@@ -473,7 +474,7 @@ function renderCompletedChaptersList(state) {
   const container = $('#completed-chapters-list');
   if (!container) return;
   if (CONTENT_INDEX.length === 0) {
-    container.innerHTML = '<p class="muted">Каталог глав загружается…</p>';
+    setSafeHTML(container, '<p class="muted">Каталог глав загружается…</p>');
     return;
   }
   const actualCompleted = new Set(getActualCompletedChapterIds(state, CONTENT_INDEX));
@@ -660,8 +661,10 @@ function renderPlanSummary(plan, state) {
   if (activeChapterId && !activeChapter) {
     const todayCard = $('#plan-today-card');
     if (todayCard) {
-      todayCard.innerHTML =
-        '<div class="today-plan-empty"><p>Задачи дня загружаются вместе с главой…</p></div>';
+      setSafeHTML(
+        todayCard,
+        '<div class="today-plan-empty"><p>Задачи дня загружаются вместе с главой…</p></div>'
+      );
       todayCard.classList.remove('hidden');
     }
     ensureLesson(activeChapterId)
@@ -701,7 +704,7 @@ function renderPlanSummary(plan, state) {
 
   const todayCard = $('#plan-today-card');
   if (todayCard) {
-    todayCard.innerHTML = renderHomeTodayCard(state, dailyPlan);
+    setSafeHTML(todayCard, renderHomeTodayCard(state, dailyPlan));
     todayCard.classList.remove('hidden');
     todayCard.querySelectorAll('[data-task-id]').forEach((element) => {
       element.addEventListener('click', (event) => {
@@ -715,7 +718,7 @@ function renderPlanSummary(plan, state) {
 
   const timeline = $('#plan-timeline');
   if (timeline) {
-    timeline.innerHTML = renderTimeline(plan, state, activeChapterId);
+    setSafeHTML(timeline, renderTimeline(plan, state, activeChapterId));
     timeline.querySelectorAll('[data-chapter-id]').forEach((card) => {
       card.addEventListener('click', () => nav('chapter', card.dataset.chapterId));
     });
@@ -1006,7 +1009,7 @@ function renderPlanCalendar(plan, state) {
     month: 'long',
     year: 'numeric',
   }).format(planCalendarMonth);
-  grid.innerHTML = '';
+  grid.replaceChildren();
 
   const dateMap = new Map();
   for (const segment of plan.segments || []) {

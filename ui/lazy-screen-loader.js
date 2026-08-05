@@ -1,5 +1,7 @@
 /* ui/lazy-screen-loader.js — Centralized lazy screen loader & chunk error management */
 
+import { setSafeHTML } from '../src/security-helpers.js';
+
 export class ScreenLoadError extends Error {
   constructor(code, message, originalError = null, screenId = '') {
     super(message);
@@ -156,12 +158,15 @@ export function prefetchScreen(screenId) {
  */
 export function showScreenLoadingUI(container, screenName = 'экран') {
   if (!container) return;
-  container.innerHTML = `
+  setSafeHTML(
+    container,
+    `
     <div class="screen-loading-overlay" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 16px; text-align: center; color: var(--ink);">
       <div class="loader-spinner" style="width: 36px; height: 36px; border: 3px solid rgba(255,122,26,0.2); border-top-color: var(--primary, #FF7A1A); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px;"></div>
       <p style="font-size: 15px; font-weight: 500; margin: 0;">Загрузка: ${screenName}...</p>
     </div>
-  `;
+  `
+  );
 }
 
 /**
@@ -175,7 +180,9 @@ export function showScreenErrorUI(container, error, onRetry) {
   const isOfflineNotice = error.code === ERROR_CODES.OFFLINE_CHUNK_NOT_CACHED;
   const title = isOfflineNotice ? '📲 Требуется интернет' : '⚠️ Ошибка загрузки экрана';
 
-  container.innerHTML = `
+  setSafeHTML(
+    container,
+    `
     <div class="screen-error-card" style="margin: 32px 16px; padding: 24px; background: var(--bg-card, #ffffff); border: 1.5px solid var(--border, #e0e0e0); border-radius: 16px; text-align: center;">
       <div style="font-size: 32px; margin-bottom: 12px;">${isOfflineNotice ? '📡' : '⚠️'}</div>
       <h3 style="font-size: 18px; margin-bottom: 8px; color: var(--ink);">${title}</h3>
@@ -189,7 +196,8 @@ export function showScreenErrorUI(container, error, onRetry) {
         <button class="btn-ghost" id="back-home-lazy-screen-btn" style="padding: 10px 20px;">🏠 На главную</button>
       </div>
     </div>
-  `;
+  `
+  );
 
   const retryBtn = container.querySelector('#retry-lazy-screen-btn');
   if (retryBtn && onRetry) {

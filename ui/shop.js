@@ -2,6 +2,7 @@ import { $ } from '../src/utils.js';
 import { syncAvatars, applyStreakSkin, applyCustomTheme } from './shared.js';
 import { openModal, closeModal } from '../src/a11y-helpers.js';
 import { SHOP_ITEMS } from './shop-catalog.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -59,44 +60,46 @@ export function renderShop(state, dependencies) {
   const items = SHOP_ITEMS.filter((item) => item.type === filterType);
 
   if (items.length === 0) {
-    body.innerHTML = `<div class="empty"><div class="em">🛒</div><h3>Нет товаров</h3></div>`;
+    setSafeHTML(body, `<div class="empty"><div class="em">🛒</div><h3>Нет товаров</h3></div>`);
     return;
   }
 
-  body.innerHTML = items
-    .map((item) => {
-      let owned, equipped;
+  setSafeHTML(
+    body,
+    items
+      .map((item) => {
+        let owned, equipped;
 
-      if (item.type === 'avatar') {
-        owned = state.unlockedAvatars.includes(item.emoji);
-        equipped = state.currentAvatar === item.emoji;
-      } else if (item.type === 'streakSkin') {
-        owned = state.unlockedStreakSkins.includes(item.value);
-        equipped = state.currentStreakSkin === item.value;
-      } else if (item.type === 'theme') {
-        owned = state.unlockedThemes.includes(item.value);
-        equipped = state.currentTheme === item.value;
-      } else if (item.type === 'title') {
-        owned = state.unlockedTitles.includes(item.value);
-        equipped = state.currentTitle === item.value;
-      }
+        if (item.type === 'avatar') {
+          owned = state.unlockedAvatars.includes(item.emoji);
+          equipped = state.currentAvatar === item.emoji;
+        } else if (item.type === 'streakSkin') {
+          owned = state.unlockedStreakSkins.includes(item.value);
+          equipped = state.currentStreakSkin === item.value;
+        } else if (item.type === 'theme') {
+          owned = state.unlockedThemes.includes(item.value);
+          equipped = state.currentTheme === item.value;
+        } else if (item.type === 'title') {
+          owned = state.unlockedTitles.includes(item.value);
+          equipped = state.currentTitle === item.value;
+        }
 
-      const canBuy = state.coins >= item.price;
+        const canBuy = state.coins >= item.price;
 
-      let btnHtml;
-      if (item.price === 0) {
-        btnHtml = `<button class="btn-shop equipped" disabled>✓ Бесплатно</button>`;
-      } else if (owned && equipped) {
-        btnHtml = `<button class="btn-shop equipped" disabled>✓ Установлено</button>`;
-      } else if (owned) {
-        btnHtml = `<button class="btn-shop btn-shop-equip" data-id="${item.id}">Установить</button>`;
-      } else if (canBuy) {
-        btnHtml = `<button class="btn-shop btn-shop-buy" data-id="${item.id}" data-price="${item.price}">Купить за ${item.price} 🪙</button>`;
-      } else {
-        btnHtml = `<button class="btn-shop btn-shop-buy" disabled>${item.price} 🪙</button>`;
-      }
+        let btnHtml;
+        if (item.price === 0) {
+          btnHtml = `<button class="btn-shop equipped" disabled>✓ Бесплатно</button>`;
+        } else if (owned && equipped) {
+          btnHtml = `<button class="btn-shop equipped" disabled>✓ Установлено</button>`;
+        } else if (owned) {
+          btnHtml = `<button class="btn-shop btn-shop-equip" data-id="${item.id}">Установить</button>`;
+        } else if (canBuy) {
+          btnHtml = `<button class="btn-shop btn-shop-buy" data-id="${item.id}" data-price="${item.price}">Купить за ${item.price} 🪙</button>`;
+        } else {
+          btnHtml = `<button class="btn-shop btn-shop-buy" disabled>${item.price} 🪙</button>`;
+        }
 
-      return `<div class="shop-item">
+        return `<div class="shop-item">
       <div class="shop-item-emoji">${item.emoji}</div>
       <div class="shop-item-info">
         <div class="shop-item-name">${item.name}</div>
@@ -104,8 +107,9 @@ export function renderShop(state, dependencies) {
       </div>
       ${btnHtml}
     </div>`;
-    })
-    .join('');
+      })
+      .join('')
+  );
 
   // Обработчики покупки
   $$('.btn-shop-buy').forEach((btn) => {

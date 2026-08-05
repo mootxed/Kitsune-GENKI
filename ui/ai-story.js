@@ -9,6 +9,7 @@ import { ensureAIPrivacyDisclosure } from '../src/ai-disclosure.js';
 import { getOpenRouterKey } from '../src/openrouter-key.js';
 import { resolveStoryTokens } from '../src/ai/story-token-resolver.js';
 import { dictionaryStore } from '../src/dictionary/dictionary-store.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 
 function escapeHtml(str) {
   if (typeof str !== 'string') return '';
@@ -23,7 +24,7 @@ function escapeHtml(str) {
       case '"':
         return '&quot;';
       case "'":
-        return '&#39;';
+        return '&#039;';
       default:
         return c;
     }
@@ -110,7 +111,9 @@ export function renderAIStory(state, dependencies) {
   // Check if OpenRouter key is configured
   const apiKey = getOpenRouterKey().trim();
   if (!apiKey) {
-    body.innerHTML = `
+    setSafeHTML(
+      body,
+      `
       <div class="card" style="text-align:center; padding: 24px;" data-testid="ai-story-no-key">
         <div style="font-size: 40px; margin-bottom: 12px;">🔑</div>
         <h3 style="margin: 0 0 8px;">Требуется API-ключ OpenRouter</h3>
@@ -121,7 +124,8 @@ export function renderAIStory(state, dependencies) {
           ⚙️ Перейти в настройки
         </button>
       </div>
-    `;
+    `
+    );
 
     const settingsBtn = $('#ai-story-go-settings');
     if (settingsBtn) {
@@ -131,7 +135,9 @@ export function renderAIStory(state, dependencies) {
   }
 
   // Render initial form
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div style="padding: 16px; display: flex; flex-direction: column; gap: 16px;">
       <div class="card" data-testid="ai-story-form">
         <h3 style="margin: 0 0 12px; font-size: 18px;">✨ Генератор историй</h3>
@@ -180,7 +186,8 @@ export function renderAIStory(state, dependencies) {
 
       <div id="ai-story-result" data-testid="ai-story-result"></div>
     </div>
-  `;
+  `
+  );
 
   const generateBtn = $('#generate-story-btn');
   if (generateBtn) {
@@ -223,13 +230,16 @@ export function renderAIStory(state, dependencies) {
     btn.disabled = true;
     btn.textContent = '⏳ Генерация...';
 
-    resultContainer.innerHTML = `
+    setSafeHTML(
+      resultContainer,
+      `
       <div class="card ai-loading-card" style="text-align: center; padding: 24px;" data-testid="ai-story-loading">
         <div style="font-size: 36px; margin-bottom: 8px;">🦊</div>
         <h3 style="margin: 0 0 8px;">AI генерирует историю...</h3>
         <p class="muted" style="font-size: 13px;">Это может занять 10-30 секунд</p>
       </div>
-    `;
+    `
+    );
 
     try {
       const rawOrObject = await API.generateAIStory(fullPrompt, weakWords, st.settings, { signal });
@@ -319,7 +329,9 @@ export function renderAIStory(state, dependencies) {
           'Структура ответа ИИ не совпадает со схемой истории. Нажмите «Попробовать снова».';
       }
 
-      resultContainer.innerHTML = `
+      setSafeHTML(
+        resultContainer,
+        `
         <div class="card" style="border-left: 4px solid var(--danger, #ef4444); padding: 16px;" data-testid="ai-story-error">
           <h3 style="margin: 0 0 8px; color: var(--danger, #ef4444);">⚠️ Ошибка генерации</h3>
           <p style="font-size: 14px; margin-bottom: 12px;">${escapeHtml(userMsg)}</p>
@@ -327,7 +339,8 @@ export function renderAIStory(state, dependencies) {
             🔄 Попробовать снова
           </button>
         </div>
-      `;
+      `
+      );
 
       const retryBtn = $('#ai-story-retry-btn');
       if (retryBtn) {
@@ -463,7 +476,7 @@ export function renderAIStory(state, dependencies) {
       </div>
     `;
 
-    container.innerHTML = html;
+    setSafeHTML(container, html);
 
     // Attach translation toggles
     container.querySelectorAll('.btn-toggle-trans').forEach((btn) => {
@@ -508,7 +521,7 @@ export function renderAIStory(state, dependencies) {
     const newBtn = container.querySelector('#ai-story-new-btn');
     if (newBtn) {
       newBtn.onclick = () => {
-        container.innerHTML = '';
+        container.replaceChildren();
         const promptInput = $('#ai-story-prompt');
         if (promptInput) {
           promptInput.value = '';

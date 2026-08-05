@@ -1,4 +1,5 @@
 import { getGrammarQuizTopic, normalizeGrammarQuizAnswer } from '../src/grammar-quiz-content.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 
 function escapeHtml(str) {
   if (typeof str !== 'string') return '';
@@ -162,7 +163,9 @@ export function openGrammarLesson({ state: _state, chapterId, topic, onComplete,
 
       const hasQuiz = questions.length > 0;
 
-      overlay.innerHTML = `
+      setSafeHTML(
+        overlay,
+        `
         <div class="grammar-lesson-shell">
           <div class="grammar-lesson-header">
             <div class="grammar-lesson-header-main">
@@ -191,7 +194,8 @@ export function openGrammarLesson({ state: _state, chapterId, topic, onComplete,
             }
           </div>
         </div>
-      `;
+      `
+      );
 
       overlay.querySelectorAll('[data-close]').forEach((btn) => {
         btn.onclick = () =>
@@ -318,7 +322,9 @@ export function openGrammarLesson({ state: _state, chapterId, topic, onComplete,
 
       const canSubmit = checkCanSubmitQuestion(q);
 
-      overlay.innerHTML = `
+      setSafeHTML(
+        overlay,
+        `
         <div class="grammar-lesson-shell">
           <div class="grammar-lesson-header">
             <div class="grammar-lesson-progress">
@@ -345,7 +351,8 @@ export function openGrammarLesson({ state: _state, chapterId, topic, onComplete,
             }
           </div>
         </div>
-      `;
+      `
+      );
 
       // Event handlers
       overlay.querySelector('[data-close]').onclick = confirmCancel;
@@ -512,7 +519,9 @@ export function openGrammarLesson({ state: _state, chapterId, topic, onComplete,
         `;
       }
 
-      overlay.innerHTML = `
+      setSafeHTML(
+        overlay,
+        `
         <div class="grammar-lesson-shell">
           <div class="grammar-lesson-header">
             <div class="grammar-lesson-header-main">
@@ -537,7 +546,8 @@ export function openGrammarLesson({ state: _state, chapterId, topic, onComplete,
             }
           </div>
         </div>
-      `;
+      `
+      );
 
       overlay.querySelectorAll('[data-close]').forEach((btn) => {
         btn.onclick = () =>

@@ -4,6 +4,7 @@ import { countAvailableCardsForSession } from '../src/srs-limits.js';
 import { XP_PER_LEVEL } from '../src/xp-system.js';
 import { $, todayStr, pluralDays } from '../src/utils.js';
 import { parseDateKey } from '../src/local-date.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 
 // ===== COMPLETION SCREEN (ЭКРАН УСПЕХА) =====
 export function showCompletionScreen(options) {
@@ -36,15 +37,18 @@ export function showCompletionScreen(options) {
 
   // Сгенерировать награды
   const rewardsContainer = document.getElementById('completion-rewards');
-  rewardsContainer.innerHTML = rewards
-    .map(
-      (r) =>
-        `<div class="reward-item">
+  setSafeHTML(
+    rewardsContainer,
+    rewards
+      .map(
+        (r) =>
+          `<div class="reward-item">
       <span class="reward-icon">${r.icon}</span>
       <span class="reward-label">${r.label}</span>
     </div>`
-    )
-    .join('');
+      )
+      .join('')
+  );
 
   let actionsContainer = document.getElementById('completion-actions');
   if (Array.isArray(options.actions) && options.actions.length > 0) {
@@ -55,7 +59,7 @@ export function showCompletionScreen(options) {
         'display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap;';
       rewardsContainer.insertAdjacentElement('afterend', actionsContainer);
     }
-    actionsContainer.innerHTML = '';
+    actionsContainer.replaceChildren();
     options.actions.forEach((act) => {
       const btn = document.createElement('button');
       btn.type = 'button';

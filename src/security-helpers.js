@@ -1,7 +1,43 @@
-/* src/security-helpers.js — Security helpers for URL validation and secret redaction */
+import DOMPurify from 'dompurify';
 
 const DISALLOWED_SCHEMES = new Set(['javascript:', 'data:', 'vbscript:', 'file:', 'about:']);
 const DEFAULT_ALLOWED_SCHEMES = new Set(['https:', 'http:', 'mailto:']);
+
+/**
+ * Sanitizes raw HTML string using DOMPurify with a strict, feature-rich policy.
+ * Preserves ruby markup, ARIA attributes, classes, and safe data attributes.
+ * Removes scripts, iframes, objects, inline handlers, javascript: URLs, dangerous SVG, srcdoc.
+ *
+ * @param {string} markup - Raw HTML input markup.
+ * @returns {string} Sanitized HTML string safe for DOM insertion.
+ */
+export function sanitizeHTML(markup) {
+  if (typeof markup !== 'string') return '';
+  return DOMPurify.sanitize(markup, {
+    USE_PROFILES: { html: true },
+    ADD_TAGS: ['ruby', 'rt', 'rp'],
+    ADD_ATTR: [
+      'aria-label',
+      'aria-hidden',
+      'aria-expanded',
+      'aria-controls',
+      'aria-describedby',
+      'role',
+      'data-testid',
+    ],
+  });
+}
+
+/**
+ * Centralized safe dynamic HTML rendering helper.
+ *
+ * @param {HTMLElement|null} element - Target DOM element.
+ * @param {string} markup - Raw HTML markup to sanitize and assign.
+ */
+export function setSafeHTML(element, markup) {
+  if (!element) return;
+  element.innerHTML = sanitizeHTML(markup);
+}
 
 /**
  * Validates and normalizes external URLs to prevent javascript:, data:, and other dangerous schemes.

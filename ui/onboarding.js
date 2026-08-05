@@ -1,4 +1,5 @@
 import { nav } from './router.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 import { $, $$, escapeHtml } from '../src/utils.js';
 import { save } from '../state/store.js';
 import { getOnboardingDraft, updateOnboardingDraft } from '../src/onboarding-state.js';
@@ -403,7 +404,9 @@ export async function renderOnboarding(state, dependencies = {}) {
       `;
     }
 
-    container.innerHTML = `
+    setSafeHTML(
+      container,
+      `
       <div class="onboarding-wrapper" style="max-width:480px;margin:0 auto;padding:16px 12px;">
         <div class="onboarding-header-nav" style="margin-bottom:12px;">
           <div class="progress-bar-wrap" style="height:6px;background:rgba(0,0,0,0.1);border-radius:3px;overflow:hidden;">
@@ -412,7 +415,8 @@ export async function renderOnboarding(state, dependencies = {}) {
         </div>
         ${stepHtml}
       </div>
-    `;
+    `
+    );
 
     bindEvents();
   }

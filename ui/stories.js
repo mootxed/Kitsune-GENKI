@@ -5,6 +5,7 @@ import { CONTENT_INDEX } from './home.js';
 import { loadContentIndex, loadChapterData } from '../src/content-loader.js';
 import { storyOccurrenceIndex } from '../src/dictionary/story-occurrence-index.js';
 import { formatLessonLabel, sameLessonId } from '../src/courses/course-context.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -50,20 +51,21 @@ export function renderStories(state, dependencies) {
   }));
 
   if (stories.length === 0) {
-    body.innerHTML = emptyState(
-      '📖',
-      'Историй пока нет',
-      'Скоро здесь появятся интересные истории!'
+    setSafeHTML(
+      body,
+      emptyState('📖', 'Историй пока нет', 'Скоро здесь появятся интересные истории!')
     );
     return;
   }
 
-  body.innerHTML = stories
-    .map((story) => {
-      const isUnlocked = chState(story.lesson_id).started;
-      const lockedClass = isUnlocked ? '' : 'story-locked';
+  setSafeHTML(
+    body,
+    stories
+      .map((story) => {
+        const isUnlocked = chState(story.lesson_id).started;
+        const lockedClass = isUnlocked ? '' : 'story-locked';
 
-      return `
+        return `
       <div class="story-card ${lockedClass}" data-story-id="${story.id}" data-testid="story-${story.id}">
         <div class="story-cover-wrap">
           <img src="${story.cover_url}" alt="${story.title}" class="story-cover" loading="lazy" />
@@ -75,8 +77,9 @@ export function renderStories(state, dependencies) {
         </div>
       </div>
     `;
-    })
-    .join('');
+      })
+      .join('')
+  );
 
   $$('.story-card').forEach((card) => {
     card.onclick = async () => {
@@ -130,25 +133,30 @@ export function renderLibraryNotes(state, dependencies) {
 
   const notes = state.savedNotes || [];
   if (notes.length === 0) {
-    body.innerHTML = `<div class="empty"><div class="em">📝</div><h3>Заметок пока нет</h3><p>Сохраняйте ответы Сенсея кнопкой «＋ Сохранить в учебник».</p></div>`;
+    setSafeHTML(
+      body,
+      `<div class="empty"><div class="em">📝</div><h3>Заметок пока нет</h3><p>Сохраняйте ответы Сенсея кнопкой «＋ Сохранить в учебник».</p></div>`
+    );
     return;
   }
 
-  body.innerHTML = notes
-    .map((n) => {
-      const isLong = isLongNote(n.content);
-      const isExpanded = expandedNoteIds.has(n.id);
-      const contentClass = isLong
-        ? isExpanded
-          ? 'note-content note-content-expanded'
-          : 'note-content note-content-collapsed'
-        : 'note-content note-content-expanded';
+  setSafeHTML(
+    body,
+    notes
+      .map((n) => {
+        const isLong = isLongNote(n.content);
+        const isExpanded = expandedNoteIds.has(n.id);
+        const contentClass = isLong
+          ? isExpanded
+            ? 'note-content note-content-expanded'
+            : 'note-content note-content-collapsed'
+          : 'note-content note-content-expanded';
 
-      const toggleBtn = isLong
-        ? `<button type="button" class="btn-ghost note-toggle" aria-expanded="${isExpanded}" aria-controls="note-content-${escapeHtmlLocal(n.id)}">${isExpanded ? 'Свернуть' : 'Развернуть'}</button>`
-        : '';
+        const toggleBtn = isLong
+          ? `<button type="button" class="btn-ghost note-toggle" aria-expanded="${isExpanded}" aria-controls="note-content-${escapeHtmlLocal(n.id)}">${isExpanded ? 'Свернуть' : 'Развернуть'}</button>`
+          : '';
 
-      return `
+        return `
       <article class="note-card" data-note-id="${escapeHtmlLocal(n.id)}">
         <header class="note-head">
           <h3 class="note-title">${escapeHtmlLocal(n.title)}</h3>
@@ -160,8 +168,9 @@ export function renderLibraryNotes(state, dependencies) {
           <button type="button" class="btn-ghost note-delete">Удалить</button>
         </footer>
       </article>`;
-    })
-    .join('');
+      })
+      .join('')
+  );
 
   body.querySelectorAll('.note-toggle').forEach((btn) => {
     btn.onclick = (e) => {
@@ -200,7 +209,10 @@ async function renderLibraryGrammar(state, dependencies) {
   if (!body) return;
 
   if (!CONTENT_INDEX || CONTENT_INDEX.length === 0) {
-    body.innerHTML = `<div class="empty"><div class="em">📚</div><h3>Уроки не загружены</h3></div>`;
+    setSafeHTML(
+      body,
+      `<div class="empty"><div class="em">📚</div><h3>Уроки не загружены</h3></div>`
+    );
     return;
   }
 
@@ -229,7 +241,9 @@ async function renderLibraryGrammar(state, dependencies) {
   const chapterTitle = (activeChapter?.title || formatLessonLabel(activeChapterId)).toUpperCase();
 
   // Показываем лоадер перед загрузкой
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="grammar-chapters-row">
       ${chaptersButtons}
     </div>
@@ -237,7 +251,8 @@ async function renderLibraryGrammar(state, dependencies) {
     <div class="loader-container">
       <div class="loader"></div>
     </div>
-  `;
+  `
+  );
 
   // Генерируем карточки грамматики
   let grammarCards = '';
@@ -280,13 +295,16 @@ async function renderLibraryGrammar(state, dependencies) {
   }
 
   // Обновляем контент с загруженной грамматикой
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="grammar-chapters-row">
       ${chaptersButtons}
     </div>
     <h2 class="grammar-chapter-title">${chapterTitle}</h2>
     ${grammarCards}
-  `;
+  `
+  );
 
   // Навешиваем обработчики на кнопки глав
   body.querySelectorAll('.grammar-chapter-btn:not(.locked)').forEach((btn) => {
@@ -668,7 +686,9 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
   if (!storyToOpen) {
     const storyBody = $('#story-body');
     if (storyBody) {
-      storyBody.innerHTML = `
+      setSafeHTML(
+        storyBody,
+        `
         <div class="story-content">
           <div class="story-meta">
             <span class="badge badge-warning">История не найдена</span>
@@ -681,7 +701,8 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
               📚 Вернуться в библиотеку
             </button>
           </div>
-        </div>`;
+        </div>`
+      );
     } else if (typeof navFn === 'function') {
       navFn('library', {}, true);
     }
@@ -792,7 +813,9 @@ export async function renderStoryContent(story, state, dependencies, options = {
   const storyBody = $('#story-body');
   if (storyBody) {
     if (signal?.aborted) return;
-    storyBody.innerHTML = `
+    setSafeHTML(
+      storyBody,
+      `
   <div class="story-content">
     <div class="story-meta">
       <span class="story-lesson-badge">${formatLessonLabel(story.lessonId || story.lesson_id)}</span>
@@ -810,7 +833,8 @@ export async function renderStoryContent(story, state, dependencies, options = {
         : ''
     }
   </div>
-  `;
+  `
+    );
   }
 
   if (signal?.aborted) return;
@@ -857,7 +881,9 @@ function startStoryQuiz(story, state, dependencies) {
     const q = story.questions[index];
     const storyBody = $('#story-body');
 
-    storyBody.innerHTML = `
+    setSafeHTML(
+      storyBody,
+      `
       <div class="quiz-container">
         <div class="quiz-header">
           <button class="btn-ghost" id="quiz-back-btn">← Назад к истории</button>
@@ -870,7 +896,8 @@ function startStoryQuiz(story, state, dependencies) {
             .join('')}
         </div>
       </div>
-    `;
+    `
+    );
 
     const backBtn = $('#quiz-back-btn');
     if (backBtn) {

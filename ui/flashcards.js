@@ -1,6 +1,5 @@
-// ui/flashcards.js - Модуль-фасад для карточек SRS, словарного запаса и сессий
-
 import { $ } from '../src/utils.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 import { wordById, cardChapter } from '../src/srs-helpers.js';
 import { validateRenderableCard } from '../src/card-validator.js';
 import { recordDiagnosticError } from '../state/store.js';
@@ -449,7 +448,9 @@ export function renderFlash(state, dependencies) {
   }
 
   if (cardMode === CARD_MODES.DRAWING) {
-    body.innerHTML = `
+    setSafeHTML(
+      body,
+      `
       <div class="flash-wrap">
         <div class="flash-top">
         <span class="flash-count" data-testid="flash-progress">${getProgressText()}</span>
@@ -473,7 +474,8 @@ export function renderFlash(state, dependencies) {
             }
           </div>
         </div>
-      </div>`;
+      </div> `
+    );
 
     startReviewTiming(card.id, CARD_MODES.DRAWING);
 

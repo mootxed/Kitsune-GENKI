@@ -1,6 +1,5 @@
-// ui/flashcards/review-fsrs.js - Логика FSRS-ответов, тайминга и Undo
-
 import { markCardIntroduced } from '../../src/srs-limits.js';
+import { setSafeHTML } from '../../src/security-helpers.js';
 import { SRS } from '../../srs.js';
 import {
   adjustQualityByTime,
@@ -389,8 +388,10 @@ export function renderCardBehaviorControls(cardId) {
   if (wrap && !wrap.querySelector('.card-leech-context')) {
     const context = document.createElement('div');
     context.className = 'card-leech-context';
-    context.innerHTML =
-      '<strong>Нужна другая ассоциация.</strong> Придумайте мнемонику, образ или короткий пример с этим словом.';
+    setSafeHTML(
+      context,
+      '<strong>Нужна другая ассоциация.</strong> Придумайте мнемонику, образ или короткий пример с этим словом.'
+    );
     top.insertAdjacentElement('afterend', context);
   }
 }

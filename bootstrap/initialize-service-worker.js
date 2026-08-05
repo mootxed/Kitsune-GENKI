@@ -1,5 +1,4 @@
-/* bootstrap/initialize-service-worker.js — Service worker lifecycle manager */
-
+import { setSafeHTML } from '../src/security-helpers.js';
 import { registerAndManageSW, activateWaitingWorker } from '../src/sw-update-manager.js';
 import { announce } from '../src/a11y-helpers.js';
 import { $ } from '../src/utils.js';
@@ -70,7 +69,11 @@ function showUpdateNotification(waitingWorker) {
     </button>
   `;
 
-  toast(message, { html: true, duration: 0 });
+  const t = $('#toast');
+  if (t) {
+    setSafeHTML(t, message);
+    t.classList.add('show');
+  }
   announce('Доступна новая версия приложения');
 
   setTimeout(() => {

@@ -16,6 +16,7 @@ import { getOpenRouterKey, setOpenRouterKey } from '../src/openrouter-key.js';
 import { openPanel as openPomodoroPanel } from './pomodoro.js';
 import { isDevModeEnabled, recordDevTap } from '../src/dev-tools.js';
 import { APP_VERSION } from '../src/app-metadata.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 
 // Локальный контекст зависимостей
 let deps = null;
@@ -31,7 +32,9 @@ export function renderSettings(state, dependencies) {
 
   const s = state.settings;
   const body = $('#settings-body');
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="set-group">
       <div class="set-item settings-destination">
         <div>
@@ -169,7 +172,8 @@ export function renderSettings(state, dependencies) {
     <div style="text-align: center; margin-top: 16px; margin-bottom: 8px;">
       <span id="app-version-trigger" style="font-size: 12px; color: var(--text-secondary, #888); cursor: pointer; user-select: none;" data-testid="app-version-trigger">KotoKitsu v${APP_VERSION}</span>
     </div>
-    <div class="bottom-pad"></div>`;
+    <div class="bottom-pad"></div>`
+  );
 
   const keyInput = $('#set-key');
   if (keyInput) {
@@ -370,7 +374,9 @@ function showImportConfirmDialog(data, state, dependencies, toastFn) {
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
+  setSafeHTML(
+    overlay,
+    `
     <div class="modal-dialog">
       <h2>Восстановить прогресс?</h2>
       <div class="modal-content">
@@ -407,7 +413,8 @@ function showImportConfirmDialog(data, state, dependencies, toastFn) {
         <button class="btn-primary" id="btn-confirm-import">Восстановить</button>
       </div>
     </div>
-  `;
+  `
+  );
 
   const colCurrent = overlay.querySelector('#import-col-current');
   if (colCurrent) {
@@ -461,7 +468,9 @@ function showLegalInfoModal() {
   overlay.className = 'modal-overlay';
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-labelledby', 'legal-modal-title');
-  overlay.innerHTML = `
+  setSafeHTML(
+    overlay,
+    `
     <div class="modal-dialog" style="max-width: 600px; max-height: 85vh; overflow-y: auto;">
       <h2 id="legal-modal-title">⚖️ Правовая информация — KotoKitsu</h2>
       <div class="modal-content" style="text-align: left; font-size: 13px; line-height: 1.6;">
@@ -499,7 +508,8 @@ zod v4.4.3 — (MIT)</pre>
         <button class="btn-primary" id="btn-close-legal" style="flex: 1;">Закрыть</button>
       </div>
     </div>
-  `;
+  `
+  );
 
   document.body.appendChild(overlay);
 

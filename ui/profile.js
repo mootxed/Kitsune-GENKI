@@ -5,6 +5,7 @@ import { getUserRankData } from '../src/xp-system.js';
 import { localDateKey } from '../src/local-date.js';
 import { commitState } from '../state/store.js';
 import { claimQuestRewardCommand, claimAchievementRewardCommand } from '../src/domain-commands.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 
 // Глобальные переменные профиля
 let heatmapMonth = null;
@@ -54,7 +55,9 @@ export function renderProfile(state, dependencies) {
   const maxXP = 99;
   const xpPercent = Math.min((currentXP / maxXP) * 100, 100);
 
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="profile-header">
     <div class="profile-avatar" id="profile-avatar-display">${state.currentAvatar || '🦊'}</div>
     <h2 class="profile-name">KotoKitsu</h2>
@@ -154,7 +157,8 @@ export function renderProfile(state, dependencies) {
 
     <!-- Тултип для графика и календаря -->
     <div id="chart-tooltip" class="chart-tooltip hidden"></div>
-  `;
+  `
+  );
 
   renderAchievements(state, dependencies);
   renderHeatmap(state);
@@ -236,13 +240,15 @@ function renderAchievements(state, dependencies) {
   const gridEl = $('#achievements-grid');
   if (!gridEl) return;
 
-  gridEl.innerHTML = allAchievements
-    .map((ach) => {
-      const unlocked = state.unlockedAchievements.includes(ach.id);
-      const claimed = state.claimedAchievements.includes(ach.id);
-      const canClaim = unlocked && !claimed && ach.rewards;
+  setSafeHTML(
+    gridEl,
+    allAchievements
+      .map((ach) => {
+        const unlocked = state.unlockedAchievements.includes(ach.id);
+        const claimed = state.claimedAchievements.includes(ach.id);
+        const canClaim = unlocked && !claimed && ach.rewards;
 
-      return `<div class="achievement-card ${unlocked ? 'unlocked' : 'locked'}">
+        return `<div class="achievement-card ${unlocked ? 'unlocked' : 'locked'}">
       ${unlocked ? '<span class="achievement-badge">✓</span>' : ''}
       <div class="achievement-emoji">${ach.emoji}</div>
       <h4 class="achievement-title">${ach.title}</h4>
@@ -258,8 +264,9 @@ function renderAchievements(state, dependencies) {
       }
       ${claimed ? '<span class="achievement-claimed-badge">Награда получена</span>' : ''}
     </div>`;
-    })
-    .join('');
+      })
+      .join('')
+  );
 
   // Добавляем обработчики для кнопок "Забрать награду"
   $$('.btn-claim-achievement').forEach((btn) => {
@@ -376,10 +383,10 @@ export function renderQuests(state, dependencies) {
 
   // Рендерим в оба контейнера, если они существуют
   if (questsContainer) {
-    questsContainer.innerHTML = fullHtml;
+    setSafeHTML(questsContainer, fullHtml);
   }
   if (profileQuestsContainer) {
-    profileQuestsContainer.innerHTML = fullHtml;
+    setSafeHTML(profileQuestsContainer, fullHtml);
   }
 
   // Добавляем обработчики для кнопок Claim в обоих контейнерах
@@ -495,7 +502,7 @@ function renderHeatmap(state) {
   const grid = $('#heatmap-grid');
   const legend = $('#heatmap-legend');
   if (!grid) return;
-  grid.innerHTML = '';
+  grid.replaceChildren();
 
   const year = heatmapMonth.getFullYear();
   const month = heatmapMonth.getMonth();
@@ -518,7 +525,9 @@ function renderHeatmap(state) {
 
   // Обновляем легенду
   if (legend) {
-    legend.innerHTML = `
+    setSafeHTML(
+      legend,
+      `
       <div class="heatmap-legend-item">
         <div class="heatmap-legend-dot practice"></div>
         <span>${practiceCount} day${practiceCount !== 1 ? 's' : ''} practiced</span>
@@ -527,7 +536,8 @@ function renderHeatmap(state) {
         <div class="heatmap-legend-dot restore"></div>
         <span>0 restores used</span>
       </div>
-    `;
+    `
+    );
   }
 
   // Первый день месяца: 0=Вс, 1=Пн, ...
@@ -588,10 +598,12 @@ function renderHeatmap(state) {
         'дек',
       ];
 
-      tooltip.innerHTML =
+      setSafeHTML(
+        tooltip,
         count > 0
           ? `<b>${count} карточек</b><br><span style="font-size:12px; opacity:0.7;">${d.getDate()} ${months[d.getMonth()]}</span>`
-          : `<b>0 карточек</b><br><span style="font-size:12px; opacity:0.7;">${d.getDate()} ${months[d.getMonth()]}</span>`;
+          : `<b>0 карточек</b><br><span style="font-size:12px; opacity:0.7;">${d.getDate()} ${months[d.getMonth()]}</span>`
+      );
 
       const rect = cell.getBoundingClientRect();
       const bodyEl = $('#profile-body');
@@ -713,7 +725,7 @@ function renderActivityChart(state) {
     counts.push(state.history[dateStr] || 0);
   }
 
-  container.innerHTML = generateActivityChartSVG(dates, counts);
+  setSafeHTML(container, generateActivityChartSVG(dates, counts));
 
   // Обработчики для тултипа
   $$('.chart-point').forEach((point) => {

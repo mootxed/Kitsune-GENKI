@@ -10,6 +10,7 @@
  */
 
 import { createAIRequestClient } from '../../src/ai/request-client.js';
+import { setSafeHTML } from '../../src/security-helpers.js';
 import { ensureAIPrivacyDisclosure } from '../../src/ai-disclosure.js';
 import { getOpenRouterKey } from '../../src/openrouter-key.js';
 
@@ -138,16 +139,19 @@ function renderComparison(comparison) {
   section.append(el('h4', { text: 'Сравнение' }));
   const table = el('table', { className: 'srp-comparison-table' });
   const thead = el('thead');
-  thead.innerHTML = '<tr><th>Форма</th><th>Чтение</th><th>Роль</th></tr>';
+  setSafeHTML(thead, '<tr><th>Форма</th><th>Чтение</th><th>Роль</th></tr>');
   const tbody = el('tbody');
   comparison.forEach((entry) => {
     const tr = document.createElement('tr');
     if (entry.isExpected) tr.classList.add('expected');
-    tr.innerHTML = `
+    setSafeHTML(
+      tr,
+      `
       <td lang="ja">${escapeHtml(entry.form || '')}</td>
       <td lang="ja">${escapeHtml(entry.reading || '')}</td>
       <td>${escapeHtml(entry.role || '')}</td>
-    `;
+    `
+    );
     tbody.append(tr);
   });
   table.append(thead, tbody);
@@ -221,11 +225,14 @@ function buildPanel({ artifact, actionType, snapshot, dependencies, cardSessionI
       exSection.append(el('h4', { text: 'Примеры' }));
       artifact.examples.forEach((ex) => {
         const item = el('div', { className: 'srp-example' });
-        item.innerHTML = `
+        setSafeHTML(
+          item,
+          `
           <strong lang="ja">${escapeHtml(ex.japanese || '')}</strong>
           ${ex.reading ? `<span class="muted" lang="ja">${escapeHtml(ex.reading)}</span>` : ''}
           <span>${escapeHtml(ex.translation || '')}</span>
-        `;
+        `
+        );
         exSection.append(item);
       });
       body.append(exSection);
@@ -289,10 +296,13 @@ function buildPanel({ artifact, actionType, snapshot, dependencies, cardSessionI
       const section = el('section', { className: 'srp-examples' });
       section.append(el('h4', { text: 'Пример' }));
       const item = el('div', { className: 'srp-example' });
-      item.innerHTML = `
+      setSafeHTML(
+        item,
+        `
         <strong lang="ja">${escapeHtml(artifact.example.japanese || '')}</strong>
         <span>${escapeHtml(artifact.example.translation || '')}</span>
-      `;
+      `
+      );
       section.append(item);
       body.append(section);
     }
@@ -424,7 +434,7 @@ export async function openSenseiPanel({ snapshot, actionType, reason, dependenci
       return;
     }
 
-    panelContainer.innerHTML = '';
+    panelContainer.replaceChildren();
     setLoading(panelContainer, true);
 
     try {
@@ -548,7 +558,7 @@ export function renderPostReviewSenseiActions({
   }
 
   // Очищаем предыдущие кнопки
-  container.innerHTML = '';
+  container.replaceChildren();
 
   const senseiRow = el('div', { className: 'srp-actions-row' });
   senseiRow.append(el('span', { className: 'srp-actions-label', text: '🦊 AI Сенсей:' }));

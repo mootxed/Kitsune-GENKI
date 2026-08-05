@@ -1,6 +1,7 @@
 /* ui/particles.js — Интерфейс словаря частиц */
 
 import { $, $$ } from '../src/utils.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 import { speakJapanese } from '../src/audio-helper.js';
 import { ExamplesDB } from '../src/examples-db.js';
 
@@ -12,7 +13,7 @@ export async function renderParticlesList(dependencies) {
   const body = $('#srs-body');
   if (!body) return;
 
-  body.innerHTML = '<div class="loader-spinner" style="margin: 40px auto;"></div>';
+  setSafeHTML(body, '<div class="loader-spinner" style="margin: 40px auto;"></div>');
 
   try {
     const response = await fetch('data/particles-dictionary.json');
@@ -44,7 +45,9 @@ export async function renderParticlesList(dependencies) {
       )
       .join('');
 
-    body.innerHTML = `
+    setSafeHTML(
+      body,
+      `
       <div class="particles-list-container">
         <div class="particles-list-header">
           <h2>Словарь японских частиц</h2>
@@ -54,7 +57,8 @@ export async function renderParticlesList(dependencies) {
           ${cardsHTML}
         </div>
       </div>
-    `;
+    `
+    );
 
     $$('.particle-card-compact').forEach((card) => {
       card.onclick = () => {
@@ -67,7 +71,9 @@ export async function renderParticlesList(dependencies) {
     });
   } catch (error) {
     console.error('Ошибка загрузки словаря частиц:', error);
-    body.innerHTML = `
+    setSafeHTML(
+      body,
+      `
       <div style="text-align: center; padding: 40px 20px;">
         <p style="font-size: 48px; margin-bottom: 16px;">😔</p>
         <p style="color: var(--text-secondary);">Не удалось загрузить словарь частиц</p>
@@ -75,7 +81,8 @@ export async function renderParticlesList(dependencies) {
           Попробовать снова
         </button>
       </div>
-    `;
+    `
+    );
   }
 }
 
@@ -95,7 +102,9 @@ function openParticleDetail(particle, allParticles, dependencies) {
     .map((ex) => `<div class="particle-example-item">${ex}</div>`)
     .join('');
 
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="particle-detail-modal">
       <div class="particle-detail-header">
         <button class="btn-ghost" id="particle-detail-close">← Назад</button>
@@ -166,7 +175,8 @@ function openParticleDetail(particle, allParticles, dependencies) {
         </button>
       </div>
     </div>
-  `;
+  `
+  );
 
   const closeBtn = $('#particle-detail-close');
   if (closeBtn) {

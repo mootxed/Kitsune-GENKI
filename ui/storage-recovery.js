@@ -7,6 +7,7 @@ import {
   downloadJSON,
 } from '../src/backup-manager.js';
 import { exportRedactedDiagnosticsJournal } from '../src/action-journal.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 
 export function renderStorageRecoveryScreen(
   containerEl,
@@ -34,7 +35,9 @@ export function renderStorageRecoveryScreen(
   const errorMessage =
     error?.message || (typeof error === 'string' ? error : 'Неизвестный сбой хранилища');
 
-  containerEl.innerHTML = `
+  setSafeHTML(
+    containerEl,
+    `
     <div class="storage-recovery-backdrop" style="
       display: flex;
       align-items: center;
@@ -149,7 +152,8 @@ export function renderStorageRecoveryScreen(
         </div>
       </div>
     </div>
-  `;
+  `
+  );
 
   const btnRetry = containerEl.querySelector('#btn-recovery-retry');
   if (btnRetry) btnRetry.onclick = () => onRetry();

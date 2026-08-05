@@ -1,4 +1,5 @@
 /* ui/screen-templates.js — Dynamic HTML templates for lazy screens */
+import { setSafeHTML } from '../src/security-helpers.js';
 
 const TEMPLATES = {
   statistics: `
@@ -326,7 +327,7 @@ export function getOrCreateScreenContainer(screenId) {
 
   const innerHTML = TEMPLATES[screenId] || '';
   if (innerHTML) {
-    container.innerHTML = innerHTML;
+    setSafeHTML(container, innerHTML);
   }
 
   const appElem = document.getElementById('app');

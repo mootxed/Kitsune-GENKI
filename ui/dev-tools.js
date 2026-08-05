@@ -1,6 +1,5 @@
-// ui/dev-tools.js - Модуль интерфейса инструментов разработчика
-
 import { $ } from '../src/utils.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 import {
   getLogs,
   clearLogs,
@@ -20,7 +19,9 @@ export function renderDevTools(state, dependencies = {}) {
   const container = $('#dev-tools-body');
   if (!container) return;
 
-  container.innerHTML = `
+  setSafeHTML(
+    container,
+    `
     <div class="set-group" style="margin-bottom: 12px;">
       <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="dev-tools-toolbar">
         <button class="btn-ghost" id="btn-copy-logs" data-testid="dev-copy-logs-btn" style="flex: 1; min-width: 140px;">📋 Скопировать все логи</button>
@@ -78,7 +79,8 @@ export function renderDevTools(state, dependencies = {}) {
       </div>
     </div>
     <div class="bottom-pad"></div>
-  `;
+  `
+  );
 
   renderLogsList();
   renderDiagnosticPreview(state);
@@ -153,24 +155,31 @@ function renderLogsList() {
 
   const entries = getLogs(currentFilter, currentSearch);
   if (entries.length === 0) {
-    container.innerHTML =
-      '<div style="padding: 16px; text-align: center; color: var(--text-secondary, #888);">Записи в журнале отсутствуют</div>';
+    setSafeHTML(
+      container,
+      '<div style="padding: 16px; text-align: center; color: var(--text-secondary, #888);">Записи в журнале отсутствуют</div>'
+    );
     return;
   }
 
-  container.innerHTML = entries
-    .slice()
-    .reverse()
-    .map((entry) => {
-      let badgeStyle = 'background: rgba(128,128,128,0.2); color: var(--text-color, #333);';
-      if (entry.level === 'INFO') badgeStyle = 'background: rgba(59,130,246,0.2); color: #2563eb;';
-      if (entry.level === 'WARN') badgeStyle = 'background: rgba(245,158,11,0.2); color: #d97706;';
-      if (entry.level === 'ERROR') badgeStyle = 'background: rgba(239,68,68,0.2); color: #dc2626;';
+  setSafeHTML(
+    container,
+    entries
+      .slice()
+      .reverse()
+      .map((entry) => {
+        let badgeStyle = 'background: rgba(128,128,128,0.2); color: var(--text-color, #333);';
+        if (entry.level === 'INFO')
+          badgeStyle = 'background: rgba(59,130,246,0.2); color: #2563eb;';
+        if (entry.level === 'WARN')
+          badgeStyle = 'background: rgba(245,158,11,0.2); color: #d97706;';
+        if (entry.level === 'ERROR')
+          badgeStyle = 'background: rgba(239,68,68,0.2); color: #dc2626;';
 
-      const hasStack = Boolean(entry.stack);
-      const stackId = `stack-${String(entry.id).replace('.', '-')}`;
+        const hasStack = Boolean(entry.stack);
+        const stackId = `stack-${String(entry.id).replace('.', '-')}`;
 
-      return `
+        return `
         <div class="dev-log-item" style="padding: 8px; border-bottom: 1px dashed var(--border, rgba(0,0,0,0.1));">
           <div style="display: flex; gap: 8px; align-items: baseline;">
             <span style="color: var(--text-secondary, #888); font-size: 11px;">[${entry.timeStr}]</span>
@@ -185,8 +194,9 @@ function renderLogsList() {
           }
         </div>
       `;
-    })
-    .join('');
+      })
+      .join('')
+  );
 
   // Bind stack toggles
   container.querySelectorAll('.dev-stack-toggle').forEach((btn) => {
@@ -216,20 +226,25 @@ function renderActionJournalTimeline(state) {
     ? state.actionJournal.slice(-50).reverse()
     : [];
   if (journal.length === 0) {
-    container.innerHTML =
-      '<div style="color: var(--ink-tertiary, #888);">Журнал действий пуст</div>';
+    setSafeHTML(
+      container,
+      '<div style="color: var(--ink-tertiary, #888);">Журнал действий пуст</div>'
+    );
     return;
   }
-  container.innerHTML = journal
-    .map((item) => {
-      const time = new Date(item.timestamp).toLocaleTimeString();
-      return `<div style="margin-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 4px;">
+  setSafeHTML(
+    container,
+    journal
+      .map((item) => {
+        const time = new Date(item.timestamp).toLocaleTimeString();
+        return `<div style="margin-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 4px;">
         <span style="color: var(--primary, #FF7A1A); font-weight: bold;">[${time}] ${item.type}</span>
         <span style="color: var(--ink-secondary, #aaa);"> (${item.source})</span>
         ${item.summary ? `<div style="color: var(--ink, #ccc); margin-top: 2px;">${escapeHtml(JSON.stringify(item.summary))}</div>` : ''}
       </div>`;
-    })
-    .join('');
+      })
+      .join('')
+  );
 }
 
 function escapeHtml(str) {

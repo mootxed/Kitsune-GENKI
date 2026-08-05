@@ -32,6 +32,7 @@ import {
   formatConfidence,
   formatRetrievability,
 } from '../src/dictionary/dictionary-fsrs-service.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 
 // ---------------------------------------------------------------------------
 // Utility
@@ -560,12 +561,12 @@ export async function renderWordDetails(state, dependencies, options = {}, conte
   } = options || {};
 
   if (!dictionaryId) {
-    body.innerHTML = renderNotFound(null);
+    setSafeHTML(body, renderNotFound(null));
     return;
   }
 
   // Show skeleton while loading
-  body.innerHTML = renderSkeleton();
+  setSafeHTML(body, renderSkeleton());
 
   const dictStore = dependencies?.dictionaryStore || dictionaryStore;
 
@@ -673,7 +674,7 @@ export async function renderWordDetails(state, dependencies, options = {}, conte
     if (signal?.aborted) return;
 
     if (details.status === 'not-found') {
-      body.innerHTML = renderNotFound(dictionaryId);
+      setSafeHTML(body, renderNotFound(dictionaryId));
       return;
     }
 
@@ -689,7 +690,9 @@ export async function renderWordDetails(state, dependencies, options = {}, conte
     } = details;
 
     // Render all sections
-    body.innerHTML = `
+    setSafeHTML(
+      body,
+      `
     <div class="word-details-page">
       ${renderHeader(entry, tokenCtx)}
       ${renderCoreEntry(entry)}
@@ -700,7 +703,8 @@ export async function renderWordDetails(state, dependencies, options = {}, conte
       ${renderExamples(examples)}
       ${renderLessons(lessons)}
       ${renderStoryOccurrences(storyOccurrences, navFn)}
-    </div>`;
+    </div>`
+    );
 
     // Wire up story navigation buttons
     setupStoryNavigation(body, navFn);
@@ -731,6 +735,6 @@ export async function renderWordDetails(state, dependencies, options = {}, conte
   } catch (err) {
     if (signal?.aborted) return;
     console.error('[WordDetails] Error rendering details:', err);
-    body.innerHTML = renderError(err.message || 'Не удалось загрузить словарь');
+    setSafeHTML(body, renderError(err.message || 'Не удалось загрузить словарь'));
   }
 }

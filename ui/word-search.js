@@ -10,6 +10,7 @@ import { selectMiniGameWords, recordGameSession } from '../src/minigame-word-rot
 import { speakJapanese, stopSpeaking } from '../src/audio-helper.js';
 import { showCompletionScreen } from './shared.js';
 import { LESSONS } from './home.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 
 let activeCleanup = null;
 
@@ -114,7 +115,9 @@ export function renderDifficultySelectionScreen(state, dependencies = {}, mode =
   if (isWeakMode && availableCount < 4) {
     const isTotalEmpty = normalCandidates.length === 0;
 
-    body.innerHTML = `
+    setSafeHTML(
+      body,
+      `
       <div class="ws-difficulty-container" data-testid="ws-difficulty-screen">
         <div class="ws-mode-switcher" data-testid="ws-mode-switcher">
           <button class="ws-mode-btn ${!isWeakMode ? 'active' : ''}" data-mode="normal" aria-pressed="${!isWeakMode}">
@@ -138,7 +141,8 @@ export function renderDifficultySelectionScreen(state, dependencies = {}, mode =
           </button>
         </div>
       </div>
-    `;
+    `
+    );
 
     const normalModeBtn = body.querySelector('.ws-mode-btn[data-mode="normal"]');
     if (normalModeBtn) {
@@ -152,7 +156,9 @@ export function renderDifficultySelectionScreen(state, dependencies = {}, mode =
     return;
   }
 
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="ws-difficulty-container" data-testid="ws-difficulty-screen">
       <div class="ws-mode-switcher" data-testid="ws-mode-switcher">
         <button class="ws-mode-btn ${!isWeakMode ? 'active' : ''}" data-mode="normal" aria-pressed="${!isWeakMode}">
@@ -213,7 +219,8 @@ export function renderDifficultySelectionScreen(state, dependencies = {}, mode =
           .join('')}
       </div>
     </div>
-  `;
+  `
+  );
 
   // Mode switcher listeners
   const modeBtns = body.querySelectorAll('.ws-mode-btn');
@@ -284,7 +291,9 @@ export function startWordSearchGame(
     !gameData.placedWords ||
     gameData.placedWords.length < diffConfig.minCount
   ) {
-    body.innerHTML = `
+    setSafeHTML(
+      body,
+      `
       <div class="empty-state" data-testid="word-search-empty">
         <span style="font-size:60px">${isWeakMode ? '🩹' : '🔍'}</span>
         <h3>${isWeakMode ? 'Не удалось составить игру' : 'Недостаточно подходящих слов'}</h3>
@@ -297,7 +306,8 @@ export function startWordSearchGame(
           ${isWeakMode ? 'Перейти в обычный режим' : '⚙️ Сменить сложность'}
         </button>
       </div>
-    `;
+    `
+    );
 
     const changeDiffBtn = $('#ws-change-diff-empty-btn');
     if (changeDiffBtn) {
@@ -344,7 +354,9 @@ export function startWordSearchGame(
     : `Все слова · ${escapeHtml(diffConfig.label)}`;
 
   // Build Game UI Markup (Compact HUD + Clue Strip + Grid)
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="ws-container" data-difficulty="${escapeHtml(difficultyId)}" data-mode="${escapeHtml(mode)}" data-testid="word-search-game">
       <!-- Header Info Bar (Single Line Compact HUD) -->
       <div class="ws-info-bar">
@@ -399,7 +411,8 @@ export function startWordSearchGame(
         </div>
       </div>
     </div>
-  `;
+  `
+  );
 
   // UI Element References
   const gridEl = $('#ws-grid');

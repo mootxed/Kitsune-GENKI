@@ -1,7 +1,5 @@
-// ui/chat.js — AI Сенсей: shell, interaction wiring and safe rendering
-
 import { $, todayStr as getTodayStr } from '../src/utils.js';
-import { validateExternalUrl } from '../src/security-helpers.js';
+import { validateExternalUrl, setSafeHTML } from '../src/security-helpers.js';
 import { syncAvatars } from './shared.js';
 import { getAvailableChapterCount } from '../src/minigame-word-selectors.js';
 import { ensureAIPrivacyDisclosure } from '../src/ai-disclosure.js';
@@ -236,7 +234,7 @@ function updateSenseiChips() {
   }
 
   if (chips.length > 0) {
-    chipsBar.innerHTML = chips.join('');
+    setSafeHTML(chipsBar, chips.join(''));
     chipsBar.hidden = false;
     chipsBar.querySelectorAll('[data-remove-chip]').forEach((btn) => {
       btn.onclick = (e) => {
@@ -256,7 +254,7 @@ function updateSenseiChips() {
       };
     });
   } else {
-    chipsBar.innerHTML = '';
+    chipsBar.replaceChildren();
     chipsBar.hidden = true;
   }
 }
@@ -480,7 +478,7 @@ export function renderSensei(state, dependencies = {}, renderOptions = {}) {
   }
   const body = $('#sensei-body');
   if (!body) return;
-  body.innerHTML = chatShell(chatHistory.length === 0);
+  setSafeHTML(body, chatShell(chatHistory.length === 0));
   renderMessages(state, dependencies, { savedScrollTop, ...renderOptions });
   document.querySelectorAll('[data-sensei-action]').forEach((button) => {
     button.addEventListener('click', () => applyExplicitAction(button.dataset.senseiAction));
@@ -548,14 +546,17 @@ export function renderSensei(state, dependencies = {}, renderOptions = {}) {
         if (extraDicts.length > 0) {
           const selectedValue = wordSourceMenu.value;
           const isExplicit = wordSourceMenu.dataset.explicit;
-          wordSourceMenu.innerHTML = `
+          setSafeHTML(
+            wordSourceMenu,
+            `
           <option value="mixed">Смешанный источник</option>
           <option value="${PERSONAL_DICTIONARY_ID}">Мой словарь</option>
           ${extraDicts.map((d) => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('')}
           <option value="current_lesson">Текущий урок</option>
           <option value="fsrs_difficult">Трудные слова</option>
           <option value="fsrs_learned">Изученные слова</option>
-        `;
+        `
+          );
           if (selectedValue) wordSourceMenu.value = selectedValue;
           if (isExplicit) wordSourceMenu.dataset.explicit = isExplicit;
           updateSenseiChips();
@@ -593,7 +594,7 @@ export function renderSensei(state, dependencies = {}, renderOptions = {}) {
 function typingIndicator() {
   const wrap = document.createElement('div');
   wrap.className = 'msg-wrap';
-  wrap.innerHTML = '<div class="msg bot"><div class="typing"><i></i><i></i><i></i></div></div>';
+  setSafeHTML(wrap, '<div class="msg bot"><div class="typing"><i></i><i></i><i></i></div></div>');
   $('#chat-area')?.append(wrap);
   return wrap;
 }
@@ -721,7 +722,9 @@ function renderSenseiTools(state, dependencies) {
   const nav = dependencies?.nav || globalThis.window?.nav || (() => {});
   const availableLessons = getAvailableChapterCount(state);
   const crosswordUnlocked = availableLessons >= 3;
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="sensei-tools-list">
       <button type="button" class="tool-card" data-nav="ai-story">
         <span class="tool-icon">✨</span><span class="tool-info"><strong>AI-история</strong><small>Старый генератор остаётся доступен</small></span><span class="tool-arrow">›</span>
@@ -732,7 +735,8 @@ function renderSenseiTools(state, dependencies) {
       <button type="button" class="tool-card" data-nav="word-search" data-testid="tool-card-word-search">
         <span class="tool-icon">🔍</span><span class="tool-info"><strong>Охота на слова</strong><small>Поиск слов в сетке</small></span><span class="tool-arrow">›</span>
       </button>
-    </div>`;
+    </div> `
+  );
   body.querySelectorAll('.tool-card').forEach((card) => {
     card.addEventListener('click', () => {
       if (card.dataset.locked === 'true') {

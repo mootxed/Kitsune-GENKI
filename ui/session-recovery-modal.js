@@ -1,4 +1,5 @@
 // ui/session-recovery-modal.js - Модальное окно восстановления активной SRS-сессии
+import { setSafeHTML } from '../src/security-helpers.js';
 
 /**
  * Вычисляет агрегированную статистику по всем батчам сохранённой сессии.
@@ -54,7 +55,9 @@ export function showSessionRecoveryModal(sessionRecord, { onResume, onRestart, o
   overlay.className = 'modal-overlay';
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-labelledby', 'session-recovery-title');
-  overlay.innerHTML = `
+  setSafeHTML(
+    overlay,
+    `
     <div class="modal-dialog" style="max-width: 480px;">
       <h2 id="session-recovery-title">Найдена незавершённая сессия</h2>
       <div class="modal-content" style="text-align: left; font-size: 14px; line-height: 1.6;">
@@ -82,7 +85,8 @@ export function showSessionRecoveryModal(sessionRecord, { onResume, onRestart, o
         </div>
       </div>
     </div>
-  `;
+  `
+  );
 
   document.body.appendChild(overlay);
 

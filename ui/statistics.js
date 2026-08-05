@@ -2,6 +2,7 @@
 
 import { $ } from '../src/utils.js';
 import { buildStatisticsViewModel } from '../src/statistics/statistics-view-model.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 
 // Legacy storage key retained for backward compatibility with existing user data
 const LS_PERIOD_KEY = 'kitsune_stats_period';
@@ -21,7 +22,9 @@ export function renderStatistics(appState) {
     timeRangeDays,
   });
 
-  container.innerHTML = `
+  setSafeHTML(
+    container,
+    `
     <div class="stats-screen-container">
       <!-- Шапка экрана -->
       <div class="stats-header">
@@ -60,7 +63,8 @@ export function renderStatistics(appState) {
       <!-- 7. Секция Mastery (Освоение знаний) -->
       ${renderMasterySection(viewModel.mastery)}
     </div>
-  `;
+  `
+  );
 
   // Навешивание обработчиков клика по кнопкам периода
   container.querySelectorAll('.stats-period-btn').forEach((btn) => {

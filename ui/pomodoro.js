@@ -15,6 +15,7 @@ import {
   applySettingsChange,
 } from '../src/pomodoro/pomodoro-state.js';
 import { playPomodoroChime, unlockAudio } from '../src/pomodoro/pomodoro-audio.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 import { isPrimaryTab } from '../src/tab-sync.js';
 
 let appDependencies = null;
@@ -288,7 +289,9 @@ function setupDOM() {
     panel.setAttribute('aria-modal', 'true');
     panel.setAttribute('aria-label', 'Панель Pomodoro');
     panel.setAttribute('data-testid', 'pomodoro-panel');
-    panel.innerHTML = `
+    setSafeHTML(
+      panel,
+      `
       <div class="pomodoro-panel-backdrop" id="pomodoro-panel-backdrop"></div>
       <div class="pomodoro-panel-content">
         <div class="pomodoro-panel-header">
@@ -351,7 +354,8 @@ function setupDOM() {
           </div>
         </div>
       </div>
-    `;
+    `
+    );
     appContainer.appendChild(panel);
   }
 }
@@ -653,10 +657,13 @@ export function renderPomodoroWidget() {
 
     const showTimeOnBtn = isRunning || isPaused || isAwaiting;
 
-    floatingBtn.innerHTML = `
+    setSafeHTML(
+      floatingBtn,
+      `
       <span class="pomodoro-btn-icon" aria-hidden="true">🍅</span>
       ${showTimeOnBtn ? `<span class="pomodoro-btn-time">${formattedTime}</span>` : ''}
-    `;
+    `
+    );
 
     floatingBtn.setAttribute(
       'aria-label',

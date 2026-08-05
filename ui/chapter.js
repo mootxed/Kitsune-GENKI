@@ -1,6 +1,7 @@
 import { save, chState } from '../state/store.js';
 import { refreshStreakDisplay } from './shared.js';
 import { $, $$, todayStr } from '../src/utils.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 import { allCards, dueCards } from '../src/srs-helpers.js';
 import { XP_CHECK, XP_CHAPTER_FULL, addXP } from '../src/xp-system.js';
 import {
@@ -254,7 +255,9 @@ export async function renderChapter(id, state, dependencies, context = {}, optio
 
   if (signal?.aborted) return;
 
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <!-- Верхний прогресс главы (3 блока сводки) -->
     <div class="card">
       <div class="row-between" style="margin-bottom:8px;">
@@ -381,7 +384,8 @@ export async function renderChapter(id, state, dependencies, context = {}, optio
     <div class="card">
       <h3 class="card-h">Ключевые темы</h3>
       <div class="tag-row">${tagsHtml}</div>
-    </div>`;
+    </div> `
+  );
 
   const btnGrammarToggle = $('#toggle-grammar-topics');
   if (btnGrammarToggle) {

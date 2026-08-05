@@ -17,6 +17,8 @@ import { renderPostReviewSenseiActions } from './sensei-review-panel.js';
 import { shouldShowSenseiAction } from './sensei-review-actions.js';
 import { activeReviewAIContext, clearActiveReviewAIContext } from './state.js';
 import { lockCurrentReviewUI } from './card-modes.js';
+import { $ } from '../../src/utils.js';
+import { setSafeHTML } from '../../src/security-helpers.js';
 import { recordDiagnosticError } from '../../state/store.js';
 import { saveActiveSessionState } from './session.js';
 
@@ -48,20 +50,23 @@ export function cleanKanjiChar(char) {
 export function renderKanjiProgressCells() {
   const container = document.getElementById('kanji-progress-cells');
   if (!container || kanjiSequence.length === 0) {
-    if (container) container.innerHTML = '';
+    if (container) container.replaceChildren();
     return;
   }
 
-  container.innerHTML = kanjiSequence
-    .map((k, idx) => {
-      const classes = ['kanji-cell'];
-      if (idx < currentKanjiIndex) classes.push('completed');
-      if (idx === currentKanjiIndex) classes.push('current');
+  setSafeHTML(
+    container,
+    kanjiSequence
+      .map((k, idx) => {
+        const classes = ['kanji-cell'];
+        if (idx < currentKanjiIndex) classes.push('completed');
+        if (idx === currentKanjiIndex) classes.push('current');
 
-      const displayChar = idx < currentKanjiIndex ? k.kanji : '';
-      return `<div class="${classes.join(' ')}">${displayChar}</div>`;
-    })
-    .join('');
+        const displayChar = idx < currentKanjiIndex ? k.kanji : '';
+        return `<div class="${classes.join(' ')}">${displayChar}</div>`;
+      })
+      .join('')
+  );
 }
 
 export async function initDrawingMode(
@@ -169,7 +174,7 @@ export async function initDrawingMode(
           renderKanjiProgressCells();
 
           const target = document.getElementById('kanji-writer-target');
-          if (target) target.innerHTML = '';
+          if (target) target.replaceChildren();
           setCurrentWriter(null);
           setDrawingMistakes(0);
 
@@ -261,7 +266,7 @@ export async function initDrawingMode(
             continueBtn.textContent = 'Продолжить ➔';
             continueBtn.style.marginTop = '12px';
             continueBtn.onclick = () => {
-              container.innerHTML = '';
+              container.replaceChildren();
               clearActiveReviewAIContext();
               if (typeof renderFlashFn === 'function') renderFlashFn(state, dependencies);
               updateSrsBadge?.();
@@ -287,7 +292,7 @@ export async function initDrawingMode(
   };
 
   try {
-    target.innerHTML = '';
+    target.replaceChildren();
     const HanziWriter = await getHanziWriter();
 
     const writer = HanziWriter.create(target, currentKanji, {

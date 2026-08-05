@@ -1,6 +1,5 @@
-/* ui/crossword.js — Crossword puzzle module */
-
 import { $ } from '../src/utils.js';
+import { setSafeHTML } from '../src/security-helpers.js';
 import { LESSONS } from './home.js';
 import { speakJapanese } from '../src/audio-helper.js';
 import { showCompletionScreen } from './shared.js';
@@ -148,7 +147,9 @@ export function renderCrosswordModeSelection(state, dependencies = {}) {
   const body = $('#crossword-body');
   if (!body) return;
 
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <div class="cw-mode-container" data-testid="cw-mode-screen">
       <div class="cw-mode-header">
         <h2>🧩 Выберите режим кроссворда</h2>
@@ -176,7 +177,8 @@ export function renderCrosswordModeSelection(state, dependencies = {}) {
         </div>
       </div>
     </div>
-  `;
+  `
+  );
 
   const cards = body.querySelectorAll('.cw-mode-card');
   cards.forEach((card) => {
@@ -227,7 +229,9 @@ export function startCrosswordGame(state, dependencies = {}, mode = 'normal') {
       showSwitchBtn = true;
     }
 
-    body.innerHTML = `
+    setSafeHTML(
+      body,
+      `
       <div class="empty-state" data-testid="crossword-empty">
         <span style="font-size:60px">${emptyIcon}</span>
         <h3>${emptyTitle}</h3>
@@ -238,7 +242,8 @@ export function startCrosswordGame(state, dependencies = {}, mode = 'normal') {
             : `<button class="cw-btn cw-btn-secondary" id="cw-back-mode-btn" style="margin-top:16px;">⚙️ Сменить режим</button>`
         }
       </div>
-    `;
+    `
+    );
 
     const switchBtn = $('#cw-switch-normal-btn');
     if (switchBtn) {
@@ -260,7 +265,9 @@ export function startCrosswordGame(state, dependencies = {}, mode = 'normal') {
 
   const modeBadgeText = isWeakMode ? '🩹 Слабые слова' : '🧩 Все слова';
 
-  body.innerHTML = `
+  setSafeHTML(
+    body,
+    `
     <!-- HUD Header & Controls -->
     <div class="cw-header-bar" data-testid="cw-header-bar">
       <span class="cw-mode-badge" data-testid="cw-mode-badge">${modeBadgeText}</span>
@@ -321,7 +328,8 @@ export function startCrosswordGame(state, dependencies = {}, mode = 'normal') {
         </ol>
       </details>
     </div>
-  `;
+  `
+  );
 
   const newGameBtn = $('#cw-new-game-btn');
   if (newGameBtn) {
@@ -674,16 +682,19 @@ function generateKeyboard(wordData, userAnswers, grid, placedWords) {
     wordData.keyboardLetterFrequency = letterFrequency;
   }
 
-  keyboard.innerHTML = wordData.keyboardLayout
-    .map(
-      (letter) => `
+  setSafeHTML(
+    keyboard,
+    wordData.keyboardLayout
+      .map(
+        (letter) => `
     <button class="kana-key" data-letter="${letter}">
       <span class="key-hira">${letter}</span>
       <span class="key-kata">${hiraganaToKatakana(letter)}</span>
     </button>
   `
-    )
-    .join('');
+      )
+      .join('')
+  );
 
   keyboard.querySelectorAll('.kana-key').forEach((btn) => {
     const letter = btn.dataset.letter;

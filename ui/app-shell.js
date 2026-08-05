@@ -37,6 +37,8 @@ import { refreshUserDictionaryLesson } from '../src/user-dictionaries/runtime.js
 import { dueCards } from '../src/srs-helpers.js';
 import { exportFullProgress, downloadJSON } from '../src/backup-manager.js';
 
+import { setSafeHTML } from '../src/security-helpers.js';
+
 const LS_THEME = 'kitsune_theme';
 
 // ===== TOAST UTILITY =====
@@ -50,12 +52,7 @@ export function toast(msg, options = {}) {
     toastTimeout = null;
   }
 
-  if (options.html) {
-    t.innerHTML = msg;
-  } else {
-    t.textContent = msg;
-  }
-
+  t.textContent = msg;
   t.classList.add('show');
 
   const duration = options.duration !== undefined ? options.duration : 3000;
@@ -252,10 +249,13 @@ export function checkStorageDegradedBanner() {
     banner.id = 'storage-warning-banner';
     banner.className = 'storage-warning-banner';
     banner.setAttribute('role', 'alert');
-    banner.innerHTML = `
+    setSafeHTML(
+      banner,
+      `
       <span>⚠️ Хранилище недоступно. Прогресс не будет сохранён при очистке браузера.</span>
       <button id="storage-warning-export-btn" class="btn-sm">Скачать экспорт</button>
-    `;
+    `
+    );
     const appElem = document.getElementById('app');
     if (appElem) appElem.insertBefore(banner, appElem.firstChild);
   }
@@ -398,7 +398,7 @@ export function setupAppShell(dependencies) {
 
       const srsBody = document.getElementById('srs-body');
       if (srsBody) {
-        srsBody.innerHTML = '';
+        srsBody.replaceChildren();
       }
 
       renderFlash(state, dependencies);
@@ -507,7 +507,7 @@ export function setupAppShell(dependencies) {
 
     if (context?.signal?.aborted) return;
 
-    body.innerHTML = dashboardHtml;
+    setSafeHTML(body, dashboardHtml);
 
     const resumeBtn = $('#srs-resume-active-session');
     if (resumeBtn) {
