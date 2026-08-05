@@ -1,6 +1,7 @@
 /* quests.js — Daily Quests & Weekly Challenges System */
 
 import { localDateKey } from './src/local-date.js';
+import { secureRandomId } from './src/utils.js';
 
 // ========== HELPERS ==========
 
@@ -28,7 +29,7 @@ function todayStr() {
  * Генерировать уникальный ID для квеста
  */
 function generateQuestId(type, date) {
-  return `${type}_${date}_${Math.random().toString(36).substr(2, 9)}`;
+  return `${type}_${date}_${secureRandomId()}`;
 }
 
 // ========== QUEST GENERATORS ==========

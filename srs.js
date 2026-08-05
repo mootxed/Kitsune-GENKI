@@ -4,6 +4,7 @@ import { fsrs, generatorParameters, Rating, State } from 'ts-fsrs';
 import { MAX_INTERVAL, SRS_SCHEDULER_CONFIG } from './src/srs-config.js';
 import { handleLeech, isLeech, LEECH_THRESHOLD } from './src/card-behavior.js';
 import { KNOWLEDGE_TYPES, SKILLS, parseCardIdentity } from './src/knowledge-model.js';
+import { secureRandomId } from './src/utils.js';
 
 const DAY = 86400000;
 
@@ -212,8 +213,7 @@ function hydrate(card) {
 }
 
 function createEventId(now = Date.now()) {
-  if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID();
-  return `review-${now}-${Math.random().toString(36).slice(2, 12)}`;
+  return `review-${now}-${secureRandomId()}`;
 }
 
 function replaceCard(target, source) {

@@ -152,7 +152,7 @@ describe('Store - Версионирование и миграции', () => {
       await loadState();
 
       expect(state.version).toBe(CURRENT_VERSION);
-      expect(getOpenRouterKey()).toBe('test_key');
+      expect(getOpenRouterKey()).toBe('');
       expect(state.settings).not.toHaveProperty('openrouterKey');
       expect(state.settings.darkMode).toBe('dark');
       // Проверяем что дефолтные настройки добавлены

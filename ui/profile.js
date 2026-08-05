@@ -738,7 +738,15 @@ function renderActivityChart(state) {
       ];
 
       const tooltip = $('#chart-tooltip');
-      tooltip.innerHTML = `<b>${count} карточек</b><br><span style="font-size:12px; opacity:0.7;">${d.getDate()} ${months[d.getMonth()]}</span>`;
+      tooltip.replaceChildren();
+      const b = document.createElement('b');
+      b.textContent = `${count} карточек`;
+      const br = document.createElement('br');
+      const span = document.createElement('span');
+      span.style.fontSize = '12px';
+      span.style.opacity = '0.7';
+      span.textContent = `${d.getDate()} ${months[d.getMonth()]}`;
+      tooltip.append(b, br, span);
 
       const rect = point.getBoundingClientRect();
       const bodyEl = $('#profile-body');

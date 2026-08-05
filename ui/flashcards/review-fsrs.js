@@ -16,6 +16,7 @@ import {
 } from '../../src/knowledge-model.js';
 import { compactReviewJournal, enqueueReviewLog } from '../../src/review-journal.js';
 import { buildReviewAttemptSnapshot } from '../../src/ai/review-context-builder.js';
+import { secureRandomId } from '../../src/utils.js';
 import {
   activeReviewTiming,
   setActiveReviewTiming,
@@ -127,10 +128,7 @@ export function submitReview(card, quality, state, context = null) {
         _wordFromStateById(state, identity.itemId) ||
         (activeReviewState ? _wordFromStateById(activeReviewState, identity.itemId) : null);
       if (word) {
-        const cardSessionId =
-          typeof crypto !== 'undefined' && crypto.randomUUID
-            ? crypto.randomUUID()
-            : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const cardSessionId = secureRandomId();
         const snapshot = buildReviewAttemptSnapshot({
           card: srsCard,
           word,
@@ -235,10 +233,7 @@ export function submitReview(card, quality, state, context = null) {
     const { aiAttempt, mode: reviewMode, responseTimeMs } = reviewContext;
     const word = activeReviewState ? _wordFromStateById(activeReviewState, identity.itemId) : null;
     if (word) {
-      const cardSessionId =
-        typeof crypto !== 'undefined' && crypto.randomUUID
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const cardSessionId = secureRandomId();
       const snapshotCard =
         nowLeech && !wasLeech ? { ...previousCard, lapses: LEECH_THRESHOLD } : previousCard;
       const snapshot = buildReviewAttemptSnapshot({

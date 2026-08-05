@@ -60,8 +60,7 @@ export function renderSettings(state, dependencies) {
       <div class="set-item">
         <label>🔑 API-ключ OpenRouter</label>
         <input type="password" id="set-key" value="" placeholder="sk-or-v1-..." data-testid="set-openrouter-key" />
-        <div class="set-hint">Получите ключ на openrouter.ai. Хранится только на этом устройстве.</div>
-        <div class="set-warning">⚠️ Ключ хранится локально в браузере. Не сохраняйте его на общем или чужом устройстве.</div>
+        <div class="set-hint">Получите ключ на openrouter.ai. Ключ хранится только до закрытия вкладки.</div>
       </div>
       <div class="set-item">
         <label>🤖 Модель</label>

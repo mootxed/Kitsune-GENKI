@@ -4,14 +4,12 @@ import {
   UserDictionaryEntrySchema,
 } from './schema.js';
 import { katakanaToHiragana } from '../typing-capability.js';
+import { secureRandomId } from '../utils.js';
 
 const DANGEROUS_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
 export function createNamespacedId(namespace) {
-  const random =
-    globalThis.crypto?.randomUUID?.() ||
-    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
-  return `${namespace}:${random}`;
+  return `${namespace}:${secureRandomId()}`;
 }
 
 export function assertSafeValue(value, { maxDepth = 20, depth = 0 } = {}) {

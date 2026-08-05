@@ -1,5 +1,5 @@
 import { nav } from './router.js';
-import { $, $$ } from '../src/utils.js';
+import { $, $$, escapeHtml } from '../src/utils.js';
 import { save } from '../state/store.js';
 import { getOnboardingDraft, updateOnboardingDraft } from '../src/onboarding-state.js';
 import {
@@ -329,7 +329,7 @@ export async function renderOnboarding(state, dependencies = {}) {
 
       let summaryHtml = '';
       if (!preview.valid) {
-        summaryHtml = `<div class="card-warning" style="padding:12px;color:var(--red);margin-bottom:14px;">Ошибка параметров: ${preview.errors.join(', ')}</div>`;
+        summaryHtml = `<div class="card-warning" style="padding:12px;color:var(--red);margin-bottom:14px;">Ошибка параметров: ${escapeHtml((preview.errors || []).join(', '))}</div>`;
       } else {
         const studyDaysText = (draft.studyDays || [])
           .sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b))
@@ -347,20 +347,21 @@ export async function renderOnboarding(state, dependencies = {}) {
         if (preview.warnings?.length > 0) {
           let recsHtml = '';
           for (const rec of preview.recommendations || []) {
-            recsHtml += `<button class="btn-sm btn-outline rec-btn" data-rec-type="${rec.type}" style="margin:4px 4px 0 0;">${rec.label}</button>`;
+            recsHtml += `<button class="btn-sm btn-outline rec-btn" data-rec-type="${escapeHtml(rec.type)}" style="margin:4px 4px 0 0;">${escapeHtml(rec.label)}</button>`;
           }
 
+          const safeWarnings = (preview.warnings || []).map((w) => escapeHtml(w)).join('<br>');
           warningBanner = `
             <div class="card-warning" style="padding:12px;background:rgba(255,152,0,0.1);border-left:3px solid var(--orange);border-radius:8px;margin-bottom:14px;font-size:13px;">
               <b>⚠️ Обратите внимание:</b>
-              <p style="margin:4px 0 8px;">${preview.warnings.join('<br>')}</p>
+              <p style="margin:4px 0 8px;">${safeWarnings}</p>
               ${recsHtml ? `<div><b>Рекомендуемые решения:</b><br>${recsHtml}</div>` : ''}
               ${
                 preview.isTight
                   ? `
                 <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;cursor:pointer;">
                   <input type="checkbox" id="ob-accept-deadline" ${draft.acceptRecommendedDeadline ? 'checked' : ''} data-testid="accept-recommended-deadline-checkbox">
-                  <span>Я согласен использовать рекомендуемый реалистичный срок — ${preview.recommendedTargetDate}</span>
+                  <span>Я согласен использовать рекомендуемый реалистичный срок — ${escapeHtml(preview.recommendedTargetDate)}</span>
                 </label>
               `
                   : ''
@@ -371,15 +372,15 @@ export async function renderOnboarding(state, dependencies = {}) {
 
         summaryHtml = `
           <div class="plan-summary-box" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
-            <div class="row-between"><span>Начало обучения:</span><b>${draft.startDate}</b></div>
-            <div class="row-between"><span>Учебные дни:</span><b>${studyDaysText || 'Не выбраны'}</b></div>
-            <div class="row-between"><span>Дневная нагрузка:</span><b>${draft.dailyCapacityMinutes} минут</b></div>
-            <div class="row-between"><span>Стартовый урок:</span><b>${formatLessonLabel(draft.startChapterId || entryLessonId)}</b></div>
-            <div class="row-between"><span>Дополнительная практика:</span><b>${wbStatusText}</b></div>
-            <div class="row-between"><span>Количество учебных дней:</span><b>${preview.requiredStudyDays} дней</b></div>
+            <div class="row-between"><span>Начало обучения:</span><b>${escapeHtml(draft.startDate)}</b></div>
+            <div class="row-between"><span>Учебные дни:</span><b>${escapeHtml(studyDaysText || 'Не выбраны')}</b></div>
+            <div class="row-between"><span>Дневная нагрузка:</span><b>${escapeHtml(draft.dailyCapacityMinutes)} минут</b></div>
+            <div class="row-between"><span>Стартовый урок:</span><b>${escapeHtml(formatLessonLabel(draft.startChapterId || entryLessonId))}</b></div>
+            <div class="row-between"><span>Дополнительная практика:</span><b>${escapeHtml(wbStatusText)}</b></div>
+            <div class="row-between"><span>Количество учебных дней:</span><b>${escapeHtml(preview.requiredStudyDays)} дней</b></div>
             <div class="row-between" style="border-top:1px dashed #ccc;padding-top:6px;margin-top:2px;">
               <span style="font-weight:600;">Примерное завершение:</span>
-              <b style="color:var(--orange,#ff9800);font-size:15px;">${preview.estimatedCompletionDate}</b>
+              <b style="color:var(--orange,#ff9800);font-size:15px;">${escapeHtml(preview.estimatedCompletionDate)}</b>
             </div>
           </div>
           ${warningBanner}

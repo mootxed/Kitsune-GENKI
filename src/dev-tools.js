@@ -5,6 +5,7 @@ import { DB_VERSION } from './db.js';
 import { safeStorage } from './safe-storage.js';
 import { APP_VERSION as METADATA_APP_VERSION } from './app-metadata.js';
 import { redactSecrets } from './security-helpers.js';
+import { secureRandomId } from './utils.js';
 
 export const APP_VERSION = METADATA_APP_VERSION;
 export const BUILD_DATE = '2026-08-03';
@@ -133,7 +134,7 @@ export function addLogEntry(level, args, explicitStack = null) {
   );
 
   logs.push({
-    id: Date.now() + Math.random(),
+    id: secureRandomId(),
     timestamp,
     timeStr: timestamp.toLocaleTimeString('ru-RU', { hour12: false }),
     level: level.toUpperCase(),

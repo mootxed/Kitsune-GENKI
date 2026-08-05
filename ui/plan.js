@@ -439,19 +439,29 @@ function renderCompletedChaptersList(state) {
   const actualCompleted = new Set(getActualCompletedChapterIds(state, CONTENT_INDEX));
   const effectiveCompleted = new Set(getCompletedChapterIds(state, CONTENT_INDEX));
 
-  container.innerHTML = CONTENT_INDEX.map((chapter) => {
+  container.replaceChildren();
+  CONTENT_INDEX.forEach((chapter) => {
     const isActual = [...actualCompleted].some((id) => sameLessonId(id, chapter.id));
     const isEffective = [...effectiveCompleted].some((id) => sameLessonId(id, chapter.id));
-    const checkedAttr = isEffective ? 'checked' : '';
-    const disabledAttr = isActual ? 'disabled' : '';
     const tag = isActual ? ' (пройдена в приложении)' : isEffective ? ' (изучена ранее)' : '';
 
-    return `
-      <label class="chapter-checkbox-item ${isActual ? 'disabled-item' : ''}">
-        <input type="checkbox" class="chapter-checkbox" data-chapter-id="${chapter.id}" ${checkedAttr} ${disabledAttr}>
-        <span class="chapter-checkbox-label">${chapter.title || formatLessonLabel(chapter.id)}${tag}</span>
-      </label>`;
-  }).join('');
+    const label = document.createElement('label');
+    label.className = `chapter-checkbox-item ${isActual ? 'disabled-item' : ''}`;
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.className = 'chapter-checkbox';
+    input.dataset.chapterId = String(chapter.id);
+    if (isEffective) input.checked = true;
+    if (isActual) input.disabled = true;
+
+    const span = document.createElement('span');
+    span.className = 'chapter-checkbox-label';
+    span.textContent = `${chapter.title || formatLessonLabel(chapter.id)}${tag}`;
+
+    label.append(input, span);
+    container.append(label);
+  });
   updateManualProgress();
   container.querySelectorAll('.chapter-checkbox:not([disabled])').forEach((checkbox) => {
     checkbox.addEventListener('change', () => {
@@ -1014,14 +1024,29 @@ function showDeadlineExpiredDialog(result, state, save, chaptersList = CONTENT_I
   // P0: Диалог показываем в plan-view-warning, который виден в режиме просмотра
   const warning = $('#plan-view-warning') || $('#plan-warning');
   if (!warning) return;
-  warning.innerHTML = `
-    <div class="deadline-expired-dialog">
-      <strong>Дедлайн ${result.expiredDeadline} истёк</strong>
-      <p>История останется без изменений. Выберите действие только для будущей части.</p>
-      <div class="deadline-expired-options">
-        ${result.options.map((option) => `<button class="deadline-option-btn" data-option="${option.type}">${option.label}</button>`).join('')}
-      </div>
-    </div>`;
+  warning.replaceChildren();
+  const dialog = document.createElement('div');
+  dialog.className = 'deadline-expired-dialog';
+
+  const strong = document.createElement('strong');
+  strong.textContent = `Дедлайн ${result.expiredDeadline || ''} истёк`;
+
+  const p = document.createElement('p');
+  p.textContent = 'История останется без изменений. Выберите действие только для будущей части.';
+
+  const optionsDiv = document.createElement('div');
+  optionsDiv.className = 'deadline-expired-options';
+
+  (result.options || []).forEach((option) => {
+    const btn = document.createElement('button');
+    btn.className = 'deadline-option-btn';
+    btn.dataset.option = option.type;
+    btn.textContent = option.label;
+    optionsDiv.append(btn);
+  });
+
+  dialog.append(strong, p, optionsDiv);
+  warning.append(dialog);
   warning.classList.remove('hidden');
   warning.querySelectorAll('[data-option]').forEach((button) => {
     button.onclick = () => {

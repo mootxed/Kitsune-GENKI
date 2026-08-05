@@ -2,6 +2,7 @@
 
 import { getStudyDayKey } from '../local-date.js';
 import { modeSkill, SKILLS } from '../knowledge-model.js';
+import { secureRandomId } from '../utils.js';
 
 const EXCLUDED_MODES = new Set(['system-fallback', 'preview', 'debug-skip']);
 const VALID_RATINGS = new Set([0, 3, 4, 5]);
@@ -99,7 +100,7 @@ export function getEffectiveReviewEvents(state, options = {}) {
 
     validEvents.push({
       ...raw,
-      eventId: eventId || `event-${timestamp}-${Math.random().toString(36).slice(2, 8)}`,
+      eventId: eventId || `event-${timestamp}-${secureRandomId()}`,
       cardId: cardId || itemId,
       itemId: itemId || cardId,
       skill,

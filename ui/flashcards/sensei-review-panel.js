@@ -28,14 +28,14 @@ async function activateChatTab() {
   }
 }
 
+import { secureRandomId } from '../../src/utils.js';
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function generateId() {
-  return typeof crypto !== 'undefined' && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return secureRandomId();
 }
 
 function el(tag, options = {}, children = []) {
@@ -272,7 +272,10 @@ function buildPanel({ artifact, actionType, snapshot, dependencies, cardSessionI
       section.append(el('h4', { text: 'Разбор по элементам' }));
       artifact.breakdown.forEach((item) => {
         const row = el('div', { className: 'srp-breakdown-row' });
-        row.innerHTML = `<strong lang="ja">${escapeHtml(item.element || '')}</strong><span>${escapeHtml(item.cue || '')}</span>`;
+        row.append(
+          el('strong', { attrs: { lang: 'ja' }, text: item.element || '' }),
+          el('span', { text: item.cue || '' })
+        );
         section.append(row);
       });
       body.append(section);

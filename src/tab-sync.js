@@ -1,6 +1,7 @@
 /* src/tab-sync.js — Single-writer BroadcastChannel & Web Locks tab coordination */
 
 import { safeStorage } from './safe-storage.js';
+import { secureRandomId } from './utils.js';
 
 let isPrimary = false;
 let tabChannel = null;
@@ -10,7 +11,7 @@ let stateUpdateCallback = null;
 let heartbeatIntervalId = null;
 let lockAbortController = null;
 
-const TAB_ID = Math.random().toString(36).substring(2, 9);
+const TAB_ID = secureRandomId();
 const CHANNEL_NAME = 'kotokitsu_tab_channel';
 const LOCK_NAME = 'kotokitsu_writer_lock';
 const LEASE_KEY = 'kotokitsu_leader_lease';

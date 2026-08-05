@@ -1,8 +1,9 @@
 /* src/action-journal.js — Local Action Journal for Diagnostics & Undo */
 
 import { STATE_SCHEMA_VERSION } from './app-metadata.js';
+import { secureRandomId } from './utils.js';
 
-const generateUUID = () => 'act-' + Math.random().toString(36).slice(2, 11) + '-' + Date.now();
+const generateUUID = () => 'act-' + secureRandomId();
 
 export const ACTION_TYPES = {
   FSRS_REVIEW: 'FSRS_REVIEW',

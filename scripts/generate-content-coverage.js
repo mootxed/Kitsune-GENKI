@@ -20,7 +20,7 @@ function generateMarkdownReport(result) {
   const now = new Date().toISOString().split('T')[0];
 
   let md = `# GENKI I Content Quality & Coverage Report\n\n`;
-  md += `*Generated automatically on ${now}*\n\n`;
+  md += `_Generated automatically on ${now}_\n\n`;
 
   md += `## Course Overall Metrics\n\n`;
   md += `**GENKI I · 12 Modules**\n\n`;
@@ -40,7 +40,7 @@ function generateMarkdownReport(result) {
   md += `- **Critical Issues**: ${t.criticalIssuesCount}\n`;
   md += `- **High Issues**: ${t.highIssuesCount}\n\n`;
 
-  md += `--- \n\n## Per-Lesson Breakdown\n\n`;
+  md += `---\n\n## Per-Lesson Breakdown\n\n`;
 
   for (const l of result.lessons) {
     md += `### Lesson ${l.lessonId} (${l.title})\n\n`;
@@ -60,16 +60,15 @@ function generateMarkdownReport(result) {
     md += `\`\`\`\n\n`;
   }
 
-  md += `--- \n\n## Audit Issues & Findings\n\n`;
+  md += `---\n\n## Audit Issues & Findings\n\n`;
   if (result.issues.length === 0) {
-    md += `*No critical or high issues detected across all 12 modules.*\n\n`;
+    md += `_No critical or high issues detected across all 12 modules._\n`;
   } else {
     md += `| ID | Category | Severity | Location | Description | Status |\n`;
     md += `| --- | --- | --- | --- | --- | --- |\n`;
     for (const issue of result.issues) {
       md += `| \`${issue.id}\` | ${issue.category} | ${issue.severity} | ${issue.location} | ${issue.description} | ${issue.status} |\n`;
     }
-    md += `\n`;
   }
 
   return md;

@@ -493,7 +493,22 @@ export function renderTypingMode(word, state, dependencies, modeConfig = {}, _re
         input.classList.remove('correct', 'shake-error');
 
         const allAnswers = acceptedAnswers.join(' или ');
-        hintMessage.innerHTML = `<p style="color: var(--danger); margin: 8px 0;">❌ Неправильно</p><p style="margin: 4px 0;">Правильный ответ: <strong style="color: var(--primary);">${allAnswers}</strong></p>`;
+        hintMessage.replaceChildren();
+        const p1 = document.createElement('p');
+        p1.style.color = 'var(--danger)';
+        p1.style.margin = '8px 0';
+        p1.textContent = '❌ Неправильно';
+
+        const p2 = document.createElement('p');
+        p2.style.margin = '4px 0';
+        p2.append('Правильный ответ: ');
+
+        const strong = document.createElement('strong');
+        strong.style.color = 'var(--primary)';
+        strong.textContent = allAnswers;
+
+        p2.append(strong);
+        hintMessage.append(p1, p2);
         hintMessage.classList.remove('hidden');
         markReviewAnswered(reviewCardId || word.id);
 
@@ -808,10 +823,31 @@ export function renderContextProductionMode(word, state, dependencies, renderFla
         isChecked = true;
 
         const allAnswers = acceptedAnswers.join(' / ');
-        const expText = task.explanation
-          ? `<p style="margin-top: 4px; font-size: 0.9em; color: var(--text-muted);">${task.explanation}</p>`
-          : '';
-        hintMessage.innerHTML = `<p style="color: var(--danger); margin: 8px 0;">❌ Неправильно</p><p style="margin: 4px 0;">Правильный ответ: <strong style="color: var(--primary);">${allAnswers}</strong></p>${expText}`;
+        hintMessage.replaceChildren();
+        const p1 = document.createElement('p');
+        p1.style.color = 'var(--danger)';
+        p1.style.margin = '8px 0';
+        p1.textContent = '❌ Неправильно';
+
+        const p2 = document.createElement('p');
+        p2.style.margin = '4px 0';
+        p2.append('Правильный ответ: ');
+
+        const strong = document.createElement('strong');
+        strong.style.color = 'var(--primary)';
+        strong.textContent = allAnswers;
+
+        p2.append(strong);
+        hintMessage.append(p1, p2);
+
+        if (task.explanation) {
+          const pExp = document.createElement('p');
+          pExp.style.marginTop = '4px';
+          pExp.style.fontSize = '0.9em';
+          pExp.style.color = 'var(--text-muted)';
+          pExp.textContent = task.explanation;
+          hintMessage.append(pExp);
+        }
         hintMessage.classList.remove('hidden');
         markReviewAnswered(reviewCardId || word.id);
 
@@ -1148,25 +1184,49 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
     const poolArea = $('#sentence-word-pool');
 
     if (userArea) {
-      userArea.innerHTML =
-        userSentence.length === 0
-          ? '<span class="sentence-placeholder">Нажмите на слова ниже</span>'
-          : userSentence
-              .map(
-                (word, idx) =>
-                  `<button class="word-chip selected" data-index="${idx}">${word}</button>`
-              )
-              .join('');
+      userArea.replaceChildren();
+      if (userSentence.length === 0) {
+        const span = document.createElement('span');
+        span.className = 'sentence-placeholder';
+        span.textContent = 'Нажмите на слова ниже';
+        userArea.append(span);
+      } else {
+        userSentence.forEach((word, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'word-chip selected';
+          btn.dataset.index = String(idx);
+          btn.textContent = word;
+          userArea.append(btn);
+        });
+      }
     }
 
     if (poolArea) {
-      const remainingWords = shuffledWords.filter((w) => !userSentence.includes(w));
-      poolArea.innerHTML =
-        remainingWords.length === 0
-          ? '<span class="sentence-placeholder">Все слова использованы</span>'
-          : remainingWords
-              .map((word) => `<button class="word-chip available">${word}</button>`)
-              .join('');
+      poolArea.replaceChildren();
+      const used = [...userSentence];
+      const availableWords = [];
+      for (const w of shuffledWords) {
+        const idx = used.indexOf(w);
+        if (idx !== -1) {
+          used.splice(idx, 1);
+        } else {
+          availableWords.push(w);
+        }
+      }
+
+      if (availableWords.length === 0) {
+        const span = document.createElement('span');
+        span.className = 'sentence-placeholder';
+        span.textContent = 'Все слова использованы';
+        poolArea.append(span);
+      } else {
+        availableWords.forEach((word) => {
+          const btn = document.createElement('button');
+          btn.className = 'word-chip available';
+          btn.textContent = word;
+          poolArea.append(btn);
+        });
+      }
     }
 
     $$('#sentence-word-pool .word-chip.available').forEach((chip) => {
@@ -1310,7 +1370,12 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
 
         if (mistakeCount === 1) {
           if (feedback) {
-            feedback.innerHTML = `❌ Неправильно. Попробуйте ещё раз.<br><small>Подсказка: "${correctWords[0]}" — первое слово</small>`;
+            feedback.replaceChildren();
+            feedback.append('❌ Неправильно. Попробуйте ещё раз.');
+            feedback.append(document.createElement('br'));
+            const small = document.createElement('small');
+            small.textContent = `Подсказка: "${correctWords[0]}" — первое слово`;
+            feedback.append(small);
             feedback.className = 'sentence-feedback incorrect';
             feedback.classList.remove('hidden');
           }
@@ -1319,7 +1384,14 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
           reviewResolved = true;
           lockCurrentReviewUI();
           if (feedback) {
-            feedback.innerHTML = `❌ Неправильно.<br>Правильный порядок: <strong lang="ja">${correctAnswer}</strong>`;
+            feedback.replaceChildren();
+            feedback.append('❌ Неправильно.');
+            feedback.append(document.createElement('br'));
+            feedback.append('Правильный порядок: ');
+            const strong = document.createElement('strong');
+            strong.lang = 'ja';
+            strong.textContent = correctAnswer;
+            feedback.append(strong);
             feedback.className = 'sentence-feedback incorrect';
             feedback.classList.remove('hidden');
           }

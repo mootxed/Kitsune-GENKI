@@ -696,14 +696,10 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
   if (signal?.aborted) return;
 
   // 4. Handle sentence scrolling & token highlight
-  const safeCss = (str) =>
-    typeof window !== 'undefined' && window.CSS && typeof window.CSS.escape === 'function'
-      ? window.CSS.escape(String(str))
-      : String(str).replace(/"/g, '\\"');
   const { sentenceId, tokenId, highlight } = options;
   if (sentenceId != null) {
-    const sentenceEl = document.querySelector(
-      `.story-sentence[data-sentence-id="${safeCss(sentenceId)}"]`
+    const sentenceEl = Array.from(document.querySelectorAll('.story-sentence')).find(
+      (el) => el.dataset.sentenceId === String(sentenceId)
     );
     if (sentenceEl) {
       if (typeof sentenceEl.scrollIntoView === 'function') {
@@ -713,7 +709,9 @@ export async function renderStoryRoute(state, dependencies, options = {}, contex
   }
 
   if (tokenId && highlight !== false) {
-    const tokenEl = document.querySelector(`.word-token[data-token-id="${safeCss(tokenId)}"]`);
+    const tokenEl = Array.from(document.querySelectorAll('.word-token')).find(
+      (el) => el.dataset.tokenId === String(tokenId)
+    );
     if (tokenEl) {
       tokenEl.classList.add('word-token-highlighted');
       setTimeout(() => {

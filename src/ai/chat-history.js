@@ -1,8 +1,8 @@
 import { z } from 'zod';
+import { secureRandomId } from '../utils.js';
 
 const nowIso = () => new Date().toISOString();
-const messageId = () =>
-  `ai-message:${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+const messageId = () => `ai-message:${secureRandomId()}`;
 
 export const ChatMessageSchema = z
   .object({
