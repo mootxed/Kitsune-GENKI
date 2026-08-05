@@ -346,52 +346,92 @@ async function updateLivePreview(state) {
       ? `до ${formatPlanDate(preferences.targetValue)} (${preview.availableStudyDays} уч. дн. доступно)`
       : `${preferences.targetValue || 0} учебных дней`;
 
-  let html = `
-    <div class="plan-preview-summary">
-      <strong>Ваш будущий график:</strong><br>
-      &bull; Глав для изучения: ${preview.previewPlan?.segments?.filter((s) => s.type === 'chapter').length || 12}<br>
-      &bull; Учебных дней: ${preview.requiredStudyDays} (по ${preferences.dailyCapacityMinutes} мин/день)<br>
-      &bull; Общее время нового материала: ~${preview.totalRequiredMinutes} минут<br>
-      &bull; Прогноз завершения: <b>${estDateFormatted}</b>
-    </div>
-  `;
+  const summaryDiv = document.createElement('div');
+  summaryDiv.className = 'plan-preview-summary';
+
+  const summaryTitle = document.createElement('strong');
+  summaryTitle.textContent = 'Ваш будущий график:';
+  summaryDiv.append(summaryTitle, document.createElement('br'));
+
+  const chapterCount =
+    preview.previewPlan?.segments?.filter((s) => s.type === 'chapter').length || 12;
+
+  summaryDiv.append(`• Глав для изучения: ${chapterCount}`, document.createElement('br'));
+  summaryDiv.append(
+    `• Учебных дней: ${preview.requiredStudyDays} (по ${preferences.dailyCapacityMinutes} мин/день)`,
+    document.createElement('br')
+  );
+  summaryDiv.append(
+    `• Общее время нового материала: ~${preview.totalRequiredMinutes} минут`,
+    document.createElement('br')
+  );
+
+  const estBold = document.createElement('b');
+  estBold.textContent = estDateFormatted;
+  summaryDiv.append('• Прогноз завершения: ', estBold);
+
+  const childrenToReplace = [summaryDiv];
 
   if (preview.isTight) {
     const isChecked = preferences.acceptRecommendedDeadline;
-    // P2: Рекомендации как кликабельные кнопки
-    const recsHtml = preview.recommendations
-      .map(
-        (r) =>
-          `<button class="btn-sm btn-outline plan-rec-btn" data-rec-type="${r.type}" data-rec-date="${r.recommendedDate || ''}" data-rec-days="${r.dailyCapacityMinutes || ''}">${r.label}</button>`
-      )
-      .join('');
-    html += `
-      <div class="plan-preview-warning">
-        <strong>&bull; Выбранный срок: ${targetLabel}</strong><br>
-        &bull; Минимально требуется: ${preview.requiredStudyDays} уч. дней<br>
-        &bull; Рекомендуемое завершение: <b>${recDateFormatted}</b>
-        <div class="plan-recommendations">${recsHtml}</div>
-        <label class="chapter-checkbox-item">
-          <input type="checkbox" id="plan-accept-deadline" data-testid="plan-accept-deadline" ${isChecked ? 'checked' : ''} />
-          <span class="chapter-checkbox-label" style="font-weight:600;">
-            Использовать рекомендуемый срок (${recDateFormatted})
-          </span>
-        </label>
-      </div>
-    `;
+    const warningDiv = document.createElement('div');
+    warningDiv.className = 'plan-preview-warning';
+
+    const targetStrong = document.createElement('strong');
+    targetStrong.textContent = `• Выбранный срок: ${targetLabel}`;
+    warningDiv.append(targetStrong, document.createElement('br'));
+
+    warningDiv.append(
+      `• Минимально требуется: ${preview.requiredStudyDays} уч. дней`,
+      document.createElement('br')
+    );
+
+    const recBold = document.createElement('b');
+    recBold.textContent = recDateFormatted;
+    warningDiv.append('• Рекомендуемое завершение: ', recBold);
+
+    const recsDiv = document.createElement('div');
+    recsDiv.className = 'plan-recommendations';
+
+    if (Array.isArray(preview.recommendations)) {
+      preview.recommendations.forEach((r) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-sm btn-outline plan-rec-btn';
+        btn.dataset.recType = r.type || '';
+        btn.dataset.recDate = r.recommendedDate || '';
+        btn.dataset.recDays = r.dailyCapacityMinutes || '';
+        btn.textContent = r.label || '';
+        btn.onclick = () => applyRecommendation(btn.dataset, state);
+        recsDiv.append(btn);
+      });
+    }
+    warningDiv.append(recsDiv);
+
+    const labelItem = document.createElement('label');
+    labelItem.className = 'chapter-checkbox-item';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = 'plan-accept-deadline';
+    checkbox.dataset.testid = 'plan-accept-deadline';
+    checkbox.checked = isChecked;
+    checkbox.addEventListener('change', () => {
+      scheduleLivePreview(state);
+    });
+
+    const spanLabel = document.createElement('span');
+    spanLabel.className = 'chapter-checkbox-label';
+    spanLabel.style.fontWeight = '600';
+    spanLabel.textContent = `Использовать рекомендуемый срок (${recDateFormatted})`;
+
+    labelItem.append(checkbox, spanLabel);
+    warningDiv.append(labelItem);
+
+    childrenToReplace.push(warningDiv);
   }
 
-  container.innerHTML = html;
+  container.replaceChildren(...childrenToReplace);
   container.classList.remove('hidden');
-
-  $('#plan-accept-deadline')?.addEventListener('change', () => {
-    scheduleLivePreview(state);
-  });
-
-  // P2: Обработчики кликабельных рекомендаций
-  container.querySelectorAll('.plan-rec-btn').forEach((btn) => {
-    btn.onclick = () => applyRecommendation(btn.dataset, state);
-  });
 }
 
 function applyRecommendation(dataset, state) {
