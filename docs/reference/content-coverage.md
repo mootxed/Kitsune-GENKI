@@ -1,6 +1,6 @@
 # GENKI I Content Quality & Coverage Report
 
-_Generated automatically on 2026-08-05_
+*Generated automatically on 2026-08-05*
 
 ## Course Overall Metrics
 
@@ -22,7 +22,7 @@ _Generated automatically on 2026-08-05_
 - **Critical Issues**: 0
 - **High Issues**: 0
 
----
+--- 
 
 ## Per-Lesson Breakdown
 
@@ -230,8 +230,9 @@ _Generated automatically on 2026-08-05_
 └── audio manually tested: 0/53
 ```
 
----
+--- 
 
 ## Audit Issues & Findings
 
-_No critical or high issues detected across all 12 modules._
+*No critical or high issues detected across all 12 modules.*
+

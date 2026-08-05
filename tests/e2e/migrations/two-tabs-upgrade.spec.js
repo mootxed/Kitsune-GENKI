@@ -37,11 +37,11 @@ test.describe('Multi-Tab Upgrade & Conflict Safeguards E2E', () => {
     await navigateToScreen(pageB, 'home');
 
     // Tab A loads and renders home
-    const headerA = pageA.locator('header');
+    const headerA = pageA.locator('header').first();
     await expect(headerA).toBeVisible();
 
     // Tab B loads and renders home
-    const headerB = pageB.locator('header');
+    const headerB = pageB.locator('header').first();
     await expect(headerB).toBeVisible();
 
     await contextA.close();

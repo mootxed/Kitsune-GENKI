@@ -125,6 +125,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: build
+    env:
+      CI: true
+      VITE_BASE: /KotoKitsu/
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -149,13 +152,9 @@ jobs:
 
       - name: Run Chromium Full E2E suite
         run: npm run test:e2e:chromium
-        env:
-          CI: true
 
       - name: Run Cross-browser Smoke suite (Chromium, Firefox, WebKit)
         run: npm run test:e2e:cross-browser
-        env:
-          CI: true
 
       - name: Run PWA & Storage Resilience suites
         run: |
@@ -163,8 +162,6 @@ jobs:
           npm run test:e2e:offline
           npm run test:e2e:storage
           npm run test:e2e:multitab
-        env:
-          CI: true
 
       - name: Upload Playwright test report
         uses: actions/upload-artifact@v4

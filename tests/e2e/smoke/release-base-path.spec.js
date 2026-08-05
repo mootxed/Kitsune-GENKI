@@ -32,14 +32,32 @@ test.describe('@smoke Release Base Path Smoke Suite', () => {
   });
 
   test('Production bundle loads cleanly under configured base path', async ({ page, baseURL }) => {
-    const base = process.env.VITE_BASE || '/';
+    const isCI = !!process.env.CI;
+    const viteBase = process.env.VITE_BASE;
+
+    if (isCI) {
+      if (!viteBase) {
+        throw new Error('VITE_BASE environment variable is required in CI mode');
+      }
+      if (viteBase !== '/KotoKitsu/') {
+        throw new Error(
+          `VITE_BASE in CI must strictly equal "/KotoKitsu/", received: "${viteBase}"`
+        );
+      }
+    }
+
+    const base = viteBase || '/';
     const targetUrl = new URL(base, baseURL || 'http://127.0.0.1:3000').href;
 
     await page.goto(targetUrl);
     await waitForAppReady(page);
 
-    // 1. Page opens at target base path
-    expect(page.url()).toContain(base);
+    // 1. Page opens at target base path, URL pathname strictly contains base path
+    const currentUrl = new URL(page.url());
+    expect(
+      currentUrl.pathname,
+      `Page pathname "${currentUrl.pathname}" must contain "${base}"`
+    ).toContain(base);
 
     // 2. Main interface renders
     const activeScreen = page.locator('.screen:not(.hidden)').first();
@@ -51,30 +69,34 @@ test.describe('@smoke Release Base Path Smoke Suite', () => {
     );
     expect(missingAssets, `404 asset failures: ${JSON.stringify(missingAssets)}`).toHaveLength(0);
 
-    // 4. Manifest is accessible
+    // 4. Manifest is loaded from base path manifest.json
     const manifestUrl = new URL('manifest.json', targetUrl).href;
+    expect(manifestUrl, 'Manifest URL must contain base path').toContain(`${base}manifest.json`);
     const manifestResponse = await page.request.get(manifestUrl);
-    expect(manifestResponse.ok(), 'manifest.json should be accessible').toBe(true);
+    expect(manifestResponse.ok(), `manifest.json should be accessible at ${manifestUrl}`).toBe(
+      true
+    );
 
-    // 5. Service Worker scope check (if SW supported in this browser engine)
+    // 5. Service Worker MUST be registered and scope must end with base path
     const swInfo = await page.evaluate(async () => {
-      if (!('serviceWorker' in navigator)) return { supported: false };
-      try {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        if (registrations.length === 0) return { supported: true, registered: false };
-        return {
-          supported: true,
-          registered: true,
-          scope: registrations[0].scope,
-        };
-      } catch (e) {
-        return { supported: true, error: e.message };
+      if (!('serviceWorker' in navigator)) {
+        throw new Error('Service Worker is not supported in this browser environment');
       }
+      for (let i = 0; i < 50; i++) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        if (registrations.length > 0) {
+          return { scope: registrations[0].scope };
+        }
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      throw new Error('Service Worker failed to register within timeout');
     });
 
-    if (swInfo.supported && swInfo.registered) {
-      expect(swInfo.scope).toContain(base);
-    }
+    const expectedScopeEnding = `${base.replace(/\/$/, '')}/`;
+    expect(
+      swInfo.scope.endsWith(expectedScopeEnding),
+      `Service Worker scope "${swInfo.scope}" must end with "${expectedScopeEnding}"`
+    ).toBe(true);
 
     // 6. No module script or critical console errors
     const fatalConsoleErrors = consoleErrors.filter(

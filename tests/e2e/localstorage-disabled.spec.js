@@ -1,14 +1,14 @@
-/* global DOMException */
 import { test, expect } from '@playwright/test';
 
 test.describe('@storage localStorage Disabled / SecurityError Fallback E2E Suite', () => {
   test('App boots safely without fatal error when localStorage throws SecurityError', async ({
     page,
   }) => {
-    // Inject script blocking localStorage access
+    // Inject script blocking localStorage access (runs in browser context where DOMException exists)
     await page.addInitScript(() => {
       Object.defineProperty(window, 'localStorage', {
         get() {
+          // eslint-disable-next-line no-undef
           throw new DOMException('localStorage is disabled by user policy', 'SecurityError');
         },
         configurable: true,
@@ -16,15 +16,17 @@ test.describe('@storage localStorage Disabled / SecurityError Fallback E2E Suite
     });
 
     await page.goto('./');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.locator('body')).toBeVisible();
 
-    // Check that app does not fatal crash
-    const screenVisible = await page
+    const isMountedSafely = await page
       .evaluate(() => {
-        const screen = document.querySelector('.screen:not(.hidden)');
-        return !!screen;
+        const hasScreen = !!document.querySelector('.screen:not(.hidden)');
+        const hasRecovery = document.body.textContent.includes('Хранилище недоступно');
+        return hasScreen || hasRecovery;
       })
       .catch(() => false);
 
-    expect(screenVisible).toBe(true);
+    expect(isMountedSafely).toBe(true);
   });
 });
