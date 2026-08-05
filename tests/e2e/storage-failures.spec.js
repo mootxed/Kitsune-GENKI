@@ -1,6 +1,6 @@
 /* global DOMException */
 import { test, expect } from '@playwright/test';
-import { seedAppState, waitForAppReady } from './helpers/reset-app-state.js';
+import { seedAppState, waitForAppReady, navigateToScreen } from './helpers/reset-app-state.js';
 
 test.describe('@storage Storage Quota & Exhaustion Failure E2E Suite', () => {
   test('QuotaExceededError in storage operations triggers warning without purging existing data', async ({
@@ -71,6 +71,7 @@ test.describe('@storage Storage Quota & Exhaustion Failure E2E Suite', () => {
 
     await page.goto('./');
     await waitForAppReady(page);
+    await navigateToScreen(page, 'settings');
 
     const backupFeatureAvailable = await page.evaluate(() => {
       return (

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { waitForAppReady } from '../helpers/reset-app-state.js';
 
-test.describe('@smoke Release Base Path Smoke Suite (/KotoKitsu/)', () => {
+test.describe('@smoke Release Base Path Smoke Suite', () => {
   let consoleErrors = [];
   let pageErrors = [];
   let failedRequests = [];
@@ -31,14 +31,15 @@ test.describe('@smoke Release Base Path Smoke Suite (/KotoKitsu/)', () => {
     });
   });
 
-  test('Production bundle loads cleanly under /KotoKitsu/ base path', async ({ page, baseURL }) => {
-    const targetUrl = new URL('/KotoKitsu/', baseURL || 'http://127.0.0.1:3000').href;
+  test('Production bundle loads cleanly under configured base path', async ({ page, baseURL }) => {
+    const base = process.env.VITE_BASE || '/';
+    const targetUrl = new URL(base, baseURL || 'http://127.0.0.1:3000').href;
 
     await page.goto(targetUrl);
     await waitForAppReady(page);
 
-    // 1. Page opens at /KotoKitsu/
-    expect(page.url()).toContain('/KotoKitsu/');
+    // 1. Page opens at target base path
+    expect(page.url()).toContain(base);
 
     // 2. Main interface renders
     const activeScreen = page.locator('.screen:not(.hidden)').first();
@@ -51,9 +52,8 @@ test.describe('@smoke Release Base Path Smoke Suite (/KotoKitsu/)', () => {
     expect(missingAssets, `404 asset failures: ${JSON.stringify(missingAssets)}`).toHaveLength(0);
 
     // 4. Manifest is accessible
-    const manifestResponse = await page.request.get(
-      new URL('/KotoKitsu/manifest.json', baseURL || 'http://127.0.0.1:3000').href
-    );
+    const manifestUrl = new URL('manifest.json', targetUrl).href;
+    const manifestResponse = await page.request.get(manifestUrl);
     expect(manifestResponse.ok(), 'manifest.json should be accessible').toBe(true);
 
     // 5. Service Worker scope check (if SW supported in this browser engine)
@@ -73,7 +73,7 @@ test.describe('@smoke Release Base Path Smoke Suite (/KotoKitsu/)', () => {
     });
 
     if (swInfo.supported && swInfo.registered) {
-      expect(swInfo.scope).toContain('/KotoKitsu/');
+      expect(swInfo.scope).toContain(base);
     }
 
     // 6. No module script or critical console errors

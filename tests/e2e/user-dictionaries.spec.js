@@ -69,7 +69,7 @@ test.describe('User dictionaries full flow', () => {
     await page.reload();
     await waitForAppReady(page);
     await navigateToScreen(page, 'user-dictionaries');
-    await page.getByRole('button', { name: 'Открыть' }).click();
+    await page.getByRole('button', { name: 'Открыть', exact: true }).click();
     await expect(page.getByRole('heading', { name: '食べる' })).toBeVisible();
 
     await navigateToScreen(page, 'settings');

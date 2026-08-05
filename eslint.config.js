@@ -3,6 +3,18 @@ import prettier from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
 
 export default [
+  {
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      '.vscode/**',
+      'coverage/**',
+      'reports/**',
+      '.sourcemaps/**',
+      'playwright-report/**',
+      'test-results/**',
+    ],
+  },
   js.configs.recommended,
   prettierConfig,
   {
@@ -136,6 +148,13 @@ export default [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', '.vscode/**'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      '.vscode/**',
+      'coverage/**',
+      'reports/**',
+      '.sourcemaps/**',
+    ],
   },
 ];
