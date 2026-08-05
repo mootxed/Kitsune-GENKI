@@ -8,8 +8,8 @@
 
 ```json
 {
-  "name": "Kitsune-GENKI Японский Язык",
-  "short_name": "Kitsune",
+  "name": "KotoKitsu",
+  "short_name": "KotoKitsu",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#121212",

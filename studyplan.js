@@ -1,4 +1,4 @@
-/* studyplan.js — deterministic, local-time study plan for Kitsune Genki */
+/* studyplan.js — deterministic, local-time study plan for KotoKitsu */
 
 import { SRS } from './srs.js';
 import { createVocabularySchedule } from './src/vocabulary-schedule.js';

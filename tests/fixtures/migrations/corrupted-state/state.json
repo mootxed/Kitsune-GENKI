@@ -1,0 +1,19 @@
+{
+  "version": 13,
+  "updatedAt": "invalid-timestamp",
+  "xp": "invalid_number",
+  "chatHistory": null,
+  "priorKnowledgeChapterIds": null,
+  "srs": {
+    "genki-1::1::v1": {
+      "id": "genki-1::1::v1",
+      "due": "2026-05-10T08:00:00.000Z",
+      "stability": 5.0,
+      "difficulty": 3.0,
+      "reps": 2,
+      "lapses": 0,
+      "state": 2
+    }
+  },
+  "unknownLegacyField": { "foo": "bar" }
+}

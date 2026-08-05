@@ -12,15 +12,20 @@ import { selectMiniGameWords, recordGameSession } from '../src/minigame-word-rot
 
 let activeCleanup = null;
 
+let cwState = null;
+let currentCrosswordWord = null;
+let crosswordFinished = false;
+let crosswordFinishedState = null;
+
 export function cleanupCrossword() {
   if (typeof activeCleanup === 'function') {
     activeCleanup();
     activeCleanup = null;
   }
-}
-
-if (typeof window !== 'undefined') {
-  window.cleanupCrossword = cleanupCrossword;
+  cwState = null;
+  currentCrosswordWord = null;
+  crosswordFinished = false;
+  crosswordFinishedState = null;
 }
 
 // Конвертер Хирагана → Катакана
@@ -371,7 +376,7 @@ function renderGridCells(grid, gridSize) {
 function initCrosswordHandlers(crosswordData, userAnswers, state, dependencies, mode = 'normal') {
   const { placedWords, grid } = crosswordData;
 
-  window.cwState = {
+  cwState = {
     userAnswers,
     placedWords,
     grid,
@@ -379,9 +384,9 @@ function initCrosswordHandlers(crosswordData, userAnswers, state, dependencies, 
     dependencies,
     mode,
   };
-  window.currentCrosswordWord = null;
-  window.crosswordFinished = false;
-  delete window.crosswordFinishedState;
+  currentCrosswordWord = null;
+  crosswordFinished = false;
+  crosswordFinishedState = null;
 
   // Обработчик клика по ячейке
   document.querySelectorAll('.grid-cell.active').forEach((cell) => {
@@ -424,7 +429,7 @@ function initCrosswordHandlers(crosswordData, userAnswers, state, dependencies, 
       if (cluePanel) cluePanel.classList.add('hidden');
       if (keyboard) keyboard.classList.add('hidden');
 
-      window.currentCrosswordWord = null;
+      currentCrosswordWord = null;
 
       document.querySelectorAll('.grid-cell.highlighted').forEach((cell) => {
         cell.classList.remove('highlighted');
@@ -450,7 +455,7 @@ function selectWord(wordData, crosswordData, userAnswers) {
   delete wordData.keyboardLayout;
   delete wordData.keyboardLetterFrequency;
 
-  window.currentCrosswordWord = wordData;
+  currentCrosswordWord = wordData;
 
   refreshGridCellClasses(placedWords, userAnswers, wordData.word.id);
   updateCluePanel(wordData.word, userAnswers, grid, placedWords);
@@ -845,8 +850,8 @@ function checkWordCompletion(wordData, userAnswers, grid, placedWords) {
   const allCompleted = placedWords.every(
     (pw) => userAnswers[pw.word.id] && userAnswers[pw.word.id].correct
   );
-  if (allCompleted && !window.crosswordFinished) {
-    window.crosswordFinished = true;
+  if (allCompleted && !crosswordFinished) {
+    crosswordFinished = true;
     setTimeout(() => {
       completeCrossword(placedWords.length, userAnswers);
     }, 1000);
@@ -869,10 +874,10 @@ function findNextIncompleteWord(placedWords, userAnswers, currentWordId) {
 }
 
 function completeCrossword(totalWords, userAnswers) {
-  if (window.crosswordFinishedState?.awarded) return;
-  window.crosswordFinishedState = { awarded: true };
+  if (crosswordFinishedState?.awarded) return;
+  crosswordFinishedState = { awarded: true };
 
-  const { state, dependencies } = window.cwState;
+  const { state, dependencies } = cwState || {};
   const { save, addXP } = dependencies;
 
   const wordsWithHint = Object.values(userAnswers).filter((a) => a.correct && a.usedHint).length;

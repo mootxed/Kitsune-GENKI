@@ -1,0 +1,12 @@
+{
+  "id": "idb-fallback-conflict",
+  "description": "IndexedDB state and fallback localStorage state with mismatching timestamps and writers",
+  "sourceStateVersion": 16,
+  "sourceDbVersion": 6,
+  "targetStateVersion": 17,
+  "targetDbVersion": 7,
+  "fixedNow": "2026-01-15T08:00:00.000Z",
+  "expectedWarnings": ["CONCURRENCY_CONFLICT_FALLBACK_SELECTED"],
+  "expectedErrors": [],
+  "invariants": ["writer-mismatch-handled-safely", "no-progress-loss"]
+}

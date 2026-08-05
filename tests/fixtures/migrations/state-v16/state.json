@@ -1,0 +1,30 @@
+{
+  "version": 16,
+  "updatedAt": 1715000000000,
+  "xp": 5000,
+  "streak": { "count": 30, "lastActive": "2026-05-01" },
+  "activeCourseId": "genki-1",
+  "courses": {
+    "genki-1": {
+      "courseId": "genki-1",
+      "courseVersion": "1.0.0",
+      "completedChapters": [1, 2, 3, 4, 5]
+    }
+  },
+  "srs": {
+    "genki-1::5::v1": {
+      "id": "genki-1::5::v1",
+      "due": "2026-05-10T08:00:00.000Z",
+      "stability": 15.0,
+      "difficulty": 2.5,
+      "elapsed_days": 1,
+      "scheduled_days": 10,
+      "reps": 8,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-04-30T08:00:00.000Z"
+    }
+  },
+  "pendingReviewLogs": [],
+  "settings": { "darkMode": "auto" }
+}

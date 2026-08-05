@@ -2,7 +2,7 @@ import { localDateKey, getLocalWeekday } from './local-date.js';
 import { parseCardIdentity } from './knowledge-model.js';
 import { cardChapter } from './srs-helpers.js';
 import { State } from 'ts-fsrs';
-import { isPriorKnowledge } from './chapter-progress.js';
+import { isPriorKnowledge } from './chapter-evidence.js';
 import {
   canonicalizeKnowledgeItemId,
   canonicalLessonId,

@@ -1,0 +1,12 @@
+{
+  "id": "fsrs-early",
+  "description": "Early FSRS cards missing modern fields and legacy progress flags",
+  "sourceStateVersion": 3,
+  "sourceDbVersion": 2,
+  "targetStateVersion": 17,
+  "targetDbVersion": 7,
+  "fixedNow": "2026-01-15T08:00:00.000Z",
+  "expectedWarnings": [],
+  "expectedErrors": [],
+  "invariants": ["no-fake-reviews-created", "legacy-mastery-flagged-without-evidence-promotion"]
+}

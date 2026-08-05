@@ -1,0 +1,12 @@
+{
+  "id": "two-tabs-upgrade",
+  "description": "Simulation of two open tabs where Tab B initiates DB upgrade while Tab A holds old connection",
+  "sourceStateVersion": 15,
+  "sourceDbVersion": 5,
+  "targetStateVersion": 17,
+  "targetDbVersion": 7,
+  "fixedNow": "2026-01-15T08:00:00.000Z",
+  "expectedWarnings": ["STALE_TAB_WRITE_BLOCKED"],
+  "expectedErrors": [],
+  "invariants": ["stale-tab-write-blocked", "versionchange-closes-db", "single-writer-honored"]
+}

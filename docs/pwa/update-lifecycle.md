@@ -9,7 +9,7 @@
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as Приложение Kitsune-GENKI
+    participant App as Приложение KotoKitsu
     participant Manager as SW Update Manager
     participant SW as Service Worker (public/sw.js)
 

@@ -1,5 +1,4 @@
-// ui/flashcards/session.js - Батчинг сессий и жизненный цикл повторений карточек
-
+import { ACTIVE_SESSION_SCHEMA_VERSION } from '../../src/app-metadata.js';
 import { allCards, wordById } from '../../src/srs-helpers.js';
 import { SRS } from '../../srs.js';
 import { SessionBatcher } from '../../src/session-batcher.js';
@@ -215,7 +214,8 @@ export function saveActiveSessionState() {
   }
 
   const sessionData = {
-    schemaVersion: 1,
+    schemaVersion: ACTIVE_SESSION_SCHEMA_VERSION,
+    sessionId: `session_${sessionCreatedAt}`,
     sessionType: flashCtx ? 'chapter' : 'srs',
     chapterId: flashCtx || null,
     sessionOrigin: activeSessionOrigin || {

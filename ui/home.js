@@ -50,6 +50,77 @@ import {
   startVocabularyBatchSession,
 } from '../src/vocabulary-unlock-plan.js';
 import { getNextStudyAction, getOrGenerateDailyPlan } from '../src/daily-plan.js';
+import { calculateSevenDayForecast } from '../src/forecast-service.js';
+import { evaluatePlanRiskAndAdaptation } from '../src/plan-risk-adaptation.js';
+
+export function buildHomeViewModel({
+  state: appState = state,
+  plan = appState?.studyPlan,
+  activeSession = null,
+  storageStatus = { degraded: false },
+  forecast = null,
+  now = Date.now(),
+} = {}) {
+  const isFirstRun = !appState?.onboarding?.completed;
+  const isPlanRequired = !plan;
+  const isStorageRecovery = storageStatus.degraded === true;
+  const hasActiveSession = Boolean(
+    activeSession &&
+    Array.isArray(activeSession.managerState?.queue) &&
+    activeSession.managerState.queue.some((i) => !i.completed)
+  );
+
+  const forecastData = forecast || calculateSevenDayForecast({ state: appState, plan, now });
+  const riskEval = evaluatePlanRiskAndAdaptation({ state: appState, forecast: forecastData, now });
+
+  let stateName = 'TODAY_IN_PROGRESS';
+  if (isStorageRecovery) stateName = 'STORAGE_RECOVERY_REQUIRED';
+  else if (isFirstRun) stateName = 'FIRST_RUN';
+  else if (isPlanRequired) stateName = 'PLAN_REQUIRED';
+  else if (hasActiveSession) stateName = 'SESSION_INTERRUPTED';
+  else if (riskEval.isRecoveryMode) stateName = 'PLAN_RECOVERY';
+  else if (forecastData.days?.[0]?.dueReviews === 0 && !forecastData.days?.[0]?.expectedNewCards)
+    stateName = 'NO_DUE_TASKS';
+
+  return {
+    stateName,
+    isFirstRun,
+    isPlanRequired,
+    hasActiveSession,
+    isStorageRecovery,
+    forecast: forecastData,
+    risk: riskEval.risk,
+    decisionExplanation: riskEval.decisionExplanation,
+    warningBanner: riskEval.warningBanner,
+    activeSession,
+  };
+}
+
+export function getPrimaryHomeAction(viewModel, dailyPlan = null) {
+  if (viewModel.isStorageRecovery) {
+    return { type: 'storage-recovery', title: 'Восстановить хранилище', targetScreen: 'recovery' };
+  }
+  if (viewModel.hasActiveSession) {
+    return { type: 'resume-session', title: 'Продолжить сессию', targetScreen: 'srs' };
+  }
+  if (viewModel.isFirstRun) {
+    return { type: 'start-onboarding', title: 'Начать обучение', targetScreen: 'onboarding' };
+  }
+  if (viewModel.isPlanRequired) {
+    return { type: 'create-plan', title: 'Составить план', targetScreen: 'plan' };
+  }
+
+  const nextTask = getNextStudyAction(dailyPlan);
+  if (nextTask) {
+    return {
+      type: nextTask.type,
+      title: 'Продолжить обучение',
+      task: nextTask,
+    };
+  }
+
+  return { type: 'completed', title: 'Все задачи на сегодня выполнены', targetScreen: 'practice' };
+}
 
 // ---------- Constants ----------
 export let CH_NAMES = {};
@@ -355,7 +426,7 @@ export async function loadLessons(options = {}) {
   CONTENT_INDEX = nextContentIndex;
   CH_NAMES = nextChapterNames;
 
-  if (state.courses?.[state.activeCourseId]) {
+  if (state?.courses?.[state?.activeCourseId]) {
     state.courses[state.activeCourseId].lessonIds = CONTENT_INDEX.map((chapter) => chapter.id);
   }
 
@@ -396,7 +467,7 @@ export async function loadLessons(options = {}) {
   if (!isCurrentLoad()) return;
 
   // Runtime backfill reconciliation for prior knowledge chapters
-  if (Array.isArray(state.priorKnowledgeChapterIds) && state.priorKnowledgeChapterIds.length > 0) {
+  if (Array.isArray(state?.priorKnowledgeChapterIds) && state.priorKnowledgeChapterIds.length > 0) {
     try {
       const pkResult = await reconcilePriorKnowledgeVocabulary(state, ensureLesson);
       if (!isCurrentLoad()) return;
@@ -406,7 +477,7 @@ export async function loadLessons(options = {}) {
     }
   }
 
-  if (!isCurrentLoad()) return;
+  if (!isCurrentLoad() || !state) return;
 
   const previousActiveChapterId = state.activeChapterId;
   ensureActiveChapterId(state, CONTENT_INDEX);
@@ -512,7 +583,6 @@ async function persistLessonsCache() {
 
 // Ленивая загрузка полного контента главы (урок + история)
 export async function ensureLesson(id) {
-  window.ensureLesson = ensureLesson;
   id = canonicalLessonId(id);
   if (!id) throw new Error('[Home] lesson ID is required');
   let entry = loadedChapters.get(id);
@@ -888,14 +958,14 @@ function executeHomeDailyTask(task, activeChapterId, dependencies) {
   window.nav('srs');
 }
 
-export function renderHomeTodayCard(appState, dailyPlan) {
+export function renderHomeTodayCard(appState, dailyPlan, viewModel = null) {
   if (!appState.studyPlan) {
     return `
       <div class="today-plan-empty">
         <div>
           <span class="today-eyebrow">ПЛАН НА СЕГОДНЯ</span>
           <h2>Составить план обучения</h2>
-          <p>Выберите учебные дни и срок — план свяжет главы с ежедневными повторениями.</p>
+          <p>Выберите учебные дни и темп — приложение рассчитает ежедневную нагрузку.</p>
         </div>
         <button class="btn-primary compact" data-action="create-plan">Составить план</button>
       </div>`;
@@ -905,13 +975,70 @@ export function renderHomeTodayCard(appState, dailyPlan) {
     return '<div class="today-plan-empty"><p>Задачи дня загружаются…</p></div>';
   }
 
+  const vm = viewModel || buildHomeViewModel({ state: appState, plan: appState.studyPlan });
+  const forecast = vm.forecast;
+
+  // Interrupted Session Banner
+  let interruptedSessionHtml = '';
+  if (vm.hasActiveSession && vm.activeSession) {
+    const queue = vm.activeSession.managerState?.queue || [];
+    const remaining = queue.filter((i) => !i.completed).length;
+    const estMin = Math.max(1, Math.ceil(remaining * 0.5));
+    interruptedSessionHtml = `
+      <div class="interrupted-session-banner" style="
+        background: linear-gradient(135deg, rgba(255, 122, 26, 0.15), rgba(255, 122, 26, 0.05));
+        border: 1px solid var(--primary, #FF7A1A);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      ">
+        <div>
+          <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; color: var(--primary, #FF7A1A);">Прерванная сессия</span>
+          <h3 style="font-size: 16px; font-weight: 700; margin: 4px 0;">Продолжить незавершённое обучение</h3>
+          <p style="font-size: 13px; color: var(--ink-secondary, #A0A0B8); margin: 0;">Осталось: ${remaining} карточек (~${estMin} мин)</p>
+        </div>
+        <button class="btn-primary compact" data-action="resume-active-session">Продолжить</button>
+      </div>`;
+  }
+
+  // 7-day forecast strip
+  let forecastHtml = '';
+  if (forecast && Array.isArray(forecast.days)) {
+    const dayLabels = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+    const forecastCols = forecast.days
+      .map((d) => {
+        const dayName = dayLabels[d.dayOfWeek] || '';
+        return `
+        <div style="text-align: center; flex: 1; padding: 6px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+          <div style="font-size: 11px; color: var(--ink-tertiary, #707088);">${dayName}</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--primary, #FF7A1A); margin-top: 2px;">${d.expectedMinutes}м</div>
+        </div>`;
+      })
+      .join('');
+
+    forecastHtml = `
+      <div class="forecast-7day-strip" style="margin: 16px 0; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 12px; font-weight: 600; color: var(--ink-secondary, #A0A0B8);">Прогноз нагрузки на 7 дней</span>
+          <span style="font-size: 11px; color: var(--ink-tertiary, #707088);">Среднее: ~${forecast.averageMinutes} мин/день</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          ${forecastCols}
+        </div>
+      </div>`;
+  }
+
   const taskTypeLabel = {
     review: 'ОБЯЗАТЕЛЬНО · FSRS',
     vocabulary: 'ОБЯЗАТЕЛЬНО · НОВЫЕ СЛОВА',
-    grammar: 'ГРАММАТИКА',
-    practice: 'ПРАКТИКА',
-    assessment: 'ПРОВЕРКА',
-    bonus: 'ДОПОЛНИТЕЛЬНО',
+    grammar: 'ПО ПЛАНУ · ГРАММАТИКА',
+    practice: 'ПО ПЛАНУ · ПРАКТИКА',
+    assessment: 'ПО ПЛАНУ · ПРОИЗВОДИТЕЛЬНОСТЬ',
+    bonus: 'ДОПОЛНИТЕЛЬНО · ПРАКТИКА',
   };
   const taskIcon = {
     review: '↻',
@@ -921,6 +1048,7 @@ export function renderHomeTodayCard(appState, dailyPlan) {
     assessment: '✓',
     bonus: '✨',
   };
+
   const tasksHtml =
     dailyPlan.tasks.length === 0
       ? '<div class="today-completed-state"><span class="completed-icon">🎉</span><p>Все обязательные задачи на сегодня выполнены.</p></div>'
@@ -956,21 +1084,27 @@ export function renderHomeTodayCard(appState, dailyPlan) {
           })
           .join('');
 
-  const warningHtml = dailyPlan.warnings?.length
-    ? `<div class="warning-banner card-warning">${dailyPlan.warnings.join(' ')}</div>`
-    : '';
+  const warningHtml = vm.warningBanner
+    ? `<div class="warning-banner card-warning" style="margin-bottom: 12px; padding: 12px; background: rgba(255, 122, 26, 0.12); border-left: 4px solid #FF7A1A; border-radius: 8px;">
+        <strong>${vm.warningBanner.title}</strong>: ${vm.warningBanner.message}
+       </div>`
+    : dailyPlan.warnings?.length
+      ? `<div class="warning-banner card-warning">${dailyPlan.warnings.join(' ')}</div>`
+      : '';
 
   return `
+    ${interruptedSessionHtml}
     <div class="today-card-header">
       <div>
         <span class="today-eyebrow">ПЛАН НА СЕГОДНЯ</span>
-        <h2>${dailyPlan.isRestDay ? 'День отдыха' : 'Конкретные шаги'}</h2>
+        <h2>${dailyPlan.isRestDay ? 'День отдыха' : 'Задачи на сегодня'}</h2>
         <small>${dailyPlan.estimatedMinutes} из ${dailyPlan.capacityMinutes} мин</small>
       </div>
       <button class="text-button" data-action="open-plan">Весь план</button>
     </div>
     ${warningHtml}
     ${tasksHtml}
+    ${forecastHtml}
   `;
 }
 

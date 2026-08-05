@@ -1,0 +1,5 @@
+{
+  "id": "course-xss-test",
+  "title": "<script>alert('xss-course-title')</script>",
+  "description": "<a href=\"javascript:alert('xss-course-desc')\">Click here</a>"
+}

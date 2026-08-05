@@ -2,7 +2,7 @@
 import { SRS } from '../srs.js';
 import { parseCardIdentity } from './knowledge-model.js';
 import { getDictionaryEntry } from './dictionary/dictionary-store.js';
-import { isPriorKnowledge, shouldChapterHaveVocabularyCards } from './chapter-progress.js';
+import { isPriorKnowledge, shouldChapterHaveVocabularyCards } from './chapter-evidence.js';
 import {
   canonicalizeKnowledgeItemId,
   canonicalLessonId,

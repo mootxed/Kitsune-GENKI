@@ -3,6 +3,7 @@
 import { $ } from '../src/utils.js';
 import { buildStatisticsViewModel } from '../src/statistics/statistics-view-model.js';
 
+// Legacy storage key retained for backward compatibility with existing user data
 const LS_PERIOD_KEY = 'kitsune_stats_period';
 
 /**

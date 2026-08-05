@@ -46,6 +46,32 @@ export function showCompletionScreen(options) {
     )
     .join('');
 
+  let actionsContainer = document.getElementById('completion-actions');
+  if (Array.isArray(options.actions) && options.actions.length > 0) {
+    if (!actionsContainer) {
+      actionsContainer = document.createElement('div');
+      actionsContainer.id = 'completion-actions';
+      actionsContainer.style.cssText =
+        'display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap;';
+      rewardsContainer.insertAdjacentElement('afterend', actionsContainer);
+    }
+    actionsContainer.innerHTML = '';
+    options.actions.forEach((act) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-secondary completion-action-btn';
+      btn.style.cssText =
+        'background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer;';
+      btn.textContent = act.label;
+      btn.onclick = () => {
+        if (typeof act.onClick === 'function') act.onClick();
+      };
+      actionsContainer.appendChild(btn);
+    });
+  } else if (actionsContainer) {
+    actionsContainer.remove();
+  }
+
   // Показать оверлей
   overlay.classList.remove('hidden');
 
@@ -72,7 +98,7 @@ export function syncAvatars() {
 
 // ---------- Refresh Streak Display ----------
 export function refreshStreakDisplay() {
-  const s = state.streak;
+  const s = state?.streak || { count: 0, lastActive: null };
   let shown = s.count;
   if (s.lastActive) {
     const diff = Math.round((parseDateKey(todayStr()) - parseDateKey(s.lastActive)) / 86400000);
@@ -80,7 +106,7 @@ export function refreshStreakDisplay() {
   } else shown = 0;
 
   // Круговой прогресс стрика
-  const dailyGoal = Math.min(state.dailyCards / 10, 1);
+  const dailyGoal = Math.min((state?.dailyCards || 10) / 10, 1);
   const pct = Math.round(dailyGoal * 100);
   const cBar = $('#streak-circle-progress');
   if (cBar) {
@@ -93,21 +119,25 @@ export function refreshStreakDisplay() {
 
   const circleInner = $('#streak-circle-inner');
   if (circleInner) {
-    circleInner.textContent = state.dailyCards >= 10 ? '🔥' : `${state.dailyCards}/10`;
+    circleInner.textContent =
+      (state?.dailyCards || 0) >= 10 ? '🔥' : `${state?.dailyCards || 0}/10`;
   }
 
   // Линейный прогресс XP
-  const xpPct = Math.min((state.xp / XP_PER_LEVEL) * 100, 100);
+  const xp = state?.xp || 0;
+  const level = state?.level || 1;
+  const coins = state?.coins || 0;
+  const xpPct = Math.min((xp / XP_PER_LEVEL) * 100, 100);
   const xpBar = $('#xp-bar-fill');
   if (xpBar) xpBar.style.width = `${xpPct}%`;
   const xpText = $('#xp-bar-text');
-  if (xpText) xpText.textContent = `${Math.round(state.xp)} / ${XP_PER_LEVEL} XP`;
+  if (xpText) xpText.textContent = `${Math.round(xp)} / ${XP_PER_LEVEL} XP`;
   const levelText = $('#level-text');
-  if (levelText) levelText.textContent = `Уровень ${state.level}`;
+  if (levelText) levelText.textContent = `Уровень ${level}`;
 
   // Монеты
   const coinsText = $('#coins-display');
-  if (coinsText) coinsText.textContent = `🪙 ${state.coins}`;
+  if (coinsText) coinsText.textContent = `${coins}`;
 
   // Стрик текст
   const streakNum = $('#streak-num');
@@ -140,7 +170,7 @@ export function applyStreakSkin() {
 
 // ---------- Apply Theme ----------
 export function applyCustomTheme() {
-  const theme = state.currentTheme || 'default';
+  const theme = state?.currentTheme || 'default';
   if (theme === 'default') {
     // Если кастомная тема не выбрана, применяем обычную тему (auto/light/dark)
     if (window.applyTheme) window.applyTheme();
@@ -151,7 +181,7 @@ export function applyCustomTheme() {
 
 // ---------- Update SRS Badge ----------
 export function updateSrsBadge() {
-  if (!window.dueCards || !state.srs) return;
+  if (!window.dueCards || !state?.srs) return;
   const due = countAvailableCardsForSession(window.dueCards(state.srs), state.srs);
   const badge = document.querySelector('.tab-badge[data-tab="srs"]');
   if (badge) {

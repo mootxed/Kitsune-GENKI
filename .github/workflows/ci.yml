@@ -1,4 +1,4 @@
-name: CI Tests
+name: CI & CD Pipeline
 
 on:
   push:
@@ -9,10 +9,19 @@ on:
       - main
   workflow_dispatch:
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,7 +35,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Lint: includes public/sw.js via dedicated ESLint override (sourceType:script)
       - name: Run linter (including Service Worker)
         run: npm run lint
 
@@ -36,19 +44,21 @@ jobs:
       - name: Check legal metadata & compliance
         run: npm run legal:check
 
-      # Unit tests: includes sw-helpers.test.js and a11y-helpers.test.js
-      - name: Run unit tests (SW helpers + accessibility helpers)
-        run: npm test
+      - name: Check documentation
+        run: npm run docs:check
 
-      # Production build: required before E2E so SW hash is injected
-      - name: Build project (production)
-        run: npm run build
+      - name: Dependency security audit
+        run: npm run security:audit
 
-  e2e:
+      - name: Check dangerous DOM and URL usage
+        run: npm run security:check
+
+      - name: Verify migration fixtures integrity
+        run: npm run fixtures:verify
+
+  coverage:
+    name: Unit Tests & Coverage
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    # E2E runs on production build preview to test real SW behavior
-    needs: test
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,24 +72,123 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Build production bundle (with auto cache versioning via vite.config.js plugin)
-      - name: Build production bundle (with SW hash injection)
+      - name: Run unit tests with mandatory coverage thresholds
+        run: npm run test:coverage
+
+      - name: Upload coverage report artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  build:
+    name: Production Build & Manifest
+    runs-on: ubuntu-latest
+    needs: [quality, coverage]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
         run: npm run build
+        env:
+          GITHUB_SHA: ${{ github.sha }}
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotokitsu-dist-${{ github.sha }}
+          path: dist/
+          retention-days: 1
 
-      # Run E2E on dev server (which serves production-like content)
-      # accessibility.spec.js includes axe-core checks and keyboard navigation tests
-      - name: Run E2E tests (accessibility + keyboard + offline PWA)
-        run: npm run test:e2e
+  e2e:
+    name: End-to-End & Cross-Browser Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download verified dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kotokitsu-dist-${{ github.sha }}
+          path: dist/
+
+      - name: Install Playwright browsers (Chromium, Firefox, WebKit)
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Run Chromium Full E2E suite
+        run: npm run test:e2e:chromium
         env:
           CI: true
 
-      - name: Upload E2E test results
+      - name: Run Cross-browser Smoke suite (Chromium, Firefox, WebKit)
+        run: npm run test:e2e:cross-browser
+        env:
+          CI: true
+
+      - name: Run PWA & Storage Resilience suites
+        run: |
+          npm run test:e2e:pwa
+          npm run test:e2e:offline
+          npm run test:e2e:storage
+          npm run test:e2e:multitab
+        env:
+          CI: true
+
+      - name: Upload Playwright test report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: e2e
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download verified dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kotokitsu-dist-${{ github.sha }}
+          path: dist/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "records": [
+    {
+      "taskId": "L4_ambiguity_01",
+      "lessonId": "lesson-04",
+      "type": "MULTIPLE_VALID_TRANSLATIONS",
+      "severity": "medium",
+      "prompt": "Переведите «чистый» или «красивый» (きれい)",
+      "acceptedVariants": ["きれい", "綺麗な", "綺麗"],
+      "resolution": "prompt-clarified",
+      "reviewedBy": "content-audit",
+      "reviewedAt": "2026-08-05"
+    },
+    {
+      "taskId": "L4_ambiguity_02",
+      "lessonId": "lesson-04",
+      "type": "MULTIPLE_VALID_PARTICLES",
+      "severity": "medium",
+      "prompt": "Направление движения (学校へ行く / 学校に行く)",
+      "acceptedVariants": ["学校へ行く", "学校に行く"],
+      "resolution": "answers-expanded",
+      "reviewedBy": "content-audit",
+      "reviewedAt": "2026-08-05"
+    }
+  ]
+}

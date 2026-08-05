@@ -1,10 +1,10 @@
-# Kitsune-GENKI — Системная документация разработчика
+# KotoKitsu — Системная документация разработчика
 
 Добро пожаловать в официальную техническую документацию проекта
-**Kitsune-GENKI** — офлайн-первого PWA-приложения для изучения японского языка,
+**KotoKitsu** — офлайн-первого PWA-приложения для изучения японского языка,
 построенного на Vanilla JavaScript (ES Modules), Vite, IndexedDB, глобальной
-словарной базе, системе состояний `state` (v16) и интервальном повторении
-`ts-fsrs`.
+словарной базе, системе состояний `state` и интервальном повторении
+`ts-fsrs` (актуальные технические версии приведены в [справочнике версий](reference/generated-versions.md)).
 
 > [!IMPORTANT]
 > Настоящая документация отражает **фактическое текущее состояние исходного кода**, модулей, схем данных и проверенных тестов репозитория.
@@ -15,21 +15,21 @@
 
 Документация структурирована по основным доменам системы:
 
-| Раздел                                                         | Назначение                                                                                                                         |
-| :------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
-| 🚀 [**Overview**](overview/project-overview.md)                | Назначение приложения, структура репозитория, архитектурные слои и жизненный цикл.                                                 |
-| 🛠️ [**Development**](development/getting-started.md)           | Руководство по запуску, рабочий процесс, стандарты кода, тестирование, отладка и CI/CD.                                            |
-| 💾 [**Data & State**](data/application-state.md)               | Модель состояния приложения (State v16), IndexedDB, миграции, journal/outbox и бэкапы.                                             |
-| 🧠 [**Learning System**](learning/learning-system-overview.md) | Knowledge model, FSRS, подсистема Mastery, учебный план, дневной план, SessionManager, XP и статистика.                            |
-| 🎯 [**Study Modes**](modes/overview.md)                        | Поведение и алгоритмы оценивания 7 учебных режимов (Multiple Choice, Typing, Drawing, Context Sentence, Context Production и др.). |
-| 📚 [**Content System**](content/content-system.md)             | Структура глав Genki, схема JSON-контента, валидаторы и пошаговые руководства по добавлению материалов.                            |
-| 🎮 [**Minigames**](minigames/overview.md)                      | Вспомогательные мини-игры (Crossword, Word Search, Particles), алгоритмы выбора слабых слов и accessibility.                       |
-| ✨ [**Features**](features/dictionary.md)                      | Интерактивный словарь, экран статистики, настройки, AI Story, TTS Audio, Onboarding.                                               |
-| 🗂️ [**User Dictionaries**](user-dictionaries.md)               | Личные словари, безопасный импорт JSON/CSV/TSV, FSRS-интеграция, export и backup.                                                  |
-| ⚖️ [**Legal & Licensing**](legal/README.md)                    | Модель лицензирования, происхождение ресурсов (RhosGFX, AI covers), third-party notices и disclaimers.                             |
-| 📱 [**PWA & SW**](pwa/pwa-overview.md)                         | Service Worker, стратегии кеширования, offline-first fallback, жизненный цикл обновлений PWA.                                      |
-| 📖 [**Reference**](reference/routes.md)                        | Справочники по маршрутам, конфигурации, npm-скриптам, схемам State/Events/Cards и Known Limitations.                               |
-| 🏛️ [**Decisions (ADRs)**](decisions/README.md)                 | Архитектурные решения (ADR) по выбору технологии, хранилища, алгоритмов SRS и независимости мини-игр.                              |
+| Раздел                                                         | Назначение                                                                                                                            |
+| :------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| 🚀 [**Overview**](overview/project-overview.md)                | Назначение приложения, структура репозитория, архитектурные слои и жизненный цикл.                                                    |
+| 🛠️ [**Development**](development/getting-started.md)           | Руководство по запуску, рабочий процесс, стандарты кода, тестирование, отладка и CI/CD.                                               |
+| 💾 [**Data & State**](data/application-state.md)               | Модель состояния приложения, IndexedDB, миграции, journal/outbox и бэкапы (см. [справочник версий](reference/generated-versions.md)). |
+| 🧠 [**Learning System**](learning/learning-system-overview.md) | Knowledge model, FSRS, подсистема Mastery, учебный план, дневной план, SessionManager, XP и статистика.                               |
+| 🎯 [**Study Modes**](modes/overview.md)                        | Поведение и алгоритмы оценивания 7 учебных режимов (Multiple Choice, Typing, Drawing, Context Sentence, Context Production и др.).    |
+| 📚 [**Content System**](content/content-system.md)             | Структура глав Genki, схема JSON-контента, валидаторы и пошаговые руководства по добавлению материалов.                               |
+| 🎮 [**Minigames**](minigames/overview.md)                      | Вспомогательные мини-игры (Crossword, Word Search, Particles), алгоритмы выбора слабых слов и accessibility.                          |
+| ✨ [**Features**](features/dictionary.md)                      | Интерактивный словарь, экран статистики, настройки, AI Story, TTS Audio, Onboarding.                                                  |
+| 🗂️ [**User Dictionaries**](user-dictionaries.md)               | Личные словари, безопасный импорт JSON/CSV/TSV, FSRS-интеграция, export и backup.                                                     |
+| ⚖️ [**Legal & Licensing**](legal/README.md)                    | Модель лицензирования, происхождение ресурсов (RhosGFX, AI covers), third-party notices и disclaimers.                                |
+| 📱 [**PWA & SW**](pwa/pwa-overview.md)                         | Service Worker, стратегии кеширования, offline-first fallback, жизненный цикл обновлений PWA.                                         |
+| 📖 [**Reference**](reference/routes.md)                        | Справочники по маршрутам, конфигурации, npm-скриптам, схемам State/Events/Cards и Known Limitations.                                  |
+| 🏛️ [**Decisions (ADRs)**](decisions/README.md)                 | Архитектурные решения (ADR) по выбору технологии, хранилища, алгоритмов SRS и независимости мини-игр.                                 |
 
 ---
 

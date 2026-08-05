@@ -1,9 +1,11 @@
 /* src/db.js — Promise-based обёртка над IndexedDB с graceful degradation */
 
 import { migrateDictionaryReviewLogEntriesV16 } from './dictionary/state-v16.js';
+import { INDEXED_DB_NAME, INDEXED_DB_VERSION } from './app-metadata.js';
 
-const DB_NAME = 'KitsuneGenkiDB';
-const DB_VERSION = 7;
+// Legacy DB name retained for backward compatibility with existing user data
+export const DB_NAME = INDEXED_DB_NAME;
+export const DB_VERSION = INDEXED_DB_VERSION;
 
 // Object Stores
 const STORES = {
@@ -1346,9 +1348,8 @@ export async function initializeDB() {
       db = new InMemoryFallback();
     }
   }
-  window.db = db;
   return db;
 }
 
 // Экспорт имён stores, схем и обёртки для использования в других модулях и тестах
-export { DB_NAME, DB_VERSION, STORES, STORE_SCHEMAS, IndexedDBWrapper };
+export { STORES, STORE_SCHEMAS, IndexedDBWrapper };

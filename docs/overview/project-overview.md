@@ -1,6 +1,6 @@
-# Project Overview — Kitsune-GENKI
+# Project Overview — KotoKitsu
 
-**Kitsune-GENKI** — это автономное Progressive Web Application (PWA) для комплексого изучения японского языка на основе популярной серии учебников Genki (Genki I и II).
+**KotoKitsu** — это автономное Progressive Web Application (PWA) для комплексого изучения японского языка на основе популярной серии учебников Genki (Genki I и II).
 
 ---
 
@@ -22,7 +22,7 @@
 
 - **Frontend Engine**: Vanilla JavaScript (ES2022 / ES Modules).
 - **Сборка и Dev-сервер**: Vite 5.
-- **База данных на клиенте**: IndexedDB (`KitsuneGenkiDB` v4) с фаллбэком на localStorage.
+- **База данных на клиенте**: IndexedDB с фаллбэком на localStorage (актуальные версии приведены в [справочнике версий](../reference/generated-versions.md)).
 - **Алгоритм SRS**: `ts-fsrs` (версия `^5.4.1`).
 - **Отрисовка кандзи**: `hanzi-writer` + `@k1low/hanzi-writer-data-jp`.
 - **Стилевое оформление**: Vanilla CSS3 с кастомными переменными темы, поддержкой темной темы и анимированных микро-взаимодействий.

@@ -60,19 +60,19 @@ describe('Markdown Link Sanitization', () => {
   it('allows safe https and http links', () => {
     const htmlHttps = md('[Google](https://google.com)');
     expect(htmlHttps).toContain(
-      '<a href="https://google.com" target="_blank" rel="noopener">Google</a>'
+      '<a href="https://google.com/" target="_blank" rel="noopener noreferrer">Google</a>'
     );
 
     const htmlHttp = md('[Example](http://example.com)');
     expect(htmlHttp).toContain(
-      '<a href="http://example.com" target="_blank" rel="noopener">Example</a>'
+      '<a href="http://example.com/" target="_blank" rel="noopener noreferrer">Example</a>'
     );
   });
 
   it('allows safe mailto links', () => {
     const htmlMailto = md('[Mail](mailto:user@example.com)');
     expect(htmlMailto).toContain(
-      '<a href="mailto:user@example.com" target="_blank" rel="noopener">Mail</a>'
+      '<a href="mailto:user@example.com" target="_blank" rel="noopener noreferrer">Mail</a>'
     );
   });
 

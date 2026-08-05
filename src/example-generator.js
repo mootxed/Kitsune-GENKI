@@ -1,6 +1,6 @@
 /**
  * example-generator.js — Детерминированный генератор и ранжирование контекстных примеров
- * для словаря и FSRS Kitsune-GENKI.
+ * для словаря и FSRS KotoKitsu.
  *
  * Приоритет источников:
  *   1. Явный curated-пример для лексемы (curated-word, curated)

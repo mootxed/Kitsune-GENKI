@@ -1,0 +1,2 @@
+Unhandled error: <img src=x onerror=alert('xss-diag')> at main.js:12:34
+Authorization: Bearer sk-or-v1-secret-key-in-error-12345

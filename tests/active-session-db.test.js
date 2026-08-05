@@ -192,7 +192,13 @@ describe('ACTIVE_SESSION IndexedDB Round-Trip Test', () => {
   });
 
   it('clears active session from IndexedDB when session finishes', async () => {
-    await saveSessionToDB({ test: 123 });
+    await saveSessionToDB({
+      schemaVersion: 2,
+      sessionId: 'test_session',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      managerState: { queue: [{ cardId: 'test_1' }], stats: { total: 1 } },
+    });
     let loaded = await loadSessionFromDB();
     expect(loaded).not.toBeNull();
 

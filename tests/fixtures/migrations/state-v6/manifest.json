@@ -1,0 +1,12 @@
+{
+  "id": "state-v6-multi-axis",
+  "description": "State v6 with recognition, recall, production skills and review logs",
+  "sourceStateVersion": 6,
+  "sourceDbVersion": 3,
+  "targetStateVersion": 17,
+  "targetDbVersion": 7,
+  "fixedNow": "2026-01-15T08:00:00.000Z",
+  "expectedWarnings": [],
+  "expectedErrors": [],
+  "invariants": ["skills-preserved", "review-logs-preserved"]
+}

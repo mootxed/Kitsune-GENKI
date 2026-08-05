@@ -1,6 +1,7 @@
 // ui/chat.js — AI Сенсей: shell, interaction wiring and safe rendering
 
 import { $, todayStr as getTodayStr } from '../src/utils.js';
+import { validateExternalUrl } from '../src/security-helpers.js';
 import { syncAvatars } from './shared.js';
 import { getAvailableChapterCount } from '../src/minigame-word-selectors.js';
 import { ensureAIPrivacyDisclosure } from '../src/ai-disclosure.js';
@@ -84,9 +85,9 @@ export function md(text) {
     return `<ul>${items}</ul>`;
   });
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gu, (_, label, url) => {
-    const safeUrl = url.trim();
-    return /^(?:https?:\/\/|mailto:)/iu.test(safeUrl)
-      ? `<a href="${safeUrl}" target="_blank" rel="noopener">${label}</a>`
+    const safeUrl = validateExternalUrl(url);
+    return safeUrl
+      ? `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${label}</a>`
       : label;
   });
   html = html.replace(/((?:^\|.*\|\n?)+)/gmu, (match) => {

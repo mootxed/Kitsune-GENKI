@@ -1,10 +1,19 @@
 // ui/flashcards.js - Модуль-фасад для карточек SRS, словарного запаса и сессий
 
-import { $, $$ } from '../src/utils.js';
+import { $ } from '../src/utils.js';
 import { wordById, cardChapter } from '../src/srs-helpers.js';
+import { validateRenderableCard } from '../src/card-validator.js';
+import { recordDiagnosticError } from '../state/store.js';
+import { exportDiagnosticReport } from '../src/diagnostics.js';
+import {
+  APP_VERSION,
+  INDEXED_DB_VERSION as DB_VERSION,
+  STATE_SCHEMA_VERSION as CURRENT_VERSION,
+} from '../src/app-metadata.js';
+import { saveActiveSessionState, getSessionOrigin } from './flashcards/session.js';
 import { markCardIntroduced } from '../src/srs-limits.js';
-import { SRS } from '../srs.js';
 import { displayWordForm, isKanjiFormAvailable } from '../src/course-orthography.js';
+export { getCardSchedulingReason } from '../src/reason-model.js';
 
 import {
   flashQueue,
@@ -12,14 +21,13 @@ import {
   setFlashIdx,
   flashCtx,
   sessionManager,
-  setSessionManager,
   setActiveReviewState,
   setActiveReviewDependencies,
 } from './flashcards/state.js';
 
 import { CARD_MODES, determineCardMode, shortT } from './flashcards/mode-selector.js';
 
-import { startReviewTiming, submitReview, renderCompletionUndo } from './flashcards/review-fsrs.js';
+import { startReviewTiming, renderCompletionUndo } from './flashcards/review-fsrs.js';
 
 import { initDrawingMode } from './flashcards/drawing-mode.js';
 
@@ -81,6 +89,62 @@ export {
   getSessionManager,
 } from './flashcards/state.js';
 
+let currentSessionSkipCount = 0;
+let consecutiveSkipCount = 0;
+
+export function resetTechnicalSkipCounters() {
+  currentSessionSkipCount = 0;
+  consecutiveSkipCount = 0;
+}
+
+export function handleTechnicalSkip(card, validationResult, state, dependencies) {
+  currentSessionSkipCount++;
+  consecutiveSkipCount++;
+
+  const details = validationResult.details || {};
+  const record = {
+    type: 'UNRENDERABLE_SRS_CARD',
+    code: validationResult.code || 'UNRENDERABLE_CARD',
+    severity: 'error',
+    cardId: card?.id || details.cardId || null,
+    itemId: card?.itemId || details.itemId || null,
+    dictionaryId: card?.dictionaryId || details.dictionaryId || null,
+    courseId: state?.activeCourseId || details.courseId || null,
+    lessonId: details.lessonId || null,
+    mode: card?.forcedMode || details.mode || null,
+    sessionId: sessionManager ? 'active' : null,
+    timestamp: Date.now(),
+    message: validationResult.message || 'Card data could not be rendered',
+    details,
+    context: {
+      appVersion: state?.appVersion || APP_VERSION,
+      schemaVersion: state?.version || CURRENT_VERSION,
+      dbVersion: DB_VERSION,
+      activeCourse: state?.activeCourseId || null,
+      sessionSource: getSessionOrigin()?.type || 'srs',
+      queueIndex: sessionManager ? sessionManager.currentIndex : flashIdx,
+      queueSize: sessionManager ? sessionManager.queue?.length : flashQueue?.length,
+      isRestoredSession: Boolean(getSessionOrigin()?.isRestored),
+      existsInSrs: Boolean(card?.id && state?.srs?.[card.id]),
+    },
+  };
+
+  recordDiagnosticError(record);
+
+  const toastFn = dependencies?.toast;
+  if (currentSessionSkipCount === 1 && typeof toastFn === 'function') {
+    toastFn(
+      '⚠️ Не удалось открыть карточку. Она была безопасно пропущена и не повлияла на расписание.'
+    );
+  }
+
+  if (consecutiveSkipCount >= 3) {
+    console.warn(
+      `[handleTechnicalSkip] ${consecutiveSkipCount} consecutive card skips encountered.`
+    );
+  }
+}
+
 // Главная функция рендеринга карточки
 export function renderFlash(state, dependencies) {
   const { save, showCompletionScreen, nav, LESSONS } = dependencies;
@@ -97,31 +161,102 @@ export function renderFlash(state, dependencies) {
   // Убедимся, что контейнер видим
   body.style.display = 'block';
 
-  let card;
+  let card = null;
+  let validationResult = null;
 
   if (sessionManager) {
-    card = sessionManager.getNextCard();
+    while (true) {
+      card = sessionManager.getNextCard();
+      if (!card) break;
+
+      validationResult = validateRenderableCard(card, { state, lessons: LESSONS });
+      if (validationResult.valid) {
+        consecutiveSkipCount = 0;
+        break;
+      }
+
+      console.warn(
+        '[renderFlash] Card validation failed, skipping card:',
+        card.id,
+        validationResult.code
+      );
+      handleTechnicalSkip(card, validationResult, state, dependencies);
+      sessionManager.skipCard(card.id);
+      saveActiveSessionState();
+    }
 
     if (!card) {
-      // Батч завершён: если есть следующий — запускаем его и продолжаем сессию
       if (startNextBatchIfAny(state, dependencies)) {
         renderFlash(state, dependencies);
         return;
       }
 
       const stats = sessionManager.getStats();
+      const skippedCount = stats.skipped || 0;
+      const answeredCount = stats.answered ?? stats.reviewed - skippedCount;
+
+      if (answeredCount === 0 && skippedCount > 0) {
+        showCompletionScreen({
+          title: 'Сессию не удалось провести',
+          subtitle: 'Учебные данные недоступны',
+          desc: 'Все карточки были пропущены из-за проблем с учебными данными. Расписание повторений не изменено.',
+          theme: 'warning',
+          rewards: [
+            { icon: '⚠️', label: `${skippedCount} технически пропущено` },
+            { icon: '🪙', label: '+0 XP' },
+          ],
+          actions: [
+            {
+              label: 'Экспортировать диагностику',
+              onClick: () =>
+                exportDiagnosticReport(state, { method: 'download', toastFn: dependencies?.toast }),
+            },
+          ],
+          onContinue: () => {
+            resetTechnicalSkipCounters();
+            abandonActiveSession();
+            flashCtx ? nav('chapter', flashCtx) : nav('srs');
+          },
+        });
+        return;
+      }
+
+      const rewards = [
+        { icon: '🧠', label: `FSRS-повторения / Выполнено: ${answeredCount}` },
+        { icon: '✨', label: `${stats.perfect} без ошибок` },
+      ];
+      if (stats.relearned > 0) {
+        rewards.push({ icon: '🔄', label: `${stats.relearned} переучено` });
+      }
+      if (skippedCount > 0) {
+        rewards.push({ icon: '⚠️', label: `${skippedCount} пропущено` });
+      }
+      rewards.push({ icon: '🎯', label: `${Math.round(stats.accuracy)}% точность` });
+      rewards.push({ icon: '🪙', label: `+${answeredCount} XP` });
+
+      const actions =
+        skippedCount > 0
+          ? [
+              {
+                label: 'Экспортировать диагностику',
+                onClick: () =>
+                  exportDiagnosticReport(state, {
+                    method: 'download',
+                    toastFn: dependencies?.toast,
+                  }),
+              },
+            ]
+          : [];
+
       showCompletionScreen({
         title: 'おめでとう！',
         subtitle: 'Сессия завершена!',
-        desc: 'Отличная работа! Вы справились со всеми карточками.',
+        desc: 'Отличная работа! Ваш ежедневный прогресс сохранён.',
         theme: 'success',
-        rewards: [
-          { icon: '📚', label: `${stats.reviewed} карточек` },
-          { icon: '✨', label: `${stats.perfect} без ошибок` },
-          { icon: '🎯', label: `${Math.round(stats.accuracy)}% точность` },
-          { icon: '🪙', label: `+${stats.reviewed} XP` },
-        ],
+        rewards,
+        actions,
         onContinue: () => {
+          resetTechnicalSkipCounters();
           abandonActiveSession();
           flashCtx ? nav('chapter', flashCtx) : nav('srs');
         },
@@ -130,25 +265,88 @@ export function renderFlash(state, dependencies) {
       return;
     }
   } else {
+    while (flashIdx < flashQueue.length) {
+      card = flashQueue[flashIdx];
+      validationResult = validateRenderableCard(card, { state, lessons: LESSONS });
+      if (validationResult.valid) {
+        consecutiveSkipCount = 0;
+        break;
+      }
+
+      console.warn(
+        '[renderFlash] Card validation failed, skipping index:',
+        flashIdx,
+        validationResult.code
+      );
+      handleTechnicalSkip(card, validationResult, state, dependencies);
+      setFlashIdx(flashIdx + 1);
+    }
+
     if (flashIdx >= flashQueue.length) {
       const count = flashQueue.length;
+      const skippedCount = currentSessionSkipCount;
+      const answeredCount = Math.max(0, count - skippedCount);
+
+      if (answeredCount === 0 && skippedCount > 0) {
+        showCompletionScreen({
+          title: 'Сессию не удалось провести',
+          subtitle: 'Учебные данные недоступны',
+          desc: 'Все карточки были пропущены из-за проблем с учебными данными. Расписание повторений не изменено.',
+          theme: 'warning',
+          rewards: [
+            { icon: '⚠️', label: `${skippedCount} технически пропущено` },
+            { icon: '🪙', label: '+0 XP' },
+          ],
+          actions: [
+            {
+              label: 'Экспортировать диагностику',
+              onClick: () =>
+                exportDiagnosticReport(state, { method: 'download', toastFn: dependencies?.toast }),
+            },
+          ],
+          onContinue: () => {
+            resetTechnicalSkipCounters();
+            flashCtx ? nav('chapter', flashCtx) : nav('srs');
+          },
+        });
+        return;
+      }
+
+      const rewards = [{ icon: '📚', label: `${answeredCount} отвечено` }];
+      if (skippedCount > 0) {
+        rewards.push({ icon: '⚠️', label: `${skippedCount} технически пропущено` });
+      }
+      rewards.push({ icon: '🪙', label: `+${answeredCount} XP` });
+
+      const actions =
+        skippedCount > 0
+          ? [
+              {
+                label: 'Экспортировать диагностику',
+                onClick: () =>
+                  exportDiagnosticReport(state, {
+                    method: 'download',
+                    toastFn: dependencies?.toast,
+                  }),
+              },
+            ]
+          : [];
+
       showCompletionScreen({
         title: 'おめでとう！',
         subtitle: 'Повторение завершено!',
-        desc: 'Вы успешно повторили все карточки.',
+        desc: 'Вы успешно повторили карточки.',
         theme: 'success',
-        rewards: [
-          { icon: '📚', label: `${count} карточек` },
-          { icon: '🪙', label: `+${count} XP` },
-        ],
+        rewards,
+        actions,
         onContinue: () => {
+          resetTechnicalSkipCounters();
           flashCtx ? nav('chapter', flashCtx) : nav('srs');
         },
       });
       renderCompletionUndo(state, dependencies, renderFlash);
       return;
     }
-    card = flashQueue[flashIdx];
   }
 
   if (!card || !card.id) {
@@ -189,20 +387,6 @@ export function renderFlash(state, dependencies) {
     return;
   }
   const word = wordById(card.id, LESSONS);
-
-  if (!word) {
-    console.warn('[renderFlash] Word not found, skipping card:', card.id);
-    if (sessionManager) {
-      submitReview(card, SRS.Quality.Good, state, {
-        mode: 'system-fallback',
-        responseTimeMs: null,
-      });
-    } else {
-      setFlashIdx(flashIdx + 1);
-    }
-    renderFlash(state, dependencies);
-    return;
-  }
 
   const displayKanji = displayWordForm(word, state);
   const displayWriting = word.reading || word.writing;

@@ -1,9 +1,15 @@
-// ui/flashcards/drawing-mode.js - Режим интерактивного рисования иероглифов с HanziWriter
-
 import { wordById } from '../../src/srs-helpers.js';
 import { SRS } from '../../srs.js';
-import HanziWriter from 'hanzi-writer';
 import { localCharDataLoader } from '../../src/kanji-loader.js';
+
+let cachedHanziWriter = null;
+async function getHanziWriter() {
+  if (!cachedHanziWriter) {
+    const mod = await import('hanzi-writer');
+    cachedHanziWriter = mod.default || mod;
+  }
+  return cachedHanziWriter;
+}
 import { getAllKanji } from './mode-selector.js';
 import { markReviewAnswered, submitReview } from './review-fsrs.js';
 import { adaptDrawingContext } from './review-context-adapters.js';
@@ -11,6 +17,8 @@ import { renderPostReviewSenseiActions } from './sensei-review-panel.js';
 import { shouldShowSenseiAction } from './sensei-review-actions.js';
 import { activeReviewAIContext, clearActiveReviewAIContext } from './state.js';
 import { lockCurrentReviewUI } from './card-modes.js';
+import { recordDiagnosticError } from '../../state/store.js';
+import { saveActiveSessionState } from './session.js';
 
 import {
   kanjiSequence,
@@ -56,7 +64,7 @@ export function renderKanjiProgressCells() {
     .join('');
 }
 
-export function initDrawingMode(
+export async function initDrawingMode(
   kanji,
   writing,
   translation,
@@ -109,12 +117,17 @@ export function initDrawingMode(
     if (word && typeof renderMultipleChoiceModeFn === 'function') {
       renderMultipleChoiceModeFn(word, state, dependencies);
     } else {
-      toast('⚠️ Слово не найдено');
+      toast('⚠️ Слово не найдено, карточка пропущена');
+      recordDiagnosticError({
+        type: 'UNRENDERABLE_SRS_CARD',
+        code: 'MISSING_WORD_DATA',
+        severity: 'error',
+        cardId: card.id,
+        message: 'No kanji or word found in drawing mode',
+      });
       if (sessionManager) {
-        submitReview(card, SRS.Quality.Good, state, {
-          mode: 'system-fallback',
-          responseTimeMs: null,
-        });
+        sessionManager.skipCard(card.id);
+        saveActiveSessionState();
       } else {
         setFlashIdx(flashIdx + 1);
       }
@@ -275,6 +288,7 @@ export function initDrawingMode(
 
   try {
     target.innerHTML = '';
+    const HanziWriter = await getHanziWriter();
 
     const writer = HanziWriter.create(target, currentKanji, {
       width: 280,
@@ -311,12 +325,17 @@ export function initDrawingMode(
           setCurrentKanjiIndex(0);
           renderMultipleChoiceModeFn(word, state, dependencies);
         } else {
-          toast('⚠️ Слово не найдено, пропускаем карточку');
+          toast('⚠️ Слово не найдено, карточка пропущена');
+          recordDiagnosticError({
+            type: 'UNRENDERABLE_SRS_CARD',
+            code: 'MISSING_WORD_DATA',
+            severity: 'error',
+            cardId: card.id,
+            message: 'Word not found on drawing fallback to multiple choice',
+          });
           if (sessionManager) {
-            submitReview(card, SRS.Quality.Good, state, {
-              mode: 'system-fallback',
-              responseTimeMs: null,
-            });
+            sessionManager.skipCard(card.id);
+            saveActiveSessionState();
           } else {
             setFlashIdx(flashIdx + 1);
           }

@@ -212,6 +212,57 @@ export const BackupSchema = z
   })
   .passthrough();
 
+export async function createPreMigrationBackup({
+  fromVersion,
+  toVersion,
+  migrationMetadata = {},
+} = {}) {
+  try {
+    const backupData = await exportFullProgress();
+    const backupPoint = {
+      ...backupData,
+      isPreMigration: true,
+      migrationMetadata: {
+        from: fromVersion,
+        to: toVersion,
+        risk: migrationMetadata.risk || 'major',
+        createdAt: new Date().toISOString(),
+        description: migrationMetadata.description || 'Pre-migration automatic safety snapshot',
+      },
+    };
+    if (db && typeof db.set === 'function') {
+      await db.set(STORES.CONTENT_CACHE, 'pre_migration_backup', backupPoint);
+    }
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('kotokitsu_pre_migration_backup', JSON.stringify(backupPoint));
+      } catch {
+        /* ignore localStorage quota error */
+      }
+    }
+    return backupPoint;
+  } catch (err) {
+    console.warn('[PreMigrationBackup] Failed to create pre-migration snapshot:', err);
+    return null;
+  }
+}
+
+export async function getPreMigrationBackup() {
+  try {
+    if (db && typeof db.get === 'function') {
+      const fromDb = await db.get(STORES.CONTENT_CACHE, 'pre_migration_backup');
+      if (fromDb) return fromDb;
+    }
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem('kotokitsu_pre_migration_backup');
+      if (raw) return JSON.parse(raw);
+    }
+  } catch (err) {
+    console.warn('[PreMigrationBackup] Failed to read pre-migration snapshot:', err);
+  }
+  return null;
+}
+
 export async function exportFullProgress() {
   try {
     const database = db || (await initializeDB());
@@ -321,17 +372,58 @@ export async function exportFullProgress() {
   }
 }
 
+export const MAX_IMPORT_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
+
+/**
+ * Очищает объект от ключей prototype pollution (__proto__, constructor, prototype)
+ * @param {any} obj
+ * @returns {any}
+ */
+export function sanitizePrototypePollution(obj, seen = new WeakSet()) {
+  if (obj === null || typeof obj !== 'object') return obj;
+
+  if (seen.has(obj)) return obj;
+  seen.add(obj);
+
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i++) {
+      obj[i] = sanitizePrototypePollution(obj[i], seen);
+    }
+    return obj;
+  }
+
+  const keys = Object.keys(obj);
+  for (const key of keys) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      delete obj[key];
+    } else {
+      obj[key] = sanitizePrototypePollution(obj[key], seen);
+    }
+  }
+  return obj;
+}
+
 /**
  * Валидирует структуру импортируемых данных с использованием Zod-схемы
  * @param {Object} data Данные для импорта
+ * @param {number} [rawSize] Размер исходного текста файла в байтах
  * @returns {Object} { valid: boolean, error?: string, isLegacy?: boolean, data?: Object }
  */
-export function validateImportData(data) {
+export function validateImportData(data, rawSize = null) {
+  if (typeof rawSize === 'number' && rawSize > MAX_IMPORT_SIZE_BYTES) {
+    return { valid: false, error: 'Размер файла экспорта превышает допустимый лимит (50 МБ)' };
+  }
+
   if (!data || typeof data !== 'object') {
     return { valid: false, error: 'Данные бэкапа должны быть объектом' };
   }
 
-  const parseResult = BackupSchema.safeParse(data);
+  const sanitized = sanitizePrototypePollution(data);
+  if (sanitized?.data?.state?.settings?.openrouterKey) {
+    sanitized.data.state.settings.openrouterKey = '';
+  }
+
+  const parseResult = BackupSchema.safeParse(sanitized);
   if (!parseResult.success) {
     const issue = parseResult.error.issues[0];
     const fieldPath = issue.path.join('.');
@@ -482,7 +574,7 @@ export async function shareJSON(data, filename) {
     try {
       await navigator.share({
         files: [file],
-        title: 'Полный бэкап Kitsune Genki',
+        title: 'Полный бэкап KotoKitsu',
         text: 'Экспорт всех данных приложения',
       });
       return true;

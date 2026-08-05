@@ -1,0 +1,21 @@
+{
+  "version": 3,
+  "updatedAt": 1705000000000,
+  "xp": 1800,
+  "streak": { "count": 12, "lastActive": "2026-01-10" },
+  "srs": {
+    "genki-1::2::v1": {
+      "id": "genki-1::2::v1",
+      "due": "2026-01-16T08:00:00.000Z",
+      "stability": 5.2,
+      "difficulty": 4.1,
+      "elapsed_days": 2,
+      "scheduled_days": 5,
+      "reps": 3,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-01-11T08:00:00.000Z"
+    }
+  },
+  "settings": { "darkMode": "auto" }
+}

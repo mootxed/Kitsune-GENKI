@@ -20,6 +20,7 @@ import {
   getDictionaryFSRS,
   formatRetrievability,
 } from '../src/dictionary/dictionary-fsrs-service.js';
+import { localDateKey } from '../src/local-date.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -177,8 +178,9 @@ describe('getDictionaryFSRS — read-only invariants', () => {
       reviewEvents: [],
       chapters: {},
     };
+
     const result = getDictionaryFSRS({ dictionaryId: taberu.id, state, srs: fakeSrs });
-    expect(result.nextReviewDate).toBe(new Date(tomorrowMs).toISOString().split('T')[0]);
+    expect(result.nextReviewDate).toBe(localDateKey(tomorrowMs));
   });
 
   it('handles missing srs gracefully', () => {

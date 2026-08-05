@@ -30,11 +30,11 @@ import {
   setFlashRevealed,
   flashCtx,
   sessionManager,
-  setSessionManager,
   activeReviewAIContext,
   clearActiveReviewAIContext,
 } from './state.js';
-import { abandonActiveSession } from './session.js';
+import { abandonActiveSession, saveActiveSessionState } from './session.js';
+import { recordDiagnosticError } from '../../state/store.js';
 import { displayWordForm } from '../../src/course-orthography.js';
 
 import { announce } from '../../src/a11y-helpers.js';
@@ -1103,11 +1103,16 @@ export function renderSentenceBuilding(particleCard, state, dependencies, render
     if (word) {
       renderMultipleChoiceMode(word, state, dependencies, {}, renderFlashFn);
     } else {
+      recordDiagnosticError({
+        type: 'UNRENDERABLE_SRS_CARD',
+        code: 'MISSING_WORD_DATA',
+        severity: 'error',
+        cardId: particleCard.id,
+        message: `Sentence building fallback failed: ${reason}`,
+      });
       if (sessionManager) {
-        submitReview(particleCard, SRS.Quality.Good, state, {
-          mode: 'system-fallback',
-          responseTimeMs: null,
-        });
+        sessionManager.skipCard(particleCard.id);
+        saveActiveSessionState();
       } else {
         setFlashIdx(flashIdx + 1);
       }
@@ -1402,11 +1407,16 @@ export function renderParticleQuizMode(particleCard, state, dependencies, render
     if (word) {
       renderMultipleChoiceMode(word, state, dependencies, {}, renderFlashFn);
     } else {
+      recordDiagnosticError({
+        type: 'UNRENDERABLE_SRS_CARD',
+        code: 'MISSING_WORD_DATA',
+        severity: 'error',
+        cardId: particleCard.id,
+        message: `Particle quiz fallback failed: ${reason}`,
+      });
       if (sessionManager) {
-        submitReview(particleCard, SRS.Quality.Good, state, {
-          mode: 'system-fallback',
-          responseTimeMs: null,
-        });
+        sessionManager.skipCard(particleCard.id);
+        saveActiveSessionState();
       } else {
         setFlashIdx(flashIdx + 1);
       }

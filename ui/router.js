@@ -1,5 +1,6 @@
 /* ui/router.js — Navigation and routing */
 import { Router } from '../router.js';
+import { installLegacyWindowApi } from '../adapters/legacy-window-api.js';
 
 let router = null;
 let renderHandlers = {};
@@ -11,7 +12,7 @@ export function initRouter(handlers) {
 
   // Создаём экземпляр роутера
   router = new Router();
-  window.router = router;
+  installLegacyWindowApi({ router });
 
   // Регистрируем обработчики рендера для каждого экрана
   router.registerRenderHandler('home', handlers.home);
@@ -46,9 +47,6 @@ export function initRouter(handlers) {
     });
   });
 
-  // Устанавливаем глобальные алиасы для обратной совместимости
-  window.nav = nav;
-  window.updateTabIndicator = updateTabIndicator;
   return router;
 }
 
@@ -60,7 +58,6 @@ export function nav(name, opt, skipHistory) {
   }
   router.navigate(name, opt, skipHistory);
 }
-window.nav = nav;
 
 // ---------- Update tab indicator ----------
 export function updateTabIndicator() {

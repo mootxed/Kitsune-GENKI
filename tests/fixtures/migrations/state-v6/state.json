@@ -1,0 +1,29 @@
+{
+  "version": 6,
+  "updatedAt": 1708000000000,
+  "xp": 2100,
+  "streak": { "count": 15, "lastActive": "2026-02-10" },
+  "srs": {
+    "genki-1::3::v1": {
+      "id": "genki-1::3::v1",
+      "due": "2026-02-20T08:00:00.000Z",
+      "stability": 6.5,
+      "difficulty": 3.8,
+      "elapsed_days": 5,
+      "scheduled_days": 10,
+      "reps": 4,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-02-10T08:00:00.000Z"
+    }
+  },
+  "pendingReviewLogs": [
+    {
+      "eventId": "rev_evt_101",
+      "cardId": "genki-1::3::v1",
+      "rating": 3,
+      "reviewedAt": "2026-02-10T08:00:00.000Z"
+    }
+  ],
+  "settings": { "darkMode": "dark" }
+}

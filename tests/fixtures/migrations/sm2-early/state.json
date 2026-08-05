@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "updatedAt": 1700000000000,
+  "xp": 1200,
+  "streak": { "count": 10, "lastActive": "2025-12-10" },
+  "srs": {
+    "genki-1::1::v1": {
+      "id": "genki-1::1::v1",
+      "interval": 10,
+      "repetitions": 3,
+      "easeFactor": 2.6,
+      "nextReview": 1700864000000
+    },
+    "genki-1::1::v2": {
+      "id": "genki-1::1::v2",
+      "interval": 1,
+      "repetitions": 1,
+      "easeFactor": 2.5,
+      "nextReview": 1700086400000
+    }
+  },
+  "settings": { "darkMode": "auto" }
+}

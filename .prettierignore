@@ -1,6 +1,9 @@
-# Build output
+# Build & test output
 dist/
 build/
+coverage/
+playwright-report/
+test-results/
 
 # Dependencies
 node_modules/

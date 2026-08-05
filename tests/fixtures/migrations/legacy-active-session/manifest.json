@@ -1,0 +1,14 @@
+{
+  "id": "legacy-active-session",
+  "description": "Legacy active session record (v1) with queue, stats and completed items",
+  "sourceStateVersion": 16,
+  "sourceDbVersion": 6,
+  "targetStateVersion": 17,
+  "targetDbVersion": 7,
+  "activeSessionVersion": 1,
+  "targetActiveSessionVersion": 2,
+  "fixedNow": "2026-01-15T08:00:00.000Z",
+  "expectedWarnings": [],
+  "expectedErrors": [],
+  "invariants": ["queue-order-preserved", "stats-migrated-to-v2", "no-duplicate-xp-on-resume"]
+}

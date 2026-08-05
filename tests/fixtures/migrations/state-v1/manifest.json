@@ -1,0 +1,12 @@
+{
+  "id": "state-v1-basic-progress",
+  "description": "Early state v1 record prior to version field addition",
+  "sourceStateVersion": 1,
+  "sourceDbVersion": 1,
+  "targetStateVersion": 17,
+  "targetDbVersion": 7,
+  "fixedNow": "2026-01-15T08:00:00.000Z",
+  "expectedWarnings": [],
+  "expectedErrors": [],
+  "invariants": ["card-count-preserved", "xp-preserved", "streak-preserved"]
+}

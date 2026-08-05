@@ -1,6 +1,6 @@
-# Repository Structure — Kitsune-GENKI
+# Repository Structure — KotoKitsu
 
-В этом документе описана организация каталогов и ключевых файлов проекта **Kitsune-GENKI**.
+В этом документе описана организация каталогов и ключевых файлов проекта **KotoKitsu**.
 
 ---
 

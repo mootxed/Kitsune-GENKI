@@ -1,6 +1,6 @@
 # Getting Started — Разворачивание и Запуск
 
-Данное руководство предназначено для быстрого разворачивания локальной среды разработки проекта **Kitsune-GENKI**.
+Данное руководство предназначено для быстрого разворачивания локальной среды разработки проекта **KotoKitsu**.
 
 ---
 
@@ -17,8 +17,8 @@
 ### 1. Клонирование репозитория
 
 ```bash
-git clone https://github.com/user/kitsune-genki.git
-cd kitsune-genki
+git clone https://github.com/mootxed/KotoKitsu.git
+cd KotoKitsu
 ```
 
 ### 2. Проверка версии Node.js
@@ -63,7 +63,10 @@ npm run prebuild
 # 3. Проверка Markdown-документации и ссылок
 npm run docs:check
 
-# 4. Проверка форматирования и линтинга
+# 4. Проверка архитектурных границ и отсутствия нелегальных window-глобалей
+npm run architecture:check
+
+# 5. Проверка форматирования и линтинга
 npm run lint
 npm run format:check
 ```
@@ -81,3 +84,23 @@ npm run format:check
 ```env
 VITE_OPENROUTER_API_KEY=your_optional_api_key_here
 ```
+
+---
+
+## ⚙️ Изменение технических версий
+
+Не редактируйте номера версий вручную в Markdown.
+
+1. Измените значение в соответствующем source-of-truth модуле (`src/app-metadata.js` или `package.json`).
+2. Добавьте миграцию, если меняется State или IndexedDB.
+3. Выполните `npm run docs:generate`.
+4. Выполните `npm run docs:check`.
+5. Закоммитьте код и сгенерированный Markdown вместе.
+
+### Когда изменять версии:
+
+- **State schema version**: увеличивайте при изменении схемы или структуры `state`.
+- **IndexedDB version**: увеличивайте при добавлении/изменении хранилищ или индексов в `src/db.js`.
+- **Course schema version**: увеличивайте при изменении контракта манифеста курса.
+- **Content version**: увеличивайте при изменении учебного контента.
+- **Package version**: обновляйте в `package.json` при релизах.

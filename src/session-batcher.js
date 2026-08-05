@@ -1,6 +1,6 @@
 /* src/session-batcher.js — batching and skill-safe ordering for SRS sessions. */
 
-import { CARD_MODES, hasKanjiChars } from '../ui/flashcards.js';
+import { CARD_MODES, hasKanjiChars } from '../ui/flashcards/mode-selector.js';
 import { SKILLS, parseCardIdentity } from './knowledge-model.js';
 import { typingCapability } from './typing-capability.js';
 

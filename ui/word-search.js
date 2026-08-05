@@ -72,10 +72,6 @@ export function cleanupWordSearch() {
   }
 }
 
-if (typeof window !== 'undefined') {
-  window.cleanupWordSearch = cleanupWordSearch;
-}
-
 /**
  * Main entry point for Word Search route.
  * Shows Mode & Difficulty Selection screen on initial enter.

@@ -498,14 +498,69 @@ describe('SessionManager', () => {
       });
 
       const stats = session.getStats();
-      expect(stats).toEqual({
+      expect(stats).toMatchObject({
         total: 3,
         reviewed: 0,
+        skipped: 0,
+        answered: 0,
         attempted: 0,
         perfect: 0,
         relearned: 0,
         remaining: 3,
         accuracy: 100,
+      });
+    });
+
+    describe('skipCard', () => {
+      it('возвращает true для активной карточки и false для отсутствующей или завершённой', () => {
+        const session = new SessionManager(mockCards, {
+          srs: mockSRS,
+          questsManager: mockQuestsManager,
+        });
+        expect(session.skipCard('card1')).toBe(true);
+        expect(session.skipCard('card1')).toBe(false); // уже завершена
+        expect(session.skipCard('non_existent')).toBe(false); // не существует
+      });
+
+      it('устанавливает completed=true, skipped=true, не вызывает SRS или quests', () => {
+        const session = new SessionManager(mockCards, {
+          srs: mockSRS,
+          questsManager: mockQuestsManager,
+        });
+        session.skipCard('card1');
+
+        const stateCard1 = session.getCardState('card1');
+        expect(stateCard1).toBeNull(); // completed cards return null from getCardState
+
+        const stats = session.getStats();
+        expect(stats.skipped).toBe(1);
+        expect(stats.reviewed).toBe(1);
+        expect(stats.answered).toBe(0);
+        expect(stats.remaining).toBe(2);
+        expect(stats.perfect).toBe(0);
+        expect(stats.relearned).toBe(0);
+        expect(mockSRS.review).not.toHaveBeenCalled();
+        expect(mockQuestsManager.incrementStreakCorrect).not.toHaveBeenCalled();
+      });
+
+      it('корректно сериализуется и восстанавливается', () => {
+        const session = new SessionManager(mockCards, { srs: mockSRS });
+        session.skipCard('card1');
+
+        const serialized = session.toSerializableState();
+        expect(serialized.queue[0].skipped).toBe(true);
+
+        const restored = new SessionManager([], { srs: mockSRS });
+        restored.restoreFromSerializableState(serialized, {
+          card1: { id: 'card1' },
+          card2: { id: 'card2' },
+          card3: { id: 'card3' },
+        });
+
+        const restoredStats = restored.getStats();
+        expect(restoredStats.skipped).toBe(1);
+        expect(restoredStats.reviewed).toBe(1);
+        expect(restoredStats.answered).toBe(0);
       });
     });
 

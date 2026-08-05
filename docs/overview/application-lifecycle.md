@@ -1,6 +1,6 @@
-# Application Lifecycle — Kitsune-GENKI
+# Application Lifecycle — KotoKitsu
 
-Документ описывает полный жизненный цикл веб-приложения **Kitsune-GENKI**: от момента загрузки `index.html` в браузере до выключения и обновления PWA Service Worker.
+Документ описывает полный жизненный цикл веб-приложения **KotoKitsu**: от момента загрузки `index.html` в браузере до выключения и обновления PWA Service Worker.
 
 ---
 

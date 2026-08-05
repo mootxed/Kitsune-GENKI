@@ -7,6 +7,13 @@ import {
   clearPostReviewSenseiActions,
 } from './ui/flashcards/sensei-review-panel.js';
 
+import { getOrCreateScreenContainer } from './ui/screen-templates.js';
+import {
+  showScreenLoadingUI,
+  showScreenErrorUI,
+  loadScreenModule,
+} from './ui/lazy-screen-loader.js';
+
 // Human-readable screen titles for screen reader announcements
 const SCREEN_TITLES = {
   home: 'Главная',
@@ -74,10 +81,14 @@ export class Router {
    */
   async navigate(name, opt, skipHistory = false) {
     const targetId = `screen-${name}`;
-    const targetScreen = document.getElementById(targetId);
+    let targetScreen = document.getElementById(targetId);
     if (!targetScreen) {
-      console.error(`[Router] Unknown screen: ${name}`);
-      return;
+      if (this.screens.includes(name) || this.renderHandlers[name]) {
+        targetScreen = getOrCreateScreenContainer(name);
+      } else {
+        console.error(`[Router] Unknown screen: ${name}`);
+        return;
+      }
     }
 
     const navId = ++this.navigationId;
@@ -90,15 +101,17 @@ export class Router {
 
     // Очищаем рендеры мини-игр при переходе на другие экраны
     if (this.currentScreen === 'word-search' && name !== 'word-search') {
-      if (typeof window.cleanupWordSearch === 'function') {
+      if (typeof window !== 'undefined' && typeof window.cleanupWordSearch === 'function') {
         window.cleanupWordSearch();
       }
+      import('./ui/word-search.js').then((m) => m.cleanupWordSearch?.());
       document.body.classList.remove('ws-focus-mode');
     }
     if (this.currentScreen === 'crossword' && name !== 'crossword') {
-      if (typeof window.cleanupCrossword === 'function') {
+      if (typeof window !== 'undefined' && typeof window.cleanupCrossword === 'function') {
         window.cleanupCrossword();
       }
+      import('./ui/crossword.js').then((m) => m.cleanupCrossword?.());
     }
     if (this.currentScreen === 'srs' && name !== 'srs') {
       closeSenseiPanel();

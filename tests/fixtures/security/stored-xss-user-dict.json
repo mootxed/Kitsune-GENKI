@@ -1,0 +1,13 @@
+{
+  "id": "dict_xss_test",
+  "name": "<img src=x onerror=alert('xss-dict-name')>",
+  "description": "<script>alert('xss-dict-desc')</script>",
+  "entries": [
+    {
+      "id": "entry_xss_1",
+      "writing": "<svg onload=alert('xss-writing')>",
+      "reading": "かんじ",
+      "meanings": ["<iframe src=javascript:alert('xss-meaning')>"]
+    }
+  ]
+}

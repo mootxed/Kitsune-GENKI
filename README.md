@@ -26,7 +26,7 @@
 - 🚀 [**Overview**](docs/overview/project-overview.md): Архитектура, слои, жизненный цикл и структура репозитория.
 - ⚖️ [**Legal Documentation**](docs/legal/README.md): Модель лицензирования, происхождение ресурсов и юридический статус.
 - 🛠️ [**Development**](docs/development/getting-started.md): Быстрый запуск, Vitest тесты, Playwright E2E, стандарты кода и CI/CD.
-- 💾 [**Data & Persistence**](docs/data/application-state.md): Схема состояния (State v13), IndexedDB (`KitsuneGenkiDB` v4), миграции и бэкапы.
+- 💾 [**Data & Persistence**](docs/data/application-state.md): Схема состояния, IndexedDB, миграции и бэкапы (см. [справочник версий](docs/reference/generated-versions.md)).
 - 🧠 [**Learning System**](docs/learning/learning-system-overview.md): Работа FSRS v5 (`ts-fsrs`), подсистема Mastery (0..4), учебный план и SessionManager.
 - 🎯 [**Study Modes**](docs/modes/overview.md): 7 учебных режимов.
 - 📚 [**Content System**](docs/content/content-system.md): Схемы JSON-файлов и уроков.

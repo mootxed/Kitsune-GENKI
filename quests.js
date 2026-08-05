@@ -109,6 +109,7 @@ function generateWeeklyChallenges() {
  * Инициализация квестов (если их нет)
  */
 function initializeQuests(state) {
+  if (!state) return;
   if (!state.quests) {
     state.quests = {
       daily: generateDailyQuests(),

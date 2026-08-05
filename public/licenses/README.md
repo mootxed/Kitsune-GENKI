@@ -1,6 +1,6 @@
-# Public License Copies — Kitsune-GENKI
+# Public License Copies — KotoKitsu
 
-This directory contains full legal texts and attribution notices for third-party software libraries and datasets physically bundled in production builds of Kitsune-GENKI.
+This directory contains full legal texts and attribution notices for third-party software libraries and datasets physically bundled in production builds of KotoKitsu.
 
 ## Directory Structure
 

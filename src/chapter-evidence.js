@@ -9,6 +9,15 @@ export function isPriorKnowledge(appState, chapterId) {
   return appState.priorKnowledgeChapterIds.some((entry) => sameLessonId(entry, id));
 }
 
+export function shouldChapterHaveVocabularyCards(appState, chapterId) {
+  const id = normalizedChapterId(chapterId);
+  if (!id) return false;
+  const chapter = appState?.chapters?.[id];
+  if (chapter?.started === true || Boolean(chapter?.completedAt)) return true;
+  if (isPriorKnowledge(appState, id)) return true;
+  return false;
+}
+
 export function isGrammarTopicCompleted(chapterState, topicId) {
   if (!chapterState || !topicId) return false;
   return chapterState.checklist?.[topicId] === true;

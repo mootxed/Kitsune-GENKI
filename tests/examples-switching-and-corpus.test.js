@@ -15,7 +15,7 @@ vi.mock('../src/audio-helper.js', () => ({
   speakJapanese: vi.fn(),
 }));
 
-describe('Kitsune-GENKI Example Switching and Corpus Integration Tests', () => {
+describe('KotoKitsu Example Switching and Corpus Integration Tests', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="srs-body"></div>';
     ExamplesDB.clear();

@@ -1,0 +1,21 @@
+{
+  "app": "kotokitsu",
+  "exportType": "full_indexeddb",
+  "schemaVersion": "7.0",
+  "data": {
+    "state": {
+      "level": 1,
+      "xp": 10,
+      "settings": {
+        "darkMode": "<script>alert('xss-settings')</script>"
+      },
+      "savedNotes": [
+        {
+          "id": "note-1",
+          "title": "<img src=x onerror=alert('xss-note-title')>",
+          "content": "<svg/onload=alert('xss-note-content')>"
+        }
+      ]
+    }
+  }
+}

@@ -3,6 +3,7 @@
 import { db, STORES } from './src/db.js';
 import { broadcastSessionEnded } from './src/tab-sync.js';
 import { canonicalizeCardId, canonicalLessonId } from './src/courses/course-context.js';
+import { parseAndMigrateActiveSession } from './src/schemas/active-session.js';
 
 let sessionPersistenceGeneration = 0;
 let sessionSaveQueue = Promise.resolve();
@@ -38,7 +39,16 @@ export async function loadSessionFromDB() {
   if (!db || typeof db.get !== 'function') return null;
   try {
     const record = await db.get(STORES.ACTIVE_SESSION, 'current');
-    return record ? normalizeSessionCourseReferences(record.data) : null;
+    if (!record || !record.data) return null;
+    const migrationResult = parseAndMigrateActiveSession(record.data);
+    if (migrationResult.success) {
+      return normalizeSessionCourseReferences(migrationResult.data);
+    }
+    console.warn(
+      '[SessionManager] Invalid/unrecoverable active session record:',
+      migrationResult.issues
+    );
+    return null;
   } catch (err) {
     console.warn('[SessionManager] Failed to load active session from DB:', err);
     return null;
@@ -112,34 +122,8 @@ export function clearSessionFromDB() {
 }
 
 export function validateSessionRecord(record) {
-  if (!record || typeof record !== 'object') return false;
-  if (record.schemaVersion !== 1) return false;
-  if (!record.managerState || typeof record.managerState !== 'object') return false;
-  if (!Array.isArray(record.managerState.queue)) return false;
-
-  const stats = record.managerState.stats;
-  if (stats && typeof stats === 'object') {
-    for (const key of ['reviewed', 'remaining', 'total']) {
-      if (stats[key] !== undefined && (!Number.isFinite(stats[key]) || stats[key] < 0)) {
-        return false;
-      }
-    }
-  }
-
-  if (record.batcherState) {
-    if (typeof record.batcherState !== 'object') return false;
-    if (!Array.isArray(record.batcherState.batches)) return false;
-    const currentIdx = record.currentBatchIndex ?? 0;
-    if (
-      !Number.isInteger(currentIdx) ||
-      currentIdx < 0 ||
-      currentIdx >= record.batcherState.batches.length
-    ) {
-      return false;
-    }
-  }
-
-  return true;
+  const result = parseAndMigrateActiveSession(record);
+  return result.success;
 }
 
 /**
@@ -469,9 +453,11 @@ class SessionManager {
    * @returns {Object}
    */
   getStats() {
+    const skipped = this.stats.skipped || 0;
+    const answered = Math.max(0, this.stats.reviewed - skipped);
     const firstAttempts = this.stats.perfect + this.stats.relearned;
     const accuracy = firstAttempts > 0 ? (this.stats.perfect / firstAttempts) * 100 : 100;
-    return { ...this.stats, accuracy };
+    return { ...this.stats, skipped, answered, accuracy };
   }
 
   /**

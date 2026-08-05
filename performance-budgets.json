@@ -1,0 +1,45 @@
+{
+  "initialJavaScript": {
+    "rawBytes": 800000,
+    "gzipBytes": 230000,
+    "maxInitialChunks": 3
+  },
+  "initialCss": {
+    "rawBytes": 250000,
+    "gzipBytes": 45000
+  },
+  "initialHtml": {
+    "rawBytes": 15000,
+    "gzipBytes": 5000
+  },
+  "startup": {
+    "weakMobileMs": 3000
+  },
+  "indexedDbOpen": {
+    "p95Ms": 250
+  },
+  "stateMigration": {
+    "p95Ms": 500
+  },
+  "serviceWorkerInstall": {
+    "p95Ms": 1500
+  },
+  "offlineCache": {
+    "bytes": 12000000
+  },
+  "memory": {
+    "startupHeapBytes": 80000000
+  },
+  "forbiddenInitialModules": [
+    "ui/chat.js",
+    "ui/ai-story.js",
+    "hanzi-writer",
+    "ui/dev-tools.js",
+    "ui/statistics.js",
+    "ui/crossword.js",
+    "ui/word-search.js",
+    "ui/pomodoro.js",
+    "ui/plan.js",
+    "ui/shop.js"
+  ]
+}

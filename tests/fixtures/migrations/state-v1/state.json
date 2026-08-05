@@ -1,0 +1,27 @@
+{
+  "updatedAt": 1700000000000,
+  "xp": 450,
+  "streak": { "count": 5, "lastActive": "2025-12-01" },
+  "srs": {
+    "genki-1::1::v1": {
+      "id": "genki-1::1::v1",
+      "interval": 4,
+      "repetitions": 2,
+      "easeFactor": 2.5,
+      "nextReview": 1700400000000
+    },
+    "genki-1::1::v2": {
+      "id": "genki-1::1::v2",
+      "interval": 1,
+      "repetitions": 1,
+      "easeFactor": 2.5,
+      "nextReview": 1700100000000
+    }
+  },
+  "settings": {
+    "darkMode": "dark"
+  },
+  "chapters": {
+    "1": { "started": true, "checklist": { "vocab": true } }
+  }
+}

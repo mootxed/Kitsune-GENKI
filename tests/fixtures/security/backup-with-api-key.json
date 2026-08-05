@@ -1,0 +1,13 @@
+{
+  "app": "kotokitsu",
+  "exportType": "full_indexeddb",
+  "schemaVersion": "7.0",
+  "data": {
+    "state": {
+      "level": 1,
+      "settings": {
+        "openrouterKey": "sk-or-v1-malicious-injected-key-12345"
+      }
+    }
+  }
+}

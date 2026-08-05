@@ -19,10 +19,12 @@ import {
 } from './chapter-content-model.js';
 import {
   isPriorKnowledge,
+  shouldChapterHaveVocabularyCards,
   isGrammarTopicCompleted,
   isPracticeItemCompleted,
   isBasicVocabularyEvidencePresent,
 } from './chapter-evidence.js';
+export { shouldChapterHaveVocabularyCards };
 import { compareLessonIds, lessonOrdinal, sameLessonId } from './courses/course-context.js';
 
 export {
@@ -203,15 +205,6 @@ export function isChapterCompleted(chapterState, chapterMeta = null, appState = 
 
   if (chapterState.completedAt && checklistComplete) return true;
   return checklistComplete;
-}
-
-export function shouldChapterHaveVocabularyCards(appState, chapterId) {
-  const id = normalizedChapterId(chapterId);
-  if (!id) return false;
-  const chapter = appState?.chapters?.[id];
-  if (chapter?.started === true || Boolean(chapter?.completedAt)) return true;
-  if (isPriorKnowledge(appState, id)) return true;
-  return false;
 }
 
 export function isEffectivelyCompleted(appState, chapterOrId) {

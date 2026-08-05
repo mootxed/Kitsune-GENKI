@@ -1,0 +1,20 @@
+{
+  "app": "kotokitsu",
+  "exportType": "full_indexeddb",
+  "schemaVersion": "7.0",
+  "__proto__": {
+    "polluted": true,
+    "admin": true
+  },
+  "constructor": {
+    "prototype": {
+      "polluted": true
+    }
+  },
+  "data": {
+    "state": {
+      "level": 1,
+      "xp": 0
+    }
+  }
+}

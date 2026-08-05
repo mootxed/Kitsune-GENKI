@@ -1,78 +1,97 @@
 # Testing Guide — Руководство по Тестированию
 
-Проект **Kitsune-GENKI** содержит развитую инфраструктуру тестирования, покрывающую доменную логику, состояние, интерфейс, доступность и E2E сценарии.
+Проект **KotoKitsu** содержит развитую инфраструктуру тестирования, покрывающую доменную логику, состояние, интерфейс, доступность, стойкость хранилища и PWA/Service Worker сценарии.
 
 ---
 
-## 🧪 Инструменты тестирования
+## 🌐 Матрица поддерживаемых браузеров и наборов
 
-1. **Vitest** (`^4.1.10`): Быстрый юнит- и интеграционный тест-раннер.
-2. **jsdom** (`^29.1.1`): Эмуляция DOM-окружения для Vitest.
-3. **Playwright** (`^1.50.0`): Полноценное E2E тестирование в реальных браузерах (Chromium, Firefox, WebKit).
-4. **@axe-core/playwright** (`^4.12.1`): Автоматический аудит WCAG 2.2 AA доступности.
+| Набор              | Chromium Desktop | Chromium Mobile      | Firefox        | WebKit        |
+| ------------------ | ---------------- | -------------------- | -------------- | ------------- |
+| Unit / integration | ✅               | N/A                  | N/A            | N/A           |
+| Full E2E           | ✅ (`chromium`)  | ✅ (`Mobile Chrome`) | ❌             | ❌            |
+| Smoke E2E          | ✅ (`chromium`)  | при необходимости    | ✅ (`firefox`) | ✅ (`webkit`) |
+| PWA install/update | ✅               | ✅                   | ограниченно    | ограниченно   |
+
+> [!NOTE]
+> Полный E2E-набор выполняется в Chromium desktop и mobile. Критические smoke-сценарии дополнительно проверяются в Firefox и WebKit.
 
 ---
 
 ## 🏃 Запуск тестов
 
-### 1. Юнит- и Интеграционные тесты (Vitest)
+### 1. Юнит- и Интеграционные тесты с обязательным покрытием (Vitest)
 
 ```bash
-# Запуск всех Vitest тестов 1 раз
+# Быстрый запуск юнит-тестов
 npm test
 
-# Запуск в режиме наблюдения (watch mode) при разработке
-npm run test:watch
-
-# Запуск с графическим интерфейсом UI
-npm run test:ui
-
-# Запуск с генерацией отчета о покрытии кода (coverage)
+# Запуск с проверкой порогов покрытия (mandatory coverage)
 npm run test:coverage
+
+# Watch mode при разработке
+npm run test:watch
 ```
 
 ### 2. End-to-End тесты (Playwright)
 
 ```bash
-# Запуск E2E тестов в headless режиме
+# Полный прогон E2E тестов в Chromium
 npm run test:e2e
+
+# Запуск только кроссбраузерного smoke-набора (Chromium, Firefox, WebKit)
+npm run test:e2e:smoke
+npm run test:e2e:cross-browser
+
+# Запуск PWA и устойчивости хранилища
+npm run test:e2e:pwa
+npm run test:e2e:offline
+npm run test:e2e:storage
+npm run test:e2e:multitab
 ```
 
-### 3. Валидация контента и связей
+### 3. Проверка артефактов и документации
 
 ```bash
-# Валидация грамматических JSON тестов
-npm run validate:grammar-quizzes
-
-# Валидация ссылок и структуры документации
+# Проверка ссылок и структуры документации
 npm run docs:check
+
+# Проверка и сборка готового production-артефакта dist
+npm run build
 ```
 
 ---
 
-## 📝 Написание нового юнит-теста
+## 📊 Пороги покрытия кода (Coverage Policy)
 
-Тесты располагаются в папке `tests/` и должны оканчиваться на `.test.js`.
+Coverage запускается через `npm run test:coverage`. В `vitest.config.js` зафиксированы минимальные блокирующие пороги:
 
-Пример структуры теста доменной функции (`tests/example.test.js`):
-
-```javascript
-import { describe, it, expect, beforeEach } from 'vitest';
-import { calculateMasteryLevel } from '../src/mastery.js';
-
-describe('Mastery Calculation System', () => {
-  it('should return level 0 for new card without reviews', () => {
-    const cardHistory = [];
-    const level = calculateMasteryLevel(cardHistory);
-    expect(level).toBe(0);
-  });
-});
-```
+- **Глобальные пороги**: Lines 70%, Functions 60%, Branches 70%, Statements 70%
+- **State (`state/**`)**: Lines 80%, Functions 70%, Branches 80%, Statements 80%
+- **SRS/FSRS (`srs.js`, `src/srs-*.js`)**: Lines 85%, Functions 80%, Branches 80%, Statements 85%
+- **Mastery (`src/mastery.js`, `achievements.js`, `quests.js`)**: Lines 85%, Functions 80%, Branches 80%, Statements 85%
+- **Study Plan (`studyplan.js`, `src/study-plan-creation.js`, `src/daily-plan.js`)**: Lines 80%, Functions 75%, Branches 70%, Statements 80%
+- **Migrations (`src/migration.js`, `src/courses/genki-1/migrations/**`)**: Lines 90%, Functions 80%, Branches 85%, Statements 90%
+- **Dictionary (`src/dictionary/**`, `src/user-dictionaries/**`)**: Lines 75%, Functions 65%, Branches 75%, Statements 80%
 
 ---
 
-## 🎭 Изоляция IndexedDB и DOM в тестах
+## 🏗️ Принцип единого CI/CD артефакта
 
-Для предотвращения взаимовлияния тестов в `tests/setup-mocks.js` инициализируются глобальные моки для `indexedDB`, `localStorage`, `SpeechSynthesis` и `AudioContext`.
+В GitHub Actions CI/CD развёртывается именно тот артефакт `dist`, который прошел сборку и все E2E тесты.
+Deploy job **не выполняет** `npm install`, `npm test` или `npm run build` повторно.
 
-Каждый тест состояния перед запуском выполняет сброс мок-хранилища.
+---
+
+## 📱 Чек-лист для ручного тестирования PWA установки
+
+1. **Chromium Desktop**:
+   - Открыть приложение по HTTPS / localhost.
+   - Проверить появление иконки установки в адресной строке.
+   - Установить приложение и запустить из ярлыка ярлык в автономном окне.
+   - Отключить сеть и убедиться, что приложение открывается offline.
+
+2. **Android Chromium**:
+   - Открыть приложение в Chrome for Android.
+   - Нажать «Добавить на главный экран» / «Установить PWA».
+   - Убедиться, что при открытии из ярлыка отображается сплэш-скрин и приложение работает offline.

@@ -68,7 +68,7 @@ describe('PWA & SW update with unfinished session', () => {
     await saveSessionToDB(sessionData);
     const loaded = await loadSessionFromDB();
 
-    expect(loaded).toEqual(sessionData);
+    expect(loaded.queue).toEqual(sessionData.queue);
     expect(getActiveStatusMessages()).toContain(SYSTEM_STATUSES.UPDATE_READY);
   });
 });

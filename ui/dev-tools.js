@@ -61,6 +61,13 @@ export function renderDevTools(state, dependencies = {}) {
       </div>
     </div>
 
+    <div class="set-group" style="margin-bottom: 16px;">
+      <div class="set-item">
+        <label style="font-weight: bold; margin-bottom: 8px; display: block;">📜 Журнал действий (Action Journal & Undo)</label>
+        <div id="dev-action-journal-timeline" style="max-height: 240px; overflow-y: auto; padding: 10px; background: var(--bg-card, #fff); border: 1px solid var(--border, #ddd); border-radius: 8px; font-size: 11px; font-family: monospace;"></div>
+      </div>
+    </div>
+
     <div class="set-group" style="margin-bottom: 24px;">
       <div class="set-item row-between">
         <div>
@@ -75,6 +82,7 @@ export function renderDevTools(state, dependencies = {}) {
 
   renderLogsList();
   renderDiagnosticPreview(state);
+  renderActionJournalTimeline(state);
 
   // Bind toolbar listeners
   $('#btn-copy-logs')?.addEventListener('click', async () => {
@@ -199,6 +207,29 @@ function renderDiagnosticPreview(state) {
   const preview = $('#dev-diagnostic-preview');
   if (!preview) return;
   preview.textContent = generateDiagnosticReport(state);
+}
+
+function renderActionJournalTimeline(state) {
+  const container = $('#dev-action-journal-timeline');
+  if (!container) return;
+  const journal = Array.isArray(state?.actionJournal)
+    ? state.actionJournal.slice(-50).reverse()
+    : [];
+  if (journal.length === 0) {
+    container.innerHTML =
+      '<div style="color: var(--ink-tertiary, #888);">Журнал действий пуст</div>';
+    return;
+  }
+  container.innerHTML = journal
+    .map((item) => {
+      const time = new Date(item.timestamp).toLocaleTimeString();
+      return `<div style="margin-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 4px;">
+        <span style="color: var(--primary, #FF7A1A); font-weight: bold;">[${time}] ${item.type}</span>
+        <span style="color: var(--ink-secondary, #aaa);"> (${item.source})</span>
+        ${item.summary ? `<div style="color: var(--ink, #ccc); margin-top: 2px;">${escapeHtml(JSON.stringify(item.summary))}</div>` : ''}
+      </div>`;
+    })
+    .join('');
 }
 
 function escapeHtml(str) {

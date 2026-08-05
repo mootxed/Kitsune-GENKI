@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { dictionaryEntryId as stableDictionaryEntryId } from '../dictionary/dictionary-id.js';
+import { COURSE_SCHEMA_VERSION } from '../app-metadata.js';
 
-export const COURSE_MANIFEST_SCHEMA_VERSION = 1;
+export const COURSE_MANIFEST_SCHEMA_VERSION = COURSE_SCHEMA_VERSION;
 
 const StableId = z.string().trim().min(1).max(240);
 const CourseId = z

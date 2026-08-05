@@ -7,8 +7,16 @@ import { cardsForItem, vocabularySkills } from '../../src/knowledge-model.js';
 import { calculateMastery } from '../../src/mastery.js';
 import { conjugateVerb } from '../../src/verb-conjugator.js';
 import { getExampleCandidates } from '../../src/example-generator.js';
-import HanziWriter from 'hanzi-writer';
 import { localCharDataLoader } from '../../src/kanji-loader.js';
+
+let cachedHanziWriter = null;
+async function getHanziWriter() {
+  if (!cachedHanziWriter) {
+    const mod = await import('hanzi-writer');
+    cachedHanziWriter = mod.default || mod;
+  }
+  return cachedHanziWriter;
+}
 import { getAllKanji } from './mode-selector.js';
 import { cleanKanjiChar } from './drawing-mode.js';
 import { displayWordForm, getUnlockedKanjiLesson } from '../../src/course-orthography.js';
@@ -18,7 +26,7 @@ import {
   getTopicLabel,
   getLessonsLabel,
   renderSkillRow,
-} from './dictionary.js';
+} from './dictionary-helpers.js';
 
 export function openDictionaryModal(word, state, dependencies) {
   const { nav } = dependencies;
@@ -783,6 +791,7 @@ export async function initDictionaryKanjiWriter(kanji, dependencies = {}) {
       writerSize = 200;
     }
 
+    const HanziWriter = await getHanziWriter();
     const writer = HanziWriter.create(target, kanji, {
       width: writerSize,
       height: writerSize,

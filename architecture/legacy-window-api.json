@@ -1,0 +1,135 @@
+[
+  {
+    "name": "SRS",
+    "owner": "srs.js",
+    "reason": "Legacy window access for SRS object",
+    "replacement": "import { SRS } from './srs.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "QuestSystem",
+    "owner": "quests.js",
+    "reason": "Legacy inline HTML or console access for quest system",
+    "replacement": "import { QuestsManager } from './quests.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "AchievementSystem",
+    "owner": "achievements.js",
+    "reason": "Legacy access for achievement system",
+    "replacement": "import { AchievementSystem } from './achievements.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "Achievements",
+    "owner": "achievements.js",
+    "reason": "Alias for AchievementSystem",
+    "replacement": "import { AchievementSystem } from './achievements.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "QuestsManager",
+    "owner": "quests.js",
+    "reason": "Legacy access for QuestsManager",
+    "replacement": "import { QuestsManager } from './quests.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "speakJapanese",
+    "owner": "src/audio-helper.js",
+    "reason": "Legacy audio playback handler",
+    "replacement": "import { speakJapanese } from './src/audio-helper.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "stopSpeaking",
+    "owner": "src/audio-helper.js",
+    "reason": "Legacy audio playback stop handler",
+    "replacement": "import { stopSpeaking } from './src/audio-helper.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "formatTimeUntilReset",
+    "owner": "src/utils.js",
+    "reason": "Formatting time timer helper",
+    "replacement": "import { formatTimeUntilReset } from './src/utils.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "toast",
+    "owner": "ui/app-shell.js",
+    "reason": "UI notifications toast function",
+    "replacement": "import { toast } from './ui/app-shell.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "applyTheme",
+    "owner": "ui/app-shell.js",
+    "reason": "Theme applier function",
+    "replacement": "import { applyTheme } from './ui/app-shell.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "showNotification",
+    "owner": "ui/app-shell.js",
+    "reason": "Browser notification trigger",
+    "replacement": "import { showNotification } from './ui/app-shell.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "scheduleNotify",
+    "owner": "ui/app-shell.js",
+    "reason": "Notification scheduler trigger",
+    "replacement": "import { scheduleNotify } from './ui/app-shell.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "scheduleOneHourReminder",
+    "owner": "ui/app-shell.js",
+    "reason": "Notification reminder trigger",
+    "replacement": "import { scheduleOneHourReminder } from './ui/app-shell.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "calculateNextNotificationDate",
+    "owner": "ui/app-shell.js",
+    "reason": "Notification date calculator",
+    "replacement": "import { calculateNextNotificationDate } from './ui/app-shell.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "nav",
+    "owner": "ui/router.js",
+    "reason": "Navigation alias",
+    "replacement": "import { nav } from './ui/router.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "updateTabIndicator",
+    "owner": "ui/router.js",
+    "reason": "UI tab indicator alias",
+    "replacement": "import { updateTabIndicator } from './ui/router.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "router",
+    "owner": "ui/router.js",
+    "reason": "Global router instance alias for legacy route triggers",
+    "replacement": "import { nav } from './ui/router.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "cleanupWordSearch",
+    "owner": "ui/word-search.js",
+    "reason": "Word search minigame cleanup function",
+    "replacement": "import { cleanupWordSearch } from './ui/word-search.js'",
+    "removalTarget": "v0.5.0"
+  },
+  {
+    "name": "cleanupCrossword",
+    "owner": "ui/crossword.js",
+    "reason": "Crossword minigame cleanup function",
+    "replacement": "import { cleanupCrossword } from './ui/crossword.js'",
+    "removalTarget": "v0.5.0"
+  }
+]

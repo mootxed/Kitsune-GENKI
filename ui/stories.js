@@ -913,7 +913,7 @@ function startStoryQuiz(story, state, dependencies) {
 
       setTimeout(() => {
         currentQuestionIndex = 0;
-        toast('❌ Попробуйте снова с начала');
+        if (dependencies.toast) dependencies.toast('❌ Попробуйте снова с начала');
         renderQuestion(0);
       }, 1500);
     }
@@ -924,8 +924,16 @@ function startStoryQuiz(story, state, dependencies) {
 
 // Функция завершения истории
 function completeStory(story, state, dependencies) {
-  const { save, showCompletionScreen, XP_PER_LEVEL, COINS_PER_LEVEL, refreshStreakDisplay } =
-    dependencies;
+  const {
+    save,
+    showCompletionScreen,
+    XP_PER_LEVEL,
+    COINS_PER_LEVEL,
+    refreshStreakDisplay,
+    toast,
+    markActivity,
+    nav,
+  } = dependencies;
 
   if (!state.completedStories) state.completedStories = [];
 
@@ -952,12 +960,12 @@ function completeStory(story, state, dependencies) {
     state.xp -= XP_PER_LEVEL;
     state.level += 1;
     state.coins += COINS_PER_LEVEL;
-    toast(`🎉 Уровень ${state.level}! +${COINS_PER_LEVEL} 🪙`);
+    if (typeof toast === 'function') toast(`🎉 Уровень ${state.level}! +${COINS_PER_LEVEL} 🪙`);
   }
 
   save();
   refreshStreakDisplay();
-  markActivity(deps?.toast || window.toast);
+  if (typeof markActivity === 'function') markActivity(toast);
 
   const rewards = isFirstCompletion
     ? [
@@ -977,7 +985,7 @@ function completeStory(story, state, dependencies) {
     theme: 'success',
     rewards: rewards,
     onContinue: () => {
-      nav('library');
+      if (typeof nav === 'function') nav('library');
     },
   });
 }

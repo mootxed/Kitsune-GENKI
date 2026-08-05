@@ -1,4 +1,4 @@
-# SRS, mastery depth и readiness в Kitsune-GENKI
+# SRS, mastery depth и readiness в KotoKitsu
 
 ## Источник истины
 

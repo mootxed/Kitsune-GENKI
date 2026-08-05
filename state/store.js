@@ -29,10 +29,15 @@ import {
   normalizePomodoroState,
 } from '../src/pomodoro/pomodoro-state.js';
 
+import { STATE_SCHEMA_VERSION } from '../src/app-metadata.js';
+
+// Legacy storage key retained for backward compatibility with existing user data
 const LS_STATE = 'kitsune_state_v1';
 
-// Текущая версия схемы данных
-export const CURRENT_VERSION = 17;
+const CURRENT_VERSION = STATE_SCHEMA_VERSION;
+export { STATE_SCHEMA_VERSION as CURRENT_VERSION };
+
+import { migrateState } from './migrations/index.js';
 
 // Глобальное состояние приложения
 export let state = null;
@@ -40,334 +45,10 @@ export let state = null;
 // Подписчики на изменения state
 const subscribers = new Set();
 
-// ---------- Migrations ----------
-const MIGRATIONS = {
-  2: (oldState) => {
-    // Миграция с версии 1 (или без версии) → 2
-    // Склеиваем со всеми полями из defaultState для гарантии наличия новых полей
-    const baseState = defaultState();
-    const migratedState = { ...baseState };
-
-    // Переносим существующие данные
-    Object.keys(oldState).forEach((key) => {
-      if (key !== 'version') {
-        migratedState[key] = oldState[key];
-      }
-    });
-
-    // Гарантируем наличие критичных полей (могли отсутствовать в старых версиях)
-    if (!migratedState.unlockedAchievements) migratedState.unlockedAchievements = [];
-    if (!migratedState.claimedAchievements) migratedState.claimedAchievements = [];
-    if (!migratedState.quests) migratedState.quests = null;
-    if (!migratedState.chatHistory) migratedState.chatHistory = [];
-    if (!migratedState.settings) migratedState.settings = baseState.settings;
-
-    // Backfill настроек
-    migratedState.settings = { ...baseState.settings, ...migratedState.settings };
-
-    // Проставляем версию
-    migratedState.version = 2;
-
-    return migratedState;
-  },
-  3: (oldState) => {
-    // Миграция с версии 2 → 3: перевод SRS-карточек с SM-2 на FSRS.
-    // Атомарно проходим по всем записям; `due` (nextReview) не перезаписывается.
-    const migratedState = { ...oldState };
-    const srs = migratedState.srs || {};
-
-    Object.keys(srs).forEach((cardId) => {
-      try {
-        srs[cardId] = SRS.migrateSM2ToFSRS(srs[cardId]);
-      } catch (err) {
-        console.error(`[Store] Ошибка миграции карточки ${cardId} на FSRS:`, err);
-      }
-    });
-
-    migratedState.srs = srs;
-    migratedState.version = 3;
-
-    return migratedState;
-  },
-  4: (oldState) => {
-    // ts-fsrs 5.4.1 adds learning_steps to Card. Existing progress is retained
-    // only as legacy data and is never promoted into evidence-backed mastery.
-    const migratedState = { ...oldState, srs: { ...(oldState.srs || {}) } };
-    for (const [cardId, card] of Object.entries(migratedState.srs)) {
-      const normalized = SRS.migrateSM2ToFSRS({ ...card, id: card.id || cardId });
-      if (
-        Object.hasOwn(card, 'progress') ||
-        normalized.reps > 0 ||
-        Number(normalized.stability) > 0
-      ) {
-        normalized.legacyMasteryEstimated = true;
-      }
-      migratedState.srs[cardId] = normalized;
-    }
-    migratedState.reviewEvents = Array.isArray(oldState.reviewEvents) ? oldState.reviewEvents : [];
-    migratedState.version = 4;
-    return migratedState;
-  },
-  5: (oldState) => {
-    const reviewEvents = Array.isArray(oldState.reviewEvents) ? [...oldState.reviewEvents] : [];
-    const cardsWithCleanEvidence = new Set(
-      reviewEvents
-        .filter((event) => event?.eventType === 'review' && !event.undoneAt)
-        .map((event) => event.cardId)
-    );
-    const srs = Object.fromEntries(
-      Object.entries(oldState.srs || {}).map(([cardId, card]) => [
-        cardId,
-        card.reps > 0 && !cardsWithCleanEvidence.has(cardId)
-          ? { ...card, legacyMasteryEstimated: true }
-          : card,
-      ])
-    );
-    const migratedState = {
-      ...oldState,
-      srs,
-      reviewEvents,
-      masteryArchive: { ...(oldState.masteryArchive || {}) },
-      version: 5,
-    };
-    return compactReviewJournal(migratedState);
-  },
-  6: (oldState) => ({
-    ...oldState,
-    pendingReviewLogs: Array.isArray(oldState.pendingReviewLogs) ? oldState.pendingReviewLogs : [],
-    version: 6,
-  }),
-  7: (oldState) => {
-    const baseState = { ...oldState };
-    const existingPrior = Array.isArray(baseState.priorKnowledgeChapterIds)
-      ? baseState.priorKnowledgeChapterIds
-      : [];
-    const legacyCompleted = Array.isArray(baseState.studyPlan?.completedChapters)
-      ? baseState.studyPlan.completedChapters
-      : [];
-    const appChapters = baseState.chapters || {};
-
-    const newPrior = new Set(
-      existingPrior.map(Number).filter((id) => Number.isInteger(id) && id > 0)
-    );
-
-    for (const id of legacyCompleted) {
-      const chId = Number(id);
-      if (!Number.isInteger(chId) || chId <= 0) continue;
-      const chState = appChapters[chId];
-      const isActuallyCompleted = Boolean(
-        chState?.completedAt ||
-        (chState?.checklist &&
-          Object.keys(chState.checklist).length > 0 &&
-          Object.values(chState.checklist).every((val) => val === true))
-      );
-      if (!isActuallyCompleted) {
-        newPrior.add(chId);
-      }
-    }
-
-    return {
-      ...baseState,
-      priorKnowledgeChapterIds: [...newPrior].sort((a, b) => a - b),
-      version: 7,
-    };
-  },
-  8: (oldState) => {
-    const baseState = { ...oldState };
-    const history =
-      baseState.miniGameWordHistory && typeof baseState.miniGameWordHistory === 'object'
-        ? baseState.miniGameWordHistory
-        : {};
-    return {
-      ...baseState,
-      miniGameWordHistory: {
-        wordSearch: {
-          recentSessions: Array.isArray(history.wordSearch?.recentSessions)
-            ? history.wordSearch.recentSessions.slice(-5)
-            : [],
-        },
-        crossword: {
-          recentSessions: Array.isArray(history.crossword?.recentSessions)
-            ? history.crossword.recentSessions.slice(-5)
-            : [],
-        },
-      },
-      version: 8,
-    };
-  },
-  9: (oldState) => {
-    const baseState = { ...oldState };
-    const settings = baseState.settings || {};
-    return {
-      ...baseState,
-      settings: {
-        ...settings,
-        notifyDays: Array.isArray(settings.notifyDays)
-          ? settings.notifyDays
-          : [1, 2, 3, 4, 5, 6, 0],
-        notificationState:
-          settings.notificationState && typeof settings.notificationState === 'object'
-            ? settings.notificationState
-            : { lastDailyDigestDate: null, lastDailyDigestSlot: null },
-      },
-      version: 9,
-    };
-  },
-  10: (oldState) => {
-    const baseState = { ...oldState };
-    baseState.vocabularyUnlocks =
-      baseState.vocabularyUnlocks && typeof baseState.vocabularyUnlocks === 'object'
-        ? baseState.vocabularyUnlocks
-        : {};
-    baseState.version = 10;
-    return normalizeVocabularyLockState(baseState);
-  },
-  11: (oldState) => {
-    const baseState = { ...oldState };
-    const chapters = { ...(baseState.chapters || {}) };
-    for (const [chapterId, chapterValue] of Object.entries(chapters)) {
-      const chapter = { ...(chapterValue || {}) };
-      chapter.checklist = { ...(chapter.checklist || {}) };
-      // Legacy aggregate flags are converted once into explicit migration
-      // evidence. New completion logic never depends on checklist.vocab.
-      if (chapter.checklist.vocab === true) chapter.legacyVocabularyCompleted = true;
-      chapters[chapterId] = chapter;
-    }
-    return {
-      ...baseState,
-      chapters,
-      grammarUnlocks:
-        baseState.grammarUnlocks && typeof baseState.grammarUnlocks === 'object'
-          ? baseState.grammarUnlocks
-          : {},
-      grammarProgress:
-        baseState.grammarProgress && typeof baseState.grammarProgress === 'object'
-          ? baseState.grammarProgress
-          : {},
-      practiceUnlocks:
-        baseState.practiceUnlocks && typeof baseState.practiceUnlocks === 'object'
-          ? baseState.practiceUnlocks
-          : {},
-      dailyPlan:
-        baseState.dailyPlan && typeof baseState.dailyPlan === 'object' ? baseState.dailyPlan : null,
-      dailyPlanHistory: Array.isArray(baseState.dailyPlanHistory) ? baseState.dailyPlanHistory : [],
-      dailyCapacityMinutes:
-        Number(baseState.dailyCapacityMinutes) > 0 ? Number(baseState.dailyCapacityMinutes) : 30,
-      workbookSettings: {
-        includeReadingWriting: baseState.workbookSettings?.includeReadingWriting !== false,
-      },
-      version: 11,
-    };
-  },
-  12: (oldState) => {
-    const baseState = { ...oldState };
-    const chapters = { ...(baseState.chapters || {}) };
-    for (const [chapterId, chapterValue] of Object.entries(chapters)) {
-      const chapter = { ...(chapterValue || {}) };
-      chapter.checklist = { ...(chapter.checklist || {}) };
-      if (chapter.checklist.grammar === true) {
-        chapter.legacyCompletionEvidence = {
-          ...(chapter.legacyCompletionEvidence || {}),
-          grammar: true,
-        };
-        delete chapter.checklist.grammar;
-      }
-      if (chapter.checklist.dialog === true) {
-        chapter.checklist[`L${chapterId}_p_dialog`] = true;
-        delete chapter.checklist.dialog;
-      }
-      if (chapter.checklist.listening === true) {
-        chapter.checklist[`L${chapterId}_p_listening`] = true;
-        delete chapter.checklist.listening;
-      }
-      if (chapter.checklist.reading === true) {
-        chapter.checklist[`L${chapterId}_p_reading`] = true;
-        delete chapter.checklist.reading;
-      }
-      chapters[chapterId] = chapter;
-    }
-
-    const hasProgress = hasMeaningfulUserProgress(baseState);
-    const onboarding = {
-      schemaVersion: 1,
-      completed: hasProgress,
-      currentStep: 0,
-      draft: null,
-      completedAt: hasProgress ? baseState.updatedAt || Date.now() : null,
-      ...(baseState.onboarding || {}),
-    };
-    if (hasProgress) onboarding.completed = true;
-
-    return {
-      ...baseState,
-      chapters,
-      onboarding,
-      workbookSettings: {
-        enabled: baseState.workbookSettings?.enabled !== false,
-        includeConversationGrammar:
-          baseState.workbookSettings?.includeConversationGrammar !== false,
-        includeReadingWriting: baseState.workbookSettings?.includeReadingWriting !== false,
-      },
-      version: 12,
-    };
-  },
-  13: (oldState) => {
-    const baseState = { ...oldState };
-    const chapters = { ...(baseState.chapters || {}) };
-    for (const [chapterId, chapterValue] of Object.entries(chapters)) {
-      const chapter = { ...(chapterValue || {}) };
-      const checklist = { ...(chapter.checklist || {}) };
-      const chId = Number(chapterId);
-
-      const legacyDialog = `L${chId}_p_dialog`;
-      const legacyListening = `L${chId}_p_listening`;
-      const legacyReading = `L${chId}_p_reading`;
-
-      if (checklist[legacyDialog] === true || checklist.dialog === true) {
-        checklist.dialog = true;
-      }
-      delete checklist[legacyDialog];
-
-      if (checklist[legacyListening] === true || checklist.listening === true) {
-        checklist.listening = true;
-      }
-      delete checklist[legacyListening];
-
-      if (checklist[legacyReading] === true || checklist.reading === true) {
-        checklist.reading = true;
-      }
-      delete checklist[legacyReading];
-
-      chapter.checklist = checklist;
-      chapters[chapterId] = chapter;
-    }
-
-    return {
-      ...baseState,
-      chapters,
-      version: 13,
-    };
-  },
-  14: (oldState) => ({
-    ...migrateGenkiVocabularyState(oldState),
-    version: 14,
-  }),
-  15: (oldState) => migrateGenki1StateV15(oldState),
-  16: (oldState) => migrateDictionaryStateV16(oldState),
-  17: (oldState) => {
-    const baseState = { ...oldState };
-    const settings = baseState.settings || {};
-    return {
-      ...baseState,
-      settings: {
-        ...settings,
-        pomodoro: normalizePomodoroSettings(settings.pomodoro),
-      },
-      pomodoro: normalizePomodoroState(baseState.pomodoro, settings.pomodoro),
-      version: 17,
-    };
-  },
-};
+// ---------- Migrations Runner ----------
+export function runMigrations(loadedState) {
+  return migrateState(loadedState, CURRENT_VERSION, { defaultState });
+}
 
 // ---------- Default State ----------
 export function defaultState() {
@@ -453,6 +134,7 @@ export function defaultState() {
     quests: null, // Инициализируется через QuestsManager
     studyPlan: null,
     _dailyGoalClaimed: false,
+    actionJournal: [],
   };
   freshState.activeCourseId = DEFAULT_COURSE_ID;
   freshState.courses = {
@@ -460,28 +142,6 @@ export function defaultState() {
   };
   bindActiveCourseProgress(freshState, DEFAULT_COURSE_ID, GENKI_1_CONTENT_VERSION);
   return freshState;
-}
-
-// ---------- Migrations Runner ----------
-export function runMigrations(loadedState) {
-  let currentVersion = loadedState.version || 1; // Старые сохранения без версии считаются версией 1
-  let migratedState = loadedState;
-
-  // Последовательно прогоняем все миграции от текущей версии до CURRENT_VERSION
-  while (currentVersion < CURRENT_VERSION) {
-    const nextVersion = currentVersion + 1;
-
-    if (MIGRATIONS[nextVersion]) {
-      console.log(`[Store] Применяю миграцию ${currentVersion} → ${nextVersion}`);
-      migratedState = MIGRATIONS[nextVersion](migratedState);
-      currentVersion = nextVersion;
-    } else {
-      console.warn(`[Store] Миграция для версии ${nextVersion} не найдена`);
-      break;
-    }
-  }
-
-  return migratedState;
 }
 
 export function createPersistableState(targetState) {
@@ -596,6 +256,9 @@ function normalizeRuntimeShape(loadedState) {
   };
   normalized.settings.pomodoro = normalizePomodoroSettings(normalized.settings?.pomodoro);
   normalized.pomodoro = normalizePomodoroState(loadedState.pomodoro, normalized.settings.pomodoro);
+  normalized.actionJournal = Array.isArray(loadedState.actionJournal)
+    ? loadedState.actionJournal
+    : [];
   normalizeVocabularyLockState(normalized);
   syncActiveCourseProgress(normalized);
   return normalized;
@@ -1174,11 +837,23 @@ export function isStoragePersisted() {
 export function recordDiagnosticError(err) {
   if (!state) return;
   if (!Array.isArray(state.lastErrors)) state.lastErrors = [];
+  const isObj = err && typeof err === 'object';
   const entry = {
-    timestamp: Date.now(),
+    timestamp: isObj && err.timestamp ? err.timestamp : Date.now(),
     message: typeof err === 'string' ? err : err?.message || String(err),
-    type: err?.type || 'ERROR',
-    stack: err?.stack ? String(err.stack).slice(0, 300) : null,
+    type: isObj && err.type ? err.type : 'ERROR',
+    code: isObj && err.code ? err.code : null,
+    severity: isObj && err.severity ? err.severity : 'error',
+    cardId: isObj && err.cardId !== undefined ? err.cardId : null,
+    itemId: isObj && err.itemId !== undefined ? err.itemId : null,
+    dictionaryId: isObj && err.dictionaryId !== undefined ? err.dictionaryId : null,
+    courseId: isObj && err.courseId !== undefined ? err.courseId : null,
+    lessonId: isObj && err.lessonId !== undefined ? err.lessonId : null,
+    mode: isObj && err.mode !== undefined ? err.mode : null,
+    sessionId: isObj && err.sessionId !== undefined ? err.sessionId : null,
+    context: isObj && err.context ? err.context : null,
+    details: isObj && err.details ? err.details : null,
+    stack: isObj && err.stack ? String(err.stack).slice(0, 300) : null,
   };
   state.lastErrors.unshift(entry);
   if (state.lastErrors.length > 100) {

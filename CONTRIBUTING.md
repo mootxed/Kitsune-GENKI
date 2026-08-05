@@ -35,11 +35,28 @@ human_reviewed: true | false
 
 ---
 
-## Инструкция по созданию PR
+## Инструкция по созданию PR и проверки
 
 1. Сделайте **Fork** репозитория.
 2. Создайте новую ветку (`git checkout -b feature/AmazingFeature`).
 3. Закоммитьте изменения (`git commit -m 'feat: Add amazing feature'`).
-4. Выполните проверки: `npm run legal:check` и `npm test`.
+4. Выполните обязательные локальные проверки перед отправкой PR:
+   ```bash
+   npm run format:check
+   npm run lint
+   npm run architecture:check
+   npm run docs:check
+   npm run test:coverage
+   npm run build
+   npm run test:e2e:cross-browser
+   npm run test:e2e
+   ```
 5. Запушьте ветку (`git push origin feature/AmazingFeature`).
 6. Откройте **Pull Request**.
+
+---
+
+## Принцип единого CI/CD артефакта
+
+Проект придерживается принципа: **развёртывается ровно тот артефакт, который прошёл проверки в CI**.
+В workflow сборка `dist` выполняется один раз, проверяется E2E тестами и передаётся в deploy job без повторного пересоздания сборки.

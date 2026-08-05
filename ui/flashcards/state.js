@@ -1,7 +1,15 @@
 // ui/flashcards/state.js - Состояние сессий SRS-карточек и аксессоры
 
 import { UndoStack } from '../../src/card-behavior.js';
-import { clearPostReviewSenseiActions } from './sensei-review-panel.js';
+export let activeReviewAIContext = null;
+
+export function setActiveReviewAIContext(ctx) {
+  activeReviewAIContext = ctx;
+}
+
+export function clearActiveReviewAIContext() {
+  activeReviewAIContext = null;
+}
 
 // Локальный контекст зависимостей
 export let deps = null;
@@ -52,16 +60,6 @@ export let currentKanjiIndex = 0;
  *  - cardSessionId: string (UUID конкретного показа карточки)
  *  - quizAnswers: Record<questionId, selectedIndex>
  */
-export let activeReviewAIContext = null;
-
-export function setActiveReviewAIContext(ctx) {
-  activeReviewAIContext = ctx;
-}
-
-export function clearActiveReviewAIContext() {
-  activeReviewAIContext = null;
-  clearPostReviewSenseiActions();
-}
 
 export function setActiveReviewTiming(timing) {
   activeReviewTiming = timing;

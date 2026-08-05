@@ -15,11 +15,12 @@ import { updateThemeCommand } from '../src/domain-commands.js';
 import { getOpenRouterKey, setOpenRouterKey } from '../src/openrouter-key.js';
 import { openPanel as openPomodoroPanel } from './pomodoro.js';
 import { isDevModeEnabled, recordDevTap } from '../src/dev-tools.js';
+import { APP_VERSION } from '../src/app-metadata.js';
 
 // Локальный контекст зависимостей
 let deps = null;
 
-// Константа localStorage (ключ темы; ключи state/lessons см. state/store.js и src/backup-manager.js)
+// Legacy storage key retained for backward compatibility with existing user settings
 const LS_THEME = 'kitsune_theme';
 
 // Функция рендеринга настроек
@@ -167,7 +168,7 @@ export function renderSettings(state, dependencies) {
     </div>
 
     <div style="text-align: center; margin-top: 16px; margin-bottom: 8px;">
-      <span id="app-version-trigger" style="font-size: 12px; color: var(--text-secondary, #888); cursor: pointer; user-select: none;" data-testid="app-version-trigger">KotoKitsu v0.1.0-alpha</span>
+      <span id="app-version-trigger" style="font-size: 12px; color: var(--text-secondary, #888); cursor: pointer; user-select: none;" data-testid="app-version-trigger">KotoKitsu v${APP_VERSION}</span>
     </div>
     <div class="bottom-pad"></div>`;
 
@@ -335,11 +336,16 @@ function handleFullImport(state, dependencies, toastFn) {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (file.size > 50 * 1024 * 1024) {
+      toastFn('⚠️ Размер файла экспорта превышает допустимый лимит (50 МБ)');
+      return;
+    }
+
     try {
       const text = await file.text();
       const data = JSON.parse(text);
 
-      const validation = validateImportData(data);
+      const validation = validateImportData(data, text.length);
       if (!validation.valid) {
         toastFn('⚠️ ' + validation.error);
         return;
@@ -467,7 +473,7 @@ function showLegalInfoModal() {
         </div>
 
         <h4 style="margin: 12px 0 4px;">💻 Лицензия кода</h4>
-        <p style="margin: 0 0 10px;">Программный код приложения распространяется под лицензией <b>GNU General Public License v3.0 or later (GPL-3.0-or-later)</b>. Автор: Mootxed. Версия: <code>v0.1.0-alpha</code> (Разработка: Российская Федерация).</p>
+        <p style="margin: 0 0 10px;">Программный код приложения распространяется под лицензией <b>GNU General Public License v3.0 or later (GPL-3.0-or-later)</b>. Автор: Mootxed. Версия: <code>v${APP_VERSION}</code> (Разработка: Российская Федерация).</p>
 
         <h4 style="margin: 12px 0 4px;">🎨 Сторонние ресурсы и графика</h4>
         <ul style="margin: 0 0 10px; padding-left: 20px;">

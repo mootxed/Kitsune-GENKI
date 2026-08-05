@@ -1,0 +1,12 @@
+{
+  "id": "state-v13-learning-plan",
+  "description": "State v13 with study plan, daily tasks, XP, streak and settings",
+  "sourceStateVersion": 13,
+  "sourceDbVersion": 4,
+  "targetStateVersion": 17,
+  "targetDbVersion": 7,
+  "fixedNow": "2026-01-15T08:00:00.000Z",
+  "expectedWarnings": [],
+  "expectedErrors": [],
+  "invariants": ["study-plan-preserved", "daily-capacity-preserved"]
+}

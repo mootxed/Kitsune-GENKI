@@ -6,8 +6,8 @@
 
 ## 🗄️ Спецификация базы данных
 
-- **Имя базы данных**: `KitsuneGenkiDB`
-- **Текущая версия DB**: `DB_VERSION = 7`
+- **Имя базы данных**: `KitsuneGenkiDB` (legacy-название сохранено для обратной совместимости)
+- **Текущая версия DB**: `INDEXED_DB_VERSION = 7` (см. [справочник версий](../reference/generated-versions.md))
 
 ---
 

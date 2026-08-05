@@ -21,7 +21,12 @@ import { shouldShowSenseiAction, buildSenseiActionInput } from './sensei-review-
 import { diagnoseReviewError } from '../../src/ai/local-diagnosis.js';
 import { validateAllQuizQuestions } from '../../src/ai/quiz-validator.js';
 import { getCorrectOptionIndex } from '../../src/ai/schemas.js';
-import { setSenseiTab } from '../chat.js';
+async function activateChatTab() {
+  const chatMod = await import('../chat.js');
+  if (typeof chatMod.setSenseiTab === 'function') {
+    chatMod.setSenseiTab('chat');
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -299,12 +304,12 @@ function buildPanel({ artifact, actionType, snapshot, dependencies, cardSessionI
     className: 'btn-ghost srp-chat-btn',
     text: '💬 Продолжить в чате',
   });
-  chatBtn.addEventListener('click', () => {
+  chatBtn.addEventListener('click', async () => {
     if (typeof dependencies?.importReviewExplanationToChat === 'function') {
-      dependencies.importReviewExplanationToChat(artifact, snapshot, dependencies?.state);
+      await dependencies.importReviewExplanationToChat(artifact, snapshot, dependencies?.state);
       dependencies?.save?.();
     }
-    setSenseiTab('chat');
+    await activateChatTab();
     dependencies?.nav?.('sensei');
     closeSenseiPanel();
   });

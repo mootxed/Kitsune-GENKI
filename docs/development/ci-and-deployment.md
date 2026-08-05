@@ -1,6 +1,6 @@
 # CI & Deployment — Непрерывная Интеграция и Публикация
 
-Документ описывает автоматизированные рабочие процессы (Workflows) в GitHub Actions и процесс деплоя веб-приложения **Kitsune-GENKI** на GitHub Pages.
+Документ описывает автоматизированные рабочие процессы (Workflows) в GitHub Actions и процесс деплоя веб-приложения **KotoKitsu** на GitHub Pages.
 
 ---
 

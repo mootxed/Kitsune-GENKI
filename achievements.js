@@ -1,4 +1,4 @@
-/* achievements.js — Achievement System for Kitsune Genki */
+/* achievements.js — Achievement System for KotoKitsu */
 
 export const ACHIEVEMENTS = [
   // Стартовые достижения

@@ -1,0 +1,18 @@
+{
+  "version": 13,
+  "updatedAt": 1715005000000,
+  "writerId": "tab_stale_999",
+  "xp": 5050,
+  "streak": { "count": 20, "lastActive": "2026-05-01" },
+  "srs": {
+    "genki-1::1::v1": {
+      "id": "genki-1::1::v1",
+      "due": "2026-05-10T08:00:00.000Z",
+      "stability": 10.0,
+      "difficulty": 3.0,
+      "reps": 5,
+      "lapses": 0,
+      "state": 2
+    }
+  }
+}

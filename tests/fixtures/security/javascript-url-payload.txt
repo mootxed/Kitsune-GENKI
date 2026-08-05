@@ -1,0 +1,6 @@
+javascript:alert(1)
+JaVaScRiPt:alert(1)
+ javascript:alert(1)
+java%73cript:alert(1)
+data:text/html,<script>alert(1)</script>
+vbscript:msgbox(1)

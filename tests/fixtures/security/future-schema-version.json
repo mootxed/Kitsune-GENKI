@@ -1,0 +1,10 @@
+{
+  "app": "kotokitsu",
+  "exportType": "full_indexeddb",
+  "schemaVersion": "99.0",
+  "data": {
+    "state": {
+      "level": 100
+    }
+  }
+}

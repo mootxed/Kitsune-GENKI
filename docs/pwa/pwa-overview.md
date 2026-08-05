@@ -1,6 +1,6 @@
 # PWA Overview — Обзор Progressive Web App
 
-Проект **Kitsune-GENKI** спроектирован как полноценное автономное приложение Progressive Web Application (PWA).
+Проект **KotoKitsu** спроектирован как полноценное автономное приложение Progressive Web Application (PWA).
 
 ---
 

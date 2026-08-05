@@ -1,0 +1,19 @@
+{
+  "version": 15,
+  "updatedAt": 1714000000000,
+  "writerId": "tab_a_legacy",
+  "xp": 4200,
+  "streak": { "count": 22, "lastActive": "2026-04-15" },
+  "srs": {
+    "genki-1::1::v1": {
+      "id": "genki-1::1::v1",
+      "due": "2026-04-20T08:00:00.000Z",
+      "stability": 8.0,
+      "difficulty": 3.0,
+      "reps": 4,
+      "lapses": 0,
+      "state": 2
+    }
+  },
+  "settings": { "darkMode": "auto" }
+}

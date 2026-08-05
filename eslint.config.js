@@ -8,7 +8,7 @@ export default [
   {
     files: ['**/*.js'],
     languageOptions: {
-      ecmaVersion: 2022,
+      ecmaVersion: 'latest',
       sourceType: 'module',
       globals: {
         // Browser globals
@@ -72,15 +72,8 @@ export default [
         beforeAll: 'readonly',
         afterAll: 'readonly',
         vi: 'readonly',
-        // App-specific globals (defined in app.js)
-        toast: 'readonly',
-        nav: 'readonly',
-        speak: 'readonly',
+        // Third-party browser globals
         HanziWriter: 'readonly',
-        appAddXP: 'readonly',
-        markActivity: 'readonly',
-        $$: 'readonly',
-        emptyState: 'readonly',
       },
     },
     plugins: {

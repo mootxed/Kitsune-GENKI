@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "sessionType": "srs",
+  "createdAt": 1705000000000,
+  "updatedAt": 1705001000000,
+  "managerState": {
+    "queue": [
+      { "cardId": "genki-1::1::v1", "sessionLapses": 0, "isFirstAttempt": true, "completed": true },
+      {
+        "cardId": "genki-1::1::v2",
+        "sessionLapses": 1,
+        "isFirstAttempt": false,
+        "completed": false
+      },
+      { "cardId": "genki-1::2::v1", "sessionLapses": 0, "isFirstAttempt": true, "completed": false }
+    ],
+    "stats": {
+      "total": 3,
+      "reviewed": 1,
+      "attempted": 2,
+      "perfect": 1,
+      "relearned": 0,
+      "remaining": 2
+    },
+    "currentIndex": 1
+  }
+}

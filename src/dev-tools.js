@@ -3,8 +3,10 @@
 import { state, CURRENT_VERSION, isStoragePersisted, isStorageDegraded } from '../state/store.js';
 import { DB_VERSION } from './db.js';
 import { safeStorage } from './safe-storage.js';
+import { APP_VERSION as METADATA_APP_VERSION } from './app-metadata.js';
+import { redactSecrets } from './security-helpers.js';
 
-export const APP_VERSION = '0.1.0-alpha';
+export const APP_VERSION = METADATA_APP_VERSION;
 export const BUILD_DATE = '2026-08-03';
 
 const LS_DEV_MODE = 'kitsune_dev_mode';
@@ -111,30 +113,32 @@ export function addLogEntry(level, args, explicitStack = null) {
   const timestamp = new Date();
   let stack = explicitStack;
 
-  const formattedMessage = args
-    .map((arg) => {
-      if (arg instanceof Error) {
-        if (!stack && arg.stack) stack = arg.stack;
-        return `${arg.name || 'Error'}: ${arg.message}`;
-      }
-      if (typeof arg === 'object' && arg !== null) {
-        try {
-          return JSON.stringify(arg, null, 2);
-        } catch {
-          return String(arg);
+  const formattedMessage = redactSecrets(
+    args
+      .map((arg) => {
+        if (arg instanceof Error) {
+          if (!stack && arg.stack) stack = arg.stack;
+          return `${arg.name || 'Error'}: ${arg.message}`;
         }
-      }
-      return String(arg);
-    })
-    .join(' ');
+        if (typeof arg === 'object' && arg !== null) {
+          try {
+            return JSON.stringify(redactSecrets(arg), null, 2);
+          } catch {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      })
+      .join(' ')
+  );
 
   logs.push({
     id: Date.now() + Math.random(),
     timestamp,
     timeStr: timestamp.toLocaleTimeString('ru-RU', { hour12: false }),
     level: level.toUpperCase(),
-    message: formattedMessage,
-    stack: stack || null,
+    message: typeof formattedMessage === 'string' ? formattedMessage : String(formattedMessage),
+    stack: stack ? redactSecrets(stack) : null,
   });
 
   // Enforce memory limit by dropping oldest logs
@@ -368,7 +372,7 @@ Lessons/Chapters: ${completedLessons}
 ===== LOGS =====
 ${logsText}`;
 
-  return reportText;
+  return redactSecrets(reportText);
 }
 
 /**

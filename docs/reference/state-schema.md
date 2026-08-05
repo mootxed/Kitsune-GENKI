@@ -1,4 +1,4 @@
-# State Schema Reference — Справочник Схемы State v13
+# State Schema Reference — Справочник Схемы State
 
 Документ опиcывает JSON Схему корневого объекта состояния `state`.
 
@@ -6,7 +6,7 @@
 
 ## 📑 Верхнеуровневая структура
 
-- `version` (number, required): Версия схемы (должна быть равна `13`).
+- `version` (number, required): Версия схемы (актуальная версия указана в [справочнике версий](generated-versions.md)).
 - `onboardingCompleted` (boolean, required).
 - `xp` (number, integer, min: 0).
 - `streak` (number, integer, min: 0).

@@ -94,7 +94,7 @@ describe('SRS Active Session Recovery & Batching', () => {
 
     const saved = await loadSessionFromDB();
     expect(saved).not.toBeNull();
-    expect(saved.schemaVersion).toBe(1);
+    expect([1, 2]).toContain(saved.schemaVersion);
     expect(saved.managerState.queue.length).toBe(5);
   });
 

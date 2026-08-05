@@ -1,6 +1,6 @@
 # Minigames Overview — Обзор Подсистемы Мини-Игр
 
-В **Kitsune-GENKI** реализовано 3 вспомогательные мини-игры: **Crossword**, **Word Search** и **Particles Game** (`ui/crossword.js`, `ui/word-search.js`, `ui/particles.js`).
+В **KotoKitsu** реализовано 3 вспомогательные мини-игры: **Crossword**, **Word Search** и **Particles Game** (`ui/crossword.js`, `ui/word-search.js`, `ui/particles.js`).
 
 ---
 

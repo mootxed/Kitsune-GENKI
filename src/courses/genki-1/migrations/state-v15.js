@@ -1,9 +1,11 @@
 import { contentId } from '../../course-contract.js';
 import { createEmptyCourseProgress } from '../../course-state.js';
 import { genki1Adapter } from '../adapter.js';
+import { DEFAULT_COURSE_ID, DEFAULT_COURSE_CONTENT_VERSION } from '../../../app-metadata.js';
 
-export const GENKI_1_COURSE_ID = 'genki-1';
-export const GENKI_1_CONTENT_VERSION = '1.0.0';
+export const GENKI_1_COURSE_ID = DEFAULT_COURSE_ID;
+export const GENKI_1_CONTENT_VERSION = DEFAULT_COURSE_CONTENT_VERSION;
+
 const CARD_SEPARATOR = '::';
 const LEGACY_LESSON_COUNT = 12;
 
