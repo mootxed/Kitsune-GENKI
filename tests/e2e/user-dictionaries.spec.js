@@ -70,7 +70,7 @@ test.describe('User dictionaries full flow', () => {
     await waitForAppReady(page);
     await navigateToScreen(page, 'user-dictionaries');
     await page
-      .getByTestId('screen-user-dictionaries')
+      .getByTestId('screen-srs')
       .getByRole('button', { name: 'Открыть', exact: true })
       .click();
     await expect(page.getByRole('heading', { name: '食べる' })).toBeVisible();
@@ -84,6 +84,7 @@ test.describe('User dictionaries full flow', () => {
     page.once('dialog', (confirmation) => confirmation.accept());
     await page.getByTestId('reset-btn').click();
     await waitForAppReady(page);
+    await page.waitForTimeout(300);
     await navigateToScreen(page, 'settings');
 
     const fileChooserPromise = page.waitForEvent('filechooser');
@@ -100,7 +101,7 @@ test.describe('User dictionaries full flow', () => {
     await waitForAppReady(page);
     await navigateToScreen(page, 'user-dictionaries');
     await page
-      .getByTestId('screen-user-dictionaries')
+      .getByTestId('screen-srs')
       .getByRole('button', { name: 'Открыть', exact: true })
       .click();
     await expect(page.getByRole('heading', { name: '食べる' })).toBeVisible();
@@ -112,7 +113,7 @@ test.describe('User dictionaries full flow', () => {
     expect(download.suggestedFilename()).toContain('.kotokitsu.json');
 
     await page
-      .getByTestId('screen-user-dictionaries')
+      .getByTestId('screen-srs')
       .getByRole('button', { name: 'Открыть', exact: true })
       .click();
     page.once('dialog', (confirmation) => confirmation.accept());

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { seedAppState, waitForAppReady } from './helpers/reset-app-state.js';
+import { seedAppState, waitForAppReady, navigateToScreen } from './helpers/reset-app-state.js';
 
 test.describe('@performance Lazy Loading & Performance Budgets E2E Suite', () => {
   test('Initial launch loads only core bundle and does NOT request lazy feature chunks', async ({
@@ -57,9 +57,13 @@ test.describe('@performance Lazy Loading & Performance Budgets E2E Suite', () =>
 
     await page.goto('./');
     await waitForAppReady(page);
+    await navigateToScreen(page, 'srs');
 
     const shopChunkPromise = page.waitForRequest((req) => req.url().includes('shop-'));
-    await page.click('[data-nav="shop"]');
+    await page.evaluate(() => {
+      const btn = document.querySelector('[data-nav="shop"]');
+      if (btn) btn.click();
+    });
     await shopChunkPromise;
 
     await expect(page.locator('#shop-modal')).not.toHaveClass(/hidden/);

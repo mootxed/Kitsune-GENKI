@@ -5,7 +5,9 @@ const TEMPLATES = {
   statistics: `
     <header class="app-header">
       <div class="app-header-left">
-        <span class="logo-fox">📊</span>
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
         <h1 class="app-title">Статистика</h1>
       </div>
       <div class="app-header-right">
@@ -16,28 +18,65 @@ const TEMPLATES = {
   `,
 
   sensei: `
-    <header class="sensei-header">
-      <div class="sensei-header-title">
-        <span class="sensei-avatar" aria-hidden="true">🦊</span>
-        <h1>AI Сенсей</h1>
+    <header class="sensei-header app-header">
+      <div class="sensei-header-title app-header-left">
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
+        <h1 class="app-title">AI Сенсей</h1>
       </div>
-      <div class="sensei-header-actions">
-        <button class="icon-btn" data-nav="settings" aria-label="Настройки Сенсея" id="sensei-settings-btn">⚙️</button>
+      <div class="sensei-header-actions app-header-right">
+        <button
+          class="icon-btn"
+          data-nav="settings"
+          aria-label="Настройки Сенсея"
+          id="sensei-settings-btn"
+        >
+          ⚙️
+        </button>
       </div>
     </header>
     <nav class="sensei-tabs" role="tablist" aria-label="Вкладки Сенсея">
-      <button class="sensei-tab active" role="tab" aria-selected="true" data-senseitab="chat" data-testid="senseitab-chat">Чат</button>
-      <button class="sensei-tab" role="tab" aria-selected="false" data-senseitab="tools" data-testid="senseitab-tools">Инструменты</button>
+      <button
+        class="sensei-tab active"
+        role="tab"
+        aria-selected="true"
+        data-senseitab="chat"
+        data-testid="senseitab-chat"
+      >
+        Чат
+      </button>
+      <button
+        class="sensei-tab"
+        role="tab"
+        aria-selected="false"
+        data-senseitab="tools"
+        data-testid="senseitab-tools"
+      >
+        Инструменты
+      </button>
     </nav>
     <div class="sensei-main-container" id="sensei-body"></div>
   `,
 
   'ai-story': `
     <header class="app-header">
-      <button class="icon-btn back-btn" data-nav="sensei" data-testid="ai-story-back-btn" aria-label="Назад">‹</button>
-      <div>
-        <h1 class="app-title">AI-история</h1>
-        <p class="app-subtitle">Генератор персонализированных историй</p>
+      <div class="app-header-left">
+        <button
+          class="icon-btn back-btn"
+          data-nav="sensei"
+          data-testid="ai-story-back-btn"
+          aria-label="Назад"
+        >
+          ‹
+        </button>
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
+        <div>
+          <h1 class="app-title">AI-история</h1>
+          <p class="app-subtitle">Генератор персонализированных историй</p>
+        </div>
       </div>
     </header>
     <div class="screen-scroll" id="ai-story-body"></div>
@@ -45,10 +84,22 @@ const TEMPLATES = {
 
   crossword: `
     <header class="app-header">
-      <button class="icon-btn back-btn" data-nav="sensei" data-testid="crossword-back-btn" aria-label="Назад">‹</button>
-      <div>
-        <h1 class="app-title">🧩 Кроссворд</h1>
-        <p class="app-subtitle">Закрепление изученных слов</p>
+      <div class="app-header-left">
+        <button
+          class="icon-btn back-btn"
+          data-nav="sensei"
+          data-testid="crossword-back-btn"
+          aria-label="Назад"
+        >
+          ‹
+        </button>
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
+        <div>
+          <h1 class="app-title">🧩 Кроссворд</h1>
+          <p class="app-subtitle">Закрепление изученных слов</p>
+        </div>
       </div>
     </header>
     <div class="screen-scroll" id="crossword-body"></div>
@@ -56,10 +107,22 @@ const TEMPLATES = {
 
   'word-search': `
     <header class="app-header">
-      <button class="icon-btn back-btn" data-nav="sensei" data-testid="word-search-back-btn" aria-label="Назад">‹</button>
-      <div>
-        <h1 class="app-title">🔍 Охота на слова</h1>
-        <p class="app-subtitle">Найдите японские слова по русскому переводу</p>
+      <div class="app-header-left">
+        <button
+          class="icon-btn back-btn"
+          data-nav="sensei"
+          data-testid="word-search-back-btn"
+          aria-label="Назад"
+        >
+          ‹
+        </button>
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
+        <div>
+          <h1 class="app-title">🔍 Охота на слова</h1>
+          <p class="app-subtitle">Найдите японские слова по русскому переводу</p>
+        </div>
       </div>
     </header>
     <div class="screen-scroll" id="word-search-body"></div>
@@ -68,7 +131,9 @@ const TEMPLATES = {
   library: `
     <header class="app-header">
       <div class="app-header-left">
-        <span class="logo-fox">📚</span>
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
         <h1 class="app-title">Мини-учебник</h1>
       </div>
       <div class="app-header-right">
@@ -77,19 +142,35 @@ const TEMPLATES = {
       </div>
     </header>
     <div class="lib-tabs">
-      <button class="lib-tab active" data-libtab="grammar" data-testid="libtab-grammar">Грамматика</button>
+      <button class="lib-tab active" data-libtab="grammar" data-testid="libtab-grammar">
+        Грамматика
+      </button>
       <button class="lib-tab" data-libtab="notes" data-testid="libtab-notes">Заметки</button>
-      <button class="lib-tab" data-libtab="stories" data-testid="libtab-stories">Истории</button>
+      <button class="lib-tab" data-libtab="stories" data-testid="libtab-stories">
+        Истории
+      </button>
     </div>
     <div class="screen-scroll" id="library-body"></div>
   `,
 
   story: `
     <header class="app-header">
-      <button class="icon-btn back-btn" data-nav="library" data-testid="story-back-btn" aria-label="Назад">‹</button>
-      <div>
-        <h1 class="app-title" id="story-title">История</h1>
-        <p class="app-subtitle" id="story-title-jp"></p>
+      <div class="app-header-left">
+        <button
+          class="icon-btn back-btn"
+          data-nav="library"
+          data-testid="story-back-btn"
+          aria-label="Назад"
+        >
+          ‹
+        </button>
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
+        <div>
+          <h1 class="app-title" id="story-title">История</h1>
+          <p class="app-subtitle" id="story-title-jp"></p>
+        </div>
       </div>
     </header>
     <div class="screen-scroll" id="story-body"></div>
@@ -98,7 +179,9 @@ const TEMPLATES = {
   settings: `
     <header class="app-header">
       <div class="app-header-left">
-        <span class="logo-fox">⚙️</span>
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
         <h1 class="app-title">Настройки</h1>
       </div>
     </header>
@@ -107,34 +190,45 @@ const TEMPLATES = {
 
   'dev-tools': `
     <header class="app-header">
-      <button class="icon-btn back-btn" data-nav="settings" data-testid="dev-tools-back-btn" aria-label="Назад">‹</button>
-      <div>
-        <h1 class="app-title">🛠️ Инструменты разработчика</h1>
-        <p class="app-subtitle">Журнал логов и диагностика</p>
+      <div class="app-header-left">
+        <button
+          class="icon-btn back-btn"
+          data-nav="settings"
+          data-testid="dev-tools-back-btn"
+          aria-label="Назад"
+        >
+          ‹
+        </button>
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
+        <div>
+          <h1 class="app-title">🛠️ Инструменты разработчика</h1>
+          <p class="app-subtitle">Журнал логов и диагностика</p>
+        </div>
       </div>
     </header>
     <div class="screen-scroll" id="dev-tools-body"></div>
   `,
 
-  'user-dictionaries': `
-    <header class="app-header">
-      <button class="icon-btn back-btn" data-nav="srs" aria-label="Назад">‹</button>
-      <div>
-        <h1 class="app-title">Мои словари</h1>
-        <p class="app-subtitle">Личные слова отдельно от очереди обучения</p>
-      </div>
-    </header>
-    <div class="screen-scroll">
-      <div id="user-dictionaries-body"></div>
-      <div class="bottom-pad"></div>
-    </div>
-  `,
-
   'word-details': `
     <header class="app-header">
-      <button class="icon-btn back-btn" id="word-details-back-btn" data-testid="word-details-back-btn" aria-label="Назад" onclick="history.back()">‹</button>
-      <div>
-        <h1 class="app-title">Слово</h1>
+      <div class="app-header-left">
+        <button
+          class="icon-btn back-btn"
+          id="word-details-back-btn"
+          data-testid="word-details-back-btn"
+          aria-label="Назад"
+          onclick="history.back()"
+        >
+          ‹
+        </button>
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
+        <div>
+          <h1 class="app-title">Слово</h1>
+        </div>
       </div>
     </header>
     <div class="screen-scroll" id="word-details-body"></div>
@@ -147,7 +241,9 @@ const TEMPLATES = {
   profile: `
     <header class="app-header">
       <div class="app-header-left">
-        <span class="logo-fox">🦊</span>
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
         <div><h1 class="app-title">Профиль</h1></div>
       </div>
       <div class="app-header-right">
@@ -161,7 +257,9 @@ const TEMPLATES = {
   quests: `
     <header class="app-header">
       <div class="app-header-left">
-        <span class="logo-fox">⚡</span>
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
         <div><h1 class="app-title">Квесты</h1></div>
       </div>
       <button class="icon-btn back-btn" data-nav="home" data-testid="quests-back-btn" aria-label="Назад">‹</button>
@@ -173,11 +271,20 @@ const TEMPLATES = {
   `,
 
   plan: `
-    <div class="screen-scroll">
-      <div class="screen-header">
-        <button class="back-btn" data-testid="plan-back-btn">‹</button>
-        <h1>План обучения</h1>
+    <header class="app-header">
+      <div class="app-header-left">
+        <button class="icon-btn back-btn" data-testid="plan-back-btn" aria-label="Назад">
+          ‹
+        </button>
+        <span class="brand-fox-mark" aria-hidden="true">
+          <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+        </span>
+        <div>
+          <h1 class="app-title">План обучения</h1>
+        </div>
       </div>
+    </header>
+    <div class="screen-scroll">
       <div id="plan-warning" class="plan-warning hidden"></div>
       <div id="plan-form-container">
         <h3 id="plan-form-title">Создать новый план</h3>

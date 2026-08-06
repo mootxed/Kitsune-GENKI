@@ -5,12 +5,12 @@
     "maxInitialChunks": 3
   },
   "initialCss": {
-    "rawBytes": 300000,
-    "gzipBytes": 55000
+    "rawBytes": 285000,
+    "gzipBytes": 52000
   },
   "initialHtml": {
-    "rawBytes": 75000,
-    "gzipBytes": 12000
+    "rawBytes": 30000,
+    "gzipBytes": 7000
   },
   "startup": {
     "weakMobileMs": 3000

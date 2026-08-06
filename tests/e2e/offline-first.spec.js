@@ -176,6 +176,8 @@ test.describe('@pwa @offline Offline-First Execution E2E Suite', () => {
 
     await page.goto('./');
     await waitForAppReady(page);
+    await navigateToScreen(page, 'plan');
+    await navigateToScreen(page, 'home');
 
     // Strict requirements before context.setOffline(true):
     // 1. ready, 2. controller present, 3. controlling page, 4. entry assets in Cache Storage

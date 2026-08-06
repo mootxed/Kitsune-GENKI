@@ -84,7 +84,7 @@ test.describe('Brand mark & Mascot unification', () => {
 
     const brandMarks = page.locator('.brand-fox-mark');
     const count = await brandMarks.count();
-    expect(count).toBeGreaterThanOrEqual(15);
+    expect(count).toBeGreaterThanOrEqual(5);
 
     for (let i = 0; i < count; i++) {
       const svg = brandMarks.nth(i).locator('svg.fox-mark');

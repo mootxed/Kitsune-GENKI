@@ -38,7 +38,9 @@ export function emptyState(icon, title, desc) {
 export function renderDictionaryError(error) {
   const container = $('#dict-lessons-container');
   if (!container) return;
-  container.innerHTML = `
+  setSafeHTML(
+    container,
+    `
     <div class="empty-state dict-error-state" style="padding: 32px 16px; text-align: center;">
       <div class="empty-state-icon" style="font-size: 32px; margin-bottom: 8px;">⚠️</div>
       <h3 class="empty-state-title" style="margin-bottom: 8px;">Ошибка загрузки словаря</h3>
@@ -46,7 +48,8 @@ export function renderDictionaryError(error) {
         ${escapeHtml(error?.message || 'Не удалось загрузить данные словаря')}
       </p>
     </div>
-  `;
+  `
+  );
 }
 
 export function getWordStatus(word, state) {
@@ -550,7 +553,9 @@ export async function renderDictionary(state, dependencies, options = {}, contex
         )
         .join('');
 
-      topicContainer.innerHTML = `
+      setSafeHTML(
+        topicContainer,
+        `
         <div class="dict-topic-filter-wrap" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
           <label for="dict-topic-select" style="font-size: 14px; font-weight: 600; color: var(--text-muted);">Тема:</label>
           <select id="dict-topic-select" style="padding: 6px 12px; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 14px; outline: none; flex: 1;">
@@ -558,7 +563,8 @@ export async function renderDictionary(state, dependencies, options = {}, contex
             ${topicOptionsHtml}
           </select>
         </div>
-      `;
+      `
+      );
 
       const topicSelect = $('#dict-topic-select');
       if (topicSelect) {

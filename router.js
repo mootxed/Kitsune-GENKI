@@ -168,21 +168,23 @@ export class Router {
     this.currentAbortController = new AbortController();
     const signal = this.currentAbortController.signal;
 
+    const currentTargetName = SCREEN_ALIASES[this.currentScreen] || this.currentScreen;
+
     // Очищаем рендеры мини-игр при переходе на другие экраны
-    if (this.currentScreen === 'word-search' && name !== 'word-search') {
+    if (currentTargetName === 'word-search' && targetName !== 'word-search') {
       if (typeof window !== 'undefined' && typeof window.cleanupWordSearch === 'function') {
         window.cleanupWordSearch();
       }
       import('./ui/word-search.js').then((m) => m.cleanupWordSearch?.());
       document.body.classList.remove('ws-focus-mode');
     }
-    if (this.currentScreen === 'crossword' && name !== 'crossword') {
+    if (currentTargetName === 'crossword' && targetName !== 'crossword') {
       if (typeof window !== 'undefined' && typeof window.cleanupCrossword === 'function') {
         window.cleanupCrossword();
       }
       import('./ui/crossword.js').then((m) => m.cleanupCrossword?.());
     }
-    if (this.currentScreen === 'srs' && targetName !== 'srs') {
+    if (currentTargetName === 'srs' && targetName !== 'srs') {
       closeSenseiPanel();
       clearPostReviewSenseiActions();
       clearActiveReviewAIContext();
@@ -190,7 +192,7 @@ export class Router {
     }
 
     // Восстанавливаем tabbar для обычных экранов
-    if (name !== 'word-search' && name !== 'srs') {
+    if (targetName !== 'word-search' && targetName !== 'srs') {
       const tabbar = document.querySelector('.tabbar');
       if (tabbar) tabbar.style.display = '';
     }
