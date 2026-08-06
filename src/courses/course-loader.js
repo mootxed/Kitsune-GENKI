@@ -313,6 +313,12 @@ export class CourseLoader {
         resource: 'vocabularyAliases',
       });
     }
+    if (resources.vocabularyIndex) {
+      shallowDocument(resources.vocabularyIndex, 'vocabularyIndex', {
+        courseId: manifest.courseId,
+        resource: 'vocabularyIndex',
+      });
+    }
 
     const lessons = contentIndex.lessons;
     const lessonsById = new Map(lessons.map((lesson) => [lesson.id, lesson]));
@@ -364,6 +370,47 @@ export class CourseLoader {
       contentId(manifest.courseId, 'vocabulary', canonicalVocabularyLocalId(localId));
     const grammarId = (localId) => contentId(manifest.courseId, 'grammar', localId);
     const exerciseId = (localId) => contentId(manifest.courseId, 'exercise', localId);
+
+    const rawVocabularyIndex = resources.vocabularyIndex || null;
+    const allVocabularyRefs = [];
+    const vocabularyByLessonMap = new Map();
+
+    if (rawVocabularyIndex && Array.isArray(rawVocabularyIndex.lessons)) {
+      for (const lessonEntry of rawVocabularyIndex.lessons) {
+        const rawLId = lessonEntry.lessonId || lessonEntry.id;
+        const lessonId = canonicalLessonId(rawLId) || String(rawLId);
+        const words = ensureArray(lessonEntry.words);
+        const resolvedRefsForLesson = [];
+        for (const w of words) {
+          const localId = canonicalVocabularyLocalId(w.localId || w.id);
+          const id = vocabularyId(localId);
+          const ref = {
+            ...deepClone(w),
+            id,
+            localId,
+            courseId: manifest.courseId,
+            dictionaryId: w.dictionaryId,
+            introducedIn: lessonId,
+            lessonId,
+            chapterId: lessonId,
+          };
+          if (ref.dictionaryId) {
+            try {
+              const resolved = this.dictionaryStore.resolveCourseVocabularyReference(ref);
+              resolvedRefsForLesson.push(resolved);
+              allVocabularyRefs.push(resolved);
+              knowledgeLessonIds.set(id, lessonId);
+              if (!knowledgeLessonIds.has(resolved.dictionaryId)) {
+                knowledgeLessonIds.set(resolved.dictionaryId, lessonId);
+              }
+            } catch (cause) {
+              console.warn(`[CourseLoader] Failed to register vocabulary reference ${id}:`, cause);
+            }
+          }
+        }
+        vocabularyByLessonMap.set(lessonId, resolvedRefsForLesson);
+      }
+    }
 
     const transformQuiz = (quiz) => ({
       ...deepClone(quiz),
@@ -717,6 +764,25 @@ export class CourseLoader {
       loadStory,
       getExercisesForLesson(value) {
         return deepFreeze(exercisesForLesson(value));
+      },
+      getVocabularyIndex() {
+        return deepFreeze({
+          schemaVersion: rawVocabularyIndex?.schemaVersion || 1,
+          contentVersion: rawVocabularyIndex?.contentVersion || manifest.contentVersion,
+          courseId: manifest.courseId,
+          lessons: Array.from(vocabularyByLessonMap.entries()).map(([lessonId, words]) => ({
+            id: lessonId,
+            lessonId,
+            words,
+          })),
+        });
+      },
+      getVocabularyForLesson(value) {
+        const id = canonicalLessonId(value) || String(value || '');
+        return deepFreeze(vocabularyByLessonMap.get(id) || []);
+      },
+      getAllVocabularyReferences() {
+        return deepFreeze([...allVocabularyRefs]);
       },
       getDictionaryEntry: (dictionaryId) => this.dictionaryStore.getDictionaryEntry(dictionaryId),
       getCourseVocabularyReference: (referenceId) =>

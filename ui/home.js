@@ -819,6 +819,17 @@ let homeRuntimeDependencies = {};
 
 export function renderHome(_appState = state, dependencies = null) {
   if (dependencies) homeRuntimeDependencies = dependencies;
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 6
+      ? 'Доброй ночи'
+      : hour < 12
+        ? 'Доброе утро'
+        : hour < 18
+          ? 'Добрый день'
+          : 'Добрый вечер';
+  const greetingTitle = document.getElementById('home-greeting-title');
+  if (greetingTitle) greetingTitle.textContent = greeting;
   const today = todayStr();
   state.dailyCards = countCompletedReviewsForDate(state, today);
   state.history[today] = state.dailyCards;
@@ -880,6 +891,11 @@ export function renderHome(_appState = state, dependencies = null) {
   const continueButton = $('#btn-continue-learning');
   const continueTitle = $('#continue-learning-title');
   const continueContext = $('#continue-learning-context');
+  const continueActionLabel = $('#continue-action-label');
+  const actionCount = $('#home-action-count');
+  const actionDuration = $('#home-action-duration');
+  const actionSource = $('#home-action-source');
+  const reasonCopy = $('#home-reason-copy');
 
   if (continueTitle) {
     continueTitle.textContent = nextAction?.title || 'Все задачи на сегодня выполнены';
@@ -887,6 +903,39 @@ export function renderHome(_appState = state, dependencies = null) {
   if (continueContext) {
     continueContext.textContent =
       nextAction?.description || 'Можно перейти к дополнительной практике';
+  }
+  const actionLabels = {
+    'start-chapter': 'Начать главу',
+    review: 'Начать повторение',
+    vocabulary: 'Учить слова',
+    grammar: 'Открыть грамматику',
+    practice: 'Начать практику',
+    assessment: 'Начать проверку',
+  };
+  const sourceLabels = {
+    review: 'FSRS · вовремя',
+    vocabulary: 'План · новые слова',
+    grammar: 'План · грамматика',
+    practice: 'План · практика',
+    'start-chapter': 'План · текущая глава',
+  };
+  if (continueActionLabel) {
+    continueActionLabel.textContent = actionLabels[nextAction?.type] || 'Начать';
+  }
+  if (actionCount) {
+    const count = Number(nextAction?.count || nextAction?.cardCount || 0);
+    actionCount.textContent = count > 0 ? `${count} элементов` : 'Следующий шаг';
+  }
+  if (actionDuration) {
+    actionDuration.textContent = `≈ ${Math.max(1, Number(nextAction?.estimatedMinutes) || 5)} минут`;
+  }
+  if (actionSource) {
+    actionSource.textContent = sourceLabels[nextAction?.type] || 'План · сегодня';
+  }
+  if (reasonCopy) {
+    reasonCopy.textContent = nextAction?.description
+      ? `${nextAction.description} Задача уже учтена в сегодняшней нагрузке.`
+      : 'Все обязательные задачи выполнены; можно выбрать короткую дополнительную практику.';
   }
   if (continueButton) {
     continueButton.onclick = () =>
@@ -922,6 +971,40 @@ export function renderHome(_appState = state, dependencies = null) {
         executeHomeDailyTask(task, activeChapterId, homeRuntimeDependencies);
       });
     });
+  }
+
+  const chapterProgress = activeChapter
+    ? getChapterProgress(state, activeChapterId, activeChapter)
+    : { ratio: 0 };
+  const chapterNumber = Math.max(1, lessonOrdinal(activeChapterId) + 1);
+  const progressPercent = Math.round((chapterProgress.ratio || 0) * 100);
+  const courseTitle = getActiveCourse()?.manifest?.title || 'GENKI I';
+  const progressLabel = $('#home-course-progress-label');
+  const progressPercentLabel = $('#home-course-progress-percent');
+  const progressBar = $('#home-course-progress-bar');
+  const planDeadline = $('#home-plan-deadline');
+  const planReserve = $('#home-plan-reserve');
+  const planPaceTitle = $('#home-plan-pace-title');
+  if (progressLabel) progressLabel.textContent = `${courseTitle} · глава ${chapterNumber}`;
+  if (progressPercentLabel) progressPercentLabel.textContent = `${progressPercent}%`;
+  if (progressBar) progressBar.style.width = `${progressPercent}%`;
+  if (planPaceTitle) {
+    planPaceTitle.textContent = state.studyPlan?.paused ? 'План на паузе' : 'Вы идёте в темпе';
+  }
+  if (planReserve) {
+    planReserve.textContent = `${state.studyPlan?.completedChapters?.length || 0} из ${CONTENT_INDEX.length || 12} глав`;
+  }
+  if (planDeadline) {
+    const deadline = state.studyPlan?.deadline;
+    if (deadline) {
+      const deadlineDate = parseDateKey(deadline);
+      const formattedDeadline = deadlineDate
+        ? new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' }).format(deadlineDate)
+        : deadline;
+      planDeadline.textContent = `При текущем темпе ожидаемая дата завершения — ${formattedDeadline}.`;
+    } else {
+      planDeadline.textContent = 'Создайте План, чтобы увидеть ожидаемую дату завершения.';
+    }
   }
 
   const courseButton = $('#home-course-link');
@@ -1034,6 +1117,7 @@ export function renderHomeTodayCard(appState, dailyPlan, viewModel = null) {
   }
 
   const taskTypeLabel = {
+    'start-chapter': 'ТЕКУЩАЯ ГЛАВА',
     review: 'ОБЯЗАТЕЛЬНО · FSRS',
     vocabulary: 'ОБЯЗАТЕЛЬНО · НОВЫЕ СЛОВА',
     grammar: 'ПО ПЛАНУ · ГРАММАТИКА',
@@ -1042,6 +1126,7 @@ export function renderHomeTodayCard(appState, dailyPlan, viewModel = null) {
     bonus: 'ДОПОЛНИТЕЛЬНО · ПРАКТИКА',
   };
   const taskIcon = {
+    'start-chapter': '始',
     review: '↻',
     vocabulary: '語',
     grammar: '文',
@@ -1093,15 +1178,28 @@ export function renderHomeTodayCard(appState, dailyPlan, viewModel = null) {
       ? `<div class="warning-banner card-warning">${dailyPlan.warnings.join(' ')}</div>`
       : '';
 
+  const completedTasks = dailyPlan.tasks.filter((task) => task.status === 'completed');
+  const completedMinutes = completedTasks.reduce(
+    (total, task) => total + (Number(task.estimatedMinutes) || 0),
+    0
+  );
+  const displayMinutes = Math.max(0, Number(dailyPlan.estimatedMinutes) || completedMinutes);
+  const capacityMinutes = Math.max(1, Number(dailyPlan.capacityMinutes) || 1);
+  const progressPercent = Math.min(100, Math.round((displayMinutes / capacityMinutes) * 100));
+  const progressCaption =
+    completedTasks.length === 0
+      ? 'Первый шаг уже выбран'
+      : `Готово задач: ${completedTasks.length}`;
+
   return `
     ${interruptedSessionHtml}
     <div class="today-card-header">
       <div>
-        <span class="today-eyebrow">ПЛАН НА СЕГОДНЯ</span>
-        <h2>${dailyPlan.isRestDay ? 'День отдыха' : 'Задачи на сегодня'}</h2>
-        <small>${dailyPlan.estimatedMinutes} из ${dailyPlan.capacityMinutes} мин</small>
+        <span class="today-eyebrow">СЕГОДНЯ</span>
+        <h2>${dailyPlan.isRestDay ? 'День отдыха' : `${displayMinutes} из ${dailyPlan.capacityMinutes} минут`}</h2>
+        <p>${progressCaption}</p>
       </div>
-      <button class="text-button" data-action="open-plan">Весь план</button>
+      <div class="today-progress-ring" style="--progress:${progressPercent}%"><span>${progressPercent}%</span></div>
     </div>
     ${warningHtml}
     ${tasksHtml}

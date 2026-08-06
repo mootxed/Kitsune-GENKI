@@ -4,6 +4,7 @@ import { Router } from '../router.js';
 
 describe('ui/router.js initRouter integration', () => {
   let userDictHandler;
+  let dictionaryHandler;
 
   beforeEach(() => {
     document.body.innerHTML = `
@@ -17,6 +18,7 @@ describe('ui/router.js initRouter integration', () => {
     `;
 
     userDictHandler = vi.fn();
+    dictionaryHandler = vi.fn();
   });
 
   it('initRouter() returns a Router instance', () => {
@@ -31,7 +33,7 @@ describe('ui/router.js initRouter integration', () => {
     expect(window.router).toBe(instance);
   });
 
-  it('click on user-dictionaries tab calls router.navigate and opens screen-user-dictionaries without exception', () => {
+  it('click on user-dictionaries tab calls router.navigate and opens screen-srs without exception', () => {
     const routerInstance = initRouter({
       home: vi.fn(),
       srs: vi.fn(),
@@ -45,8 +47,11 @@ describe('ui/router.js initRouter integration', () => {
     expect(userDictHandler).toHaveBeenCalledTimes(1);
     expect(getCurrentRoute()).toBe('user-dictionaries');
 
-    const screen = document.getElementById('screen-user-dictionaries');
-    expect(screen.classList.contains('hidden')).toBe(false);
+    const srsScreen = document.getElementById('screen-srs');
+    expect(srsScreen.classList.contains('hidden')).toBe(false);
+
+    const userDictScreen = document.getElementById('screen-user-dictionaries');
+    expect(userDictScreen.classList.contains('hidden')).toBe(true);
   });
 
   it('nav("user-dictionaries") function works correctly', () => {
@@ -59,5 +64,20 @@ describe('ui/router.js initRouter integration', () => {
     nav('user-dictionaries');
     expect(userDictHandler).toHaveBeenCalledTimes(1);
     expect(getCurrentRoute()).toBe('user-dictionaries');
+  });
+
+  it('nav("dictionary") reuses screen-srs while preserving the dictionary route', () => {
+    initRouter({
+      home: vi.fn(),
+      srs: vi.fn(),
+      dictionary: dictionaryHandler,
+      'user-dictionaries': userDictHandler,
+    });
+
+    nav('dictionary');
+
+    expect(dictionaryHandler).toHaveBeenCalledTimes(1);
+    expect(getCurrentRoute()).toBe('dictionary');
+    expect(document.getElementById('screen-srs').classList.contains('hidden')).toBe(false);
   });
 });

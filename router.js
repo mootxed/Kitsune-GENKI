@@ -6,6 +6,12 @@ import {
   closeSenseiPanel,
   clearPostReviewSenseiActions,
 } from './ui/flashcards/sensei-review-panel.js';
+import { abortActiveSrsTabRender } from './ui/srs-tab-controller.js';
+
+const SCREEN_ALIASES = {
+  dictionary: 'srs',
+  'user-dictionaries': 'srs',
+};
 
 import { getOrCreateScreenContainer } from './ui/screen-templates.js';
 import {
@@ -22,6 +28,7 @@ const SCREEN_TITLES = {
   profile: 'Профиль',
   chapter: 'Глава',
   srs: 'Карточки',
+  dictionary: 'Словарь',
   sensei: 'Инструменты',
   library: 'Учебник',
   settings: 'Настройки',
@@ -36,6 +43,55 @@ const SCREEN_TITLES = {
   'word-details': 'Детали слова',
 };
 
+const PARENT_TAB_MAP = {
+  dictionary: 'srs',
+  'user-dictionaries': 'srs',
+  'word-details': 'srs',
+
+  'ai-story': 'sensei',
+  crossword: 'sensei',
+  'word-search': 'sensei',
+
+  story: 'library',
+  course: 'library',
+  chapter: 'library',
+
+  quests: 'profile',
+  statistics: 'profile',
+  settings: 'profile',
+  shop: 'profile',
+  'dev-tools': 'profile',
+
+  plan: 'home',
+};
+
+export function getParentTab(screenName, origin = null) {
+  if (screenName === 'word-details' && origin) {
+    return PARENT_TAB_MAP[origin] || origin;
+  }
+  return PARENT_TAB_MAP[screenName] || screenName;
+}
+
+export function isElementVisible(el) {
+  if (!el) return false;
+  if (typeof window !== 'undefined' && window.getComputedStyle) {
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+  }
+  if (el.classList?.contains('hidden')) return false;
+  return true;
+}
+
+export function resolveActiveNavigationTab(screenName, origin = null) {
+  const directTabs = [...document.querySelectorAll(`.tab[data-nav="${screenName}"]`)];
+  const visibleDirect = directTabs.find(isElementVisible);
+  if (visibleDirect) return visibleDirect;
+
+  const parentName = getParentTab(screenName, origin);
+  const parentTabs = [...document.querySelectorAll(`.tab[data-nav="${parentName}"]`)];
+  return parentTabs.find(isElementVisible) || null;
+}
+
 export class Router {
   constructor() {
     this.screens = [
@@ -45,6 +101,7 @@ export class Router {
       'profile',
       'chapter',
       'srs',
+      'dictionary',
       'sensei',
       'library',
       'settings',
@@ -61,6 +118,17 @@ export class Router {
     this.renderHandlers = {};
     this.navigationId = 0;
     this.currentAbortController = null;
+    this.currentScreen = null;
+    this.currentOpt = null;
+
+    if (typeof window !== 'undefined') {
+      const handleResize = () => this.updateActiveTab();
+      window.addEventListener('resize', handleResize);
+      if (window.matchMedia) {
+        const mql = window.matchMedia('(max-width: 768px)');
+        mql?.addEventListener?.('change', handleResize);
+      }
+    }
   }
 
   /**
@@ -80,7 +148,8 @@ export class Router {
    * @returns {Promise<void>}
    */
   async navigate(name, opt, skipHistory = false) {
-    const targetId = `screen-${name}`;
+    const targetName = SCREEN_ALIASES[name] || name;
+    const targetId = `screen-${targetName}`;
     let targetScreen = document.getElementById(targetId);
     if (!targetScreen) {
       if (this.screens.includes(name) || this.renderHandlers[name]) {
@@ -113,10 +182,11 @@ export class Router {
       }
       import('./ui/crossword.js').then((m) => m.cleanupCrossword?.());
     }
-    if (this.currentScreen === 'srs' && name !== 'srs') {
+    if (this.currentScreen === 'srs' && targetName !== 'srs') {
       closeSenseiPanel();
       clearPostReviewSenseiActions();
       clearActiveReviewAIContext();
+      abortActiveSrsTabRender();
     }
 
     // Восстанавливаем tabbar для обычных экранов
@@ -132,6 +202,7 @@ export class Router {
     }
 
     this.currentScreen = name;
+    this.currentOpt = opt;
 
     // Шаг 2: скрыть старые экраны и поставить inert
     document.querySelectorAll('.screen').forEach((screen) => {
@@ -149,14 +220,8 @@ export class Router {
       );
     }
 
-    // Управление активными табами
-    const tabs = document.querySelectorAll('.tab');
-    tabs.forEach((t) => {
-      t.classList.toggle('active', t.dataset.nav === name);
-    });
-
-    // Обновление индикатора табов
-    this.updateTabIndicator();
+    // Управление активными табами: ровно ОДИН активный видимый таб
+    this.updateActiveTab();
 
     // Добавление в историю браузера (кроме случаев, когда skipHistory=true)
     if (!skipHistory) {
@@ -236,6 +301,22 @@ export class Router {
         this.navigate(targetScreen);
       }
     });
+  }
+
+  /**
+   * Обновление активной вкладки навигации на основе текущего экрана и видимых элементов
+   */
+  updateActiveTab() {
+    if (!this.currentScreen) return;
+    const activeTab = resolveActiveNavigationTab(
+      this.currentScreen,
+      typeof this.currentOpt === 'object' ? this.currentOpt?.origin : null
+    );
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach((t) => {
+      t.classList.toggle('active', t === activeTab);
+    });
+    this.updateTabIndicator();
   }
 
   /**

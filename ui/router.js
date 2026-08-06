@@ -21,6 +21,7 @@ export function initRouter(handlers) {
   router.registerRenderHandler('profile', handlers.profile);
   router.registerRenderHandler('chapter', handlers.chapter);
   router.registerRenderHandler('srs', handlers.srs);
+  router.registerRenderHandler('dictionary', handlers.dictionary);
   router.registerRenderHandler('sensei', handlers.sensei);
   router.registerRenderHandler('library', handlers.library);
   router.registerRenderHandler('settings', handlers.settings);

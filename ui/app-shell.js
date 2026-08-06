@@ -34,6 +34,7 @@ import { renderProfile, renderQuests } from './profile.js';
 import { renderOnboarding } from './onboarding.js';
 import { renderParticlesList } from './particles.js';
 import { refreshUserDictionaryLesson } from '../src/user-dictionaries/runtime.js';
+import { registerSrsTabs, activateSrsTab, initSrsTabsDelegate } from './srs-tab-controller.js';
 import { dueCards } from '../src/srs-helpers.js';
 import { exportFullProgress, downloadJSON } from '../src/backup-manager.js';
 
@@ -439,6 +440,40 @@ export function setupAppShell(dependencies) {
     renderParticlesList(dependencies);
   };
 
+  registerSrsTabs({
+    repetition: {
+      title: 'Повторение',
+      subtitle: 'Очередь FSRS и короткие сессии',
+      render: (options, ctx) => renderSrsDashboard(options, ctx),
+    },
+    dictionary: {
+      title: 'Словарь',
+      subtitle: 'Слова, главы, мастерство и статусы SRS',
+      render: (options, ctx) => renderDictionary(state, dependencies, options, ctx),
+    },
+    particles: {
+      title: 'Частицы',
+      subtitle: 'Справочник и практика японских частиц',
+      render: (_options, ctx) => renderParticlesDictionary(ctx),
+    },
+    'user-dictionaries': {
+      title: 'Мои словари',
+      subtitle: 'Личные наборы слов и импорт',
+      render: async (options, ctx) => {
+        const { renderUserDictionaries } = await import('./user-dictionaries.js');
+        return renderUserDictionaries(
+          state,
+          {
+            ...dependencies,
+            refreshRuntime: () => refreshUserDictionaryLesson(LESSONS, undefined, state),
+          },
+          { containerId: 'srs-body', ...options },
+          ctx
+        );
+      },
+    },
+  });
+
   const renderSrsDashboard = async (options = {}, context = {}) => {
     if (options?.mode === 'session') {
       return;
@@ -446,6 +481,9 @@ export function setupAppShell(dependencies) {
 
     const body = $('#srs-body');
     if (!body) return;
+
+    // Init delegate once
+    initSrsTabsDelegate();
 
     const srsScreen = document.getElementById('screen-srs');
     if (srsScreen) srsScreen.classList.remove('srs-session-active');
@@ -455,6 +493,10 @@ export function setupAppShell(dependencies) {
     if (srsHeader) {
       srsHeader.style.display = 'flex';
     }
+    const srsTitle = document.getElementById('srs-screen-title');
+    const srsSubtitle = document.getElementById('srs-screen-subtitle');
+    if (srsTitle) srsTitle.textContent = 'Повторение';
+    if (srsSubtitle) srsSubtitle.textContent = 'Очередь FSRS и короткие сессии';
 
     const tabbar = document.querySelector('.tabbar');
     if (tabbar) tabbar.style.display = '';
@@ -467,25 +509,12 @@ export function setupAppShell(dependencies) {
       tabsContainerDashboard.style.display = '';
     }
 
-    $$('#srs-tabs-container .lib-tab').forEach((tab) => {
-      tab.classList.toggle('active', tab.dataset.tab === 'repetition');
-      tab.onclick = () => {
-        if (tab.dataset.tab === 'dictionary') {
-          $$('#srs-tabs-container .lib-tab').forEach((t) =>
-            t.classList.toggle('active', t === tab)
-          );
-          renderDictionary(state, dependencies, {}, context);
-        } else if (tab.dataset.tab === 'particles') {
-          $$('#srs-tabs-container .lib-tab').forEach((t) =>
-            t.classList.toggle('active', t === tab)
-          );
-          renderParticlesDictionary();
-        } else if (tab.dataset.tab === 'user-dictionaries') {
-          router.navigate('user-dictionaries');
-        } else {
-          renderSrsDashboard({}, context);
-        }
-      };
+    // Update tab active state without reassigning onclick
+    document.querySelectorAll('#srs-tabs-container .lib-tab').forEach((tab) => {
+      const isActive = tab.dataset.tab === 'repetition';
+      tab.classList.toggle('active', isActive);
+      tab.setAttribute('aria-selected', String(isActive));
+      tab.setAttribute('tabindex', isActive ? '0' : '-1');
     });
 
     await ensureLessonsForSrs();
@@ -566,6 +595,14 @@ export function setupAppShell(dependencies) {
     }
   };
 
+  const renderDictionaryRoute = (options = {}, context = {}) => {
+    initSrsTabsDelegate();
+    return activateSrsTab('dictionary', {
+      renderOptions: options,
+      routeContext: context,
+    });
+  };
+
   router = initRouter({
     home: (options, context) => renderHome(state, dependencies, options, context),
     course: (options, context) => renderCourse(state, dependencies, options, context),
@@ -584,6 +621,7 @@ export function setupAppShell(dependencies) {
       );
     },
     srs: (options, context) => renderSrsDashboard(options, context),
+    dictionary: (options, context) => renderDictionaryRoute(options, context),
     profile: (options, context) => renderProfile(state, dependencies, options, context),
     shop: async (options, context) => {
       const { renderShop } = await import('./shop.js');
@@ -631,17 +669,12 @@ export function setupAppShell(dependencies) {
       const { renderStatistics } = await import('./statistics.js');
       return renderStatistics(state, options, context);
     },
-    'user-dictionaries': async (options, context) => {
-      const { renderUserDictionaries } = await import('./user-dictionaries.js');
-      return renderUserDictionaries(
-        state,
-        {
-          ...dependencies,
-          refreshRuntime: () => refreshUserDictionaryLesson(LESSONS, undefined, state),
-        },
-        options,
-        context
-      );
+    'user-dictionaries': (options, context) => {
+      initSrsTabsDelegate();
+      return activateSrsTab('user-dictionaries', {
+        renderOptions: options,
+        routeContext: context,
+      });
     },
     'word-details': async (options, context) => {
       const { renderWordDetails } = await import('./word-details.js');

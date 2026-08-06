@@ -77,6 +77,7 @@ export class DictionaryStore {
     this.courseAliases = new Map(); // courseId -> Map(localId -> dictionaryId)
     this.courseReferences = new Map();
     this.referencesByDictionaryId = new Map();
+    this.userRevision = 0;
   }
 
   async ensureLoaded() {
@@ -135,6 +136,7 @@ export class DictionaryStore {
         }
       }
     }
+    this.userRevision++;
   }
 
   getDictionaryEntry(id) {
@@ -354,6 +356,7 @@ export class DictionaryStore {
       this.aliases.set(saved.id, id);
     }
     this.userEntries.set(id, entry);
+    this.userRevision++;
     return { entry, created: !current, conflict: null };
   }
 }

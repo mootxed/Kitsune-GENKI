@@ -3,6 +3,39 @@
   "description": "Asset provenance registry for KotoKitsu visual media",
   "assets": [
     {
+      "path": "public/assets/mascot/mascot-onboarding-large.webp",
+      "assetType": "mascot",
+      "sourceType": "ai-generated",
+      "generator": "unknown",
+      "model": "unknown",
+      "commissionedBy": "Mootxed",
+      "licenseStatus": "needs-author-confirmation",
+      "reviewStatus": "project-owner-supplied",
+      "changes": ["resized", "converted-to-webp"]
+    },
+    {
+      "path": "public/assets/mascot/mascot-hero-medium.webp",
+      "assetType": "mascot",
+      "sourceType": "ai-generated",
+      "generator": "unknown",
+      "model": "unknown",
+      "commissionedBy": "Mootxed",
+      "licenseStatus": "needs-author-confirmation",
+      "reviewStatus": "project-owner-supplied",
+      "changes": ["resized", "converted-to-webp"]
+    },
+    {
+      "path": "public/assets/mascot/mascot-message-compact.webp",
+      "assetType": "mascot",
+      "sourceType": "ai-generated",
+      "generator": "unknown",
+      "model": "unknown",
+      "commissionedBy": "Mootxed",
+      "licenseStatus": "needs-author-confirmation",
+      "reviewStatus": "project-owner-supplied",
+      "changes": ["resized", "converted-to-webp"]
+    },
+    {
       "path": "public/image/Story1.webp",
       "assetType": "story-cover",
       "sourceType": "ai-generated",

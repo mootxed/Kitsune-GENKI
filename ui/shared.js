@@ -5,6 +5,7 @@ import { XP_PER_LEVEL } from '../src/xp-system.js';
 import { $, todayStr, pluralDays } from '../src/utils.js';
 import { parseDateKey } from '../src/local-date.js';
 import { setSafeHTML } from '../src/security-helpers.js';
+import { dueCards } from '../src/srs-helpers.js';
 
 // ===== COMPLETION SCREEN (ЭКРАН УСПЕХА) =====
 export function showCompletionScreen(options) {
@@ -28,12 +29,10 @@ export function showCompletionScreen(options) {
   document.getElementById('completion-subtitle').textContent = subtitle;
   document.getElementById('completion-desc').textContent = desc;
 
-  // Установить тему (цвет фона)
-  if (theme === 'levelup') {
-    overlay.style.background = 'linear-gradient(135deg, #1a0a2e 0%, #2a1a4e 100%)';
-  } else {
-    overlay.style.background = 'linear-gradient(135deg, #1E3A2F 0%, #2E4A3F 100%)';
-  }
+  // Установить тему (классы вместо inline background)
+  overlay.style.background = '';
+  overlay.classList.remove('completion-success', 'completion-levelup');
+  overlay.classList.add(theme === 'levelup' ? 'completion-levelup' : 'completion-success');
 
   // Сгенерировать награды
   const rewardsContainer = document.getElementById('completion-rewards');
@@ -42,7 +41,7 @@ export function showCompletionScreen(options) {
     rewards
       .map(
         (r) =>
-          `<div class="reward-item">
+          `<div class="reward-item completion-reward">
       <span class="reward-icon">${r.icon}</span>
       <span class="reward-label">${r.label}</span>
     </div>`
@@ -81,23 +80,47 @@ export function showCompletionScreen(options) {
 
   // Обработчик кнопки
   const btn = document.getElementById('btn-completion-continue');
-  btn.onclick = () => {
-    overlay.classList.add('hidden');
+  if (btn) {
+    btn.textContent = 'Продолжить';
+    btn.onclick = () => {
+      overlay.classList.add('hidden');
 
-    // Восстанавливаем tabbar при закрытии completion screen
-    const tabbar = document.querySelector('.tabbar');
-    if (tabbar) tabbar.style.display = '';
+      // Восстанавливаем tabbar при закрытии completion screen
+      const tabbar = document.querySelector('.tabbar');
+      if (tabbar) tabbar.style.display = '';
 
-    if (onContinue) onContinue();
-  };
+      if (onContinue) onContinue();
+    };
+  }
 }
 
 // ---------- Avatar Sync ----------
 export function syncAvatars() {
-  const all = document.querySelectorAll('.logo-fox');
+  const s = state || (typeof window !== 'undefined' ? window.state : null);
+  const avatar = s?.currentAvatar || '🦊';
+  const all = document.querySelectorAll('.user-avatar');
   all.forEach((el) => {
-    el.textContent = state.currentAvatar || '🦊';
+    el.textContent = avatar;
   });
+}
+
+// ---------- Update SRS Badge ----------
+export function updateSrsBadge() {
+  const s = state || (typeof window !== 'undefined' ? window.state : null);
+  if (!s?.srs) return;
+  const rawDue = dueCards(s.srs);
+  const due = countAvailableCardsForSession(rawDue, s.srs);
+  const badge =
+    document.getElementById('tab-srs-badge') ||
+    document.querySelector('.tab-badge[data-tab="srs"]');
+  if (badge) {
+    if (due > 0) {
+      badge.textContent = due > 99 ? '99+' : due;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  }
 }
 
 // ---------- Refresh Streak Display ----------
@@ -180,20 +203,5 @@ export function applyCustomTheme() {
     if (window.applyTheme) window.applyTheme();
   } else {
     document.documentElement.setAttribute('data-theme', theme);
-  }
-}
-
-// ---------- Update SRS Badge ----------
-export function updateSrsBadge() {
-  if (!window.dueCards || !state?.srs) return;
-  const due = countAvailableCardsForSession(window.dueCards(state.srs), state.srs);
-  const badge = document.querySelector('.tab-badge[data-tab="srs"]');
-  if (badge) {
-    if (due > 0) {
-      badge.textContent = due > 99 ? '99+' : due;
-      badge.classList.remove('hidden');
-    } else {
-      badge.classList.add('hidden');
-    }
   }
 }

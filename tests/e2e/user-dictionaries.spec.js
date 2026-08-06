@@ -69,7 +69,10 @@ test.describe('User dictionaries full flow', () => {
     await page.reload();
     await waitForAppReady(page);
     await navigateToScreen(page, 'user-dictionaries');
-    await page.getByRole('button', { name: 'Открыть', exact: true }).click();
+    await page
+      .getByTestId('screen-user-dictionaries')
+      .getByRole('button', { name: 'Открыть', exact: true })
+      .click();
     await expect(page.getByRole('heading', { name: '食べる' })).toBeVisible();
 
     await navigateToScreen(page, 'settings');
@@ -96,7 +99,10 @@ test.describe('User dictionaries full flow', () => {
     await reloadPromise;
     await waitForAppReady(page);
     await navigateToScreen(page, 'user-dictionaries');
-    await page.getByRole('button', { name: 'Открыть', exact: true }).click();
+    await page
+      .getByTestId('screen-user-dictionaries')
+      .getByRole('button', { name: 'Открыть', exact: true })
+      .click();
     await expect(page.getByRole('heading', { name: '食べる' })).toBeVisible();
 
     const downloadPromise = page.waitForEvent('download');
@@ -105,7 +111,10 @@ test.describe('User dictionaries full flow', () => {
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toContain('.kotokitsu.json');
 
-    await page.getByRole('button', { name: 'Открыть', exact: true }).click();
+    await page
+      .getByTestId('screen-user-dictionaries')
+      .getByRole('button', { name: 'Открыть', exact: true })
+      .click();
     page.once('dialog', (confirmation) => confirmation.accept());
     await page.getByRole('button', { name: 'Удалить' }).click();
     await expect(page.getByText('В словаре пока нет слов')).toBeVisible();

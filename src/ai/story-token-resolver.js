@@ -692,7 +692,12 @@ export async function resolveStoryTokens(options = {}) {
     }
   }
 
-  console.info('[StoryTokenResolver]', statistics);
+  if (
+    options.verbose ||
+    (typeof window !== 'undefined' && (window.__DEBUG_STORY_TOKENS__ || window.devMode))
+  ) {
+    console.info('[StoryTokenResolver]', statistics);
+  }
 
   const updatedStory = isStoryObject
     ? { ...rawStory, story: resolvedSentences }

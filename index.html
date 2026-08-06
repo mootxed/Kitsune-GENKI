@@ -6,16 +6,77 @@
     <meta name="theme-color" content="#FF7A1A" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#12121E" media="(prefers-color-scheme: dark)" />
 
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🦊</text></svg>"
-    />
+    <link rel="icon" href="icon.svg" />
     <title>KotoKitsu — Независимый тренажёр японского языка</title>
     <link rel="manifest" href="manifest.json" />
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles-redesign.css" />
     <link rel="apple-touch-icon" href="icon.svg" />
   </head>
   <body>
+    <svg class="app-icon-sprite" aria-hidden="true">
+      <symbol id="i-fox-mark" viewBox="0 0 40 40">
+        <path d="M5 16 7 3l11 8M35 16 33 3l-11 8" class="fox-mark-ears" />
+        <path
+          d="M7 16c0-7 5-11 13-11s13 4 13 11v7c0 8-6 13-13 13S7 31 7 23Z"
+          class="fox-mark-head"
+        />
+        <path
+          d="M9 22c3 0 5 1 7 4 1-2 3-3 4-3s3 1 4 3c2-3 4-4 7-4-1 8-5 11-11 11S10 30 9 22Z"
+          class="fox-mark-muzzle"
+        />
+        <circle cx="15" cy="19" r="2" class="fox-mark-detail" />
+        <circle cx="25" cy="19" r="2" class="fox-mark-detail" />
+        <path d="M18 25h4l-2 2Z" class="fox-mark-detail" />
+      </symbol>
+      <symbol id="i-home" viewBox="0 0 24 24">
+        <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+      </symbol>
+      <symbol id="i-plan" viewBox="0 0 24 24">
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M8 3v4m8-4v4M3 10h18M8 14h3m2 0h3m-8 4h3" />
+      </symbol>
+      <symbol id="i-book" viewBox="0 0 24 24">
+        <path
+          d="M4 4.5A2.5 2.5 0 0 1 6.5 2H11v18H6.5A2.5 2.5 0 0 0 4 22zM20 4.5A2.5 2.5 0 0 0 17.5 2H13v18h4.5A2.5 2.5 0 0 1 20 22z"
+        />
+      </symbol>
+      <symbol id="i-repeat" viewBox="0 0 24 24">
+        <path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3" />
+      </symbol>
+      <symbol id="i-search" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-4-4" />
+      </symbol>
+      <symbol id="i-story" viewBox="0 0 24 24">
+        <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" />
+        <path d="M8 20a3 3 0 0 1 0-6h11M9 8h6" />
+      </symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24">
+        <path d="M21 12a8 8 0 0 1-8 8H5l-3 2 1-5a9 9 0 1 1 18-5z" />
+        <path d="M8 12h.01M12 12h.01M16 12h.01" />
+      </symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10m6 10V4m6 16v-7m5 7H2" /></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6V3h4v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"
+        />
+      </symbol>
+      <symbol id="i-theme" viewBox="0 0 24 24">
+        <path d="M20 15.2A8 8 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2z" />
+      </symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z" /></symbol>
+      <symbol id="i-more" viewBox="0 0 24 24">
+        <circle cx="5" cy="12" r="1" />
+        <circle cx="12" cy="12" r="1" />
+        <circle cx="19" cy="12" r="1" />
+      </symbol>
+      <symbol id="i-user" viewBox="0 0 24 24">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </symbol>
+    </svg>
     <div id="app">
       <!-- Grid Background -->
       <div class="grid-background"></div>
@@ -33,21 +94,26 @@
       <section class="screen hidden" id="screen-home" data-testid="screen-home">
         <header class="app-header">
           <div class="app-header-left">
-            <span class="logo-fox">🦊</span>
+            <span class="logo-fox brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
             <div>
-              <h1 class="app-title">KotoKitsu</h1>
-              <p class="app-subtitle">Тренажёр японского</p>
+              <h1 class="app-title" id="home-greeting-title">Добро пожаловать</h1>
+              <p class="app-subtitle" id="home-greeting-subtitle">План на сегодня готов</p>
             </div>
           </div>
           <div class="app-header-right">
-            <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
+            <span class="offline-chip"><span></span>Доступно без сети</span>
             <button
-              class="icon-btn"
+              class="icon-btn theme-shortcut"
               data-nav="settings"
-              data-testid="header-settings-btn"
-              aria-label="Настройки"
+              aria-label="Открыть настройки темы"
             >
-              ⚙️
+              <svg class="ui-icon"><use href="#i-theme" /></svg>
+              <span class="sr-only">Открыть настройки темы</span>
+            </button>
+            <button class="icon-btn home-avatar" data-nav="profile" aria-label="Открыть профиль">
+              <span class="user-avatar">🦊</span>
             </button>
           </div>
         </header>
@@ -86,25 +152,81 @@
           </div>
           <span class="streak-flame">🔥</span>
 
-          <button
-            class="continue-learning-card"
-            id="btn-continue-learning"
-            data-testid="continue-learning-btn"
-          >
-            <span class="continue-mark">続</span>
-            <span class="continue-copy">
-              <strong id="continue-learning-title">Продолжить обучение</strong>
-              <small id="continue-learning-context">Определяем следующий шаг…</small>
-            </span>
-            <span class="continue-arrow">→</span>
-          </button>
+          <section class="home-hero" aria-labelledby="continue-learning-title">
+            <div class="home-hero-copy">
+              <span class="home-hero-eyebrow">СЛЕДУЮЩИЙ ШАГ</span>
+              <button
+                class="continue-learning-card"
+                id="btn-continue-learning"
+                data-testid="continue-learning-btn"
+              >
+                <span class="continue-mark" aria-hidden="true">続</span>
+                <span class="continue-copy">
+                  <strong id="continue-learning-title">Продолжить обучение</strong>
+                  <small id="continue-learning-context">Определяем следующий шаг…</small>
+                </span>
+                <span class="home-task-meta" aria-hidden="true">
+                  <span class="home-meta-chip" id="home-action-count">Текущая задача</span>
+                  <span class="home-meta-chip" id="home-action-duration">≈ 5 минут</span>
+                  <span class="home-meta-chip info" id="home-action-source">План · сегодня</span>
+                </span>
+                <span class="continue-arrow" aria-hidden="true">
+                  <svg class="ui-icon"><use href="#i-play" /></svg>
+                  <span id="continue-action-label">Начать</span>
+                </span>
+              </button>
+            </div>
+            <figure class="home-mascot" aria-hidden="true">
+              <span class="home-mascot-halo"></span>
+              <img
+                src="assets/mascot/mascot-hero-medium.webp"
+                width="512"
+                height="512"
+                alt=""
+                loading="eager"
+                decoding="async"
+              />
+            </figure>
+          </section>
 
-          <section
-            class="home-today-card"
-            id="home-plan-today"
-            data-testid="home-plan-today"
-            aria-live="polite"
-          ></section>
+          <div class="home-today-panel">
+            <section
+              class="home-today-card"
+              id="home-plan-today"
+              data-testid="home-plan-today"
+              aria-live="polite"
+            ></section>
+
+            <article class="home-plan-progress-card" id="home-plan-progress-card">
+              <div class="home-plan-progress-head">
+                <div>
+                  <span class="today-eyebrow">ПЛАН</span>
+                  <h2 id="home-plan-pace-title">Вы идёте в темпе</h2>
+                </div>
+                <span class="home-plan-reserve" id="home-plan-reserve">12 глав</span>
+              </div>
+              <div class="home-course-glance">
+                <div>
+                  <strong id="home-course-progress-label">GENKI I · глава 1</strong
+                  ><span id="home-course-progress-percent">0%</span>
+                </div>
+                <div class="home-progress-track"><span id="home-course-progress-bar"></span></div>
+                <p id="home-plan-deadline">
+                  План рассчитывает дату завершения по реальному прогрессу.
+                </p>
+              </div>
+            </article>
+          </div>
+
+          <aside class="home-reason-strip">
+            <svg class="ui-icon" aria-hidden="true"><use href="#i-repeat" /></svg>
+            <div>
+              <strong>Почему именно этот шаг?</strong>
+              <p id="home-reason-copy">
+                План выбрал следующую задачу по текущему прогрессу и расписанию.
+              </p>
+            </div>
+          </aside>
 
           <button class="course-entry-card" id="home-course-link" data-testid="course-entry-btn">
             <span>Все главы курса</span>
@@ -117,10 +239,15 @@
       <!-- ===== COURSE ===== -->
       <section class="screen hidden" id="screen-course" data-testid="screen-course">
         <header class="app-header">
-          <button class="icon-btn back-btn" data-nav="home" aria-label="Назад">‹</button>
-          <div>
-            <h1 class="app-title">Курс</h1>
-            <p class="app-subtitle">Все главы, включая завершённые</p>
+          <div class="app-header-left">
+            <button class="icon-btn back-btn" data-nav="home" aria-label="Назад">‹</button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">Курс</h1>
+              <p class="app-subtitle">Все главы, включая завершённые</p>
+            </div>
           </div>
         </header>
         <div class="screen-scroll">
@@ -129,20 +256,66 @@
         </div>
       </section>
 
-      <!-- ===== CHAPTER DETAIL ===== -->
-      <section class="screen hidden" id="screen-chapter" data-testid="screen-chapter">
+      <!-- ===== PROFILE ===== -->
+      <section class="screen hidden" id="screen-profile" data-testid="screen-profile">
         <header class="app-header">
+          <div class="app-header-left">
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div><h1 class="app-title">Профиль</h1></div>
+          </div>
+          <div class="app-header-right">
+            <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
+            <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
+          </div>
+        </header>
+        <div class="screen-scroll" id="profile-body"></div>
+      </section>
+
+      <!-- ===== QUESTS ===== -->
+      <section class="screen hidden" id="screen-quests" data-testid="screen-quests">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div><h1 class="app-title">Квесты</h1></div>
+          </div>
           <button
             class="icon-btn back-btn"
             data-nav="home"
-            data-testid="chapter-back-btn"
+            data-testid="quests-back-btn"
             aria-label="Назад"
           >
             ‹
           </button>
-          <div>
-            <h1 class="app-title" id="chapter-title">Глава</h1>
-            <p class="app-subtitle" id="chapter-jp"></p>
+        </header>
+        <div class="screen-scroll">
+          <div id="quests-container"></div>
+          <div class="bottom-pad"></div>
+        </div>
+      </section>
+
+      <!-- ===== CHAPTER DETAIL ===== -->
+      <section class="screen hidden" id="screen-chapter" data-testid="screen-chapter">
+        <header class="app-header">
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              data-nav="home"
+              data-testid="chapter-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title" id="chapter-title">Глава</h1>
+              <p class="app-subtitle" id="chapter-jp"></p>
+            </div>
           </div>
         </header>
         <div class="screen-scroll" id="chapter-body"></div>
@@ -160,10 +333,12 @@
             >
               ‹
             </button>
-            <span class="logo-fox">🦊</span>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
             <div>
-              <h1 class="app-title">KotoKitsu</h1>
-              <p class="app-subtitle">Система интервальных повторений</p>
+              <h1 class="app-title" id="srs-screen-title">Повторение</h1>
+              <p class="app-subtitle" id="srs-screen-subtitle">Очередь FSRS и короткие сессии</p>
             </div>
           </div>
           <div class="app-header-right">
@@ -171,34 +346,1011 @@
             <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
           </div>
         </header>
-        <div class="lib-tabs" id="srs-tabs-container">
-          <button class="lib-tab active" data-tab="repetition">Повторение</button>
-          <button class="lib-tab" data-tab="dictionary">Словарь</button>
-          <button class="lib-tab" data-tab="particles">Частицы</button>
-          <button class="lib-tab" data-tab="user-dictionaries">Мои словари</button>
+        <div class="lib-tabs" id="srs-tabs-container" role="tablist" aria-label="Разделы SRS">
+          <button
+            class="lib-tab active"
+            data-tab="repetition"
+            role="tab"
+            aria-selected="true"
+            aria-controls="srs-body"
+            tabindex="0"
+          >
+            Повторение
+          </button>
+          <button
+            class="lib-tab"
+            data-tab="dictionary"
+            role="tab"
+            aria-selected="false"
+            aria-controls="srs-body"
+            tabindex="-1"
+          >
+            Словарь
+          </button>
+          <button
+            class="lib-tab"
+            data-tab="particles"
+            role="tab"
+            aria-selected="false"
+            aria-controls="srs-body"
+            tabindex="-1"
+          >
+            Частицы
+          </button>
+          <button
+            class="lib-tab"
+            data-tab="user-dictionaries"
+            role="tab"
+            aria-selected="false"
+            aria-controls="srs-body"
+            tabindex="-1"
+          >
+            Мои словари
+          </button>
         </div>
         <div class="screen-scroll" id="srs-body"></div>
       </section>
 
+
+      <!-- ===== AI STORY GENERATOR ===== -->
+      <section class="screen hidden" id="screen-ai-story" data-testid="screen-ai-story">
+        <header class="app-header">
+          <button
+            class="icon-btn back-btn"
+            data-nav="sensei"
+            data-testid="ai-story-back-btn"
+            aria-label="Назад"
+          >
+            ‹
+          </button>
+          <div>
+            <h1 class="app-title">AI-история</h1>
+            <p class="app-subtitle">Генератор персонализированных историй</p>
+          </div>
+        </header>
+        <div class="screen-scroll" id="ai-story-body"></div>
+      </section>
+
+      <!-- ===== CROSSWORD ===== -->
+      <section class="screen hidden" id="screen-crossword" data-testid="screen-crossword">
+        <header class="app-header">
+          <button
+            class="icon-btn back-btn"
+            data-nav="sensei"
+            data-testid="crossword-back-btn"
+            aria-label="Назад"
+          >
+            ‹
+          </button>
+          <div>
+            <h1 class="app-title">🧩 Кроссворд</h1>
+            <p class="app-subtitle">Закрепление изученных слов</p>
+          </div>
+        </header>
+        <div class="screen-scroll" id="crossword-body"></div>
+      </section>
+
+      <!-- ===== WORD SEARCH ===== -->
+      <section class="screen hidden" id="screen-word-search" data-testid="screen-word-search">
+        <header class="app-header">
+          <button
+            class="icon-btn back-btn"
+            data-nav="sensei"
+            data-testid="word-search-back-btn"
+            aria-label="Назад"
+          >
+            ‹
+          </button>
+          <div>
+            <h1 class="app-title">🔍 Охота на слова</h1>
+            <p class="app-subtitle">Найдите японские слова по русскому переводу</p>
+          </div>
+        </header>
+        <div class="screen-scroll" id="word-search-body"></div>
+      </section>
+
+      <!-- ===== LIBRARY ===== -->
+      <section class="screen hidden" id="screen-library" data-testid="screen-library">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="logo-fox">📚</span>
+            <h1 class="app-title">Мини-учебник</h1>
+          </div>
+          <div class="app-header-right">
+            <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
+            <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
+          </div>
+        </header>
+        <div class="lib-tabs">
+          <button class="lib-tab active" data-libtab="grammar" data-testid="libtab-grammar">
+            Грамматика
+          </button>
+          <button class="lib-tab" data-libtab="notes" data-testid="libtab-notes">Заметки</button>
+          <button class="lib-tab" data-libtab="stories" data-testid="libtab-stories">
+            Истории
+          </button>
+        </div>
+        <div class="screen-scroll" id="library-body"></div>
+      </section>
+
+      <!-- ===== STORY READING ===== -->
+      <section class="screen hidden" id="screen-story" data-testid="screen-story">
+        <header class="app-header">
+          <button
+            class="icon-btn back-btn"
+            data-nav="library"
+            data-testid="story-back-btn"
+            aria-label="Назад"
+          >
+            ‹
+          </button>
+          <div>
+            <h1 class="app-title" id="story-title">История</h1>
+            <p class="app-subtitle" id="story-title-jp"></p>
+          </div>
+        </header>
+        <div class="screen-scroll" id="story-body"></div>
+      </section>
+
+      <!-- ===== SETTINGS ===== -->
+      <section class="screen hidden" id="screen-settings" data-testid="screen-settings">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="logo-fox">⚙️</span>
+            <h1 class="app-title">Настройки</h1>
+          </div>
+        </header>
+        <div class="screen-scroll" id="settings-body"></div>
+      </section>
+
+      <!-- ===== DEV TOOLS ===== -->
+      <section class="screen hidden" id="screen-dev-tools" data-testid="screen-dev-tools">
+        <header class="app-header">
+          <button
+            class="icon-btn back-btn"
+            data-nav="settings"
+            data-testid="dev-tools-back-btn"
+            aria-label="Назад"
+          >
+            ‹
+          </button>
+          <div>
+            <h1 class="app-title">🛠️ Инструменты разработчика</h1>
+            <p class="app-subtitle">Журнал логов и диагностика</p>
+          </div>
+        </header>
+        <div class="screen-scroll" id="dev-tools-body"></div>
+      </section>
+
+      <!-- ===== STATISTICS ===== -->
+      <section class="screen hidden" id="screen-statistics" data-testid="screen-statistics">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="logo-fox">📊</span>
+            <h1 class="app-title">Статистика</h1>
+          </div>
+          <div class="app-header-right">
+            <button class="icon-btn" data-nav="profile" aria-label="Профиль">👤</button>
+          </div>
+        </header>
+        <div class="screen-scroll" id="statistics-body"></div>
+      </section>
+
+      <!-- ===== WORD DETAILS ===== -->
+      <section class="screen hidden" id="screen-word-details" data-testid="screen-word-details">
+        <header class="app-header">
+          <button
+            class="icon-btn back-btn"
+            id="word-details-back-btn"
+            data-testid="word-details-back-btn"
+            aria-label="Назад"
+            onclick="history.back()"
+          >
+            ‹
+          </button>
+          <div>
+            <h1 class="app-title">Слово</h1>
+          </div>
+        </header>
+        <div class="screen-scroll" id="word-details-body"></div>
+      </section>
+
+      <!-- ===== STUDY PLAN ===== -->
+      <section class="screen hidden" id="screen-plan" data-testid="screen-plan">
+        <div class="screen-scroll">
+          <div class="screen-header">
+            <button class="back-btn" data-testid="plan-back-btn">‹</button>
+            <h1>План обучения</h1>
+          </div>
+
+          <!-- Уведомления (видны и при форме, и при просмотре) -->
+          <div id="plan-warning" class="plan-warning hidden"></div>
+
+          <!-- Форма создания/редактирования плана -->
+          <div id="plan-form-container">
+            <h3 id="plan-form-title">Создать новый план</h3>
+
+            <div class="form-group">
+              <label class="form-label" for="plan-start-date">Дата начала</label>
+              <input
+                type="date"
+                id="plan-start-date"
+                class="form-input"
+                data-testid="plan-start-date"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Способ выбора срока</label>
+              <div class="plan-deadline-toggle">
+                <button class="toggle-btn active" data-mode="days" data-testid="deadline-mode-days">
+                  Количество дней
+                </button>
+                <button class="toggle-btn" data-mode="date" data-testid="deadline-mode-date">
+                  Дата дедлайна
+                </button>
+              </div>
+            </div>
+
+            <div id="plan-days-input" class="form-group">
+              <label class="form-label" for="plan-total-days">Количество учебных дней</label>
+              <input
+                type="number"
+                id="plan-total-days"
+                class="form-input"
+                min="12"
+                value="90"
+                data-testid="plan-total-days"
+              />
+            </div>
+
+            <div id="plan-deadline-input" class="form-group hidden">
+              <label class="form-label" for="plan-deadline-date">Дата дедлайна</label>
+              <input
+                type="date"
+                id="plan-deadline-date"
+                class="form-input"
+                data-testid="plan-deadline-date"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Дни недели</label>
+              <div class="weekday-selector">
+                <button class="weekday-btn active" data-day="1" data-testid="weekday-1">Пн</button>
+                <button class="weekday-btn active" data-day="2" data-testid="weekday-2">Вт</button>
+                <button class="weekday-btn active" data-day="3" data-testid="weekday-3">Ср</button>
+                <button class="weekday-btn active" data-day="4" data-testid="weekday-4">Чт</button>
+                <button class="weekday-btn active" data-day="5" data-testid="weekday-5">Пт</button>
+                <button class="weekday-btn" data-day="6" data-testid="weekday-6">Сб</button>
+                <button class="weekday-btn" data-day="0" data-testid="weekday-0">Вс</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" id="label-plan-capacity-minutes" for="plan-capacity-minutes"
+                >Сколько времени вы готовы заниматься в учебный день?</label
+              >
+              <select
+                id="plan-capacity-minutes"
+                class="form-input"
+                data-testid="plan-capacity-select"
+                aria-labelledby="label-plan-capacity-minutes"
+              >
+                <option value="15">15 минут</option>
+                <option value="30" selected>30 минут</option>
+                <option value="45">45 минут</option>
+                <option value="60">60 минут</option>
+              </select>
+            </div>
+
+            <!-- Прогресс изученных глав -->
+            <div class="plan-progress-widget card">
+              <span class="form-label">Уже изучено</span>
+              <div class="plan-progress-bar-container">
+                <div
+                  id="plan-progress-bar-fill"
+                  class="plan-progress-bar-fill"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <span id="plan-progress-text" class="plan-progress-text">Загрузка прогресса...</span>
+            </div>
+
+            <!-- Дополнительные настройки -->
+            <details class="plan-advanced-details">
+              <summary>Дополнительные настройки</summary>
+              <div class="plan-advanced-content">
+                <label class="chapter-checkbox-item">
+                  <input
+                    type="checkbox"
+                    id="plan-workbook-enabled"
+                    data-testid="plan-workbook-enabled"
+                    checked
+                  />
+                  <span class="chapter-checkbox-label">Включить дополнительную практику</span>
+                </label>
+                <div id="plan-workbook-sub-options" style="margin-left: 1.5rem; margin-top: 0.5rem">
+                  <label class="chapter-checkbox-item">
+                    <input
+                      type="checkbox"
+                      id="plan-workbook-conversation-grammar"
+                      data-testid="plan-workbook-conversation-grammar"
+                      checked
+                    />
+                    <span class="chapter-checkbox-label">Грамматические задания</span>
+                  </label>
+                  <label class="chapter-checkbox-item">
+                    <input
+                      type="checkbox"
+                      id="plan-workbook-reading-writing"
+                      data-testid="plan-workbook-reading-writing"
+                      checked
+                    />
+                    <span class="chapter-checkbox-label">Чтение и письмо</span>
+                  </label>
+                </div>
+                <p style="font-size: 0.875rem; color: #666; margin: 0.5rem 0 1rem">
+                  Настройки регулируют включение заданий дополнительной практики в главы и план.
+                </p>
+                <label class="form-label">Уже изученные главы (ручная корректировка)</label>
+                <p style="font-size: 0.875rem; color: #666; margin-bottom: 1rem">
+                  Отметьте главы, которые вы уже изучили. Они не будут включены в план обучения.
+                </p>
+                <div id="completed-chapters-list" class="completed-chapters-list"></div>
+              </div>
+            </details>
+
+            <div id="plan-preview-container" class="plan-preview-container card hidden"></div>
+
+            <div class="plan-form-actions">
+              <button
+                class="btn btn-primary"
+                id="plan-generate-btn"
+                data-testid="plan-generate-btn"
+              >
+                Создать план
+              </button>
+              <button
+                class="btn btn-secondary"
+                id="plan-cancel-btn"
+                data-testid="plan-cancel-btn"
+                style="display: none"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+
+          <!-- Контейнер плана (показывается после генерации) -->
+          <div id="plan-view-container" class="hidden">
+            <!-- Уведомления режима просмотра (диалог дедлайна, ошибки пересчёта) -->
+            <div id="plan-view-warning" class="plan-warning hidden"></div>
+
+            <!-- Панель управления планом -->
+            <div id="plan-controls" class="plan-controls card hidden">
+              <button class="btn btn-secondary" id="plan-edit-btn" data-testid="plan-edit-btn">
+                ✏️ Изменить
+              </button>
+              <button class="btn btn-secondary" id="plan-recalc-btn" data-testid="plan-recalc-btn">
+                🔄 Пересчитать
+              </button>
+              <button class="btn btn-secondary" id="plan-pause-btn" data-testid="plan-pause-btn">
+                ⏸️ Приостановить
+              </button>
+              <button class="btn btn-danger" id="plan-delete-btn" data-testid="plan-delete-btn">
+                🗑️ Удалить
+              </button>
+            </div>
+
+            <!-- План на сегодня -->
+            <div id="plan-today-card" class="plan-today-card hidden"></div>
+
+            <!-- Переключатель вида -->
+            <div class="plan-view-toggle card">
+              <button class="toggle-btn active" data-view="timeline" data-testid="view-timeline">
+                📋 Таймлайн
+              </button>
+              <button class="toggle-btn" data-view="grid" data-testid="view-grid">
+                📅 Календарь
+              </button>
+            </div>
+
+            <!-- Таймлайн (список сегментов) -->
+            <div id="plan-timeline" class="plan-timeline"></div>
+
+            <!-- Календарная сетка -->
+            <div id="plan-calendar-grid" class="heatmap-calendar-card hidden">
+              <div class="heatmap-nav">
+                <button class="heatmap-nav-btn" id="plan-heatmap-prev">←</button>
+                <span class="heatmap-month-label" id="plan-heatmap-month-label">Месяц</span>
+                <button class="heatmap-nav-btn" id="plan-heatmap-next">→</button>
+              </div>
+              <div class="heatmap-legend" id="plan-heatmap-legend"></div>
+              <div class="heatmap-weekdays">
+                <div class="heatmap-weekday">Пн</div>
+                <div class="heatmap-weekday">Вт</div>
+                <div class="heatmap-weekday">Ср</div>
+                <div class="heatmap-weekday">Чт</div>
+                <div class="heatmap-weekday">Пт</div>
+                <div class="heatmap-weekday">Сб</div>
+                <div class="heatmap-weekday">Вс</div>
+              </div>
+              <div class="heatmap-grid" id="plan-heatmap-grid"></div>
+            </div>
+
+            <!-- Рекомендации по распределению времени -->
+            <div id="plan-advice-container" class="card hidden">
+              <h3>Распределение времени</h3>
+              <p class="advice-subtitle">Рекомендации оптимального баланса</p>
+              <div id="plan-advice-bar" class="advice-bar hidden"></div>
+              <div id="plan-advice-percentages" class="advice-percentages hidden"></div>
+              <p id="plan-advice-tip" class="advice-tip"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== USER DICTIONARIES ===== -->
+      <section
+        class="screen hidden"
+        id="screen-user-dictionaries"
+        data-testid="screen-user-dictionaries"
+      >
+        <header class="app-header">
+          <button class="icon-btn back-btn" data-nav="srs" aria-label="Назад">‹</button>
+          <div>
+            <h1 class="app-title">Мои словари</h1>
+            <p class="app-subtitle">Личные слова отдельно от очереди обучения</p>
+          </div>
+        </header>
+        <div class="screen-scroll">
+          <div id="user-dictionaries-body"></div>
+          <div class="bottom-pad"></div>
+        </div>
+      </section>
+
+      <!-- ===== SENSEI ===== -->
+      <section
+        class="screen sensei-screen-layout hidden"
+        id="screen-sensei"
+        data-testid="screen-sensei"
+      >
+        <header class="sensei-header app-header">
+          <div class="sensei-header-title app-header-left">
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <h1 class="app-title">AI Сенсей</h1>
+          </div>
+          <div class="sensei-header-actions app-header-right">
+            <button
+              class="icon-btn"
+              data-nav="settings"
+              aria-label="Настройки Сенсея"
+              id="sensei-settings-btn"
+            >
+              ⚙️
+            </button>
+          </div>
+        </header>
+        <nav class="sensei-tabs" role="tablist" aria-label="Вкладки Сенсея">
+          <button
+            class="sensei-tab active"
+            role="tab"
+            aria-selected="true"
+            data-senseitab="chat"
+            data-testid="senseitab-chat"
+          >
+            Чат
+          </button>
+          <button
+            class="sensei-tab"
+            role="tab"
+            aria-selected="false"
+            data-senseitab="tools"
+            data-testid="senseitab-tools"
+          >
+            Инструменты
+          </button>
+        </nav>
+        <div class="sensei-main-container" id="sensei-body"></div>
+      </section>
+
+      <!-- ===== AI STORY GENERATOR ===== -->
+      <section class="screen hidden" id="screen-ai-story" data-testid="screen-ai-story">
+        <header class="app-header">
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              data-nav="sensei"
+              data-testid="ai-story-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">AI-история</h1>
+              <p class="app-subtitle">Генератор персонализированных историй</p>
+            </div>
+          </div>
+        </header>
+        <div class="screen-scroll" id="ai-story-body"></div>
+      </section>
+
+      <!-- ===== CROSSWORD ===== -->
+      <section class="screen hidden" id="screen-crossword" data-testid="screen-crossword">
+        <header class="app-header">
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              data-nav="sensei"
+              data-testid="crossword-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">🧩 Кроссворд</h1>
+              <p class="app-subtitle">Закрепление изученных слов</p>
+            </div>
+          </div>
+        </header>
+        <div class="screen-scroll" id="crossword-body"></div>
+      </section>
+
+      <!-- ===== WORD SEARCH ===== -->
+      <section class="screen hidden" id="screen-word-search" data-testid="screen-word-search">
+        <header class="app-header">
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              data-nav="sensei"
+              data-testid="word-search-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">🔍 Охота на слова</h1>
+              <p class="app-subtitle">Найдите японские слова по русскому переводу</p>
+            </div>
+          </div>
+        </header>
+        <div class="screen-scroll" id="word-search-body"></div>
+      </section>
+
+      <!-- ===== LIBRARY ===== -->
+      <section class="screen hidden" id="screen-library" data-testid="screen-library">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <h1 class="app-title">Мини-учебник</h1>
+          </div>
+          <div class="app-header-right">
+            <button class="icon-btn" data-nav="shop" aria-label="Магазин">🛒</button>
+            <button class="icon-btn" data-nav="settings" aria-label="Настройки">⚙️</button>
+          </div>
+        </header>
+        <div class="lib-tabs">
+          <button class="lib-tab active" data-libtab="grammar" data-testid="libtab-grammar">
+            Грамматика
+          </button>
+          <button class="lib-tab" data-libtab="notes" data-testid="libtab-notes">Заметки</button>
+          <button class="lib-tab" data-libtab="stories" data-testid="libtab-stories">
+            Истории
+          </button>
+        </div>
+        <div class="screen-scroll" id="library-body"></div>
+      </section>
+
+      <!-- ===== STORY READING ===== -->
+      <section class="screen hidden" id="screen-story" data-testid="screen-story">
+        <header class="app-header">
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              data-nav="library"
+              data-testid="story-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title" id="story-title">История</h1>
+              <p class="app-subtitle" id="story-title-jp"></p>
+            </div>
+          </div>
+        </header>
+        <div class="screen-scroll" id="story-body"></div>
+      </section>
+
+      <!-- ===== SETTINGS ===== -->
+      <section class="screen hidden" id="screen-settings" data-testid="screen-settings">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <h1 class="app-title">Настройки</h1>
+          </div>
+        </header>
+        <div class="screen-scroll" id="settings-body"></div>
+      </section>
+
+      <!-- ===== DEV TOOLS ===== -->
+      <section class="screen hidden" id="screen-dev-tools" data-testid="screen-dev-tools">
+        <header class="app-header">
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              data-nav="settings"
+              data-testid="dev-tools-back-btn"
+              aria-label="Назад"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">🛠️ Инструменты разработчика</h1>
+              <p class="app-subtitle">Журнал логов и диагностика</p>
+            </div>
+          </div>
+        </header>
+        <div class="screen-scroll" id="dev-tools-body"></div>
+      </section>
+
+      <!-- ===== STATISTICS ===== -->
+      <section class="screen hidden" id="screen-statistics" data-testid="screen-statistics">
+        <header class="app-header">
+          <div class="app-header-left">
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <h1 class="app-title">Статистика</h1>
+          </div>
+          <div class="app-header-right">
+            <button class="icon-btn" data-nav="profile" aria-label="Профиль">👤</button>
+          </div>
+        </header>
+        <div class="screen-scroll" id="statistics-body"></div>
+      </section>
+
+      <!-- ===== WORD DETAILS ===== -->
+      <section class="screen hidden" id="screen-word-details" data-testid="screen-word-details">
+        <header class="app-header">
+          <div class="app-header-left">
+            <button
+              class="icon-btn back-btn"
+              id="word-details-back-btn"
+              data-testid="word-details-back-btn"
+              aria-label="Назад"
+              onclick="history.back()"
+            >
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">Слово</h1>
+            </div>
+          </div>
+        </header>
+        <div class="screen-scroll" id="word-details-body"></div>
+      </section>
+
+      <!-- ===== STUDY PLAN ===== -->
+      <section class="screen hidden" id="screen-plan" data-testid="screen-plan">
+        <header class="app-header">
+          <div class="app-header-left">
+            <button class="icon-btn back-btn" data-testid="plan-back-btn" aria-label="Назад">
+              ‹
+            </button>
+            <span class="brand-fox-mark" aria-hidden="true">
+              <svg class="fox-mark"><use href="#i-fox-mark" /></svg>
+            </span>
+            <div>
+              <h1 class="app-title">План обучения</h1>
+            </div>
+          </div>
+        </header>
+        <div class="screen-scroll">
+          <!-- Уведомления (видны и при форме, и при просмотре) -->
+          <div id="plan-warning" class="plan-warning hidden"></div>
+
+          <!-- Форма создания/редактирования плана -->
+          <div id="plan-form-container">
+            <h3 id="plan-form-title">Создать новый план</h3>
+
+            <div class="form-group">
+              <label class="form-label" for="plan-start-date">Дата начала</label>
+              <input
+                type="date"
+                id="plan-start-date"
+                class="form-input"
+                data-testid="plan-start-date"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Способ выбора срока</label>
+              <div class="plan-deadline-toggle">
+                <button class="toggle-btn active" data-mode="days" data-testid="deadline-mode-days">
+                  Количество дней
+                </button>
+                <button class="toggle-btn" data-mode="date" data-testid="deadline-mode-date">
+                  Дата дедлайна
+                </button>
+              </div>
+            </div>
+
+            <div id="plan-days-input" class="form-group">
+              <label class="form-label" for="plan-total-days">Количество учебных дней</label>
+              <input
+                type="number"
+                id="plan-total-days"
+                class="form-input"
+                min="12"
+                value="90"
+                data-testid="plan-total-days"
+              />
+            </div>
+
+            <div id="plan-deadline-input" class="form-group hidden">
+              <label class="form-label" for="plan-deadline-date">Дата дедлайна</label>
+              <input
+                type="date"
+                id="plan-deadline-date"
+                class="form-input"
+                data-testid="plan-deadline-date"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Дни недели</label>
+              <div class="weekday-selector">
+                <button class="weekday-btn active" data-day="1" data-testid="weekday-1">Пн</button>
+                <button class="weekday-btn active" data-day="2" data-testid="weekday-2">Вт</button>
+                <button class="weekday-btn active" data-day="3" data-testid="weekday-3">Ср</button>
+                <button class="weekday-btn active" data-day="4" data-testid="weekday-4">Чт</button>
+                <button class="weekday-btn active" data-day="5" data-testid="weekday-5">Пт</button>
+                <button class="weekday-btn" data-day="6" data-testid="weekday-6">Сб</button>
+                <button class="weekday-btn" data-day="0" data-testid="weekday-0">Вс</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" id="label-plan-capacity-minutes" for="plan-capacity-minutes"
+                >Сколько времени вы готовы заниматься в учебный день?</label
+              >
+              <select
+                id="plan-capacity-minutes"
+                class="form-input"
+                data-testid="plan-capacity-select"
+                aria-labelledby="label-plan-capacity-minutes"
+              >
+                <option value="15">15 минут</option>
+                <option value="30" selected>30 минут</option>
+                <option value="45">45 минут</option>
+                <option value="60">60 минут</option>
+              </select>
+            </div>
+
+            <!-- Прогресс изученных глав -->
+            <div class="plan-progress-widget card">
+              <span class="form-label">Уже изучено</span>
+              <div class="plan-progress-bar-container">
+                <div
+                  id="plan-progress-bar-fill"
+                  class="plan-progress-bar-fill"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <span id="plan-progress-text" class="plan-progress-text">Загрузка прогресса...</span>
+            </div>
+
+            <!-- Дополнительные настройки -->
+            <details class="plan-advanced-details">
+              <summary>Дополнительные настройки</summary>
+              <div class="plan-advanced-content">
+                <label class="chapter-checkbox-item">
+                  <input
+                    type="checkbox"
+                    id="plan-workbook-enabled"
+                    data-testid="plan-workbook-enabled"
+                    checked
+                  />
+                  <span class="chapter-checkbox-label">Включить дополнительную практику</span>
+                </label>
+                <div id="plan-workbook-sub-options" style="margin-left: 1.5rem; margin-top: 0.5rem">
+                  <label class="chapter-checkbox-item">
+                    <input
+                      type="checkbox"
+                      id="plan-workbook-conversation-grammar"
+                      data-testid="plan-workbook-conversation-grammar"
+                      checked
+                    />
+                    <span class="chapter-checkbox-label">Грамматические задания</span>
+                  </label>
+                  <label class="chapter-checkbox-item">
+                    <input
+                      type="checkbox"
+                      id="plan-workbook-reading-writing"
+                      data-testid="plan-workbook-reading-writing"
+                      checked
+                    />
+                    <span class="chapter-checkbox-label">Чтение и письмо</span>
+                  </label>
+                </div>
+                <p style="font-size: 0.875rem; color: #666; margin: 0.5rem 0 1rem">
+                  Настройки регулируют включение заданий дополнительной практики в главы и план.
+                </p>
+                <label class="form-label">Уже изученные главы (ручная корректировка)</label>
+                <p style="font-size: 0.875rem; color: #666; margin-bottom: 1rem">
+                  Отметьте главы, которые вы уже изучили. Они не будут включены в план обучения.
+                </p>
+                <div id="completed-chapters-list" class="completed-chapters-list"></div>
+              </div>
+            </details>
+
+            <div id="plan-preview-container" class="plan-preview-container card hidden"></div>
+
+            <div class="plan-form-actions">
+              <button
+                class="btn btn-primary"
+                id="plan-generate-btn"
+                data-testid="plan-generate-btn"
+              >
+                Создать план
+              </button>
+              <button
+                class="btn btn-secondary"
+                id="plan-cancel-btn"
+                data-testid="plan-cancel-btn"
+                style="display: none"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+
+          <!-- Контейнер плана (показывается после генерации) -->
+          <div id="plan-view-container" class="hidden">
+            <!-- Уведомления режима просмотра (диалог дедлайна, ошибки пересчёта) -->
+            <div id="plan-view-warning" class="plan-warning hidden"></div>
+
+            <!-- Панель управления планом -->
+            <div id="plan-controls" class="plan-controls card hidden">
+              <button class="btn btn-secondary" id="plan-edit-btn" data-testid="plan-edit-btn">
+                ✏️ Изменить
+              </button>
+              <button class="btn btn-secondary" id="plan-recalc-btn" data-testid="plan-recalc-btn">
+                🔄 Пересчитать
+              </button>
+              <button class="btn btn-secondary" id="plan-pause-btn" data-testid="plan-pause-btn">
+                ⏸️ Приостановить
+              </button>
+              <button class="btn btn-danger" id="plan-delete-btn" data-testid="plan-delete-btn">
+                🗑️ Удалить
+              </button>
+            </div>
+
+            <!-- План на сегодня -->
+            <div id="plan-today-card" class="plan-today-card hidden"></div>
+
+            <!-- Переключатель вида -->
+            <div class="plan-view-toggle card">
+              <button class="toggle-btn active" data-view="timeline" data-testid="view-timeline">
+                📋 Таймлайн
+              </button>
+              <button class="toggle-btn" data-view="grid" data-testid="view-grid">
+                📅 Календарь
+              </button>
+            </div>
+
+            <!-- Таймлайн (список сегментов) -->
+            <div id="plan-timeline" class="plan-timeline"></div>
+
+            <!-- Календарная сетка -->
+            <div id="plan-calendar-grid" class="heatmap-calendar-card hidden">
+              <div class="heatmap-nav">
+                <button class="heatmap-nav-btn" id="plan-heatmap-prev">←</button>
+                <span class="heatmap-month-label" id="plan-heatmap-month-label">Месяц</span>
+                <button class="heatmap-nav-btn" id="plan-heatmap-next">→</button>
+              </div>
+              <div class="heatmap-legend" id="plan-heatmap-legend"></div>
+              <div class="heatmap-weekdays">
+                <div class="heatmap-weekday">Пн</div>
+                <div class="heatmap-weekday">Вт</div>
+                <div class="heatmap-weekday">Ср</div>
+                <div class="heatmap-weekday">Чт</div>
+                <div class="heatmap-weekday">Пт</div>
+                <div class="heatmap-weekday">Сб</div>
+                <div class="heatmap-weekday">Вс</div>
+              </div>
+              <div class="heatmap-grid" id="plan-heatmap-grid"></div>
+            </div>
+
+            <!-- Рекомендации по распределению времени -->
+            <div id="plan-advice-container" class="card hidden">
+              <h3>Распределение времени</h3>
+              <p class="advice-subtitle">Рекомендации оптимального баланса</p>
+              <div id="plan-advice-bar" class="advice-bar hidden"></div>
+              <div id="plan-advice-percentages" class="advice-percentages hidden"></div>
+              <p id="plan-advice-tip" class="advice-tip"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- ===== BOTTOM NAV ===== -->
       <nav class="tabbar" data-testid="tabbar">
+        <div class="sidebar-brand" aria-hidden="true">
+          <span class="sidebar-brand-mark"
+            ><svg class="fox-mark"><use href="#i-fox-mark" /></svg
+          ></span>
+          <strong>KotoKitsu</strong>
+        </div>
         <div class="tab-indicator"></div>
-        <button class="tab active" data-nav="home" data-testid="tab-home">
-          <span class="tab-ic">🏠</span><span>Главная</span>
+        <button class="tab active mobile-primary-tab" data-nav="home" data-testid="tab-home">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-home" /></svg><span>Главная</span>
         </button>
-        <button class="tab" data-nav="srs" data-testid="tab-srs">
-          <span class="tab-ic">🎴</span><span class="tab-badge hidden" id="tab-srs-badge">0</span
-          ><span>SRS</span>
+        <button class="tab mobile-primary-tab" data-nav="srs" data-testid="tab-srs">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-repeat" /></svg
+          ><span class="tab-badge hidden" id="tab-srs-badge">0</span><span>SRS</span>
         </button>
-        <button class="tab" data-nav="sensei" data-testid="tab-sensei">
-          <span class="tab-ic">🤖</span><span>Инструменты</span>
+        <button class="tab mobile-primary-tab" data-nav="sensei" data-testid="tab-sensei">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-chat" /></svg
+          ><span>Инструменты</span>
         </button>
-        <button class="tab" data-nav="library" data-testid="tab-library">
-          <span class="tab-ic">📖</span><span>Учебник</span>
+        <button class="tab mobile-primary-tab" data-nav="library" data-testid="tab-library">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-story" /></svg><span>Учебник</span>
         </button>
-        <button class="tab" data-nav="profile" data-testid="tab-profile">
-          <span class="tab-ic">👤</span><span>Профиль</span>
+        <button class="tab mobile-primary-tab" data-nav="profile" data-testid="tab-profile">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-user" /></svg><span>Профиль</span>
         </button>
+        <button class="tab desktop-nav-tab" data-nav="plan" data-testid="tab-plan">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-plan" /></svg><span>План</span>
+        </button>
+        <button class="tab desktop-nav-tab" data-nav="course" data-testid="tab-course">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-book" /></svg><span>Курс</span>
+        </button>
+        <button class="tab desktop-nav-tab" data-nav="dictionary" data-testid="tab-dictionary">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-search" /></svg><span>Словарь</span>
+        </button>
+        <button class="tab desktop-nav-tab" data-nav="statistics" data-testid="tab-statistics">
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-chart" /></svg
+          ><span>Статистика</span>
+        </button>
+        <button
+          class="tab desktop-nav-tab sidebar-settings-tab"
+          data-nav="settings"
+          data-testid="tab-settings"
+        >
+          <svg class="ui-icon settings-icon" aria-hidden="true"><use href="#i-settings" /></svg
+          ><span>Настройки</span>
+        </button>
+        <div class="sidebar-storage-status" aria-hidden="true">
+          <span></span>
+          <div><strong>Данные сохранены</strong><small>Доступно без сети</small></div>
+        </div>
       </nav>
 
       <div id="toast" data-testid="toast" aria-live="polite" role="status"></div>

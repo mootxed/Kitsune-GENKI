@@ -18,7 +18,7 @@ import {
   getUserRankData,
 } from '../src/xp-system.js';
 import { cardChapter, wordById, isWordUnlocked, dueCards, allCards } from '../src/srs-helpers.js';
-import { sameLessonId } from '../src/courses/course-context.js';
+import { sameLessonId, getActiveCourse } from '../src/courses/course-context.js';
 import { evaluateAndCompleteChapter } from '../src/chapter-progress.js';
 import {
   exportFullProgress,
@@ -110,6 +110,9 @@ export function createProductionDependencies() {
     syncAvatars,
     updateSrsBadge,
     updateMainQuestsTimer,
+
+    // Course context
+    getActiveCourse,
 
     // Home module
     markActivity,

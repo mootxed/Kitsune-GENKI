@@ -295,13 +295,14 @@ export function latestUndoableEvent(state) {
 
 export async function undoLastReview(state, dependencies, renderFlashFn) {
   const stackEntry = reviewUndoStack.pop();
-  const persistedEvent = stackEntry
-    ? (state.reviewEvents || []).find((event) => event.eventId === stackEntry.eventId)
-    : latestUndoableEvent(state);
+  if (!stackEntry) return false;
+  const persistedEvent = (state.reviewEvents || []).find(
+    (event) => event.eventId === stackEntry.eventId
+  );
   if (!persistedEvent) return false;
 
   const cardId = persistedEvent.cardId;
-  const previous = stackEntry?.state;
+  const previous = stackEntry.state;
   const card = state.srs[cardId];
   if (!card) return false;
   if (previous?.session && !sessionManager?.restoreSnapshot(previous.session)) return false;
@@ -344,8 +345,13 @@ export async function undoLastReview(state, dependencies, renderFlashFn) {
   saveActiveSessionState();
   dependencies.updateSrsBadge?.();
   dependencies.toast?.('↩️ Последний ответ отменён');
-  if (typeof renderFlashFn === 'function') {
-    renderFlashFn(state, dependencies);
+  const reRender =
+    renderFlashFn ||
+    dependencies?.renderFlash ||
+    activeReviewDependencies?.renderFlash ||
+    window.renderFlash;
+  if (typeof reRender === 'function') {
+    reRender(state, dependencies);
   }
   return true;
 }
@@ -356,7 +362,12 @@ export function createUndoButton(state, dependencies, renderFlashFn) {
   button.className = 'btn-ghost review-undo-btn';
   button.dataset.testid = 'review-undo';
   button.textContent = '↩️ Отменить ответ';
-  button.onclick = async () => undoLastReview(state, dependencies, renderFlashFn);
+  const reRender =
+    renderFlashFn ||
+    dependencies?.renderFlash ||
+    activeReviewDependencies?.renderFlash ||
+    window.renderFlash;
+  button.onclick = async () => undoLastReview(state, dependencies, reRender);
   return button;
 }
 
@@ -368,11 +379,9 @@ export function renderCardBehaviorControls(cardId) {
   const top = document.querySelector('#srs-body .flash-top');
   if (!top) return;
 
-  if (
-    (reviewUndoStack.canUndo || latestUndoableEvent(state)) &&
-    !top.querySelector('.review-undo-btn')
-  ) {
-    top.insertBefore(createUndoButton(state, dependencies), top.lastElementChild);
+  if (reviewUndoStack.canUndo && !top.querySelector('.review-undo-btn')) {
+    const reRender = dependencies?.renderFlash || window.renderFlash;
+    top.insertBefore(createUndoButton(state, dependencies, reRender), top.lastElementChild);
   }
 
   const card = state.srs[cardId];
@@ -400,6 +409,11 @@ export function renderCompletionUndo(state, dependencies, renderFlashFn) {
   const rewards = document.getElementById('completion-rewards');
   if (!rewards) return;
   rewards.parentElement?.querySelector('.review-undo-btn')?.remove();
-  if (!reviewUndoStack.canUndo && !latestUndoableEvent(state)) return;
-  rewards.insertAdjacentElement('afterend', createUndoButton(state, dependencies, renderFlashFn));
+  if (!reviewUndoStack.canUndo) return;
+  const reRender =
+    renderFlashFn ||
+    dependencies?.renderFlash ||
+    activeReviewDependencies?.renderFlash ||
+    window.renderFlash;
+  rewards.insertAdjacentElement('afterend', createUndoButton(state, dependencies, reRender));
 }
